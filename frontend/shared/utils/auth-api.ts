@@ -1,11 +1,22 @@
-ise/**
+/**
  * Service API d'authentification
  * Architecture DDD - Module Core/Auth
  */
 
-import * as apiClientModule from './api-client';
-const apiClient = apiClientModule.default;
-import { PaginatedResponse } from './api-client';
+import axios from 'axios';
+
+// Configuration de base
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+// Créer une instance axios simple pour l'authentification
+const authAxios = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
 
 /**
  * Interfaces de types pour l'authentification
@@ -58,39 +69,37 @@ class AuthAPIService {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     console.log('[AuthAPI] Tentative de connexion avec:', credentials.email);
-    let authResponse: AuthResponse;
     try {
-      authResponse = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      const response = await authAxios.post<AuthResponse>('/auth/login', credentials);
 
       // Sauvegarder les tokens
       if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', authResponse.accessToken);
-        localStorage.setItem('refresh_token', authResponse.refreshToken);
-        localStorage.setItem('user', JSON.stringify(authResponse.user));
+        localStorage.setItem('access_token', response.data.accessToken);
+        localStorage.setItem('refresh_token', response.data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       console.log('[AuthAPI] Connexion réussie pour', credentials.email);
+      return response.data;
     } catch (error: any) {
-      console.error('[AuthAPI] Erreur de connexion:', error.status, error.message, error.details);
+      console.error('[AuthAPI] Erreur de connexion:', error.response?.status, error.response?.data?.message, error.message);
       throw error;
     }
-    return authResponse;
-
   }
 
   /**
    * Inscription utilisateur
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/register', data);
+    const response = await authAxios.post<AuthResponse>('/auth/register', data);
 
     // Sauvegarder les tokens
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', response.accessToken);
-      localStorage.setItem('refresh_token', response.refreshToken);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('access_token', response.data.accessToken);
+      localStorage.setItem('refresh_token', response.data.refreshToken);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
 
-    return response;
+    return response.data;
   }
 
   /**
@@ -98,7 +107,7 @@ class AuthAPIService {
    */
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/auth/logout', {});
+      await authAxios.post('/auth/logout', {});
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } finally {
@@ -121,56 +130,58 @@ class AuthAPIService {
       throw new Error('No refresh token available');
     }
 
-    const response = await apiClient.post<{ accessToken: string }>('/auth/refresh', { refreshToken });
+    const response = await authAxios.post<{ accessToken: string }>('/auth/refresh', { refreshToken });
 
     // Mettre à jour le token
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', response.accessToken);
+      localStorage.setItem('access_token', response.data.accessToken);
     }
 
-    return response;
+    return response.data;
   }
 
   /**
    * Obtenir le profil utilisateur connecté
    */
   async getProfile(): Promise<User> {
-    const response = await apiClient.get<User>('/auth/me');
+    const response = await authAxios.get<User>('/auth/me');
 
     // Mettre à jour le localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(response));
+      localStorage.setItem('user', JSON.stringify(response.data));
     }
 
-    return response;
+    return response.data;
   }
 
   /**
    * Mettre à jour le profil
    */
   async updateProfile(data: Partial<User>): Promise<User> {
-    const response = await apiClient.patch<User>('/auth/profile', data);
+    const response = await authAxios.patch<User>('/auth/profile', data);
 
     // Mettre à jour le localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(response));
+      localStorage.setItem('user', JSON.stringify(response.data));
     }
 
-    return response;
+    return response.data;
   }
 
   /**
    * Demander une réinitialisation de mot de passe
    */
   async requestPasswordReset(data: PasswordResetRequest): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>('/auth/forgot-password', data);
+    const response = await authAxios.post<{ message: string }>('/auth/forgot-password', data);
+    return response.data;
   }
 
   /**
    * Confirmer la réinitialisation du mot de passe
    */
   async resetPassword(data: PasswordResetConfirm): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>('/auth/reset-password', data);
+    const response = await authAxios.post<{ message: string }>('/auth/reset-password', data);
+    return response.data;
   }
 
   /**
@@ -228,7 +239,8 @@ class AuthAPIService {
     loginAttempts: number;
     failedLogins: number;
   }> {
-    return apiClient.get('/auth/stats');
+    const response = await authAxios.get('/auth/stats');
+    return response.data;
   }
 }
 

@@ -1,7 +1,8 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -10,24 +11,25 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
-  async register(
-    @Body() body: { email: string; password: string; firstName?: string; lastName?: string; role?: string },
-  ) {
-    return this.authService.register(body);
+  @ApiBody({ type: RegisterDto })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
-  async login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
+  @ApiBody({ type: LoginDto })
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto.email, loginDto.password);
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  async refresh(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshToken(body.refreshToken);
+  @ApiBody({ type: RefreshTokenDto })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 
   @Get('me')

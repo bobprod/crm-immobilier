@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { CommunicationsService } from './communications.service';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { SendEmailDto, SendSmsDto, SendWhatsAppDto, CreateTemplateDto, UpdateTemplateDto } from './dto';
@@ -9,7 +9,7 @@ import { SendEmailDto, SendSmsDto, SendWhatsAppDto, CreateTemplateDto, UpdateTem
 @UseGuards(JwtAuthGuard)
 @Controller('communications')
 export class CommunicationsController {
-  constructor(private communicationsService: CommunicationsService) {}
+  constructor(private communicationsService: CommunicationsService) { }
 
   @Post('email')
   @ApiOperation({ summary: 'Envoyer un email' })
@@ -61,6 +61,7 @@ export class CommunicationsController {
 
   @Post('smtp/test-email')
   @ApiOperation({ summary: 'Envoyer un email de test' })
+  @ApiBody({ schema: { type: 'object', properties: { to: { type: 'string', example: 'test@example.com' } } } })
   sendTestEmail(@Body() body: { to: string }) {
     return this.communicationsService.sendTestEmail(body.to);
   }

@@ -1,19 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { PropertiesService } from './properties.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 
 @ApiTags('properties')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('properties')
 export class PropertiesController {
-  constructor(private propertiesService: PropertiesService) {}
+  constructor(private propertiesService: PropertiesService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create property' })
-  create(@Request() req, @Body() data: any) {
-    return this.propertiesService.create(req.user.userId, data);
+  @ApiBody({ type: CreatePropertyDto })
+  create(@Request() req, @Body() createPropertyDto: CreatePropertyDto) {
+    return this.propertiesService.create(req.user.userId, createPropertyDto);
   }
 
   @Get()
@@ -30,8 +32,9 @@ export class PropertiesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update property' })
-  update(@Request() req, @Param('id') id: string, @Body() data: any) {
-    return this.propertiesService.update(id, req.user.userId, data);
+  @ApiBody({ type: UpdatePropertyDto })
+  update(@Request() req, @Param('id') id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
+    return this.propertiesService.update(id, req.user.userId, updatePropertyDto);
   }
 
   @Delete(':id')

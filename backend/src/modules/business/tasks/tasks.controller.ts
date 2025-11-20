@@ -10,21 +10,23 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { TasksService } from './tasks.service';
+import { CreateTaskDto, UpdateTaskDto } from './dto';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
-  constructor(private tasksService: TasksService) {}
+  constructor(private tasksService: TasksService) { }
 
   @Post()
   @ApiOperation({ summary: 'Créer une tâche' })
-  create(@Request() req, @Body() data: any) {
-    return this.tasksService.create(req.user.userId, data);
+  @ApiBody({ type: CreateTaskDto })
+  create(@Request() req, @Body() createTaskDto: CreateTaskDto) {
+    return this.tasksService.create(req.user.userId, createTaskDto);
   }
 
   @Get()
@@ -59,8 +61,9 @@ export class TasksController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Modifier une tâche' })
-  update(@Request() req, @Param('id') id: string, @Body() data: any) {
-    return this.tasksService.update(id, req.user.userId, data);
+  @ApiBody({ type: UpdateTaskDto })
+  update(@Request() req, @Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+    return this.tasksService.update(id, req.user.userId, updateTaskDto);
   }
 
   @Put(':id/complete')

@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
+import { Button } from '../../../shared/components/ui/button';
 import { Plus, Building2, Users, Calendar, FileText, Send } from 'lucide-react';
 import { useRouter } from 'next/router';
 

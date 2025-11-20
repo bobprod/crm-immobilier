@@ -1,19 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { ProspectsService } from './prospects.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+import { CreateProspectDto, UpdateProspectDto } from './dto';
 
 @ApiTags('prospects')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('prospects')
 export class ProspectsController {
-  constructor(private prospectsService: ProspectsService) {}
+  constructor(private prospectsService: ProspectsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create prospect' })
-  create(@Request() req, @Body() data: any) {
-    return this.prospectsService.create(req.user.userId, data);
+  @ApiBody({ type: CreateProspectDto })
+  create(@Request() req, @Body() createProspectDto: CreateProspectDto) {
+    return this.prospectsService.create(req.user.userId, createProspectDto);
   }
 
   @Get()
@@ -30,8 +32,9 @@ export class ProspectsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update prospect' })
-  update(@Request() req, @Param('id') id: string, @Body() data: any) {
-    return this.prospectsService.update(id, req.user.userId, data);
+  @ApiBody({ type: UpdateProspectDto })
+  update(@Request() req, @Param('id') id: string, @Body() updateProspectDto: UpdateProspectDto) {
+    return this.prospectsService.update(id, req.user.userId, updateProspectDto);
   }
 
   @Delete(':id')

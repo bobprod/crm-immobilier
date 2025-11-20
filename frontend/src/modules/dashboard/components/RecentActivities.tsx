@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
 import { Clock, User, Building2, Calendar } from 'lucide-react';
 
 interface Activity {
