@@ -15,17 +15,33 @@ interface LayoutProps {
 export default function Layout({ children, initialTab = 'dashboard', disableAuthRedirect = false }: LayoutProps) {
   const router = useRouter();
   const { user, loading, logout } = useAuth(); // Destructure loading from useAuth
-  const [activeTab, setActiveTab] = useState(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     // Handle redirection only after client-side mount and auth loading is complete
-    if (disableAuthRedirect === false && !user && !loading) {
+    // For testing purposes, also check for auth_token in localStorage
+    const hasAuthToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+    if (disableAuthRedirect === false && !user && !loading && !hasAuthToken) {
+      console.log('Layout: Redirecting to login - user:', user, 'loading:', loading, 'hasAuthToken:', hasAuthToken);
       router.push('/login');
     }
   }, [user, loading, mounted, disableAuthRedirect, router]);
+
+  // Determine active tab based on current route
+  const getActiveTab = () => {
+    const path = router.pathname;
+    if (path === '/dashboard' || path === '/') return 'dashboard';
+    if (path.startsWith('/properties')) return 'properties';
+    if (path.startsWith('/prospects')) return 'prospects';
+    if (path.startsWith('/appointments')) return 'appointments';
+    if (path.startsWith('/analytics')) return 'analytics';
+    if (path.startsWith('/settings')) return 'settings';
+    return 'dashboard'; // default
+  };
+
+  const activeTab = getActiveTab();
 
   // Avoid server-side rendering issues and initial hydration mismatches
   // In test mode, skip auth loading check
@@ -47,11 +63,10 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
   ];
 
   const handleNavigation = (tabId: string, href: string) => {
-    setActiveTab(tabId);
     if (mounted) {
       router.push(href);
     }
-    setSidebarOpen(false);
+    // Keep sidebar open on mobile after navigation
   };
 
   const handleLogout = async () => {

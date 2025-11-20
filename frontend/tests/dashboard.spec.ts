@@ -3,21 +3,23 @@ import { test, expect } from '@playwright/test';
 test.describe('Dashboard Pages', () => {
     test.beforeEach(async ({ page }) => {
         // Mock authentication for dashboard access
-        await page.addInitScript(() => {
+        await page.goto('/dashboard');
+        await page.evaluate(() => {
             localStorage.setItem('auth_token', 'test-token');
             localStorage.setItem('user', JSON.stringify({
                 id: '1',
                 email: 'test@example.com',
-                name: 'Test User',
+                firstName: 'Test',
+                lastName: 'User',
                 role: 'admin'
             }));
+            console.log('Test: Set auth_token in localStorage');
         });
+        await page.reload();
+        await page.waitForLoadState('networkidle');
     });
 
     test('should load dashboard page', async ({ page }) => {
-        await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
-
         // Check if dashboard loads
         await expect(page).toHaveURL(/.*dashboard/);
 
@@ -27,6 +29,18 @@ test.describe('Dashboard Pages', () => {
     });
 
     test('should load properties page', async ({ page }) => {
+        // Set up authentication for properties page
+        await page.evaluate(() => {
+            localStorage.setItem('auth_token', 'test-token');
+            localStorage.setItem('user', JSON.stringify({
+                id: '1',
+                email: 'test@example.com',
+                firstName: 'Test',
+                lastName: 'User',
+                role: 'admin'
+            }));
+        });
+
         await page.goto('/properties');
         await page.waitForLoadState('networkidle');
 
@@ -87,8 +101,6 @@ test.describe('Dashboard Pages', () => {
     });
 
     test('should navigate between dashboard pages using sidebar', async ({ page }) => {
-        await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
 
         // Click on Properties link in sidebar
         await page.click('text=Propriétés');
@@ -108,9 +120,6 @@ test.describe('Dashboard Pages', () => {
 
     test('should handle mobile menu toggle', async ({ page }) => {
         await page.setViewportSize({ width: 768, height: 1024 });
-
-        await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
 
         // Check if mobile menu button exists
         const menuButton = page.locator('button').filter({ hasText: '' }).first();
