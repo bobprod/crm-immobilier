@@ -42,10 +42,11 @@ print_section() {
     echo -e "${BLUE}========================================${NC}"
 }
 
-# Variables pour stocker les tokens
+# Variables pour stocker les tokens et IDs
 ADMIN_TOKEN=""
 MANAGER_TOKEN=""
 AGENT_TOKEN=""
+USER_IDS=()
 
 echo -e "${YELLOW}"
 echo "╔════════════════════════════════════════════╗"
@@ -62,25 +63,26 @@ print_section "1. Test de Santé du Serveur"
 response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL" 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
-print_result "Health Check" "$body" "$http_code"
+print_result "Health Check (GET /api)" "$body" "$http_code"
 
 # ============================================
-# 2. CRÉATION DES UTILISATEURS
+# 2. CRÉATION DES UTILISATEURS (sans role)
 # ============================================
 print_section "2. Création des Utilisateurs de Test"
 
-# Créer Admin
+# Créer Admin (sera agent par défaut, on changera le rôle après)
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@crm-immobilier.local",
     "password": "Admin@123456",
     "firstName": "Admin",
-    "lastName": "User",
-    "role": "admin"
+    "lastName": "User"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
+ADMIN_ID=$(echo "$body" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+USER_IDS+=("$ADMIN_ID")
 print_result "Créer utilisateur Admin" "$body" "$http_code"
 
 # Créer Manager
@@ -90,11 +92,12 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/register" \
     "email": "manager@crm-immobilier.local",
     "password": "Manager@123456",
     "firstName": "Manager",
-    "lastName": "User",
-    "role": "manager"
+    "lastName": "User"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
+MANAGER_ID=$(echo "$body" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+USER_IDS+=("$MANAGER_ID")
 print_result "Créer utilisateur Manager" "$body" "$http_code"
 
 # Créer Agent
@@ -104,17 +107,78 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/register" \
     "email": "agent@crm-immobilier.local",
     "password": "Agent@123456",
     "firstName": "Agent",
-    "lastName": "User",
-    "role": "agent"
+    "lastName": "User"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
+AGENT_ID=$(echo "$body" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+USER_IDS+=("$AGENT_ID")
 print_result "Créer utilisateur Agent" "$body" "$http_code"
 
 # ============================================
-# 3. CONNEXION DES UTILISATEURS
+# 3. CONNEXION INITIALE
 # ============================================
-print_section "3. Connexion des Utilisateurs"
+print_section "3. Connexion Initiale (obtenir token)"
+
+# Login avec le premier user pour obtenir un token
+response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@crm-immobilier.local",
+    "password": "Admin@123456"
+  }' 2>/dev/null || echo -e "\n000")
+http_code=$(echo "$response" | tail -n1)
+body=$(echo "$response" | sed '$d')
+TEMP_TOKEN=$(echo "$body" | grep -o '"accessToken":"[^"]*' | cut -d'"' -f4)
+print_result "Login Admin (pour obtenir token initial)" "$body" "$http_code"
+
+if [ -z "$TEMP_TOKEN" ]; then
+    echo -e "${RED}ERREUR: Impossible d'obtenir le token. Arrêt des tests.${NC}"
+    exit 1
+fi
+
+# ============================================
+# 4. MISE À JOUR DES RÔLES
+# ============================================
+print_section "4. Mise à Jour des Rôles Utilisateurs"
+
+# Mettre à jour le rôle Admin
+if [ ! -z "$ADMIN_ID" ]; then
+    response=$(curl -s -w "\n%{http_code}" -X PUT "$API_URL/users/$ADMIN_ID" \
+      -H "Authorization: Bearer $TEMP_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"role": "admin"}' 2>/dev/null || echo -e "\n000")
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+    print_result "Mettre à jour rôle Admin" "$body" "$http_code"
+fi
+
+# Mettre à jour le rôle Manager
+if [ ! -z "$MANAGER_ID" ]; then
+    response=$(curl -s -w "\n%{http_code}" -X PUT "$API_URL/users/$MANAGER_ID" \
+      -H "Authorization: Bearer $TEMP_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"role": "manager"}' 2>/dev/null || echo -e "\n000")
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+    print_result "Mettre à jour rôle Manager" "$body" "$http_code"
+fi
+
+# Mettre à jour le rôle Agent
+if [ ! -z "$AGENT_ID" ]; then
+    response=$(curl -s -w "\n%{http_code}" -X PUT "$API_URL/users/$AGENT_ID" \
+      -H "Authorization: Bearer $TEMP_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"role": "agent"}' 2>/dev/null || echo -e "\n000")
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+    print_result "Mettre à jour rôle Agent" "$body" "$http_code"
+fi
+
+# ============================================
+# 5. RECONNEXION AVEC LES BONS RÔLES
+# ============================================
+print_section "5. Reconnexion avec les Nouveaux Rôles"
 
 # Login Admin
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
@@ -126,7 +190,7 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 ADMIN_TOKEN=$(echo "$body" | grep -o '"accessToken":"[^"]*' | cut -d'"' -f4)
-print_result "Login Admin" "$body" "$http_code"
+print_result "Login Admin (avec rôle admin)" "$body" "$http_code"
 
 # Login Manager
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
@@ -138,7 +202,7 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 MANAGER_TOKEN=$(echo "$body" | grep -o '"accessToken":"[^"]*' | cut -d'"' -f4)
-print_result "Login Manager" "$body" "$http_code"
+print_result "Login Manager (avec rôle manager)" "$body" "$http_code"
 
 # Login Agent
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
@@ -150,7 +214,7 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/auth/login" \
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 AGENT_TOKEN=$(echo "$body" | grep -o '"accessToken":"[^"]*' | cut -d'"' -f4)
-print_result "Login Agent" "$body" "$http_code"
+print_result "Login Agent (avec rôle agent)" "$body" "$http_code"
 
 # Vérifier si on a au moins un token
 if [ -z "$ADMIN_TOKEN" ]; then
@@ -159,9 +223,9 @@ if [ -z "$ADMIN_TOKEN" ]; then
 fi
 
 # ============================================
-# 4. TEST DES ENDPOINTS UTILISATEURS
+# 6. TEST DES ENDPOINTS UTILISATEURS
 # ============================================
-print_section "4. Test des Endpoints Utilisateurs"
+print_section "6. Test des Endpoints Utilisateurs"
 
 # GET /users
 response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/users" \
@@ -170,35 +234,34 @@ http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 print_result "GET /users - Lister tous les utilisateurs" "$body" "$http_code"
 
-# GET /users/me
-response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/users/me" \
+# GET /auth/me
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/auth/me" \
   -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
-print_result "GET /users/me - Profil utilisateur" "$body" "$http_code"
+print_result "GET /auth/me - Profil utilisateur courant" "$body" "$http_code"
 
 # ============================================
-# 5. TEST DES ENDPOINTS PROPRIÉTÉS
+# 7. TEST DES ENDPOINTS PROPRIÉTÉS
 # ============================================
-print_section "5. Test des Endpoints Propriétés"
+print_section "7. Test des Endpoints Propriétés"
 
 # POST /properties - Créer une propriété
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/properties" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Villa Luxueuse Test",
-    "description": "Belle villa avec piscine pour les tests",
+    "title": "Villa Luxueuse Test API",
+    "description": "Belle villa avec piscine pour tests automatisés",
+    "type": "villa",
+    "category": "sale",
     "price": 500000,
+    "area": 200,
+    "bedrooms": 3,
+    "bathrooms": 2,
     "address": "123 Rue Example",
     "city": "Paris",
-    "zipCode": "75001",
-    "propertyType": "villa",
-    "status": "available",
-    "surface": 200,
-    "rooms": 5,
-    "bedrooms": 3,
-    "bathrooms": 2
+    "zipCode": "75001"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
@@ -222,9 +285,9 @@ if [ ! -z "$PROPERTY_ID" ]; then
 fi
 
 # ============================================
-# 6. TEST DES ENDPOINTS PROSPECTS
+# 8. TEST DES ENDPOINTS PROSPECTS
 # ============================================
-print_section "6. Test des Endpoints Prospects"
+print_section "8. Test des Endpoints Prospects"
 
 # POST /prospects - Créer un prospect
 response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/prospects" \
@@ -235,8 +298,10 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/prospects" \
     "lastName": "Dupont",
     "email": "jean.dupont@example.com",
     "phone": "+33612345678",
-    "status": "new",
-    "source": "website"
+    "type": "buyer",
+    "budget": 450000,
+    "source": "website",
+    "notes": "Intéressé par villas à Paris"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
@@ -260,9 +325,9 @@ if [ ! -z "$PROSPECT_ID" ]; then
 fi
 
 # ============================================
-# 7. TEST DES ENDPOINTS RENDEZ-VOUS
+# 9. TEST DES ENDPOINTS RENDEZ-VOUS
 # ============================================
-print_section "7. Test des Endpoints Rendez-vous"
+print_section "9. Test des Endpoints Rendez-vous"
 
 # POST /appointments - Créer un rendez-vous
 if [ ! -z "$PROSPECT_ID" ] && [ ! -z "$PROPERTY_ID" ]; then
@@ -270,12 +335,14 @@ if [ ! -z "$PROSPECT_ID" ] && [ ! -z "$PROPERTY_ID" ]; then
       -H "Authorization: Bearer $ADMIN_TOKEN" \
       -H "Content-Type: application/json" \
       -d "{
-        \"prospectId\": \"$PROSPECT_ID\",
-        \"propertyId\": \"$PROPERTY_ID\",
-        \"startDate\": \"2025-12-01T10:00:00.000Z\",
-        \"endDate\": \"2025-12-01T11:00:00.000Z\",
+        \"title\": \"Visite Villa Paris\",
+        \"description\": \"Visite avec Jean Dupont\",
+        \"startTime\": \"2025-12-01T10:00:00Z\",
+        \"endTime\": \"2025-12-01T11:00:00Z\",
         \"type\": \"visit\",
-        \"status\": \"scheduled\"
+        \"status\": \"scheduled\",
+        \"prospectId\": \"$PROSPECT_ID\",
+        \"propertyId\": \"$PROPERTY_ID\"
       }" 2>/dev/null || echo -e "\n000")
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | sed '$d')
@@ -290,10 +357,36 @@ http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 print_result "GET /appointments - Lister tous les rendez-vous" "$body" "$http_code"
 
+# GET /appointments/upcoming
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/appointments/upcoming" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
+http_code=$(echo "$response" | tail -n1)
+body=$(echo "$response" | sed '$d')
+print_result "GET /appointments/upcoming - Rendez-vous à venir" "$body" "$http_code"
+
 # ============================================
-# 8. TEST DES ENDPOINTS DOCUMENTS
+# 10. TEST DES ENDPOINTS ANALYTICS
 # ============================================
-print_section "8. Test des Endpoints Documents"
+print_section "10. Test des Endpoints Analytics"
+
+# GET /analytics/dashboard
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/analytics/dashboard" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
+http_code=$(echo "$response" | tail -n1)
+body=$(echo "$response" | sed '$d')
+print_result "GET /analytics/dashboard - Dashboard analytics" "$body" "$http_code"
+
+# GET /analytics/kpis
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/analytics/kpis" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
+http_code=$(echo "$response" | tail -n1)
+body=$(echo "$response" | sed '$d')
+print_result "GET /analytics/kpis - KPIs principaux" "$body" "$http_code"
+
+# ============================================
+# 11. TEST DES ENDPOINTS DOCUMENTS
+# ============================================
+print_section "11. Test des Endpoints Documents"
 
 # GET /documents
 response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/documents" \
@@ -302,29 +395,12 @@ http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 print_result "GET /documents - Lister tous les documents" "$body" "$http_code"
 
-# ============================================
-# 9. TEST DES ENDPOINTS ANALYTICS
-# ============================================
-print_section "9. Test des Endpoints Analytics"
-
-# GET /analytics/dashboard
-response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/analytics/dashboard" \
+# GET /documents/categories/list
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/documents/categories/list" \
   -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
-print_result "GET /analytics/dashboard - Statistiques du tableau de bord" "$body" "$http_code"
-
-# ============================================
-# 10. TEST DES ENDPOINTS NOTIFICATIONS
-# ============================================
-print_section "10. Test des Endpoints Notifications"
-
-# GET /notifications
-response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/notifications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" 2>/dev/null || echo -e "\n000")
-http_code=$(echo "$response" | tail -n1)
-body=$(echo "$response" | sed '$d')
-print_result "GET /notifications - Lister toutes les notifications" "$body" "$http_code"
+print_result "GET /documents/categories/list - Lister catégories" "$body" "$http_code"
 
 # ============================================
 # RÉSUMÉ FINAL
@@ -342,12 +418,18 @@ if [ $FAILED_TESTS -eq 0 ]; then
     echo -e "${GREEN}✓ TOUS LES TESTS SONT PASSÉS AVEC SUCCÈS!${NC}"
     echo ""
     echo -e "${YELLOW}Identifiants créés:${NC}"
-    echo -e "  Admin   : admin@crm-immobilier.local / Admin@123456"
-    echo -e "  Manager : manager@crm-immobilier.local / Manager@123456"
-    echo -e "  Agent   : agent@crm-immobilier.local / Agent@123456"
+    echo -e "  Admin   : admin@crm-immobilier.local / Admin@123456 (role: admin)"
+    echo -e "  Manager : manager@crm-immobilier.local / Manager@123456 (role: manager)"
+    echo -e "  Agent   : agent@crm-immobilier.local / Agent@123456 (role: agent)"
+    echo ""
+    echo -e "${YELLOW}IDs utilisateurs:${NC}"
+    echo -e "  Admin ID   : $ADMIN_ID"
+    echo -e "  Manager ID : $MANAGER_ID"
+    echo -e "  Agent ID   : $AGENT_ID"
     exit 0
 else
     echo -e "${RED}✗ CERTAINS TESTS ONT ÉCHOUÉ${NC}"
-    echo -e "${YELLOW}Vérifiez que le backend NestJS est bien démarré sur $API_URL${NC}"
+    echo -e "${YELLOW}Vérifiez que le backend NestJS est bien démarré sur http://localhost:3000${NC}"
+    echo -e "${YELLOW}Et que la base de données est accessible${NC}"
     exit 1
 fi
