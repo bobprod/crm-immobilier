@@ -3,7 +3,7 @@
  * Architecture DDD - Module Core/Auth
  */
 
-import apiClient, { type PaginatedResponse } from './api-client';
+import { apiClient } from './api-client-backend';
 
 /**
  * Interfaces de types pour l'authentification
@@ -59,11 +59,12 @@ class AuthAPIService {
         let authResponse: AuthResponse;
         try {
             // Utilisez directement apiClient.post car apiClient est l'instance exportée par défaut
-            authResponse = await apiClient.post<AuthResponse>('/auth/login', credentials);
+            const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+            authResponse = response.data;
 
             // Sauvegarder les tokens
             if (typeof window !== 'undefined') {
-                localStorage.setItem('access_token', authResponse.accessToken);
+                localStorage.setItem('auth_token', authResponse.accessToken);
                 localStorage.setItem('refresh_token', authResponse.refreshToken);
                 localStorage.setItem('user', JSON.stringify(authResponse.user));
             }
@@ -85,12 +86,12 @@ class AuthAPIService {
 
         // Sauvegarder les tokens
         if (typeof window !== 'undefined') {
-            localStorage.setItem('access_token', response.accessToken);
-            localStorage.setItem('refresh_token', response.refreshToken);
-            localStorage.setItem('user', JSON.stringify(response.user));
+            localStorage.setItem('auth_token', response.data.accessToken);
+            localStorage.setItem('refresh_token', response.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
         }
 
-        return response;
+        return response.data;
     }
 
     /**
@@ -127,10 +128,10 @@ class AuthAPIService {
 
         // Mettre à jour le token
         if (typeof window !== 'undefined') {
-            localStorage.setItem('access_token', response.accessToken);
+            localStorage.setItem('auth_token', response.data.accessToken);
         }
 
-        return response;
+        return response.data;
     }
 
     /**
@@ -142,10 +143,10 @@ class AuthAPIService {
 
         // Mettre à jour le localStorage
         if (typeof window !== 'undefined') {
-            localStorage.setItem('user', JSON.stringify(response));
+            localStorage.setItem('user', JSON.stringify(response.data));
         }
 
-        return response;
+        return response.data;
     }
 
     /**
@@ -157,24 +158,26 @@ class AuthAPIService {
 
         // Mettre à jour le localStorage
         if (typeof window !== 'undefined') {
-            localStorage.setItem('user', JSON.stringify(response));
+            localStorage.setItem('user', JSON.stringify(response.data));
         }
 
-        return response;
+        return response.data;
     }
 
     /**
      * Demander une réinitialisation de mot de passe
      */
     async requestPasswordReset(data: PasswordResetRequest): Promise<{ message: string }> {
-        return apiClient.post<{ message: string }>('/auth/forgot-password', data);
+        const response = await apiClient.post<{ message: string }>('/auth/forgot-password', data);
+        return response.data;
     }
 
     /**
      * Confirmer la réinitialisation du mot de passe
      */
     async resetPassword(data: PasswordResetConfirm): Promise<{ message: string }> {
-        return apiClient.post<{ message: string }>('/auth/reset-password', data);
+        const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
+        return response.data;
     }
 
     /**
@@ -182,7 +185,7 @@ class AuthAPIService {
      */
     isAuthenticated(): boolean {
         if (typeof window === 'undefined') return false;
-        return !!localStorage.getItem('access_token');
+        return !!localStorage.getItem('auth_token');
     }
 
     /**
@@ -208,7 +211,7 @@ class AuthAPIService {
      */
     getAccessToken(): string | null {
         if (typeof window === 'undefined') return null;
-        return localStorage.getItem('access_token');
+        return localStorage.getItem('auth_token');
     }
 
     /**
@@ -217,7 +220,7 @@ class AuthAPIService {
     clearAuthData(): void {
         if (typeof window === 'undefined') return;
 
-        localStorage.removeItem('access_token');
+        localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
     }

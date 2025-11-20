@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -47,7 +48,7 @@ export default function ProspectsListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <Layout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -130,6 +131,6 @@ export default function ProspectsListPage() {
           )}
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

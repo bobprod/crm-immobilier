@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -36,7 +37,7 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <Layout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Rendez-vous</h1>
         <Button>Nouveau RDV</Button>
@@ -88,6 +89,6 @@ export default function AppointmentsPage() {
           ))
         )}
       </div>
-    </div>
+    </Layout>
   );
 }
