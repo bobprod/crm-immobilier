@@ -106,7 +106,7 @@ class AuthAPIService {
         } finally {
             // Nettoyer le localStorage même en cas d'erreur
             if (typeof window !== 'undefined') {
-                localStorage.removeItem('access_token');
+                localStorage.removeItem('auth_token');
                 localStorage.removeItem('refresh_token');
                 localStorage.removeItem('user');
             }

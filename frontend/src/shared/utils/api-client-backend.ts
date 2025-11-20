@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API Client for backend communication
 const backendApiClient = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
