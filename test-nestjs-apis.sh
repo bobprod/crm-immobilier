@@ -4,7 +4,7 @@
 # Script de Test Complet pour Backend NestJS
 # ============================================
 
-API_URL="http://localhost:3000"
+API_URL="http://localhost:3000/api"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -48,10 +48,10 @@ MANAGER_TOKEN=""
 AGENT_TOKEN=""
 
 echo -e "${YELLOW}"
-echo "╔════════════════════════════════════════╗"
-echo "║  Test Complet Backend NestJS CRM       ║"
-echo "║  API URL: $API_URL              ║"
-echo "╚════════════════════════════════════════╝"
+echo "╔════════════════════════════════════════════╗"
+echo "║  Test Complet Backend NestJS CRM           ║"
+echo "║  API URL: $API_URL                  ║"
+echo "╚════════════════════════════════════════════╝"
 echo -e "${NC}"
 
 # ============================================
@@ -59,7 +59,7 @@ echo -e "${NC}"
 # ============================================
 print_section "1. Test de Santé du Serveur"
 
-response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/health" 2>/dev/null || echo -e "\n000")
+response=$(curl -s -w "\n%{http_code}" -X GET "$API_URL" 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
 print_result "Health Check" "$body" "$http_code"
