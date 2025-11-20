@@ -9,9 +9,10 @@ import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 interface LayoutProps {
   children: React.ReactNode;
   initialTab?: string;
+  disableAuthRedirect?: boolean;
 }
 
-export default function Layout({ children, initialTab = 'dashboard' }: LayoutProps) {
+export default function Layout({ children, initialTab = 'dashboard', disableAuthRedirect = false }: LayoutProps) {
   const router = useRouter();
   const { user, loading, logout } = useAuth(); // Destructure loading from useAuth
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -20,21 +21,20 @@ export default function Layout({ children, initialTab = 'dashboard' }: LayoutPro
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Handle redirection only after client-side mount and auth loading is complete
+    if (disableAuthRedirect === false && !user && !loading) {
+      router.push('/login');
+    }
+  }, [user, loading, mounted, disableAuthRedirect, router]);
 
   // Avoid server-side rendering issues and initial hydration mismatches
-  if (!mounted || loading) {
+  // In test mode, skip auth loading check
+  if (!mounted || (loading && !disableAuthRedirect)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  // Handle redirection only after client-side mount and auth loading is complete
-  if (!user && mounted && !loading) {
-    router.push('/login');
-    return null; // Return null to prevent rendering content before redirection
   }
 
   const menuItems = [
@@ -73,7 +73,7 @@ export default function Layout({ children, initialTab = 'dashboard' }: LayoutPro
             <button
               key={item.id}
               onClick={() => handleNavigation(item.id, item.href)}
-              className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-100 ${activeTab === item.id ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : 'text-gray-700'
+              className={`w-full flex items-center px-6 py-3 text-left hover:bg-gray-100 ${activeTab === item.id ? 'bg-primary-foreground text-primary border-r-2 border-primary' : 'text-gray-700'
                 }`}
             >
               <item.icon className="w-5 h-5 mr-3" />

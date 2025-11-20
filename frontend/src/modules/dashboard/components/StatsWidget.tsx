@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
 import { Building2, Users, Calendar, TrendingUp } from 'lucide-react';
 
 interface StatsWidgetProps {
