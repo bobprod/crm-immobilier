@@ -271,14 +271,20 @@ print_section "5. Rendez-vous (Appointments)"
 
 # Create appointment
 if [ ! -z "$PROSPECT_ID" ] && [ ! -z "$PROPERTY_ID" ]; then
+    # Générer des dates futures dynamiques pour éviter les conflits
+    # Ajouter des heures aléatoires basées sur l'heure actuelle
+    RANDOM_HOURS=$((RANDOM % 72 + 24))  # Entre 24 et 96 heures dans le futur
+    START_TIME=$(date -u -d "+${RANDOM_HOURS} hours" +"%Y-%m-%dT%H:00:00Z" 2>/dev/null || date -u -v+${RANDOM_HOURS}H +"%Y-%m-%dT%H:00:00Z" 2>/dev/null || echo "2025-12-25T14:00:00Z")
+    END_TIME=$(date -u -d "+${RANDOM_HOURS} hours +1 hour" +"%Y-%m-%dT%H:00:00Z" 2>/dev/null || date -u -v+${RANDOM_HOURS}H -v+1H +"%Y-%m-%dT%H:00:00Z" 2>/dev/null || echo "2025-12-25T15:00:00Z")
+
     response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/appointments" \
       -H "Authorization: Bearer $ADMIN_TOKEN" \
       -H "Content-Type: application/json" \
       -d "{
         \"title\": \"Visite Test API\",
         \"description\": \"Test automatique\",
-        \"startTime\": \"2025-12-20T10:00:00Z\",
-        \"endTime\": \"2025-12-20T11:00:00Z\",
+        \"startTime\": \"$START_TIME\",
+        \"endTime\": \"$END_TIME\",
         \"type\": \"visit\",
         \"status\": \"scheduled\",
         \"prospectId\": \"$PROSPECT_ID\",
