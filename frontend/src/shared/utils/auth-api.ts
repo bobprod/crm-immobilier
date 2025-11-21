@@ -60,13 +60,28 @@ class AuthAPIService {
         try {
             // Utilisez directement apiClient.post car apiClient est l'instance exportée par défaut
             const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+
+            console.log('[AuthAPI] Raw response:', response);
+            console.log('[AuthAPI] Response data:', response.data);
+
             authResponse = response.data;
+
+            // Vérifier la structure de la réponse
+            if (!authResponse.accessToken || !authResponse.refreshToken) {
+                console.error('[AuthAPI] Missing tokens in response:', authResponse);
+                throw new Error('Invalid response format: missing tokens');
+            }
 
             // Sauvegarder les tokens
             if (typeof window !== 'undefined') {
+                console.log('[AuthAPI] Saving token to localStorage:', authResponse.accessToken.substring(0, 20) + '...');
                 localStorage.setItem('auth_token', authResponse.accessToken);
                 localStorage.setItem('refresh_token', authResponse.refreshToken);
                 localStorage.setItem('user', JSON.stringify(authResponse.user));
+
+                // Vérifier que le token est bien sauvegardé
+                const savedToken = localStorage.getItem('auth_token');
+                console.log('[AuthAPI] Token saved confirmation:', savedToken ? savedToken.substring(0, 20) + '...' : 'NOT SAVED');
             }
             console.log('[AuthAPI] Connexion réussie pour', credentials.email);
         } catch (error: any) {
