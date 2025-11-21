@@ -103,28 +103,41 @@ export class TasksService {
    * Obtenir statistiques
    */
   async getStats(userId: string) {
-    const [total, todo, inProgress, done, overdue] = await Promise.all([
-      this.prisma.tasks.count({ where: { userId } }),
-      this.prisma.tasks.count({ where: { userId, status: 'todo' } }),
-      this.prisma.tasks.count({ where: { userId, status: 'in_progress' } }),
-      this.prisma.tasks.count({ where: { userId, status: 'done' } }),
-      this.prisma.tasks.count({
-        where: {
-          userId,
-          status: { in: ['todo', 'in_progress'] },
-          dueDate: { lt: new Date() },
-        },
-      }),
-    ]);
+    try {
+      const [total, todo, inProgress, done, overdue] = await Promise.all([
+        this.prisma.tasks.count({ where: { userId } }).catch(() => 0),
+        this.prisma.tasks.count({ where: { userId, status: 'todo' } }).catch(() => 0),
+        this.prisma.tasks.count({ where: { userId, status: 'in_progress' } }).catch(() => 0),
+        this.prisma.tasks.count({ where: { userId, status: 'done' } }).catch(() => 0),
+        this.prisma.tasks.count({
+          where: {
+            userId,
+            status: { in: ['todo', 'in_progress'] },
+            dueDate: { lt: new Date() },
+          },
+        }).catch(() => 0),
+      ]);
 
-    return {
-      total,
-      todo,
-      inProgress,
-      done,
-      overdue,
-      completionRate: total > 0 ? Math.round((done / total) * 100) : 0,
-    };
+      return {
+        total,
+        todo,
+        inProgress,
+        done,
+        overdue,
+        completionRate: total > 0 ? Math.round((done / total) * 100) : 0,
+      };
+    } catch (error) {
+      console.error('Error fetching tasks stats:', error);
+      // Retourner des valeurs par défaut en cas d'erreur
+      return {
+        total: 0,
+        todo: 0,
+        inProgress: 0,
+        done: 0,
+        overdue: 0,
+        completionRate: 0,
+      };
+    }
   }
 
   /**

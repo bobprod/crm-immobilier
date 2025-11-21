@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API Client for backend communication
 const backendApiClient = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,9 +10,19 @@ const backendApiClient = axios.create({
 
 backendApiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Only access localStorage if we're in the browser
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        // Ensure headers object exists
+        if (!config.headers) {
+          config.headers = {} as any;
+        }
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('[API Client] Token attached to request:', token.substring(0, 20) + '...');
+      } else {
+        console.log('[API Client] No token found in localStorage');
+      }
     }
     return config;
   },
@@ -25,8 +35,15 @@ backendApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      console.error('[API Client] 401 Unauthorized - clearing token');
+      // Only redirect if not already on login page and not a login request
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login') && !error.config.url?.includes('/auth/login')) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        console.log('[API Client] Redirecting to login...');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
