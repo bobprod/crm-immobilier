@@ -34,25 +34,20 @@ export default function AnalyticsPage() {
     try {
       setError(null);
       const response = await apiClient.get('/analytics/dashboard');
-      setAnalytics(response.data || {
-        totalProspects: 0,
-        totalProperties: 0,
-        totalRevenue: 0,
-        conversionRate: 0,
-        prospectsByStatus: {},
-        propertiesByType: {}
-      });
-    } catch (error) {
-      console.error('Erreur chargement analytics:', error);
-      setError('Impossible de charger les analytics. Les données par défaut sont affichées.');
+      // Merge API response with defaults to ensure all fields are defined
       setAnalytics({
         totalProspects: 0,
         totalProperties: 0,
         totalRevenue: 0,
         conversionRate: 0,
         prospectsByStatus: {},
-        propertiesByType: {}
+        propertiesByType: {},
+        ...(response.data || {})
       });
+    } catch (error) {
+      console.error('Erreur chargement analytics:', error);
+      setError('Impossible de charger les analytics. Les données par défaut sont affichées.');
+      // Don't set analytics here, keep the initial state values
     } finally {
       setLoading(false);
     }
@@ -88,7 +83,7 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{analytics.totalProspects}</div>
+              <div className="text-3xl font-bold">{analytics.totalProspects || 0}</div>
             </CardContent>
           </Card>
 
@@ -100,7 +95,7 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{analytics.totalProperties}</div>
+              <div className="text-3xl font-bold">{analytics.totalProperties || 0}</div>
             </CardContent>
           </Card>
 
@@ -113,7 +108,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {analytics.totalRevenue.toLocaleString()} €
+                {(analytics.totalRevenue || 0).toLocaleString()} €
               </div>
             </CardContent>
           </Card>
@@ -126,7 +121,7 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{analytics.conversionRate}%</div>
+              <div className="text-3xl font-bold">{analytics.conversionRate || 0}%</div>
             </CardContent>
           </Card>
         </div>
@@ -138,10 +133,10 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(analytics.prospectsByStatus).map(([status, count]) => (
+              {Object.entries(analytics.prospectsByStatus || {}).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
                   <span className="capitalize">{status}</span>
-                  <span className="font-bold">{count}</span>
+                  <span className="font-bold">{count || 0}</span>
                 </div>
               ))}
             </div>
@@ -155,10 +150,10 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(analytics.propertiesByType).map(([type, count]) => (
+              {Object.entries(analytics.propertiesByType || {}).map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
                   <span className="capitalize">{type}</span>
-                  <span className="font-bold">{count}</span>
+                  <span className="font-bold">{count || 0}</span>
                 </div>
               ))}
             </div>
