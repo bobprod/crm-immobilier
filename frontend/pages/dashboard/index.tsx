@@ -5,6 +5,7 @@ import Layout from '../../src/modules/core/layout/components/Layout';
 import { StatsWidget } from '../../src/modules/dashboard/components/StatsWidget';
 import { RecentActivities } from '../../src/modules/dashboard/components/RecentActivities';
 import { QuickActions } from '../../src/modules/dashboard/components/QuickActions';
+import { apiClient } from '../../src/shared/utils/api-client-backend';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -23,20 +24,30 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      console.log('[Dashboard] Fetching dashboard stats...');
+      const response = await apiClient.get('/dashboard/stats');
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats);
-        setRecentActivities(data.recentActivities);
+      console.log('[Dashboard] Response received:', response.data);
+      if (response.data) {
+        setStats(response.data.stats || {
+          totalProperties: 0,
+          totalProspects: 0,
+          totalAppointments: 0,
+          conversionRate: 0
+        });
+        setRecentActivities(response.data.recentActivities || []);
       }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch (error: any) {
+      console.error('[Dashboard] Error fetching dashboard data:', error);
+      console.error('[Dashboard] Error details:', error.response?.status, error.response?.data);
+      // Set default values on error
+      setStats({
+        totalProperties: 0,
+        totalProspects: 0,
+        totalAppointments: 0,
+        conversionRate: 0
+      });
+      setRecentActivities([]);
     } finally {
       setLoading(false);
     }
