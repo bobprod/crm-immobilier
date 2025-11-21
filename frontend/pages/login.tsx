@@ -16,9 +16,24 @@ export default function Login() {
     setError('');
 
     try {
+      console.log('[Login] Starting login process...');
       await login(email, password);
+
+      // Wait a bit to ensure token is fully saved in localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify token is actually saved before redirecting
+      const savedToken = localStorage.getItem('auth_token');
+      console.log('[Login] Token verification:', savedToken ? 'Token found' : 'Token NOT found');
+
+      if (!savedToken) {
+        throw new Error('Token was not saved properly');
+      }
+
+      console.log('[Login] Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (err: any) {
+      console.error('[Login] Login error:', err);
       setError(err?.message || 'Email ou mot de passe incorrect');
     } finally {
       setLoading(false);

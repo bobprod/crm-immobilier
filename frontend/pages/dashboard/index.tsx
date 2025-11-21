@@ -19,12 +19,25 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    // Wait a bit to ensure token is available after redirect from login
+    const timer = setTimeout(() => {
+      fetchDashboardData();
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
-      console.log('[Dashboard] Fetching dashboard stats...');
+      // Verify token exists before making request
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.error('[Dashboard] No token found, cannot fetch data');
+        setLoading(false);
+        return;
+      }
+
+      console.log('[Dashboard] Token found, fetching dashboard stats...');
       const response = await apiClient.get('/dashboard/stats');
 
       console.log('[Dashboard] Response received:', response.data);
