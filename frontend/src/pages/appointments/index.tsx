@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { apiClient } from '@/src/shared/utils/api-client-backend';
 
 interface Appointment {
   id: string;
@@ -18,6 +19,7 @@ interface Appointment {
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAppointments();
@@ -25,11 +27,13 @@ export default function AppointmentsPage() {
 
   const loadAppointments = async () => {
     try {
-      const response = await fetch('/api/appointments/upcoming');
-      const data = await response.json();
-      setAppointments(data);
+      setError(null);
+      const response = await apiClient.get('/appointments/upcoming');
+      setAppointments(response.data || []);
     } catch (error) {
       console.error('Erreur chargement RDV:', error);
+      setError('Impossible de charger les rendez-vous');
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -42,9 +46,22 @@ export default function AppointmentsPage() {
         <Button>Nouveau RDV</Button>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">{error}</p>
+          <Button onClick={loadAppointments} className="mt-2" variant="outline">
+            Réessayer
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           <div>Chargement...</div>
+        ) : appointments.length === 0 ? (
+          <div className="col-span-full text-center py-8 text-gray-500">
+            Aucun rendez-vous à venir
+          </div>
         ) : (
           appointments.map((apt) => (
             <Card key={apt.id}>

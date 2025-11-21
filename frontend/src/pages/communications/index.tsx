@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Mail, MessageSquare, Phone } from 'lucide-react';
+import { apiClient } from '@/src/shared/utils/api-client-backend';
 
 interface Communication {
   id: string;
@@ -17,6 +18,7 @@ interface Communication {
 export default function CommunicationsPage() {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCommunications();
@@ -24,11 +26,13 @@ export default function CommunicationsPage() {
 
   const loadCommunications = async () => {
     try {
-      const response = await fetch('/api/communications/history');
-      const data = await response.json();
-      setCommunications(data);
+      setError(null);
+      const response = await apiClient.get('/communications/history');
+      setCommunications(response.data || []);
     } catch (error) {
       console.error('Erreur chargement communications:', error);
+      setError('Impossible de charger les communications');
+      setCommunications([]);
     } finally {
       setLoading(false);
     }
@@ -50,9 +54,22 @@ export default function CommunicationsPage() {
         <Button>Nouvelle communication</Button>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">{error}</p>
+          <Button onClick={loadCommunications} className="mt-2" variant="outline">
+            Réessayer
+          </Button>
+        </div>
+      )}
+
       <div className="space-y-4">
         {loading ? (
           <div>Chargement...</div>
+        ) : communications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            Aucune communication
+          </div>
         ) : (
           communications.map((comm) => (
             <Card key={comm.id}>

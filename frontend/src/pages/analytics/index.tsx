@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
 import { TrendingUp, Users, Home, DollarSign } from 'lucide-react';
+import { apiClient } from '@/src/shared/utils/api-client-backend';
 
 interface Analytics {
   totalProspects: number;
@@ -12,8 +14,16 @@ interface Analytics {
 }
 
 export default function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [analytics, setAnalytics] = useState<Analytics>({
+    totalProspects: 0,
+    totalProperties: 0,
+    totalRevenue: 0,
+    conversionRate: 0,
+    prospectsByStatus: {},
+    propertiesByType: {}
+  });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAnalytics();
@@ -21,24 +31,44 @@ export default function AnalyticsPage() {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch('/api/analytics/dashboard');
-      const data = await response.json();
-      setAnalytics(data);
+      setError(null);
+      const response = await apiClient.get('/analytics/dashboard');
+      setAnalytics(response.data || {
+        totalProspects: 0,
+        totalProperties: 0,
+        totalRevenue: 0,
+        conversionRate: 0,
+        prospectsByStatus: {},
+        propertiesByType: {}
+      });
     } catch (error) {
       console.error('Erreur chargement analytics:', error);
+      setError('Impossible de charger les analytics. Les données par défaut sont affichées.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div>Chargement...</div>;
-  if (!analytics) return <div>Données non disponibles</div>;
-
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Analytics & Statistiques</h1>
 
-      {/* KPIs Principaux */}
+      {error && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">{error}</p>
+          <Button onClick={loadAnalytics} className="mt-2" variant="outline">
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          {/* KPIs Principaux */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-3">
@@ -124,6 +154,8 @@ export default function AnalyticsPage() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }
