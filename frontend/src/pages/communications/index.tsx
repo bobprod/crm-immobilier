@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Mail, MessageSquare, Phone } from 'lucide-react';
+import { Mail, MessageSquare, Phone, AlertCircle } from 'lucide-react';
+import { apiClient } from '@/shared/utils/api-client-backend';
 
 interface Communication {
   id: string;
@@ -17,6 +18,7 @@ interface Communication {
 export default function CommunicationsPage() {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCommunications();
@@ -24,11 +26,13 @@ export default function CommunicationsPage() {
 
   const loadCommunications = async () => {
     try {
-      const response = await fetch('/api/communications/history');
-      const data = await response.json();
-      setCommunications(data);
-    } catch (error) {
+      setError(null);
+      const response = await apiClient.get('/communications/history');
+      setCommunications(response.data || []);
+    } catch (error: any) {
       console.error('Erreur chargement communications:', error);
+      setError('Impossible de charger l\'historique des communications.');
+      setCommunications([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -50,9 +54,28 @@ export default function CommunicationsPage() {
         <Button>Nouvelle communication</Button>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-yellow-800">{error}</p>
+            <button
+              onClick={loadCommunications}
+              className="mt-2 text-sm text-yellow-600 hover:text-yellow-800 underline"
+            >
+              Réessayer
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {loading ? (
-          <div>Chargement...</div>
+          <div className="text-center py-8">Chargement des communications...</div>
+        ) : communications.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            Aucune communication dans l'historique
+          </div>
         ) : (
           communications.map((comm) => (
             <Card key={comm.id}>
