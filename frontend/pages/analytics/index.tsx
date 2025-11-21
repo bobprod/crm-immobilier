@@ -15,7 +15,14 @@ interface Analytics {
 }
 
 export default function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [analytics, setAnalytics] = useState<Analytics>({
+    totalProspects: 0,
+    totalProperties: 0,
+    totalRevenue: 0,
+    conversionRate: 0,
+    prospectsByStatus: {},
+    propertiesByType: {}
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
