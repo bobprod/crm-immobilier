@@ -12,7 +12,7 @@ backendApiClient.interceptors.request.use(
   (config) => {
     // Only access localStorage if we're in the browser
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('access_token');
       if (token) {
         // Ensure headers object exists
         if (!config.headers) {
@@ -38,7 +38,7 @@ backendApiClient.interceptors.response.use(
       console.error('[API Client] 401 Unauthorized - clearing token');
       // Only redirect if not already on login page and not a login request
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login') && !error.config.url?.includes('/auth/login')) {
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         console.log('[API Client] Redirecting to login...');
