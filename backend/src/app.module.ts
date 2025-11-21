@@ -40,6 +40,9 @@ import { MarketingModule } from './modules/marketing/marketing.module';
 // INTEGRATIONS MODULE
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 
+// PUBLIC MODULES
+import { VitrineModule } from './modules/public/vitrine/vitrine.module';
+
 import { databaseConfig, jwtConfig, mailConfig } from './config';
 
 @Module({
@@ -88,6 +91,9 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
     
     // INTEGRATIONS - 1 module
     IntegrationsModule,
+
+    // PUBLIC - 1 module (Vitrine)
+    VitrineModule,
   ],
   controllers: [AppController],
   providers: [AppService],

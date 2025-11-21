@@ -9,55 +9,71 @@ export class DashboardService {
    * Statistiques globales
    */
   async getStats(userId: string) {
-    const [
-      activeProspects,
-      availableProperties,
-      todayAppointments,
-      totalMatches,
-      activeCampaigns,
-      pendingTasks,
-      totalCommunications,
-    ] = await Promise.all([
-      this.prisma.prospects.count({ where: { userId, status: 'active' } }),
-      this.prisma.properties.count({ where: { userId, status: 'available' } }),
-      this.prisma.appointments.count({
-        where: {
-          userId,
-          startTime: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lt: new Date(new Date().setHours(23, 59, 59, 999)),
+    try {
+      const [
+        activeProspects,
+        availableProperties,
+        todayAppointments,
+        totalMatches,
+        activeCampaigns,
+        pendingTasks,
+        totalCommunications,
+      ] = await Promise.all([
+        this.prisma.prospects.count({ where: { userId, status: 'active' } }).catch(() => 0),
+        this.prisma.properties.count({ where: { userId, status: 'available' } }).catch(() => 0),
+        this.prisma.appointments.count({
+          where: {
+            userId,
+            startTime: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0)),
+              lt: new Date(new Date().setHours(23, 59, 59, 999)),
+            },
           },
-        },
-      }),
-      this.prisma.matches.count({
-        where: {
-          properties: { userId },
-          status: 'pending',
-        },
-      }),
-      this.prisma.prospecting_campaigns.count({
-        where: { userId, status: 'active' },
-      }),
-      this.prisma.tasks.count({
-        where: { userId, status: { in: ['todo', 'in_progress'] } },
-      }),
-      this.prisma.communications.count({ where: { userId } }),
-    ]);
+        }).catch(() => 0),
+        this.prisma.matches.count({
+          where: {
+            properties: { userId },
+            status: 'pending',
+          },
+        }).catch(() => 0),
+        this.prisma.prospecting_campaigns.count({
+          where: { userId, status: 'active' },
+        }).catch(() => 0),
+        this.prisma.tasks.count({
+          where: { userId, status: { in: ['todo', 'in_progress'] } },
+        }).catch(() => 0),
+        this.prisma.communications.count({ where: { userId } }).catch(() => 0),
+      ]);
 
-    const conversionRate = await this.calculateConversionRate(userId);
-    const matchSuccessRate = await this.calculateMatchSuccessRate(userId);
+      const conversionRate = await this.calculateConversionRate(userId).catch(() => 0);
+      const matchSuccessRate = await this.calculateMatchSuccessRate(userId).catch(() => 0);
 
-    return {
-      activeProspects,
-      availableProperties,
-      todayAppointments,
-      totalMatches,
-      activeCampaigns,
-      pendingTasks,
-      totalCommunications,
-      conversionRate: Math.round(conversionRate * 10) / 10,
-      matchSuccessRate: Math.round(matchSuccessRate * 10) / 10,
-    };
+      return {
+        activeProspects,
+        availableProperties,
+        todayAppointments,
+        totalMatches,
+        activeCampaigns,
+        pendingTasks,
+        totalCommunications,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+        matchSuccessRate: Math.round(matchSuccessRate * 10) / 10,
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      // Return default values if there's an error
+      return {
+        activeProspects: 0,
+        availableProperties: 0,
+        todayAppointments: 0,
+        totalMatches: 0,
+        activeCampaigns: 0,
+        pendingTasks: 0,
+        totalCommunications: 0,
+        conversionRate: 0,
+        matchSuccessRate: 0,
+      };
+    }
   }
 
   /**
