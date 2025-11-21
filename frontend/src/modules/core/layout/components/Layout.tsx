@@ -21,8 +21,8 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
   useEffect(() => {
     setMounted(true);
     // Handle redirection only after client-side mount and auth loading is complete
-    // For testing purposes, also check for auth_token in localStorage
-    const hasAuthToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+    // For testing purposes, also check for access_token in localStorage
+    const hasAuthToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
     if (disableAuthRedirect === false && !user && !loading && !hasAuthToken) {
       console.log('Layout: Redirecting to login - user:', user, 'loading:', loading, 'hasAuthToken:', hasAuthToken);
       router.push('/login');

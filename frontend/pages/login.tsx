@@ -23,7 +23,7 @@ export default function Login() {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify token is actually saved before redirecting
-      const savedToken = localStorage.getItem('auth_token');
+      const savedToken = localStorage.getItem('access_token');
       console.log('[Login] Token verification:', savedToken ? 'Token found' : 'Token NOT found');
 
       if (!savedToken) {

@@ -30,7 +30,7 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       // Verify token exists before making request
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('access_token');
       if (!token) {
         console.error('[Dashboard] No token found, cannot fetch data');
         setLoading(false);

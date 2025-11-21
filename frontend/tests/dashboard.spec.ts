@@ -5,7 +5,7 @@ test.describe('Dashboard Pages', () => {
         // Mock authentication for dashboard access
         await page.goto('/dashboard');
         await page.evaluate(() => {
-            localStorage.setItem('auth_token', 'test-token');
+            localStorage.setItem('access_token', 'test-token');
             localStorage.setItem('user', JSON.stringify({
                 id: '1',
                 email: 'test@example.com',
@@ -13,7 +13,7 @@ test.describe('Dashboard Pages', () => {
                 lastName: 'User',
                 role: 'admin'
             }));
-            console.log('Test: Set auth_token in localStorage');
+            console.log('Test: Set access_token in localStorage');
         });
         await page.reload();
         await page.waitForLoadState('networkidle');
@@ -31,7 +31,7 @@ test.describe('Dashboard Pages', () => {
     test('should load properties page', async ({ page }) => {
         // Set up authentication for properties page
         await page.evaluate(() => {
-            localStorage.setItem('auth_token', 'test-token');
+            localStorage.setItem('access_token', 'test-token');
             localStorage.setItem('user', JSON.stringify({
                 id: '1',
                 email: 'test@example.com',

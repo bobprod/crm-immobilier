@@ -4,7 +4,7 @@ test.describe('PropertyList Component', () => {
     test.beforeEach(async ({ page }) => {
         // Mock authentication
         await page.addInitScript(() => {
-            localStorage.setItem('auth_token', 'test-token');
+            localStorage.setItem('access_token', 'test-token');
             localStorage.setItem('user', JSON.stringify({
                 id: '1',
                 email: 'test@example.com',
