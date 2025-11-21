@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { TrendingUp, Users, Home, DollarSign, AlertCircle } from 'lucide-react';
-import { apiClient } from '@/shared/utils/api-client-backend';
+import { Button } from '@/shared/components/ui/button';
+import { TrendingUp, Users, Home, DollarSign } from 'lucide-react';
+import { apiClient } from '@/src/shared/utils/api-client-backend';
 
 interface Analytics {
   totalProspects: number;
@@ -40,37 +41,34 @@ export default function AnalyticsPage() {
         prospectsByStatus: {},
         propertiesByType: {}
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur chargement analytics:', error);
       setError('Impossible de charger les analytics. Les données par défaut sont affichées.');
-      // Keep default values already set in state
     } finally {
       setLoading(false);
     }
   };
-
-  if (loading) return <div className="flex items-center justify-center h-screen">Chargement des analytics...</div>;
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Analytics & Statistiques</h1>
 
       {error && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-yellow-800">{error}</p>
-            <button
-              onClick={loadAnalytics}
-              className="mt-2 text-sm text-yellow-600 hover:text-yellow-800 underline"
-            >
-              Réessayer
-            </button>
-          </div>
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">{error}</p>
+          <Button onClick={loadAnalytics} className="mt-2" variant="outline">
+            Réessayer
+          </Button>
         </div>
       )}
 
-      {/* KPIs Principaux */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          {/* KPIs Principaux */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-3">
@@ -156,6 +154,8 @@ export default function AnalyticsPage() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Calendar, Clock, MapPin, User, AlertCircle } from 'lucide-react';
-import { apiClient } from '@/shared/utils/api-client-backend';
+import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { apiClient } from '@/src/shared/utils/api-client-backend';
 
 interface Appointment {
   id: string;
@@ -30,10 +30,10 @@ export default function AppointmentsPage() {
       setError(null);
       const response = await apiClient.get('/appointments/upcoming');
       setAppointments(response.data || []);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur chargement RDV:', error);
-      setError('Impossible de charger les rendez-vous. Veuillez réessayer.');
-      setAppointments([]); // Set empty array on error
+      setError('Impossible de charger les rendez-vous');
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -47,23 +47,17 @@ export default function AppointmentsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-yellow-800">{error}</p>
-            <button
-              onClick={loadAppointments}
-              className="mt-2 text-sm text-yellow-600 hover:text-yellow-800 underline"
-            >
-              Réessayer
-            </button>
-          </div>
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800">{error}</p>
+          <Button onClick={loadAppointments} className="mt-2" variant="outline">
+            Réessayer
+          </Button>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-full text-center py-8">Chargement des rendez-vous...</div>
+          <div>Chargement...</div>
         ) : appointments.length === 0 ? (
           <div className="col-span-full text-center py-8 text-gray-500">
             Aucun rendez-vous à venir
