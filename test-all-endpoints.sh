@@ -332,7 +332,7 @@ response=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/tasks" \
     "description": "Description test",
     "dueDate": "2025-12-25T18:00:00Z",
     "priority": "high",
-    "status": "pending"
+    "status": "todo"
   }' 2>/dev/null || echo -e "\n000")
 http_code=$(echo "$response" | tail -n1)
 body=$(echo "$response" | sed '$d')
