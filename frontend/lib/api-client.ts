@@ -15,7 +15,6 @@ const apiClient: AxiosInstance = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true,
 });
 
 // Intercepteur de requête pour ajouter automatiquement le token JWT

@@ -70,7 +70,6 @@ class ApiClient implements Pick<AxiosInstance, 'get' | 'post' | 'put' | 'patch' 
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: true,
     });
 
     this.setupInterceptors();
