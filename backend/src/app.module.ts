@@ -9,6 +9,15 @@ import { AuthModule } from './modules/core/auth/auth.module';
 import { UsersModule } from './modules/core/users/users.module';
 import { SettingsModule } from './modules/core/settings/settings.module';
 
+// NOTIFICATIONS MODULE
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
+// CACHE MODULE
+import { CacheModule } from './modules/cache/cache.module';
+
+// WORDPRESS MODULE
+import { WordPressModule } from './modules/integrations/wordpress/wordpress.module';
+
 // BUSINESS MODULES
 import { PropertiesModule } from './modules/business/properties/properties.module';
 import { ProspectsModule } from './modules/business/prospects/prospects.module';
@@ -55,11 +64,17 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
     
     // Database
     PrismaModule,
-    
+
+    // CACHE - Global module
+    CacheModule,
+
     // CORE - 3 modules
     AuthModule,
     UsersModule,
     SettingsModule,
+
+    // NOTIFICATIONS - 1 module
+    NotificationsModule,
     
     // BUSINESS - 4 modules
     PropertiesModule,
@@ -89,8 +104,9 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
     // MARKETING - 2 modules (Campaigns, Tracking+ML)
     MarketingModule,
     
-    // INTEGRATIONS - 1 module
+    // INTEGRATIONS - 2 modules
     IntegrationsModule,
+    WordPressModule,
 
     // PUBLIC - 1 module (Vitrine)
     VitrineModule,
