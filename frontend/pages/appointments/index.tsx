@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { apiClient } from '../../src/shared/utils/api-client-backend';
 
 interface Appointment {
   id: string;
@@ -26,11 +27,25 @@ export default function AppointmentsPage() {
 
   const loadAppointments = async () => {
     try {
-      const response = await fetch('/api/appointments/upcoming');
-      const data = await response.json();
-      setAppointments(data);
-    } catch (error) {
-      console.error('Erreur chargement RDV:', error);
+      // Vérifier que le token existe avant de faire la requête
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        console.error('[Appointments] No token found, cannot fetch data');
+        setAppointments([]);
+        setLoading(false);
+        return;
+      }
+
+      console.log('[Appointments] Fetching upcoming appointments...');
+      const response = await apiClient.get('/appointments/upcoming');
+
+      console.log('[Appointments] Response received:', response.data);
+      setAppointments(response.data || []);
+    } catch (error: any) {
+      console.error('[Appointments] Erreur chargement RDV:', error);
+      console.error('[Appointments] Error details:', error.response?.status, error.response?.data);
+      // Définir un tableau vide en cas d'erreur au lieu de crasher
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
@@ -45,7 +60,15 @@ export default function AppointmentsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div>Chargement...</div>
+          <div className="col-span-full flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <Calendar className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun rendez-vous</h3>
+            <p className="text-gray-500">Vous n'avez aucun rendez-vous à venir pour le moment.</p>
+          </div>
         ) : (
           appointments.map((apt) => (
             <Card key={apt.id}>
