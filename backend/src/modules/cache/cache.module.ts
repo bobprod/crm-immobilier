@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { CacheService } from './cache.service';
-import { PrismaModule } from '../core/database/prisma.module';
+import { PrismaModule } from '../../shared/database/prisma.module';
 
 @Global() // Rendre le cache disponible globalement
 @Module({

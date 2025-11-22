@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WordPressController } from './wordpress.controller';
 import { WordPressService } from './wordpress.service';
-import { PrismaModule } from '../../core/database/prisma.module';
+import { PrismaModule } from '../../../shared/database/prisma.module';
 
 @Module({
   imports: [PrismaModule],
