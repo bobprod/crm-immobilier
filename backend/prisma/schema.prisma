@@ -177,6 +177,7 @@ model properties {
   budget            Json?     // Budget min/max
   wpSyncId       String?
   wpSyncedAt     DateTime?
+  wordpressId    String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   matches        matches[]
@@ -301,6 +302,11 @@ model users {
   detectedAnomalies        DetectedAnomaly[]
   ai_usage_metrics         ai_usage_metrics[]        @relation("UserAiUsageMetrics")
   conversion_events        conversion_events[]       @relation("UserConversionEvents")
+  notifications            Notification[]            @relation("UserNotifications")
+  activities               Activity[]                @relation("UserActivities")
+  wordpressUrl             String?
+  wordpressUsername        String?
+  wordpressPassword        String?
 }
 
 // ============================================
@@ -1206,4 +1212,77 @@ model conversion_events {
   @@index([timestamp])
   @@index([userId, timestamp])
   @@index([userId, eventType])
+}
+
+// ============================================
+// 🆕 NOTIFICATIONS MODULE (NOUVEAU)
+// ============================================
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // appointment, task, lead, system, property, message
+  title     String
+  message   String    @db.Text
+  actionUrl String?
+  metadata  Json?     @default("{}")
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// 🆕 SYNC LOGS MODULE (NOUVEAU)
+// ============================================
+
+model SyncLog {
+  id           String   @id @default(cuid())
+  entityType   String   // property, prospect, appointment, etc.
+  entityId     String
+  platform     String   // wordpress, facebook, google, etc.
+  status       String   // success, error, pending
+  externalId   String?
+  errorMessage String?  @db.Text
+  syncedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([platform])
+  @@index([status])
+  @@index([syncedAt])
+  @@map("sync_logs")
+}
+
+// ============================================
+// 🆕 ACTIVITY LOGS MODULE (NOUVEAU)
+// ============================================
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // property_created, prospect_contacted, appointment_scheduled, etc.
+  description String
+  entityType  String?  // property, prospect, appointment, etc.
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user users @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("activities")
 }
