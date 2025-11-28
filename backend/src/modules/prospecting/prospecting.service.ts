@@ -654,4 +654,272 @@ export class ProspectingService {
   async getOpportunities(userId: string, filters?: any) {
     return this.getCampaigns(userId, filters);
   }
+
+  // ============================================
+  // METHODES ADDITIONNELLES
+  // ============================================
+
+  /**
+   * Mettre à jour une campagne
+   */
+  async updateCampaign(userId: string, campaignId: string, data: any) {
+    await this.getCampaignById(userId, campaignId);
+
+    return this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data,
+    });
+  }
+
+  /**
+   * Supprimer un lead
+   */
+  async deleteLead(userId: string, leadId: string) {
+    await this.getLeadById(userId, leadId);
+
+    await this.prisma.prospecting_leads.delete({
+      where: { id: leadId },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Mettre à jour le statut d'un match
+   */
+  async updateMatchStatus(userId: string, matchId: string, status: string) {
+    const match = await this.prisma.prospecting_matches.findUnique({
+      where: { id: matchId },
+      include: { properties: true },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match non trouvé');
+    }
+
+    return this.prisma.prospecting_matches.update({
+      where: { id: matchId },
+      data: { status },
+    });
+  }
+
+  /**
+   * Statistiques par source
+   */
+  async getStatsBySource(userId: string) {
+    const stats = await this.prisma.prospecting_leads.groupBy({
+      by: ['source'],
+      where: { userId },
+      _count: true,
+      _avg: { score: true },
+    });
+
+    return stats.map((s) => ({
+      source: s.source || 'unknown',
+      count: s._count,
+      avgScore: Math.round(s._avg.score || 0),
+    }));
+  }
+
+  /**
+   * Statistiques de conversion
+   */
+  async getConversionStats(userId: string) {
+    const [total, converted, byStage] = await Promise.all([
+      this.prisma.prospecting_leads.count({ where: { userId } }),
+      this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
+      this.prisma.prospecting_leads.groupBy({
+        by: ['status'],
+        where: { userId },
+        _count: true,
+      }),
+    ]);
+
+    const conversionRate = total > 0 ? (converted / total) * 100 : 0;
+
+    return {
+      total,
+      converted,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+      byStage: byStage.map((s) => ({
+        stage: s.status,
+        count: s._count,
+        percentage: Math.round((s._count / total) * 100 * 10) / 10,
+      })),
+      funnel: {
+        new: byStage.find((s) => s.status === 'new')?._count || 0,
+        contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
+        qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
+        converted: byStage.find((s) => s.status === 'converted')?._count || 0,
+        rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
+      },
+    };
+  }
+
+  /**
+   * ROI de la prospection
+   */
+  async getROIStats(userId: string) {
+    const [campaigns, convertedLeads] = await Promise.all([
+      this.prisma.prospecting_campaigns.findMany({
+        where: { userId },
+        include: {
+          _count: { select: { leads: true } },
+        },
+      }),
+      this.prisma.prospecting_leads.findMany({
+        where: { userId, status: 'converted' },
+        include: { convertedProspect: true },
+      }),
+    ]);
+
+    // Calculer les valeurs estimées
+    const totalLeads = campaigns.reduce((sum, c) => sum + c._count.leads, 0);
+    const totalConverted = convertedLeads.length;
+    const estimatedValue = convertedLeads.reduce((sum, lead) => {
+      const budget = lead.budget as any;
+      return sum + (budget?.max || budget?.min || budget || 0);
+    }, 0);
+
+    return {
+      totalCampaigns: campaigns.length,
+      totalLeads,
+      totalConverted,
+      conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
+      estimatedValue,
+      avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
+      costPerLead: 0, // À calculer selon les coûts API
+      roi: 0, // À calculer
+    };
+  }
+
+  /**
+   * Dédupliquer les leads
+   */
+  async deduplicateLeads(userId: string, campaignId?: string) {
+    const where: any = { userId };
+    if (campaignId) where.campaignId = campaignId;
+
+    const leads = await this.prisma.prospecting_leads.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const seen = new Map<string, string>();
+    const duplicates: string[] = [];
+
+    for (const lead of leads) {
+      // Clé de déduplication: email ou téléphone
+      const key = lead.email?.toLowerCase() || lead.phone || lead.id;
+
+      if (seen.has(key)) {
+        duplicates.push(lead.id);
+      } else {
+        seen.set(key, lead.id);
+      }
+    }
+
+    // Supprimer les doublons
+    if (duplicates.length > 0) {
+      await this.prisma.prospecting_leads.deleteMany({
+        where: { id: { in: duplicates } },
+      });
+    }
+
+    return {
+      success: true,
+      totalProcessed: leads.length,
+      duplicatesRemoved: duplicates.length,
+      uniqueLeads: leads.length - duplicates.length,
+    };
+  }
+
+  /**
+   * Exporter les leads
+   */
+  async exportLeads(userId: string, campaignId: string, format: string) {
+    const leads = await this.prisma.prospecting_leads.findMany({
+      where: { campaignId, userId },
+      orderBy: { score: 'desc' },
+    });
+
+    if (format === 'json') {
+      return { data: leads, format: 'json' };
+    }
+
+    // Format CSV
+    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Ville', 'Type', 'Budget', 'Score', 'Statut', 'Source'];
+    const rows = leads.map((lead) => [
+      lead.firstName || '',
+      lead.lastName || '',
+      lead.email || '',
+      lead.phone || '',
+      lead.city || '',
+      lead.propertyType || '',
+      JSON.stringify(lead.budget) || '',
+      lead.score,
+      lead.status,
+      lead.source || '',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+    return {
+      data: csv,
+      format: 'csv',
+      filename: `leads-${campaignId}-${Date.now()}.csv`,
+    };
+  }
+
+  /**
+   * Importer des leads
+   */
+  async importLeads(userId: string, campaignId: string, leads: any[]) {
+    await this.getCampaignById(userId, campaignId);
+
+    const created: any[] = [];
+    const errors: any[] = [];
+
+    for (const leadData of leads) {
+      try {
+        const score = this.calculateLeadScore(leadData);
+
+        const lead = await this.prisma.prospecting_leads.create({
+          data: {
+            campaignId,
+            userId,
+            firstName: leadData.firstName || leadData.prenom,
+            lastName: leadData.lastName || leadData.nom,
+            email: leadData.email,
+            phone: leadData.phone || leadData.telephone,
+            city: leadData.city || leadData.ville,
+            propertyType: leadData.propertyType || leadData.typeBien,
+            budget: leadData.budget,
+            source: 'import',
+            score,
+            status: 'new',
+          },
+        });
+
+        created.push(lead);
+      } catch (error) {
+        errors.push({ data: leadData, error: error.message });
+      }
+    }
+
+    // Mettre à jour le compteur de la campagne
+    await this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data: {
+        foundCount: { increment: created.length },
+      },
+    });
+
+    return {
+      success: true,
+      imported: created.length,
+      errors: errors.length,
+      errorDetails: errors,
+    };
+  }
 }
