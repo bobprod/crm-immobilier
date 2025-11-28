@@ -133,6 +133,7 @@ export class ProspectingService {
 
     if (filters?.status) where.status = filters.status;
     if (filters?.minScore) where.score = { gte: parseInt(filters.minScore) };
+    if (filters?.leadType) where.prospectType = filters.leadType;
 
     return this.prisma.prospecting_leads.findMany({
       where,

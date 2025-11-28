@@ -51,6 +51,12 @@ export interface CampaignConfig {
   };
 }
 
+export interface BudgetRange {
+  min?: number;
+  max?: number;
+  currency?: string;
+}
+
 export interface ProspectingLead {
   id: string;
   campaignId: string;
@@ -64,9 +70,7 @@ export interface ProspectingLead {
   zipCode?: string;
   country?: string;
   propertyType?: string;
-  budget?: number;
-  budgetMin?: number;
-  budgetMax?: number;
+  budget?: number | BudgetRange;
   surface?: number;
   surfaceMin?: number;
   surfaceMax?: number;
