@@ -17,23 +17,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Utiliser la méthode isAuthenticated de authAPI pour vérifier la présence du token
+      // Only check auth if we have a token
       if (authAPI.isAuthenticated()) {
         try {
-          // Utiliser authAPI.getProfile pour récupérer les infos utilisateur
+          // Try to get fresh user data from API
           const userData = await authAPI.getProfile();
           setUser(userData);
         } catch (error) {
-          console.error('Auth check failed:', error);
-          // For testing purposes, use stored user data if API call fails
+          console.warn('Auth check failed - user not logged in');
+          // If API call fails, try to use stored user data
           const storedUser = authAPI.getStoredUser();
-          console.log('Auth check failed, stored user:', storedUser);
           if (storedUser) {
-            console.log('Using stored user data for testing');
+            console.log('Using stored user data');
             setUser(storedUser);
           } else {
+            // Clear auth data if both API and storage fail
             console.log('No stored user, clearing auth data');
-            authAPI.clearAuthData(); // Nettoyer les données si la vérification échoue
+            authAPI.clearAuthData();
             setUser(null);
           }
         }

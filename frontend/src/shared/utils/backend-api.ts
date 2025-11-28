@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -13,7 +13,7 @@ const apiClient = axios.create({
 // Intercepteur pour ajouter le token JWT
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,12 +34,24 @@ apiClient.interceptors.response.use(
         message: 'Backend non disponible',
       });
     }
-    
+
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on login page, not on home page
+      if (typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/login') &&
+        window.location.pathname !== '/') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else if (typeof window !== 'undefined') {
+        // Just clear tokens if we are on a public page like home
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+      }
     }
-    
+
     return Promise.reject(error);
   }
 );

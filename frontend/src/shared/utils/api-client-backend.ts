@@ -12,7 +12,7 @@ backendApiClient.interceptors.request.use(
   (config) => {
     // Only access localStorage if we're in the browser
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('auth_token');
       if (token) {
         // Ensure headers object exists
         if (!config.headers) {
@@ -35,14 +35,24 @@ backendApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.error('[API Client] 401 Unauthorized - clearing token');
-      // Only redirect if not already on login page and not a login request
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login') && !error.config.url?.includes('/auth/login')) {
-        localStorage.removeItem('access_token');
+      // console.log('[API Client] 401 Unauthorized - clearing token');
+
+      // Only redirect if not already on login page, not on home page, and not a login request
+      if (typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/login') &&
+        window.location.pathname !== '/' &&
+        !error.config.url?.includes('/auth/login')) {
+        localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         console.log('[API Client] Redirecting to login...');
         window.location.href = '/login';
+      } else if (typeof window !== 'undefined') {
+        // Just clear tokens if we are on a public page like home
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        console.log('[API Client] 401 on public page - tokens cleared, no redirect');
       }
     }
     return Promise.reject(error);

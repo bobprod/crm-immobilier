@@ -1,58 +1,81 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
-import { Clock, User, Building2, Calendar } from 'lucide-react';
-
-interface Activity {
-  id: string;
-  type: 'prospect' | 'property' | 'appointment' | 'user';
-  action: string;
-  details: string;
-  timestamp: string;
-  user?: string;
-}
+import { User, Building2, Calendar, MessageSquare } from 'lucide-react';
+import type { RecentActivities as RecentActivitiesType } from '../types/dashboard.types';
 
 interface RecentActivitiesProps {
-  activities: Activity[];
+  activities: RecentActivitiesType;
 }
 
 export function RecentActivities({ activities }: RecentActivitiesProps) {
-  const getIcon = (type: Activity['type']) => {
-    switch (type) {
-      case 'prospect':
-        return User;
-      case 'property':
-        return Building2;
-      case 'appointment':
-        return Calendar;
-      case 'user':
-        return User;
-      default:
-        return Clock;
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleString('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateString;
     }
   };
 
-  const getColor = (type: Activity['type']) => {
-    switch (type) {
-      case 'prospect':
-        return 'text-blue-600 bg-blue-100';
-      case 'property':
-        return 'text-green-600 bg-green-100';
-      case 'appointment':
-        return 'text-purple-600 bg-purple-100';
-      case 'user':
-        return 'text-orange-600 bg-orange-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
+  const getStatusColor = (status: string) => {
+    const statusColors: Record<string, string> = {
+      active: 'bg-green-100 text-green-800',
+      pending: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-red-100 text-red-800',
+      available: 'bg-green-100 text-green-800',
+      sold: 'bg-gray-100 text-gray-800',
+      sent: 'bg-blue-100 text-blue-800',
+      delivered: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Combine all activities into one list for simplicity
+  const allActivities = [
+    ...(activities.recentProspects || []).map(p => ({
+      id: p.id,
+      type: 'prospect' as const,
+      title: `${p.firstName} ${p.lastName}`,
+      date: p.createdAt,
+      status: p.status,
+      icon: User,
+      color: 'text-green-600'
+    })),
+    ...(activities.recentProperties || []).map(p => ({
+      id: p.id,
+      type: 'property' as const,
+      title: p.title,
+      date: p.createdAt,
+      status: p.status,
+      icon: Building2,
+      color: 'text-blue-600',
+      extra: `${p.price.toLocaleString()} €`
+    })),
+    ...(activities.recentAppointments || []).map(a => ({
+      id: a.id,
+      type: 'appointment' as const,
+      title: a.title,
+      date: a.startTime,
+      status: a.status,
+      icon: Calendar,
+      color: 'text-purple-600'
+    })),
+    ...(activities.recentCommunications || []).map(c => ({
+      id: c.id,
+      type: 'communication' as const,
+      title: c.subject || c.type,
+      date: c.sentAt,
+      status: c.status,
+      icon: MessageSquare,
+      color: 'text-indigo-600',
+      extra: c.to
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
   return (
     <Card>
@@ -60,37 +83,27 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
         <CardTitle>Activités récentes</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {activities.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">Aucune activité récente</p>
+        <div className="space-y-3">
+          {allActivities.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">Aucune activité récente</p>
           ) : (
-            activities.map((activity) => {
-              const Icon = getIcon(activity.type);
-              const colorClasses = getColor(activity.type);
-
+            allActivities.map((activity) => {
+              const Icon = activity.icon;
               return (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50">
-                  <div className={`p-2 rounded-full ${colorClasses}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900">
-                        {activity.action}
-                      </p>
+                <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-3">
+                    <Icon className={`h-5 w-5 ${activity.color}`} />
+                    <div>
+                      <p className="font-medium">{activity.title}</p>
                       <p className="text-xs text-gray-500">
-                        {formatTimestamp(activity.timestamp)}
+                        {formatDate(activity.date)}
+                        {'extra' in activity && activity.extra && ` • ${activity.extra}`}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {activity.details}
-                    </p>
-                    {activity.user && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Par {activity.user}
-                      </p>
-                    )}
                   </div>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded ${getStatusColor(activity.status)}`}>
+                    {activity.status}
+                  </span>
                 </div>
               );
             })

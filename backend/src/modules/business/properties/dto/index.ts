@@ -60,7 +60,54 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ApiPropertyOptional()
+  @IsOptional()
   features?: any;
+
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
+  @IsOptional()
+  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  priority?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  assignedTo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  netPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  fees?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  feesPercentage?: number;
 }
 
 export class UpdatePropertyDto {
@@ -87,4 +134,49 @@ export class UpdatePropertyDto {
   @ApiPropertyOptional()
   @IsOptional()
   features?: any;
+
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
+  @IsOptional()
+  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  priority?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  tags?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  assignedTo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ownerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  netPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  fees?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  feesPercentage?: number;
 }

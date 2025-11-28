@@ -1,11 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
+import { Badge } from '@/shared/components/ui/badge';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/shared/utils/api-client-backend';
 import { useRouter } from 'next/router';
+import { propertiesAPI } from '@/shared/utils/properties-api';
+import { PropertyFilters } from './PropertyFilters';
+import { PropertyBulkActions } from './PropertyBulkActions';
+import { Plus, Eye, Edit, Trash } from 'lucide-react';
 
 interface Property {
     id: string;
@@ -13,11 +16,14 @@ interface Property {
     type: string;
     price: number;
     currency: string;
-    location: string;
-    bedrooms: number;
-    bathrooms: number;
-    area: number;
+    city: string; // Changed from location to match API
+    bedrooms?: number;
+    bathrooms?: number;
+    area?: number;
     status: string;
+    priority?: string;
+    tags?: string[];
+    createdAt: string;
 }
 
 interface PropertyListProps {
@@ -30,160 +36,211 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
     const [properties, setProperties] = useState<Property[]>(initialProperties || []);
     const [loading, setLoading] = useState<boolean>(initialLoading ?? false);
     const [error, setError] = useState<string | null>(initialError ?? null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [filters, setFilters] = useState<any>({});
     const router = useRouter();
 
-    useEffect(() => {
-        // Check URL parameters for test mode
-        const urlParams = new URLSearchParams(window.location.search);
-        const isTestMode = urlParams.get('testMode') === 'true';
-        const testLoading = urlParams.get('loading') === 'true';
-        const testError = urlParams.get('error') === 'true';
-
-        // Check if we're in controlled state (test mode with initial props)
-        const isInControlledState =
-            initialProperties !== undefined ||
-            initialLoading !== undefined ||
-            initialError !== undefined ||
-            isTestMode;
-
-        // Only fetch if we're not in controlled/test mode
-        if (!isInControlledState) {
-            const fetchProperties = async () => {
-                setLoading(true);
-                setError(null);
-
-                try {
-                    const response = await apiClient.get('/properties');
-                    setProperties(response.data);
-                } catch (err) {
-                    setError('Failed to fetch properties');
-                    console.error('Error fetching properties:', err);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchProperties();
-        } else {
-            // In test mode, ensure state is set from initial props or URL params
-            if (testLoading || initialLoading) {
-                setLoading(true);
-            } else if (testError || initialError) {
-                setError('Failed to fetch properties');
-                setLoading(false);
-            } else {
-                setLoading(false);
-                if (initialProperties) {
-                    setProperties(initialProperties);
-                } else if (isTestMode) {
-                    // Provide mock data for testing
-                    const mockProperties: Property[] = [
-                        {
-                            id: '1',
-                            title: 'Property 1',
-                            type: 'Apartment',
-                            price: 250000,
-                            currency: 'EUR',
-                            location: 'Paris',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: 75,
-                            status: 'Available'
-                        },
-                        {
-                            id: '2',
-                            title: 'Property 2',
-                            type: 'House',
-                            price: 450000,
-                            currency: 'EUR',
-                            location: 'Lyon',
-                            bedrooms: 4,
-                            bathrooms: 2,
-                            area: 150,
-                            status: 'Sold'
-                        },
-                        {
-                            id: '3',
-                            title: 'Property 3',
-                            type: 'Studio',
-                            price: 180000,
-                            currency: 'EUR',
-                            location: 'Marseille',
-                            bedrooms: 1,
-                            bathrooms: 1,
-                            area: 45,
-                            status: 'Available'
-                        }
-                    ];
-                    setProperties(mockProperties);
-                }
-            }
+    const fetchProperties = async (currentFilters = filters) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await propertiesAPI.list(currentFilters);
+            // Handle both array response and { properties: [], total: 0 } response format
+            const data = Array.isArray(response) ? response : (response as any).properties || [];
+            setProperties(data);
+        } catch (err) {
+            setError('Failed to fetch properties');
+            console.error('Error fetching properties:', err);
+        } finally {
+            setLoading(false);
         }
-    }, [initialLoading, initialError, initialProperties]);
+    };
 
-    if (loading) {
+    useEffect(() => {
+        if (!initialProperties && !initialLoading) {
+            fetchProperties();
+        }
+    }, [initialProperties, initialLoading]);
+
+    const handleFilterChange = (newFilters: any) => {
+        setFilters(newFilters);
+        fetchProperties(newFilters);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(properties.map(p => p.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(pid => pid !== id));
+        }
+    };
+
+    const handleBulkAction = async (action: string, value?: any) => {
+        try {
+            if (action === 'delete') {
+                if (!confirm('Êtes-vous sûr de vouloir supprimer ces propriétés ?')) return;
+                // Implement bulk delete API call
+                // await propertiesAPI.bulkDelete(selectedIds);
+            } else if (action === 'priority') {
+                // await propertiesAPI.bulkUpdatePriority(selectedIds, value);
+            } else if (action === 'status') {
+                // await propertiesAPI.bulkUpdateStatus(selectedIds, value);
+            }
+
+            // Refresh list and clear selection
+            await fetchProperties();
+            setSelectedIds([]);
+        } catch (err) {
+            console.error('Bulk action failed:', err);
+            alert('Une erreur est survenue lors de l\'action groupée');
+        }
+    };
+
+    const getPriorityColor = (priority?: string) => {
+        switch (priority) {
+            case 'urgent': return 'bg-red-100 text-red-800';
+            case 'high': return 'bg-orange-100 text-orange-800';
+            case 'medium': return 'bg-blue-100 text-blue-800';
+            case 'low': return 'bg-gray-100 text-gray-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'available': return 'bg-green-100 text-green-800';
+            case 'reserved': return 'bg-yellow-100 text-yellow-800';
+            case 'sold': return 'bg-red-100 text-red-800';
+            case 'rented': return 'bg-blue-100 text-blue-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    if (loading && properties.length === 0) {
         return (
-            <div data-testid="loading-state" className="flex items-center justify-center p-8">
-                <div className="text-lg">Loading properties...</div>
+            <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div data-testid="error-state" className="flex items-center justify-center p-8">
-                <div className="text-red-500 text-lg">{error}</div>
+            <div className="flex items-center justify-center p-8 text-red-500">
+                {error}
             </div>
         );
     }
 
     return (
-        <Card data-testid="properties-card">
-            <CardHeader>
-                <CardTitle>Properties List</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Table data-testid="properties-table">
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody data-testid="properties-tbody">
-                        {properties.length === 0 ? (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold tracking-tight">Propriétés</h2>
+                <Button onClick={() => router.push('/properties/new')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouvelle Propriété
+                </Button>
+            </div>
+
+            <PropertyFilters onFilterChange={handleFilterChange} />
+
+            <PropertyBulkActions
+                selectedCount={selectedIds.length}
+                onAction={handleBulkAction}
+            />
+
+            <Card>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center text-gray-500">
-                                    No properties found
-                                </TableCell>
+                                <TableHead className="w-[50px]">
+                                    <Checkbox
+                                        checked={properties.length > 0 && selectedIds.length === properties.length}
+                                        onCheckedChange={handleSelectAll}
+                                    />
+                                </TableHead>
+                                <TableHead>Titre</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Prix</TableHead>
+                                <TableHead>Surface</TableHead>
+                                <TableHead>Priorité</TableHead>
+                                <TableHead>Statut</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ) : (
-                            properties.map((property) => (
-                                <TableRow key={property.id} data-testid={`property-row-${property.id}`}>
-                                    <TableCell>{property.title}</TableCell>
-                                    <TableCell>{property.type}</TableCell>
-                                    <TableCell>{`${property.price} ${property.currency}`}</TableCell>
-                                    <TableCell>{property.location}</TableCell>
-                                    <TableCell>{property.status}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            data-testid={`view-button-${property.id}`}
-                                            onClick={() => router.push(`/properties/${property.id}`)}
-                                        >
-                                            View
-                                        </Button>
+                        </TableHeader>
+                        <TableBody>
+                            {properties.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                        Aucune propriété trouvée
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                            ) : (
+                                properties.map((property) => (
+                                    <TableRow key={property.id}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedIds.includes(property.id)}
+                                                onCheckedChange={(checked) => handleSelectOne(property.id, checked as boolean)}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">
+                                            <div>{property.title}</div>
+                                            <div className="text-xs text-gray-500">{property.city}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{property.type}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.price)}
+                                        </TableCell>
+                                        <TableCell>
+                                            {property.area ? `${property.area} m²` : '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={getPriorityColor(property.priority)} variant="secondary">
+                                                {property.priority || 'medium'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={getStatusColor(property.status)} variant="secondary">
+                                                {property.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => router.push(`/properties/${property.id}`)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => router.push(`/properties/${property.id}/edit`)}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

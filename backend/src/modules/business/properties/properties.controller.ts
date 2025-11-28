@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Request, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { PropertiesService } from './properties.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { CreatePropertyDto, UpdatePropertyDto } from './dto';
@@ -24,13 +25,36 @@ export class PropertiesController {
     return this.propertiesService.findAll(req.user.userId, filters);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get property by ID' })
-  findOne(@Request() req, @Param('id') id: string) {
-    return this.propertiesService.findOne(id, req.user.userId);
+  @Get('featured')
+  @ApiOperation({ summary: 'Get featured properties' })
+  getFeatured(@Request() req) {
+    return this.propertiesService.getFeatured(req.user.userId);
   }
 
-  @Put(':id')
+  @Get('assigned/:userId')
+  @ApiOperation({ summary: 'Get assigned properties' })
+  getAssigned(@Request() req, @Param('userId') assignedTo: string) {
+    return this.propertiesService.getAssigned(req.user.userId, assignedTo);
+  }
+
+  @Patch('bulk/priority')
+  @ApiOperation({ summary: 'Bulk update priority' })
+  bulkUpdatePriority(@Request() req, @Body() body: { ids: string[], priority: string }) {
+    return this.propertiesService.bulkUpdatePriority(body.ids, req.user.userId, body.priority);
+  }
+
+  @Patch('bulk/status')
+  @ApiOperation({ summary: 'Bulk update status' })
+  bulkUpdateStatus(@Request() req, @Body() body: { ids: string[], status: string }) {
+    return this.propertiesService.bulkUpdateStatus(body.ids, req.user.userId, body.status);
+  }
+
+  @Patch('bulk/assign')
+  @ApiOperation({ summary: 'Bulk assign properties' })
+  bulkAssign(@Request() req, @Body() body: { ids: string[], assignedTo: string }) {
+    return this.propertiesService.bulkAssign(body.ids, req.user.userId, body.assignedTo);
+  }
+
   @ApiOperation({ summary: 'Update property' })
   @ApiBody({ type: UpdatePropertyDto })
   update(@Request() req, @Param('id') id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
@@ -47,5 +71,69 @@ export class PropertiesController {
   @ApiOperation({ summary: 'Sync property with WordPress' })
   syncWordPress(@Request() req, @Param('id') id: string, @Body() body: { wpSyncId: string }) {
     return this.propertiesService.syncWithWordPress(id, req.user.userId, body.wpSyncId);
+  }
+
+  @Post(':id/images')
+  @ApiOperation({ summary: 'Upload property images' })
+  @UseInterceptors(FilesInterceptor('images', 10))
+  uploadImages(@Request() req, @Param('id') id: string, @UploadedFiles() files: Express.Multer.File[]) {
+    return this.propertiesService.uploadImages(id, req.user.userId, files);
+  }
+
+  @Delete(':id/images')
+  @ApiOperation({ summary: 'Delete property image' })
+  deleteImage(@Request() req, @Param('id') id: string, @Body() body: { imageUrl: string }) {
+    return this.propertiesService.deleteImage(id, req.user.userId, body.imageUrl);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Update property status' })
+  updateStatus(@Request() req, @Param('id') id: string, @Body() body: { status: string }) {
+    return this.propertiesService.updateStatus(id, req.user.userId, body.status);
+  }
+
+  @Post('search')
+  @ApiOperation({ summary: 'Advanced property search' })
+  search(@Request() req, @Body() criteria: any) {
+    return this.propertiesService.search(req.user.userId, criteria);
+  }
+
+  @Get(':id/similar')
+  @ApiOperation({ summary: 'Get similar properties' })
+  getSimilar(@Request() req, @Param('id') id: string, @Query('limit') limit?: number) {
+    return this.propertiesService.getSimilar(id, req.user.userId, limit || 5);
+  }
+
+  @Get('nearby')
+  @ApiOperation({ summary: 'Get nearby properties' })
+  getNearby(
+    @Request() req,
+    @Query('latitude') latitude: number,
+    @Query('longitude') longitude: number,
+    @Query('radiusKm') radiusKm?: number
+  ) {
+    return this.propertiesService.getNearby(req.user.userId, latitude, longitude, radiusKm || 5);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get properties statistics' })
+  getStats(@Request() req) {
+    return this.propertiesService.getStats(req.user.userId);
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export properties to CSV' })
+  async exportCSV(@Request() req, @Query() filters: any) {
+    return this.propertiesService.exportCSV(req.user.userId, filters);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import properties from CSV' })
+  @UseInterceptors(FilesInterceptor('file', 1))
+  async importCSV(@Request() req, @UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) {
+      throw new Error('No file uploaded');
+    }
+    return this.propertiesService.importCSV(req.user.userId, files[0]);
   }
 }
