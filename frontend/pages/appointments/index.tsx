@@ -28,7 +28,7 @@ export default function AppointmentsPage() {
   const loadAppointments = async () => {
     try {
       // Vérifier que le token existe avant de faire la requête
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('auth_token');
       if (!token) {
         console.error('[Appointments] No token found, cannot fetch data');
         setAppointments([]);

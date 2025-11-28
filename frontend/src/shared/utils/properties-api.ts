@@ -18,6 +18,22 @@ interface Property {
   longitude?: number;
   images: string[];
   features: string[];
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  tags?: string[];
+  assignedTo?: string;
+  isFeatured?: boolean;
+  notes?: string;
+  ownerId?: string;
+  owner?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  netPrice?: number;
+  fees?: number;
+  feesPercentage?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,6 +53,15 @@ interface CreatePropertyDTO {
   latitude?: number;
   longitude?: number;
   features?: string[];
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  tags?: string[];
+  assignedTo?: string;
+  isFeatured?: boolean;
+  notes?: string;
+  ownerId?: string;
+  netPrice?: number;
+  fees?: number;
+  feesPercentage?: number;
 }
 
 interface PropertyFilters {
