@@ -126,7 +126,6 @@ model matches {
 }
 
 model properties {
-<<<<<<< HEAD
   id                  String                      @id @default(cuid())
   userId              String
   agencyId            String?
@@ -159,8 +158,11 @@ model properties {
   budget              Json?
   wpSyncId            String?
   wpSyncedAt          DateTime?
+  wordpressId         String?
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
+
+  // Relations
   propertySeo         PropertySeo?
   publishedProperty   PublishedProperty[]
   vitrineAnalytics    VitrineAnalytics[]
@@ -173,15 +175,14 @@ model properties {
   prospectShown       prospect_properties_shown[] @relation("PropertyProspectShown")
   prospecting_matches prospecting_matches[]       @relation("PropertyMatches")
   tasks               tasks[]                     @relation("PropertyTasks")
-  
-  // New fields
-  priority            String                      @default("medium") // low, medium, high, urgent
-  tags                Json?                       // ["luxury", "new", "urgent"]
+
+  // Priority & Organization
+  priority            String                      @default("medium")
+  tags                Json?
   assignedTo          String?
   isFeatured          Boolean                     @default(false)
   notes               String?
   lastContactAt       DateTime?
-
   assignedUser        users?                      @relation("AssignedProperties", fields: [assignedTo], references: [id])
 
   // Owner/Vendor
@@ -189,63 +190,14 @@ model properties {
   owner               prospects?                  @relation("PropertyOwner", fields: [ownerId], references: [id])
 
   // Financials
-  netPrice            Float?                      // Net Vendeur
-  fees                Float?                      // Honoraires
-  feesPercentage      Float?                      // % Honoraires
+  netPrice            Float?
+  fees                Float?
+  feesPercentage      Float?
 
   @@index([priority])
   @@index([isFeatured])
   @@index([assignedTo])
   @@index([ownerId])
-=======
-  id             String           @id @default(cuid())
-  userId         String
-  agencyId       String?
-  reference      String?          // 🆕 ADDED: Property reference number
-  title          String
-  description    String?
-  type           String
-  category       String
-  price          Float
-  currency       String           @default("TND")
-  address        String?
-  city           String?
-  delegation     String?
-  zipCode        String?
-  latitude       Float?
-  longitude      Float?
-  bedrooms       Int?
-  bathrooms      Int?
-  area           Float?
-  images         Json?
-  features       Json?
-  status         String           @default("available")
-  viewsCount     Int              @default(0) // 🆕 ADDED: Number of views
-  prospectType      String?   // requete_location, requete_achat, mandat_location, mandat_vente, promoteur
-  subType           String?   // Type de bien recherché ou à vendre
-  searchCriteria    Json?     // Critères de recherche structurés
-  mandatInfo        Json?     // Informations mandat si applicable
-  profiling         Json?     // Profiling enrichi du prospect
-  timeline          String?   // Timeline souhaitée
-  budget            Json?     // Budget min/max
-  wpSyncId       String?
-  wpSyncedAt     DateTime?
-  wordpressId    String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  matches        matches[]
-  communications communications[]
-  documents      documents[]
-  appointments   appointments[]
-  tasks                tasks[]               @relation("PropertyTasks")
-  prospectShown             prospect_properties_shown[]   @relation("PropertyProspectShown")
-  prospecting_matches  prospecting_matches[] @relation("PropertyMatches")
-  agencies       agencies?        @relation(fields: [agencyId], references: [id])
-  users          users            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  publishedProperty     PublishedProperty[]
-  vitrineAnalytics      VitrineAnalytics[]
-  propertySeo           PropertySeo?
->>>>>>> origin/main
 }
 
 model prospects {
