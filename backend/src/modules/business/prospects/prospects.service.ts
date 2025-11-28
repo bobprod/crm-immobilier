@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 
 @Injectable()
@@ -36,7 +36,7 @@ export class ProspectsService {
   }
 
   async findOne(id: string, userId: string) {
-    return this.prisma.prospects.findFirst({
+    const prospect = await this.prisma.prospects.findFirst({
       where: { id, userId },
       include: {
         matches: {
@@ -47,9 +47,24 @@ export class ProspectsService {
         appointments: true,
       },
     });
+
+    if (!prospect) {
+      throw new NotFoundException('Prospect non trouvé');
+    }
+
+    return prospect;
   }
 
   async update(id: string, userId: string, data: any) {
+    // Vérifier que le prospect appartient à l'utilisateur
+    const prospect = await this.prisma.prospects.findFirst({
+      where: { id, userId },
+    });
+
+    if (!prospect) {
+      throw new NotFoundException('Prospect non trouvé');
+    }
+
     return this.prisma.prospects.update({
       where: { id },
       data,
@@ -57,6 +72,15 @@ export class ProspectsService {
   }
 
   async delete(id: string, userId: string) {
+    // Vérifier que le prospect appartient à l'utilisateur
+    const prospect = await this.prisma.prospects.findFirst({
+      where: { id, userId },
+    });
+
+    if (!prospect) {
+      throw new NotFoundException('Prospect non trouvé');
+    }
+
     return this.prisma.prospects.delete({
       where: { id },
     });
