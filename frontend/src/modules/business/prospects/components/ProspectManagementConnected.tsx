@@ -728,7 +728,7 @@ export default function ProspectManagementConnected({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Type d'interaction</Label>
+              <Label>Type d&apos;interaction</Label>
               <Select
                 value={interactionType}
                 onValueChange={(v) => setInteractionType(v as any)}
@@ -790,7 +790,7 @@ export default function ProspectManagementConnected({
               Annuler
             </Button>
             <Button onClick={handleAddInteraction}>
-              Enregistrer l'interaction
+              Enregistrer l&apos;interaction
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -858,7 +858,7 @@ export default function ProspectManagementConnected({
 
               {/* Change Stage */}
               <div>
-                <Label className="text-gray-500">Changer l'etape</Label>
+                <Label className="text-gray-500">Changer l&apos;etape</Label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {FUNNEL_STAGES.map((stage) => (
                     <Button
