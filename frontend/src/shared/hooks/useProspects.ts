@@ -77,7 +77,7 @@ export function useProspects() {
   const updateProspect = async (id: string, data: Partial<Prospect>) => {
     try {
       const response = await fetch(`${API_URL}/prospects/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
       });
