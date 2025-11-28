@@ -126,6 +126,7 @@ model matches {
 }
 
 model properties {
+<<<<<<< HEAD
   id                  String                      @id @default(cuid())
   userId              String
   agencyId            String?
@@ -196,6 +197,55 @@ model properties {
   @@index([isFeatured])
   @@index([assignedTo])
   @@index([ownerId])
+=======
+  id             String           @id @default(cuid())
+  userId         String
+  agencyId       String?
+  reference      String?          // 🆕 ADDED: Property reference number
+  title          String
+  description    String?
+  type           String
+  category       String
+  price          Float
+  currency       String           @default("TND")
+  address        String?
+  city           String?
+  delegation     String?
+  zipCode        String?
+  latitude       Float?
+  longitude      Float?
+  bedrooms       Int?
+  bathrooms      Int?
+  area           Float?
+  images         Json?
+  features       Json?
+  status         String           @default("available")
+  viewsCount     Int              @default(0) // 🆕 ADDED: Number of views
+  prospectType      String?   // requete_location, requete_achat, mandat_location, mandat_vente, promoteur
+  subType           String?   // Type de bien recherché ou à vendre
+  searchCriteria    Json?     // Critères de recherche structurés
+  mandatInfo        Json?     // Informations mandat si applicable
+  profiling         Json?     // Profiling enrichi du prospect
+  timeline          String?   // Timeline souhaitée
+  budget            Json?     // Budget min/max
+  wpSyncId       String?
+  wpSyncedAt     DateTime?
+  wordpressId    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  matches        matches[]
+  communications communications[]
+  documents      documents[]
+  appointments   appointments[]
+  tasks                tasks[]               @relation("PropertyTasks")
+  prospectShown             prospect_properties_shown[]   @relation("PropertyProspectShown")
+  prospecting_matches  prospecting_matches[] @relation("PropertyMatches")
+  agencies       agencies?        @relation(fields: [agencyId], references: [id])
+  users          users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishedProperty     PublishedProperty[]
+  vitrineAnalytics      VitrineAnalytics[]
+  propertySeo           PropertySeo?
+>>>>>>> origin/main
 }
 
 model prospects {
@@ -255,50 +305,55 @@ model user_integrations {
 }
 
 model users {
-  id                      String                    @id @default(cuid())
-  email                   String                    @unique
-  password                String
-  firstName               String?
-  lastName                String?
-  role                    String                    @default("agent")
-  agencyId                String?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
-  aiSuggestions           AiSuggestion[]
-  detectedAnomalies       DetectedAnomaly[]
-  llmConfig               LlmConfig?
-  mlConfig                MlConfig?
-  pages                   Page[]
-  publishedProperties     PublishedProperty[]
-  seoBlogPosts            SeoBlogPost[]
-  seoConfig               SeoConfig?
-  trackingConfigs         TrackingConfig[]
-  trackingEvents          TrackingEvent[]
-  vitrineAnalytics        VitrineAnalytics[]
-  vitrineConfig           VitrineConfig?
-  ai_generations          ai_generations[]          @relation("UserAiGenerations")
-  ai_settings             ai_settings?
-  ai_usage_metrics        ai_usage_metrics[]        @relation("UserAiUsageMetrics")
-  analytics_events        analytics_events[]        @relation("UserAnalyticsEvents")
-  appointments            appointments[]
-  campaigns               campaigns[]
-  communication_templates communication_templates[] @relation("UserCommunicationTemplates")
-  communications          communications[]          @relation("UserCommunications")
-  contact_validations     contact_validations[]     @relation("UserContactValidations")
-  conversion_events       conversion_events[]       @relation("UserConversionEvents")
-  document_templates      document_templates[]      @relation("UserDocumentTemplates")
-  documents               documents[]               @relation("UserDocuments")
-  ocr_results             ocr_results[]             @relation("UserOcrResults")
-  properties              properties[]
-  prospect_interactions   prospect_interactions[]   @relation("UserProspectInteractions")
-  prospecting_campaigns   prospecting_campaigns[]   @relation("UserProspectingCampaigns")
-  prospecting_leads       prospecting_leads[]       @relation("UserProspectingLeads")
-  prospects               prospects[]
-  settings                settings[]                @relation("UserSettings")
-  tasks                   tasks[]                   @relation("UserTasks")
-  user_integrations       user_integrations[]
-  agencies                agencies?                 @relation(fields: [agencyId], references: [id])
-  assignedProperties      properties[]              @relation("AssignedProperties")
+  id                       String                    @id @default(cuid())
+  email                    String                    @unique
+  password                 String
+  firstName                String?
+  lastName                 String?
+  role                     String                    @default("agent")
+  agencyId                 String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  aiSuggestions            AiSuggestion[]
+  detectedAnomalies        DetectedAnomaly[]
+  llmConfig                LlmConfig?
+  mlConfig                 MlConfig?
+  pages                    Page[]
+  publishedProperties      PublishedProperty[]
+  seoBlogPosts             SeoBlogPost[]
+  seoConfig                SeoConfig?
+  trackingConfigs          TrackingConfig[]
+  trackingEvents           TrackingEvent[]
+  vitrineAnalytics         VitrineAnalytics[]
+  vitrineConfig            VitrineConfig?
+  ai_generations           ai_generations[]          @relation("UserAiGenerations")
+  ai_settings              ai_settings?
+  ai_usage_metrics         ai_usage_metrics[]        @relation("UserAiUsageMetrics")
+  analytics_events         analytics_events[]        @relation("UserAnalyticsEvents")
+  appointments             appointments[]
+  campaigns                campaigns[]
+  communication_templates  communication_templates[] @relation("UserCommunicationTemplates")
+  communications           communications[]          @relation("UserCommunications")
+  contact_validations      contact_validations[]     @relation("UserContactValidations")
+  conversion_events        conversion_events[]       @relation("UserConversionEvents")
+  document_templates       document_templates[]      @relation("UserDocumentTemplates")
+  documents                documents[]               @relation("UserDocuments")
+  ocr_results              ocr_results[]             @relation("UserOcrResults")
+  properties               properties[]
+  prospect_interactions    prospect_interactions[]   @relation("UserProspectInteractions")
+  prospecting_campaigns    prospecting_campaigns[]   @relation("UserProspectingCampaigns")
+  prospecting_leads        prospecting_leads[]       @relation("UserProspectingLeads")
+  prospects                prospects[]
+  settings                 settings[]                @relation("UserSettings")
+  tasks                    tasks[]                   @relation("UserTasks")
+  user_integrations        user_integrations[]
+  agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
+  assignedProperties       properties[]              @relation("AssignedProperties")
+  notifications            Notification[]            @relation("UserNotifications")
+  activities               Activity[]                @relation("UserActivities")
+  wordpressUrl             String?
+  wordpressUsername        String?
+  wordpressPassword        String?
 }
 
 model communications {
@@ -1120,4 +1175,77 @@ model conversion_events {
   @@index([timestamp])
   @@index([userId, timestamp])
   @@index([userId, eventType])
+}
+
+// ============================================
+// 🆕 NOTIFICATIONS MODULE (NOUVEAU)
+// ============================================
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // appointment, task, lead, system, property, message
+  title     String
+  message   String    @db.Text
+  actionUrl String?
+  metadata  Json?     @default("{}")
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// 🆕 SYNC LOGS MODULE (NOUVEAU)
+// ============================================
+
+model SyncLog {
+  id           String   @id @default(cuid())
+  entityType   String   // property, prospect, appointment, etc.
+  entityId     String
+  platform     String   // wordpress, facebook, google, etc.
+  status       String   // success, error, pending
+  externalId   String?
+  errorMessage String?  @db.Text
+  syncedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([platform])
+  @@index([status])
+  @@index([syncedAt])
+  @@map("sync_logs")
+}
+
+// ============================================
+// 🆕 ACTIVITY LOGS MODULE (NOUVEAU)
+// ============================================
+
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // property_created, prospect_contacted, appointment_scheduled, etc.
+  description String
+  entityType  String?  // property, prospect, appointment, etc.
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user users @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("activities")
 }
