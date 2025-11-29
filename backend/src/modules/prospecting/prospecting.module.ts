@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ProspectingController } from './prospecting.controller';
 import { ProspectingService } from './prospecting.service';
 import { ProspectingIntegrationService } from './prospecting-integration.service';
+import { LLMProspectingService } from './llm-prospecting.service';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 @Module({
@@ -15,11 +16,13 @@ import { PrismaService } from '../../shared/database/prisma.service';
   providers: [
     ProspectingService,
     ProspectingIntegrationService,
+    LLMProspectingService,
     PrismaService,
   ],
   exports: [
     ProspectingService,
     ProspectingIntegrationService,
+    LLMProspectingService,
   ],
 })
 export class ProspectingModule {}

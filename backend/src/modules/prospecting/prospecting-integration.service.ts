@@ -1,6 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { LLMProspectingService } from './llm-prospecting.service';
+import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
 import axios from 'axios';
 
 interface LeadData {
@@ -25,6 +27,13 @@ export interface SourceConfig {
   endpoint?: string;
 }
 
+export interface IngestResult {
+  created: number;
+  rejected: number;
+  total: number;
+  leads: string[];
+}
+
 @Injectable()
 export class ProspectingIntegrationService {
   private readonly logger = new Logger(ProspectingIntegrationService.name);
@@ -32,6 +41,8 @@ export class ProspectingIntegrationService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => LLMProspectingService))
+    private llmProspectingService: LLMProspectingService,
   ) {}
 
   // ============================================
@@ -162,6 +173,157 @@ export class ProspectingIntegrationService {
     } catch {
       return { success: false, error: 'Firecrawl API indisponible' };
     }
+  }
+
+  // ============================================
+  // INGESTION - Pipeline LLM pour leads structures
+  // ============================================
+
+  /**
+   * Ingere des items scrappe et les transforme en leads via LLM
+   * C'est le point d'entree principal apres le scraping
+   */
+  async ingestScrapedItems(
+    userId: string,
+    campaignId: string,
+    items: RawScrapedItem[],
+  ): Promise<IngestResult> {
+    this.logger.log(`Ingesting ${items.length} scraped items for campaign ${campaignId}`);
+
+    // 1) Appeler le LLM pour structurer les items
+    const leadsToCreate: ProspectingLeadCreateInput[] =
+      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items);
+
+    // 2) Filtrer les "rejete/spam"
+    const validLeads = leadsToCreate.filter(
+      (lead) => lead.validationStatus !== 'spam' && lead.status !== 'rejete',
+    );
+
+    const rejectedCount = leadsToCreate.length - validLeads.length;
+    const createdIds: string[] = [];
+
+    // 3) Inserer dans la table prospecting_leads
+    for (const lead of validLeads) {
+      try {
+        const created = await this.prisma.prospecting_leads.create({
+          data: {
+            userId,
+            campaignId,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+            email: lead.email,
+            phone: lead.phone,
+            city: lead.city,
+            propertyType: lead.propertyTypes?.[0],
+            budget: lead.budgetMax ? {
+              min: lead.budgetMin,
+              max: lead.budgetMax,
+              currency: lead.budgetCurrency || 'TND',
+            } : undefined,
+            source: lead.source,
+            sourceUrl: lead.url,
+            prospectType: lead.leadType === 'mandat' ? 'mandat' : 'requete',
+            score: lead.score,
+            status: 'new',
+            metadata: {
+              ...lead.metadata,
+              rawText: lead.rawText,
+              title: lead.title,
+              intention: lead.intention,
+              urgency: lead.urgency,
+              surfaceM2: lead.surfaceM2,
+              rooms: lead.rooms,
+              validationStatus: lead.validationStatus,
+              seriousnessScore: lead.seriousnessScore,
+            },
+          },
+        });
+        createdIds.push(created.id);
+      } catch (error) {
+        this.logger.warn(`Failed to create lead: ${error.message}`);
+      }
+    }
+
+    // 4) Mettre a jour le compteur de la campagne
+    await this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data: {
+        foundCount: { increment: createdIds.length },
+      },
+    });
+
+    this.logger.log(`Ingestion complete: ${createdIds.length} created, ${rejectedCount} rejected`);
+
+    return {
+      created: createdIds.length,
+      rejected: rejectedCount,
+      total: items.length,
+      leads: createdIds,
+    };
+  }
+
+  /**
+   * Convertit les donnees brutes d'un scraper en RawScrapedItem
+   */
+  convertToRawScrapedItems(
+    data: any[],
+    source: string,
+  ): RawScrapedItem[] {
+    return data.map((item) => ({
+      id: item.id,
+      source,
+      url: item.url || item.link || item.sourceUrl,
+      title: item.title || item.subject,
+      text: item.text || item.content || item.snippet || item.message || item.description || '',
+      authorName: item.authorName || item.from?.name || item.author,
+      publishedAt: item.publishedAt || item.created_time ? new Date(item.created_time) : undefined,
+      rawMetadata: item,
+    }));
+  }
+
+  /**
+   * Scrape et ingere en une seule operation
+   */
+  async scrapeAndIngest(
+    userId: string,
+    campaignId: string,
+    source: string,
+    config: any,
+  ): Promise<IngestResult> {
+    let rawData: any[] = [];
+
+    // Scraper selon la source
+    switch (source) {
+      case 'pica':
+        const picaResult = await this.scrapeWithPica(userId, config);
+        rawData = picaResult.leads || [];
+        break;
+      case 'serp':
+        const serpResult = await this.scrapeFromSERP(userId, config);
+        rawData = serpResult.leads || [];
+        break;
+      case 'firecrawl':
+        const firecrawlResult = await this.scrapeWithFirecrawl(userId, config.urls || [], config);
+        rawData = firecrawlResult.leads || [];
+        break;
+      case 'meta':
+      case 'linkedin':
+        const socialResult = await this.scrapeFromSocial(userId, { platform: source, ...config });
+        rawData = socialResult.leads || [];
+        break;
+      case 'webscrape':
+        const webResult = await this.scrapeWebsites(userId, config.urls || []);
+        rawData = webResult.leads || [];
+        break;
+      default:
+        throw new BadRequestException(`Source non supportee: ${source}`);
+    }
+
+    // Convertir en RawScrapedItem
+    const items = this.convertToRawScrapedItems(rawData, source);
+
+    // Ingerer via le pipeline LLM
+    return this.ingestScrapedItems(userId, campaignId, items);
   }
 
   // ============================================
