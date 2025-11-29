@@ -1,0 +1,920 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { useProspecting } from '@/shared/hooks/useProspecting';
+import {
+  getCampaignStatusLabel,
+  getCampaignStatusColor,
+  getCampaignTypeLabel,
+  getLeadStatusLabel,
+  getLeadStatusColor,
+  getLeadTypeLabel,
+  getLeadTypeColor,
+  getSourceLabel,
+  getSourceColor,
+  getScoreBadgeColor,
+  CampaignType,
+  LeadType,
+  LeadStatus,
+  ProspectingCampaign,
+  ProspectingLead,
+} from '@/shared/utils/prospecting-api';
+import { GeographicTargeting } from './GeographicTargeting';
+import { DemographicTargeting } from './DemographicTargeting';
+import { SalesFunnel } from './SalesFunnel';
+import { LeadValidator } from './LeadValidator';
+
+// ============================================
+// TYPES
+// ============================================
+
+interface ProspectingDashboardProps {
+  language?: 'fr' | 'en';
+}
+
+type TabType = 'dashboard' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping' | 'settings';
+
+// ============================================
+// SUB-COMPONENTS
+// ============================================
+
+const StatCard: React.FC<{
+  title: string;
+  value: string | number;
+  icon: string;
+  change?: number;
+  color?: string;
+}> = ({ title, value, icon, change, color = 'purple' }) => (
+  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-500 font-medium">{title}</p>
+        <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+        {change !== undefined && (
+          <p className={`text-sm mt-2 flex items-center gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <span>{change >= 0 ? '↗' : '↘'}</span>
+            {Math.abs(change)}% vs mois dernier
+          </p>
+        )}
+      </div>
+      <div className={`p-4 rounded-2xl bg-gradient-to-br from-${color}-100 to-${color}-200`}>
+        <span className="text-3xl">{icon}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const CampaignCard: React.FC<{
+  campaign: ProspectingCampaign;
+  onSelect: (id: string) => void;
+  onStart: (id: string) => void;
+  onPause: (id: string) => void;
+}> = ({ campaign, onSelect, onStart, onPause }) => (
+  <div
+    className="bg-white rounded-xl shadow-lg p-5 hover:shadow-xl transition-all cursor-pointer border border-gray-100 group"
+    onClick={() => onSelect(campaign.id)}
+  >
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h3 className="font-bold text-gray-900 text-lg group-hover:text-purple-600 transition-colors">
+          {campaign.name}
+        </h3>
+        <p className="text-sm text-gray-500 mt-1">{campaign.description || 'Pas de description'}</p>
+      </div>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCampaignStatusColor(campaign.status)}`}>
+        {getCampaignStatusLabel(campaign.status)}
+      </span>
+    </div>
+
+    <div className="flex items-center gap-4 mb-4">
+      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+          style={{ width: `${Math.min((campaign.foundCount / (campaign.targetCount || 100)) * 100, 100)}%` }}
+        />
+      </div>
+      <span className="text-sm font-medium text-gray-600">
+        {campaign.foundCount}/{campaign.targetCount || '∞'}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between">
+      <div className="flex gap-3">
+        <span className="inline-flex items-center gap-1 text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+          👥 {campaign.foundCount} leads
+        </span>
+        <span className="inline-flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+          🎯 {campaign.matchedCount} matchs
+        </span>
+      </div>
+
+      <div className="flex gap-2">
+        {(campaign.status === 'draft' || campaign.status === 'paused') && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onStart(campaign.id); }}
+            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-md"
+          >
+            ▶ Lancer
+          </button>
+        )}
+        {campaign.status === 'active' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onPause(campaign.id); }}
+            className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-all shadow-md"
+          >
+            ⏸ Pause
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
+  language = 'fr',
+}) => {
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [campaignStep, setCampaignStep] = useState(1);
+  const [newCampaign, setNewCampaign] = useState({
+    name: '',
+    description: '',
+    type: 'requete' as CampaignType,
+    targetCount: 100,
+    config: {
+      zones: [] as any[],
+      demographics: {} as any,
+    },
+  });
+  const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
+  const [showLeadModal, setShowLeadModal] = useState(false);
+
+  const {
+    campaigns,
+    leads,
+    sources,
+    globalStats,
+    sourceStats,
+    loading,
+    error,
+    scrapingInProgress,
+    aiProcessingInProgress,
+    loadCampaigns,
+    loadLeads,
+    loadSources,
+    loadAllStats,
+    createCampaign,
+    startCampaign,
+    pauseCampaign,
+    updateLead,
+    convertLead,
+    qualifyLead,
+    scrapePica,
+    scrapeSERP,
+    scrapeSocial,
+    scrapeFirecrawl,
+    scrapeWebsites,
+    detectOpportunities,
+    validateEmails,
+    clearError,
+  } = useProspecting();
+
+  // Handle lead click - open detail modal
+  const handleLeadClick = useCallback((lead: ProspectingLead) => {
+    setSelectedLead(lead);
+    setShowLeadModal(true);
+  }, []);
+
+  // Initial data load
+  useEffect(() => {
+    loadCampaigns();
+    loadSources();
+    loadAllStats();
+  }, []);
+
+  // Load leads when campaign selected
+  useEffect(() => {
+    if (selectedCampaignId) {
+      loadLeads(selectedCampaignId);
+    }
+  }, [selectedCampaignId, loadLeads]);
+
+  const handleCreateCampaign = async () => {
+    const campaign = await createCampaign({
+      ...newCampaign,
+      config: newCampaign.config,
+    });
+    if (campaign) {
+      setShowCampaignForm(false);
+      setNewCampaign({
+        name: '',
+        description: '',
+        type: 'requete',
+        targetCount: 100,
+        config: { zones: [], demographics: {} },
+      });
+      setCampaignStep(1);
+    }
+  };
+
+  const handleLeadValidation = useCallback(async (leadIds: string[]) => {
+    const leadsToValidate = leads.filter(l => leadIds.includes(l.id));
+    const emails = leadsToValidate.map(l => l.email).filter(Boolean) as string[];
+
+    if (emails.length > 0) {
+      await validateEmails(emails);
+    }
+
+    return leadIds.map(id => ({
+      leadId: id,
+      email: { valid: true, deliverable: true, disposable: false, role: false, score: 85 },
+      phone: { valid: true, formatted: '', type: 'mobile' as const },
+      name: { valid: true, confidence: 90, issues: [] },
+      overall: { score: 85, status: 'valid' as const, flags: [] },
+    }));
+  }, [leads, validateEmails]);
+
+  const handleLeadUpdate = useCallback((leadId: string, data: Partial<ProspectingLead>) => {
+    updateLead(leadId, data);
+  }, [updateLead]);
+
+  const handleStageChange = useCallback((leadId: string, newStatus: LeadStatus) => {
+    updateLead(leadId, { status: newStatus });
+  }, [updateLead]);
+
+  const tabs: { id: TabType; label: string; icon: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'targeting', label: 'Ciblage', icon: '🎯' },
+    { id: 'funnel', label: 'Tunnel', icon: '🔄' },
+    { id: 'validation', label: 'Validation', icon: '🛡️' },
+    { id: 'campaigns', label: 'Campagnes', icon: '📋' },
+    { id: 'scraping', label: 'Scraping', icon: '🔍' },
+    { id: 'settings', label: 'Config', icon: '⚙️' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Prospection Intelligente
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Trouvez des opportunites immobilieres avec l&apos;IA
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCampaignForm(true)}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <span className="text-xl">+</span>
+              Nouvelle Campagne
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <nav className="bg-white border-b shadow-sm sticky top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto py-2">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex justify-between items-center shadow-md">
+            <span className="flex items-center gap-2">
+              <span>⚠️</span> {error}
+            </span>
+            <button onClick={clearError} className="text-red-500 hover:text-red-700 text-xl">
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Total Leads"
+                value={globalStats?.total || 0}
+                icon="👥"
+                change={12}
+                color="purple"
+              />
+              <StatCard
+                title="Leads Convertis"
+                value={globalStats?.converted || 0}
+                icon="✅"
+                change={8}
+                color="green"
+              />
+              <StatCard
+                title="Taux de Conversion"
+                value={`${(globalStats?.conversionRate || 0).toFixed(1)}%`}
+                icon="📈"
+                change={5}
+                color="blue"
+              />
+              <StatCard
+                title="Score Moyen"
+                value={`${(globalStats?.avgScore || 0).toFixed(0)}%`}
+                icon="⭐"
+                color="yellow"
+              />
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => setActiveTab('targeting')}
+                className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white text-left hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg group"
+              >
+                <div className="text-3xl mb-3">📍</div>
+                <h3 className="font-bold text-lg">Ciblage Geographique</h3>
+                <p className="text-blue-100 text-sm mt-1">Definir les zones de prospection</p>
+                <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  Configurer →
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('funnel')}
+                className="p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white text-left hover:from-purple-600 hover:to-pink-700 transition-all shadow-lg group"
+              >
+                <div className="text-3xl mb-3">🔄</div>
+                <h3 className="font-bold text-lg">Tunnel de Vente</h3>
+                <p className="text-purple-100 text-sm mt-1">Suivre la progression des leads</p>
+                <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  Voir le tunnel →
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('validation')}
+                className="p-6 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl text-white text-left hover:from-teal-600 hover:to-cyan-700 transition-all shadow-lg group"
+              >
+                <div className="text-3xl mb-3">🛡️</div>
+                <h3 className="font-bold text-lg">Validation Anti-Spam</h3>
+                <p className="text-teal-100 text-sm mt-1">Verifier la qualite des leads</p>
+                <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  Valider →
+                </span>
+              </button>
+            </div>
+
+            {/* Recent Campaigns */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Campagnes Recentes</h2>
+                <button
+                  onClick={() => setActiveTab('campaigns')}
+                  className="text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  Voir tout →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {campaigns.slice(0, 4).map(campaign => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onSelect={(id) => {
+                      setSelectedCampaignId(id);
+                      setActiveTab('funnel');
+                    }}
+                    onStart={startCampaign}
+                    onPause={pauseCampaign}
+                  />
+                ))}
+              </div>
+              {campaigns.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <div className="text-5xl mb-4">📋</div>
+                  <p className="text-lg">Aucune campagne</p>
+                  <p className="text-sm mt-1">Creez votre premiere campagne de prospection</p>
+                  <button
+                    onClick={() => setShowCampaignForm(true)}
+                    className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    Creer une campagne
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Targeting Tab */}
+        {activeTab === 'targeting' && (
+          <div className="space-y-6">
+            <GeographicTargeting
+              onZonesChange={(zones) => setNewCampaign(prev => ({
+                ...prev,
+                config: { ...prev.config, zones }
+              }))}
+            />
+            <DemographicTargeting
+              onChange={(demographics) => setNewCampaign(prev => ({
+                ...prev,
+                config: { ...prev.config, demographics }
+              }))}
+            />
+          </div>
+        )}
+
+        {/* Funnel Tab */}
+        {activeTab === 'funnel' && (
+          <div>
+            {selectedCampaignId ? (
+              <SalesFunnel
+                leads={leads}
+                onLeadClick={handleLeadClick}
+                onStageChange={handleStageChange}
+              />
+            ) : (
+              <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                <div className="text-5xl mb-4">📊</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Selectionnez une campagne</h3>
+                <p className="text-gray-500 mb-6">Choisissez une campagne pour voir son tunnel de conversion</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {campaigns.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedCampaignId(c.id)}
+                      className="px-4 py-2 border-2 border-purple-200 rounded-lg text-purple-600 hover:bg-purple-50 transition"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Validation Tab */}
+        {activeTab === 'validation' && (
+          <LeadValidator
+            leads={leads}
+            onValidate={handleLeadValidation}
+            onUpdateLead={handleLeadUpdate}
+          />
+        )}
+
+        {/* Campaigns Tab */}
+        {activeTab === 'campaigns' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">Mes Campagnes</h2>
+              <button
+                onClick={() => setShowCampaignForm(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                + Nouvelle
+              </button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {campaigns.map(campaign => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onSelect={(id) => {
+                    setSelectedCampaignId(id);
+                    setActiveTab('funnel');
+                  }}
+                  onStart={startCampaign}
+                  onPause={pauseCampaign}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Scraping Tab */}
+        {activeTab === 'scraping' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple' },
+                { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue' },
+                { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo' },
+                { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan' },
+                { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange' },
+                { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray' },
+              ].map(source => (
+                <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
+                      {source.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">{source.name}</h3>
+                      <p className="text-sm text-gray-500">{source.desc}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (source.id === 'pica') scrapePica({ query: 'immobilier tunis' });
+                      else if (source.id === 'serp') scrapeSERP({ query: 'appartement vendre tunis' });
+                      else if (source.id === 'meta') scrapeSocial('meta', 'immobilier');
+                      else if (source.id === 'linkedin') scrapeSocial('linkedin', 'agent immobilier tunis');
+                      else if (source.id === 'firecrawl') scrapeFirecrawl(['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']);
+                      else if (source.id === 'website') scrapeWebsites(['https://www.afif.tn', 'https://www.immobilier.com.tn']);
+                    }}
+                    disabled={scrapingInProgress}
+                    className={`w-full py-2 rounded-lg font-medium transition ${
+                      scrapingInProgress
+                        ? 'bg-gray-100 text-gray-400'
+                        : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
+                    }`}
+                  >
+                    {scrapingInProgress ? 'Scraping...' : 'Lancer'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Configuration des APIs</h2>
+            <div className="space-y-4">
+              {sources.map(source => (
+                <div key={source.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${source.configured ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span className="font-medium">{source.name}</span>
+                  </div>
+                  <span className={source.configured ? 'text-green-600' : 'text-gray-500'}>
+                    {source.configured ? '✓ Configure' : 'Non configure'}
+                  </span>
+                </div>
+              ))}
+              <a
+                href="/settings/integrations"
+                className="block text-center py-3 text-purple-600 hover:text-purple-700 font-medium"
+              >
+                → Gerer les integrations dans Parametres
+              </a>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Campaign Creation Modal */}
+      {showCampaignForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold">Nouvelle Campagne</h2>
+                  <p className="text-purple-100 text-sm mt-1">Etape {campaignStep} sur 3</p>
+                </div>
+                <button
+                  onClick={() => { setShowCampaignForm(false); setCampaignStep(1); }}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+              {/* Progress bar */}
+              <div className="flex gap-2 mt-4">
+                {[1, 2, 3].map(step => (
+                  <div
+                    key={step}
+                    className={`flex-1 h-1 rounded-full ${
+                      step <= campaignStep ? 'bg-white' : 'bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {campaignStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-gray-900">Informations de base</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la campagne</label>
+                    <input
+                      type="text"
+                      value={newCampaign.name}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      placeholder="Ex: Prospection Tunis Q4 2024"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      value={newCampaign.description}
+                      onChange={(e) => setNewCampaign(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      rows={3}
+                      placeholder="Objectifs et details de la campagne..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Type de lead</label>
+                      <select
+                        value={newCampaign.type}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, type: e.target.value as CampaignType }))}
+                        className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="requete">🔍 Requete - Chercheurs</option>
+                        <option value="mandat">🏠 Mandat - Proprietaires</option>
+                        <option value="geographic">📍 Geographique</option>
+                        <option value="demographic">👥 Demographique</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Objectif de leads</label>
+                      <input
+                        type="number"
+                        value={newCampaign.targetCount}
+                        onChange={(e) => setNewCampaign(prev => ({ ...prev, targetCount: parseInt(e.target.value) }))}
+                        className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {campaignStep === 2 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-gray-900">Ciblage geographique</h3>
+                  <GeographicTargeting
+                    onZonesChange={(zones) => setNewCampaign(prev => ({
+                      ...prev,
+                      config: { ...prev.config, zones }
+                    }))}
+                    initialZones={newCampaign.config.zones}
+                  />
+                </div>
+              )}
+
+              {campaignStep === 3 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-gray-900">Ciblage demographique</h3>
+                  <DemographicTargeting
+                    onChange={(demographics) => setNewCampaign(prev => ({
+                      ...prev,
+                      config: { ...prev.config, demographics }
+                    }))}
+                    initialCriteria={newCampaign.config.demographics}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t flex justify-between">
+              <button
+                onClick={() => setCampaignStep(Math.max(1, campaignStep - 1))}
+                disabled={campaignStep === 1}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              >
+                ← Retour
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowCampaignForm(false); setCampaignStep(1); }}
+                  className="px-6 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Annuler
+                </button>
+                {campaignStep < 3 ? (
+                  <button
+                    onClick={() => setCampaignStep(campaignStep + 1)}
+                    disabled={campaignStep === 1 && !newCampaign.name}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    Suivant →
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleCreateCampaign}
+                    disabled={loading || !newCampaign.name}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Creation...' : '🚀 Lancer la campagne'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {(loading || scrapingInProgress || aiProcessingInProgress) && (
+        <div className="fixed bottom-6 right-6 bg-white rounded-xl shadow-2xl px-5 py-4 flex items-center gap-4 z-50">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-8 w-8 border-3 border-purple-200 border-t-purple-600" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-900">
+              {aiProcessingInProgress ? 'Analyse IA en cours...' :
+               scrapingInProgress ? 'Scraping en cours...' :
+               'Chargement...'}
+            </p>
+            <p className="text-sm text-gray-500">Veuillez patienter</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lead Detail Modal */}
+      {showLeadModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
+                    {(selectedLead.firstName?.[0] || '') + (selectedLead.lastName?.[0] || 'L')}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {selectedLead.firstName || ''} {selectedLead.lastName || 'Sans nom'}
+                    </h2>
+                    <p className="text-purple-100 text-sm mt-1">
+                      {getLeadTypeLabel(selectedLead.leadType)} • Score: {selectedLead.score}%
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowLeadModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Contact Info */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">📞 Contact</h3>
+                <div className="space-y-2">
+                  {selectedLead.email && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📧</span> {selectedLead.email}
+                    </div>
+                  )}
+                  {selectedLead.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📱</span> {selectedLead.phone}
+                    </div>
+                  )}
+                  {selectedLead.city && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📍</span> {selectedLead.city}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Score */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">📊 Statut</h3>
+                <div className="flex items-center gap-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadStatusColor(selectedLead.status)}`}>
+                    {getLeadStatusLabel(selectedLead.status)}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(selectedLead.leadType)}`}>
+                    {getLeadTypeLabel(selectedLead.leadType)}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Score:</span>
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getScoreBadgeColor(selectedLead.score)}`}
+                      style={{ width: `${selectedLead.score}%` }}
+                    />
+                  </div>
+                  <span className="font-bold">{selectedLead.score}%</span>
+                </div>
+              </div>
+
+              {/* Budget */}
+              {selectedLead.budget && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">💰 Budget</h3>
+                  <p className="text-lg text-green-600 font-bold">
+                    {typeof selectedLead.budget === 'object'
+                      ? `${((selectedLead.budget as any).min / 1000).toFixed(0)}k - ${((selectedLead.budget as any).max / 1000).toFixed(0)}k TND`
+                      : `${(selectedLead.budget / 1000).toFixed(0)}k TND`}
+                  </p>
+                </div>
+              )}
+
+              {/* Source */}
+              {selectedLead.source && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">🔗 Source</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source)}`}>
+                    {getSourceLabel(selectedLead.source)}
+                  </span>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedLead.notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">📝 Notes</h3>
+                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t flex justify-between">
+              <button
+                onClick={() => setShowLeadModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Fermer
+              </button>
+              <div className="flex gap-2">
+                {selectedLead.status === 'new' && (
+                  <button
+                    onClick={() => {
+                      updateLead(selectedLead.id, { status: 'contacted' });
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    📞 Marquer contacte
+                  </button>
+                )}
+                {selectedLead.status === 'contacted' && (
+                  <button
+                    onClick={() => {
+                      qualifyLead(selectedLead.id);
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    ✅ Qualifier
+                  </button>
+                )}
+                {selectedLead.status === 'qualified' && (
+                  <button
+                    onClick={() => {
+                      convertLead(selectedLead.id);
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    🎉 Convertir
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProspectingDashboard;

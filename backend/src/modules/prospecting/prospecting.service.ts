@@ -133,6 +133,7 @@ export class ProspectingService {
 
     if (filters?.status) where.status = filters.status;
     if (filters?.minScore) where.score = { gte: parseInt(filters.minScore) };
+    if (filters?.leadType) where.prospectType = filters.leadType;
 
     return this.prisma.prospecting_leads.findMany({
       where,
@@ -653,5 +654,476 @@ export class ProspectingService {
 
   async getOpportunities(userId: string, filters?: any) {
     return this.getCampaigns(userId, filters);
+  }
+
+  // ============================================
+  // METHODES ADDITIONNELLES
+  // ============================================
+
+  /**
+   * Mettre à jour une campagne
+   */
+  async updateCampaign(userId: string, campaignId: string, data: any) {
+    await this.getCampaignById(userId, campaignId);
+
+    return this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data,
+    });
+  }
+
+  /**
+   * Supprimer un lead
+   */
+  async deleteLead(userId: string, leadId: string) {
+    await this.getLeadById(userId, leadId);
+
+    await this.prisma.prospecting_leads.delete({
+      where: { id: leadId },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Mettre à jour le statut d'un match
+   */
+  async updateMatchStatus(userId: string, matchId: string, status: string) {
+    const match = await this.prisma.prospecting_matches.findUnique({
+      where: { id: matchId },
+      include: { properties: true },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match non trouvé');
+    }
+
+    return this.prisma.prospecting_matches.update({
+      where: { id: matchId },
+      data: { status },
+    });
+  }
+
+  /**
+   * Statistiques par source
+   */
+  async getStatsBySource(userId: string) {
+    const stats = await this.prisma.prospecting_leads.groupBy({
+      by: ['source'],
+      where: { userId },
+      _count: true,
+      _avg: { score: true },
+    });
+
+    return stats.map((s) => ({
+      source: s.source || 'unknown',
+      count: s._count,
+      avgScore: Math.round(s._avg.score || 0),
+    }));
+  }
+
+  /**
+   * Statistiques de conversion
+   */
+  async getConversionStats(userId: string) {
+    const [total, converted, byStage] = await Promise.all([
+      this.prisma.prospecting_leads.count({ where: { userId } }),
+      this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
+      this.prisma.prospecting_leads.groupBy({
+        by: ['status'],
+        where: { userId },
+        _count: true,
+      }),
+    ]);
+
+    const conversionRate = total > 0 ? (converted / total) * 100 : 0;
+
+    return {
+      total,
+      converted,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+      byStage: byStage.map((s) => ({
+        stage: s.status,
+        count: s._count,
+        percentage: Math.round((s._count / total) * 100 * 10) / 10,
+      })),
+      funnel: {
+        new: byStage.find((s) => s.status === 'new')?._count || 0,
+        contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
+        qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
+        converted: byStage.find((s) => s.status === 'converted')?._count || 0,
+        rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
+      },
+    };
+  }
+
+  /**
+   * ROI de la prospection
+   */
+  async getROIStats(userId: string) {
+    const [campaigns, convertedLeads] = await Promise.all([
+      this.prisma.prospecting_campaigns.findMany({
+        where: { userId },
+        include: {
+          _count: { select: { leads: true } },
+        },
+      }),
+      this.prisma.prospecting_leads.findMany({
+        where: { userId, status: 'converted' },
+        include: { convertedProspect: true },
+      }),
+    ]);
+
+    // Calculer les valeurs estimées
+    const totalLeads = campaigns.reduce((sum, c) => sum + c._count.leads, 0);
+    const totalConverted = convertedLeads.length;
+    const estimatedValue = convertedLeads.reduce((sum, lead) => {
+      const budget = lead.budget as any;
+      return sum + (budget?.max || budget?.min || budget || 0);
+    }, 0);
+
+    return {
+      totalCampaigns: campaigns.length,
+      totalLeads,
+      totalConverted,
+      conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
+      estimatedValue,
+      avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
+      costPerLead: 0, // À calculer selon les coûts API
+      roi: 0, // À calculer
+    };
+  }
+
+  /**
+   * Dédupliquer les leads avec matching intelligent
+   */
+  async deduplicateLeads(userId: string, campaignId?: string) {
+    const where: any = { userId };
+    if (campaignId) where.campaignId = campaignId;
+
+    const leads = await this.prisma.prospecting_leads.findMany({
+      where,
+      orderBy: { score: 'desc' }, // Garder le lead avec le meilleur score
+    });
+
+    const uniqueLeads = new Map<string, any>();
+    const duplicates: string[] = [];
+    const mergedData: any[] = [];
+
+    for (const lead of leads) {
+      // Générer plusieurs clés pour la déduplication
+      const keys = this.generateDeduplicationKeys(lead);
+      let foundDuplicate = false;
+      let originalLeadId: string | null = null;
+
+      for (const key of keys) {
+        if (uniqueLeads.has(key)) {
+          foundDuplicate = true;
+          originalLeadId = uniqueLeads.get(key).id;
+          break;
+        }
+      }
+
+      if (foundDuplicate && originalLeadId) {
+        duplicates.push(lead.id);
+        // Fusionner les données du doublon avec l'original
+        const original = uniqueLeads.get(keys[0]);
+        if (original) {
+          mergedData.push({
+            id: originalLeadId,
+            data: this.mergeLeadData(original, lead),
+          });
+        }
+      } else {
+        // Ajouter toutes les clés pour ce lead
+        keys.forEach(key => uniqueLeads.set(key, lead));
+      }
+    }
+
+    // Mettre à jour les leads originaux avec les données fusionnées
+    for (const merge of mergedData) {
+      await this.prisma.prospecting_leads.update({
+        where: { id: merge.id },
+        data: merge.data,
+      });
+    }
+
+    // Supprimer les doublons
+    if (duplicates.length > 0) {
+      await this.prisma.prospecting_leads.deleteMany({
+        where: { id: { in: duplicates } },
+      });
+    }
+
+    return {
+      success: true,
+      totalProcessed: leads.length,
+      duplicatesRemoved: duplicates.length,
+      uniqueLeads: leads.length - duplicates.length,
+      mergedRecords: mergedData.length,
+    };
+  }
+
+  /**
+   * Générer des clés de déduplication pour un lead
+   */
+  private generateDeduplicationKeys(lead: any): string[] {
+    const keys: string[] = [];
+
+    // Clé email (normalisée)
+    if (lead.email) {
+      keys.push(`email:${lead.email.toLowerCase().trim()}`);
+    }
+
+    // Clé téléphone (normalisé)
+    if (lead.phone) {
+      const normalizedPhone = this.normalizePhone(lead.phone);
+      keys.push(`phone:${normalizedPhone}`);
+    }
+
+    // Clé nom+ville (pour matcher les doublons sans contact)
+    if (lead.firstName && lead.lastName && lead.city) {
+      const nameKey = `name:${this.normalizeText(lead.firstName)}_${this.normalizeText(lead.lastName)}_${this.normalizeText(lead.city)}`;
+      keys.push(nameKey);
+    }
+
+    return keys;
+  }
+
+  /**
+   * Normaliser un numéro de téléphone
+   */
+  private normalizePhone(phone: string): string {
+    // Supprimer tout sauf les chiffres
+    let normalized = phone.replace(/[^0-9]/g, '');
+
+    // Gérer le préfixe tunisien
+    if (normalized.startsWith('00216')) {
+      normalized = normalized.substring(5);
+    } else if (normalized.startsWith('216')) {
+      normalized = normalized.substring(3);
+    } else if (normalized.startsWith('0')) {
+      normalized = normalized.substring(1);
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Normaliser du texte pour comparaison
+   */
+  private normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * Fusionner les données de deux leads
+   */
+  private mergeLeadData(original: any, duplicate: any): any {
+    const merged: any = {};
+
+    // Prendre la valeur non-nulle ou la plus récente
+    const fields = ['firstName', 'lastName', 'email', 'phone', 'city', 'zipCode', 'propertyType'];
+
+    for (const field of fields) {
+      if (!original[field] && duplicate[field]) {
+        merged[field] = duplicate[field];
+      }
+    }
+
+    // Fusionner les metadata
+    if (duplicate.metadata) {
+      merged.metadata = {
+        ...original.metadata,
+        ...duplicate.metadata,
+        mergedFrom: [...(original.metadata?.mergedFrom || []), duplicate.id],
+        mergedAt: new Date().toISOString(),
+      };
+    }
+
+    // Garder le meilleur score
+    if (duplicate.score > original.score) {
+      merged.score = duplicate.score;
+    }
+
+    return merged;
+  }
+
+  /**
+   * Calculer la distance de Levenshtein entre deux chaînes
+   */
+  private levenshteinDistance(str1: string, str2: string): number {
+    const m = str1.length;
+    const n = str2.length;
+    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (str1[i - 1] === str2[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+    }
+
+    return dp[m][n];
+  }
+
+  /**
+   * Trouver les doublons potentiels avec fuzzy matching
+   */
+  async findPotentialDuplicates(userId: string, leadId: string) {
+    const lead = await this.getLeadById(userId, leadId);
+
+    const allLeads = await this.prisma.prospecting_leads.findMany({
+      where: { userId, id: { not: leadId } },
+    });
+
+    const potentialDuplicates: any[] = [];
+
+    for (const other of allLeads) {
+      let similarity = 0;
+      let reasons: string[] = [];
+
+      // Comparer les emails
+      if (lead.email && other.email) {
+        if (lead.email.toLowerCase() === other.email.toLowerCase()) {
+          similarity += 50;
+          reasons.push('Email identique');
+        }
+      }
+
+      // Comparer les téléphones
+      if (lead.phone && other.phone) {
+        const phone1 = this.normalizePhone(lead.phone);
+        const phone2 = this.normalizePhone(other.phone);
+        if (phone1 === phone2) {
+          similarity += 40;
+          reasons.push('Téléphone identique');
+        }
+      }
+
+      // Comparer les noms (fuzzy)
+      if (lead.firstName && lead.lastName && other.firstName && other.lastName) {
+        const name1 = `${this.normalizeText(lead.firstName)} ${this.normalizeText(lead.lastName)}`;
+        const name2 = `${this.normalizeText(other.firstName)} ${this.normalizeText(other.lastName)}`;
+        const distance = this.levenshteinDistance(name1, name2);
+        const maxLen = Math.max(name1.length, name2.length);
+        const nameSimilarity = 1 - (distance / maxLen);
+
+        if (nameSimilarity > 0.8) {
+          similarity += 30 * nameSimilarity;
+          reasons.push(`Nom similaire (${Math.round(nameSimilarity * 100)}%)`);
+        }
+      }
+
+      if (similarity >= 40) {
+        potentialDuplicates.push({
+          lead: other,
+          similarity: Math.round(similarity),
+          reasons,
+        });
+      }
+    }
+
+    return potentialDuplicates.sort((a, b) => b.similarity - a.similarity);
+  }
+
+  /**
+   * Exporter les leads
+   */
+  async exportLeads(userId: string, campaignId: string, format: string) {
+    const leads = await this.prisma.prospecting_leads.findMany({
+      where: { campaignId, userId },
+      orderBy: { score: 'desc' },
+    });
+
+    if (format === 'json') {
+      return { data: leads, format: 'json' };
+    }
+
+    // Format CSV
+    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Ville', 'Type', 'Budget', 'Score', 'Statut', 'Source'];
+    const rows = leads.map((lead) => [
+      lead.firstName || '',
+      lead.lastName || '',
+      lead.email || '',
+      lead.phone || '',
+      lead.city || '',
+      lead.propertyType || '',
+      JSON.stringify(lead.budget) || '',
+      lead.score,
+      lead.status,
+      lead.source || '',
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+    return {
+      data: csv,
+      format: 'csv',
+      filename: `leads-${campaignId}-${Date.now()}.csv`,
+    };
+  }
+
+  /**
+   * Importer des leads
+   */
+  async importLeads(userId: string, campaignId: string, leads: any[]) {
+    await this.getCampaignById(userId, campaignId);
+
+    const created: any[] = [];
+    const errors: any[] = [];
+
+    for (const leadData of leads) {
+      try {
+        const score = this.calculateLeadScore(leadData);
+
+        const lead = await this.prisma.prospecting_leads.create({
+          data: {
+            campaignId,
+            userId,
+            firstName: leadData.firstName || leadData.prenom,
+            lastName: leadData.lastName || leadData.nom,
+            email: leadData.email,
+            phone: leadData.phone || leadData.telephone,
+            city: leadData.city || leadData.ville,
+            propertyType: leadData.propertyType || leadData.typeBien,
+            budget: leadData.budget,
+            source: 'import',
+            score,
+            status: 'new',
+          },
+        });
+
+        created.push(lead);
+      } catch (error) {
+        errors.push({ data: leadData, error: error.message });
+      }
+    }
+
+    // Mettre à jour le compteur de la campagne
+    await this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data: {
+        foundCount: { increment: created.length },
+      },
+    });
+
+    return {
+      success: true,
+      imported: created.length,
+      errors: errors.length,
+      errorDetails: errors,
+    };
   }
 }
