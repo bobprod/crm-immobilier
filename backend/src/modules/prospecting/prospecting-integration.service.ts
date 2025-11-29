@@ -719,8 +719,11 @@ export class ProspectingIntegrationService {
 
     try {
       const result = await this.callLLM(llmConfig, prompt);
-      return { success: true, analysis: result };
+      return { success: true, analysis: result, method: 'llm' };
     } catch (error) {
+      // Log l'erreur pour le debugging
+      this.logger.warn(`LLM analysis failed, falling back to regex: ${error.message}`);
+
       // Fallback sur extraction regex
       const contact = this.extractContactFromText(content);
       return {
@@ -730,6 +733,8 @@ export class ProspectingIntegrationService {
           leadType: this.detectLeadType(content),
           score: contact?.email ? 60 : 30,
         },
+        method: 'fallback_regex',
+        llmError: error.message,
       };
     }
   }
@@ -780,11 +785,19 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, classification: result };
-    } catch {
+      return { success: true, classification: result, method: 'llm' };
+    } catch (error) {
+      // Log l'erreur pour le debugging
+      this.logger.warn(`LLM classification failed for lead ${leadId}, using basic rules: ${error.message}`);
+
       // Classification basique sans IA
       const classification = this.classifyLeadBasic(lead);
-      return { success: true, classification };
+      return {
+        success: true,
+        classification,
+        method: 'fallback_rules',
+        llmError: error.message,
+      };
     }
   }
 

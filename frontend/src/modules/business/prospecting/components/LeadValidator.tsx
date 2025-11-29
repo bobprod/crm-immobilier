@@ -187,17 +187,33 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
 
   // Valider tous les leads
   const handleValidateAll = async () => {
-    setSelectedLeads(new Set(leads.map(l => l.id)));
-    // La validation sera lancee automatiquement
+    const allLeadIds = leads.map(l => l.id);
+    setSelectedLeads(new Set(allLeadIds));
     setIsValidating(true);
 
-    const localResults = leads.map(quickValidate);
-    const newResults = new Map<string, ValidationResult>();
-    localResults.forEach(result => {
-      newResults.set(result.leadId, result);
-    });
-    setValidationResults(newResults);
-    setIsValidating(false);
+    try {
+      // D'abord validation locale rapide
+      const localResults = leads.map(quickValidate);
+      const newResults = new Map<string, ValidationResult>();
+      localResults.forEach(result => {
+        newResults.set(result.leadId, result);
+      });
+      setValidationResults(newResults);
+
+      // Puis appeler l'API pour validation approfondie
+      try {
+        const apiResults = await onValidate(allLeadIds);
+        apiResults.forEach(result => {
+          newResults.set(result.leadId, result);
+        });
+        setValidationResults(new Map(newResults));
+      } catch {
+        // Garder les resultats locaux en cas d'erreur API
+        console.warn('API validation failed, using local results');
+      }
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   // Filtrer les leads

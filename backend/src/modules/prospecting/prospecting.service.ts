@@ -761,7 +761,7 @@ export class ProspectingService {
    * ROI de la prospection
    */
   async getROIStats(userId: string) {
-    const [campaigns, convertedLeads] = await Promise.all([
+    const [campaigns, convertedLeads, allLeads] = await Promise.all([
       this.prisma.prospecting_campaigns.findMany({
         where: { userId },
         include: {
@@ -771,6 +771,10 @@ export class ProspectingService {
       this.prisma.prospecting_leads.findMany({
         where: { userId, status: 'converted' },
         include: { convertedProspect: true },
+      }),
+      this.prisma.prospecting_leads.findMany({
+        where: { userId },
+        select: { metadata: true, source: true },
       }),
     ]);
 
@@ -782,6 +786,35 @@ export class ProspectingService {
       return sum + (budget?.max || budget?.min || budget || 0);
     }, 0);
 
+    // Calculer les coûts par source (estimation basée sur les coûts API typiques)
+    const apiCosts: Record<string, number> = {
+      pica: 0.05,      // ~0.05 TND par lead
+      serp: 0.02,      // ~0.02 TND par requête
+      meta: 0.03,      // ~0.03 TND par lead (Facebook/Instagram)
+      linkedin: 0.10,  // ~0.10 TND par lead
+      firecrawl: 0.01, // ~0.01 TND par page
+      website: 0.005,  // ~0.005 TND par scrape
+      manual: 0,       // Gratuit
+    };
+
+    // Calculer le coût total basé sur les sources des leads
+    const totalCost = allLeads.reduce((sum, lead) => {
+      const source = (lead.source || 'manual').toLowerCase();
+      const metadata = lead.metadata as any;
+      // Vérifier si un coût est stocké dans les métadonnées
+      if (metadata?.apiCost) {
+        return sum + metadata.apiCost;
+      }
+      return sum + (apiCosts[source] || 0);
+    }, 0);
+
+    const costPerLead = totalLeads > 0 ? Math.round((totalCost / totalLeads) * 100) / 100 : 0;
+
+    // Calculer le ROI: (Valeur générée - Coût) / Coût * 100
+    const roi = totalCost > 0
+      ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
+      : (estimatedValue > 0 ? 100 : 0);
+
     return {
       totalCampaigns: campaigns.length,
       totalLeads,
@@ -789,8 +822,9 @@ export class ProspectingService {
       conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
       estimatedValue,
       avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
-      costPerLead: 0, // À calculer selon les coûts API
-      roi: 0, // À calculer
+      totalCost: Math.round(totalCost * 100) / 100,
+      costPerLead,
+      roi,
     };
   }
 

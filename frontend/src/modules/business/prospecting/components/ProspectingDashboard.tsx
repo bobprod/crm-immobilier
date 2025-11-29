@@ -223,18 +223,66 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const handleLeadValidation = useCallback(async (leadIds: string[]) => {
     const leadsToValidate = leads.filter(l => leadIds.includes(l.id));
     const emails = leadsToValidate.map(l => l.email).filter(Boolean) as string[];
+    const phones = leadsToValidate.map(l => l.phone).filter(Boolean) as string[];
+
+    // Call actual validation APIs
+    let emailResults: Record<string, any> = {};
+    let phoneResults: Record<string, any> = {};
 
     if (emails.length > 0) {
-      await validateEmails(emails);
+      try {
+        const response = await validateEmails(emails);
+        if (response?.results) {
+          emailResults = response.results;
+        }
+      } catch (error) {
+        console.error('Email validation failed:', error);
+      }
     }
 
-    return leadIds.map(id => ({
-      leadId: id,
-      email: { valid: true, deliverable: true, disposable: false, role: false, score: 85 },
-      phone: { valid: true, formatted: '', type: 'mobile' as const },
-      name: { valid: true, confidence: 90, issues: [] },
-      overall: { score: 85, status: 'valid' as const, flags: [] },
-    }));
+    // Build validation results from actual API responses
+    return leadIds.map(id => {
+      const lead = leadsToValidate.find(l => l.id === id);
+      const emailValidation = lead?.email ? emailResults[lead.email] : null;
+
+      // Calculate scores based on actual validation
+      const emailScore = emailValidation?.valid ? (emailValidation.deliverable ? 90 : 60) : 30;
+      const hasPhone = !!lead?.phone;
+      const hasName = !!(lead?.firstName || lead?.lastName);
+      const phoneScore = hasPhone ? 70 : 0;
+      const nameScore = hasName ? 80 : 40;
+      const overallScore = Math.round((emailScore + phoneScore + nameScore) / 3);
+
+      return {
+        leadId: id,
+        email: emailValidation ? {
+          valid: emailValidation.valid ?? false,
+          deliverable: emailValidation.deliverable ?? false,
+          disposable: emailValidation.disposable ?? false,
+          role: emailValidation.role ?? false,
+          score: emailScore,
+        } : { valid: false, deliverable: false, disposable: false, role: false, score: 0 },
+        phone: {
+          valid: hasPhone,
+          formatted: lead?.phone || '',
+          type: 'mobile' as const,
+        },
+        name: {
+          valid: hasName,
+          confidence: hasName ? 85 : 0,
+          issues: hasName ? [] : ['Nom manquant'],
+        },
+        overall: {
+          score: overallScore,
+          status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'invalid') as 'valid' | 'suspicious' | 'invalid',
+          flags: [
+            ...(!emailValidation?.valid ? ['Email invalide'] : []),
+            ...(!hasPhone ? ['Téléphone manquant'] : []),
+            ...(!hasName ? ['Nom manquant'] : []),
+          ],
+        },
+      };
+    });
   }, [leads, validateEmails]);
 
   const handleLeadUpdate = useCallback((leadId: string, data: Partial<ProspectingLead>) => {

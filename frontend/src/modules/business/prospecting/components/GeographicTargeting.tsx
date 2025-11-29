@@ -123,8 +123,14 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
 
   // Supprimer une zone
   const removeZone = useCallback((zoneId: string) => {
-    setZones(prev => prev.filter(z => z.id !== zoneId || !z.id.startsWith('radius-')));
-    setZones(prev => prev.map(z => z.id === zoneId ? { ...z, selected: false } : z));
+    setZones(prev => {
+      // Pour les zones radius (créées par l'utilisateur), les supprimer complètement
+      if (zoneId.startsWith('radius-')) {
+        return prev.filter(z => z.id !== zoneId);
+      }
+      // Pour les zones prédéfinies, juste les désélectionner
+      return prev.map(z => z.id === zoneId ? { ...z, selected: false } : z);
+    });
   }, []);
 
   // Estimation du reach
