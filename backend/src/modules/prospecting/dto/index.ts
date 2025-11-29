@@ -165,3 +165,6 @@ export class ValidateEmailsDto {
 
 // Export LLM Prospecting types
 export * from './llm-prospecting.dto';
+
+// Export Matching types
+export * from './matching.dto';
