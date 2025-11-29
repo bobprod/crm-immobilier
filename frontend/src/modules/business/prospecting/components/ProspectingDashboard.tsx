@@ -153,6 +153,17 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [leadMatches, setLeadMatches] = useState<any[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
+  // Scraping configuration
+  const [showScrapingConfig, setShowScrapingConfig] = useState(false);
+  const [scrapingSource, setScrapingSource] = useState<string | null>(null);
+  const [scrapingConfig, setScrapingConfig] = useState({
+    query: '',
+    urls: [''],
+    maxResults: 50,
+  });
+  // Notes editing
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
 
   const {
     campaigns,
@@ -357,6 +368,82 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     updateLead(leadId, { status: newStatus });
   }, [updateLead]);
 
+  // Handle scraping with user config
+  const handleLaunchScraping = useCallback(async () => {
+    if (!scrapingSource) return;
+
+    if (scrapingSource === 'pica') {
+      await scrapePica({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+    } else if (scrapingSource === 'serp') {
+      await scrapeSERP({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+    } else if (scrapingSource === 'meta') {
+      await scrapeSocial('meta', scrapingConfig.query);
+    } else if (scrapingSource === 'linkedin') {
+      await scrapeSocial('linkedin', scrapingConfig.query);
+    } else if (scrapingSource === 'firecrawl') {
+      await scrapeFirecrawl(scrapingConfig.urls.filter(Boolean));
+    } else if (scrapingSource === 'website') {
+      await scrapeWebsites(scrapingConfig.urls.filter(Boolean));
+    }
+
+    setShowScrapingConfig(false);
+    setScrapingSource(null);
+    setScrapingConfig({ query: '', urls: [''], maxResults: 50 });
+  }, [scrapingSource, scrapingConfig, scrapePica, scrapeSERP, scrapeSocial, scrapeFirecrawl, scrapeWebsites]);
+
+  // Handle detect opportunities with AI
+  const handleDetectOpportunities = useCallback(async () => {
+    if (!selectedCampaignId) {
+      // Use first campaign or show error
+      const campaign = campaigns[0];
+      if (!campaign) return;
+    }
+    await detectOpportunities({
+      sources: ['pica', 'serp', 'meta'],
+      keywords: ['immobilier', 'appartement', 'villa', 'terrain'],
+      locations: ['Tunis', 'La Marsa', 'Sousse', 'Sfax'],
+      confidence: 0.7,
+    });
+  }, [selectedCampaignId, campaigns, detectOpportunities]);
+
+  // Handle save notes
+  const handleSaveNotes = useCallback(async () => {
+    if (selectedLead) {
+      await updateLead(selectedLead.id, { qualificationNotes: notesValue });
+      setSelectedLead({ ...selectedLead, qualificationNotes: notesValue });
+      setEditingNotes(false);
+    }
+  }, [selectedLead, notesValue, updateLead]);
+
+  // Handle export stats from funnel
+  const handleExportStats = useCallback(() => {
+    // Export funnel statistics as CSV
+    const stats = leads.reduce((acc, lead) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const csv = Object.entries(stats)
+      .map(([status, count]) => `${status},${count}`)
+      .join('\n');
+
+    const blob = new Blob([`Status,Count\n${csv}`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'funnel-stats.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [leads]);
+
+  // Handle relaunch inactive leads
+  const handleRelaunchInactive = useCallback(async (leadIds: string[]) => {
+    // Update inactive leads status to trigger follow-up
+    for (const id of leadIds) {
+      await updateLead(id, { status: 'contacted' });
+    }
+  }, [updateLead]);
+
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'targeting', label: 'Ciblage', icon: '🎯' },
@@ -439,21 +526,18 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 title="Total Leads"
                 value={globalStats?.total || 0}
                 icon="👥"
-                change={12}
                 color="purple"
               />
               <StatCard
                 title="Leads Convertis"
                 value={globalStats?.converted || 0}
                 icon="✅"
-                change={8}
                 color="green"
               />
               <StatCard
                 title="Taux de Conversion"
                 value={`${(globalStats?.conversionRate || 0).toFixed(1)}%`}
                 icon="📈"
-                change={5}
                 color="blue"
               />
               <StatCard
@@ -571,6 +655,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 leads={leads}
                 onLeadClick={handleLeadClick}
                 onStageChange={handleStageChange}
+                onExportStats={handleExportStats}
+                onRelaunchInactive={handleRelaunchInactive}
               />
             ) : (
               <div className="bg-white rounded-xl shadow-lg p-12 text-center">
@@ -633,47 +719,83 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
         {/* Scraping Tab */}
         {activeTab === 'scraping' && (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple' },
-                { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue' },
-                { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo' },
-                { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan' },
-                { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange' },
-                { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray' },
-              ].map(source => (
-                <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
-                      {source.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{source.name}</h3>
-                      <p className="text-sm text-gray-500">{source.desc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (source.id === 'pica') scrapePica({ query: 'immobilier tunis' });
-                      else if (source.id === 'serp') scrapeSERP({ query: 'appartement vendre tunis' });
-                      else if (source.id === 'meta') scrapeSocial('meta', 'immobilier');
-                      else if (source.id === 'linkedin') scrapeSocial('linkedin', 'agent immobilier tunis');
-                      else if (source.id === 'firecrawl') scrapeFirecrawl(['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']);
-                      else if (source.id === 'website') scrapeWebsites(['https://www.afif.tn', 'https://www.immobilier.com.tn']);
-                    }}
-                    disabled={scrapingInProgress}
-                    className={`w-full py-2 rounded-lg font-medium transition ${
-                      scrapingInProgress
-                        ? 'bg-gray-100 text-gray-400'
-                        : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
-                    }`}
-                  >
-                    {scrapingInProgress ? 'Scraping...' : 'Lancer'}
-                  </button>
+          <div className="space-y-6">
+            {/* AI Detection Button */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold">🤖 Detection IA d&apos;Opportunites</h3>
+                  <p className="text-purple-100 text-sm mt-1">
+                    Analysez automatiquement les sources pour trouver des leads qualifies
+                  </p>
                 </div>
-              ))}
+                <button
+                  onClick={handleDetectOpportunities}
+                  disabled={aiProcessingInProgress}
+                  className="px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 disabled:opacity-50 transition"
+                >
+                  {aiProcessingInProgress ? '⏳ Analyse en cours...' : '🚀 Lancer la detection IA'}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple', needsQuery: true },
+                  { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue', needsQuery: true },
+                  { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo', needsQuery: true },
+                  { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan', needsQuery: true },
+                  { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange', needsQuery: false },
+                  { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray', needsQuery: false },
+                ].map(source => (
+                  <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
+                        {source.icon}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{source.name}</h3>
+                        <p className="text-sm text-gray-500">{source.desc}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setScrapingSource(source.id);
+                        setShowScrapingConfig(true);
+                        // Set default values based on source
+                        if (source.needsQuery) {
+                          setScrapingConfig({
+                            query: source.id === 'pica' ? 'immobilier tunis' :
+                                   source.id === 'serp' ? 'appartement vendre tunis' :
+                                   source.id === 'meta' ? 'immobilier tunisie' :
+                                   'agent immobilier tunis',
+                            urls: [''],
+                            maxResults: 50,
+                          });
+                        } else {
+                          setScrapingConfig({
+                            query: '',
+                            urls: source.id === 'firecrawl'
+                              ? ['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']
+                              : ['https://www.afif.tn', 'https://www.immobilier.com.tn'],
+                            maxResults: 50,
+                          });
+                        }
+                      }}
+                      disabled={scrapingInProgress}
+                      className={`w-full py-2 rounded-lg font-medium transition ${
+                        scrapingInProgress
+                          ? 'bg-gray-100 text-gray-400'
+                          : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
+                      }`}
+                    >
+                      {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -970,12 +1092,51 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               )}
 
               {/* Notes */}
-              {selectedLead.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">📝 Notes</h3>
-                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.notes}</p>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">📝 Notes</h3>
+                  {!editingNotes && (
+                    <button
+                      onClick={() => {
+                        setEditingNotes(true);
+                        setNotesValue(selectedLead.qualificationNotes || '');
+                      }}
+                      className="text-sm text-purple-600 hover:text-purple-700"
+                    >
+                      ✏️ Modifier
+                    </button>
+                  )}
                 </div>
-              )}
+                {editingNotes ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      rows={4}
+                      placeholder="Ajouter des notes sur ce lead..."
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditingNotes(false)}
+                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={handleSaveNotes}
+                        className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                      >
+                        💾 Enregistrer
+                      </button>
+                    </div>
+                  </div>
+                ) : selectedLead.qualificationNotes ? (
+                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.qualificationNotes}</p>
+                ) : (
+                  <p className="text-gray-400 bg-gray-50 rounded-lg p-3 italic">Aucune note. Cliquez sur Modifier pour en ajouter.</p>
+                )}
+              </div>
 
               {/* Matching Section */}
               <div className="border-t pt-4">
@@ -1119,6 +1280,108 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scraping Configuration Modal */}
+      {showScrapingConfig && scrapingSource && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold">Configuration du Scraping</h2>
+                  <p className="text-purple-100 text-sm mt-1">
+                    {scrapingSource === 'pica' && 'Pica API - SERP + Firecrawl'}
+                    {scrapingSource === 'serp' && 'Google SERP - Recherche Google'}
+                    {scrapingSource === 'meta' && 'Meta/Facebook - Marketplace'}
+                    {scrapingSource === 'linkedin' && 'LinkedIn - Profils pro'}
+                    {scrapingSource === 'firecrawl' && 'Firecrawl - Web scraping'}
+                    {scrapingSource === 'website' && 'Sites web - Agences immo'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowScrapingConfig(false);
+                    setScrapingSource(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              {['pica', 'serp', 'meta', 'linkedin'].includes(scrapingSource) ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Requete de recherche
+                    </label>
+                    <input
+                      type="text"
+                      value={scrapingConfig.query}
+                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, query: e.target.value }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      placeholder="Ex: appartement vendre tunis"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre maximum de resultats
+                    </label>
+                    <input
+                      type="number"
+                      value={scrapingConfig.maxResults}
+                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, maxResults: parseInt(e.target.value) || 50 }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      min={1}
+                      max={200}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    URLs a scraper (une par ligne)
+                  </label>
+                  <textarea
+                    value={scrapingConfig.urls.join('\n')}
+                    onChange={(e) => setScrapingConfig(prev => ({ ...prev, urls: e.target.value.split('\n').filter(Boolean) }))}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                    rows={5}
+                    placeholder="https://www.mubawab.tn&#10;https://www.tayara.tn/immobilier"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Entrez les URLs completes des pages a analyser
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 rounded-b-2xl border-t flex justify-between">
+              <button
+                onClick={() => {
+                  setShowScrapingConfig(false);
+                  setScrapingSource(null);
+                }}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleLaunchScraping}
+                disabled={scrapingInProgress || (!scrapingConfig.query && scrapingConfig.urls.filter(Boolean).length === 0)}
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+              >
+                {scrapingInProgress ? '⏳ Scraping...' : '🚀 Lancer le scraping'}
+              </button>
             </div>
           </div>
         </div>
