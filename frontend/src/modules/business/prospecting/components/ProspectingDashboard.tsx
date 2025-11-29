@@ -151,6 +151,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   });
   const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [leadMatches, setLeadMatches] = useState<any[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
 
   const {
     campaigns,
@@ -180,13 +182,75 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     detectOpportunities,
     validateEmails,
     clearError,
+    // Matching functions
+    findMatches,
+    loadMatches,
+    notifyMatch,
+    updateMatchStatus,
   } = useProspecting();
 
   // Handle lead click - open detail modal
   const handleLeadClick = useCallback((lead: ProspectingLead) => {
     setSelectedLead(lead);
     setShowLeadModal(true);
+    setLeadMatches([]);
   }, []);
+
+  // Handle find matches for a lead
+  const handleFindMatches = useCallback(async (leadId: string) => {
+    setLoadingMatches(true);
+    try {
+      const result = await findMatches(leadId);
+      if (result?.matches) {
+        setLeadMatches(result.matches);
+      }
+    } catch (error) {
+      console.error('Failed to find matches:', error);
+    } finally {
+      setLoadingMatches(false);
+    }
+  }, [findMatches]);
+
+  // Handle load existing matches for a lead
+  const handleLoadMatches = useCallback(async (leadId: string) => {
+    setLoadingMatches(true);
+    try {
+      const matches = await loadMatches(leadId);
+      if (matches) {
+        setLeadMatches(matches);
+      }
+    } catch (error) {
+      console.error('Failed to load matches:', error);
+    } finally {
+      setLoadingMatches(false);
+    }
+  }, [loadMatches]);
+
+  // Handle notify match
+  const handleNotifyMatch = useCallback(async (matchId: string) => {
+    try {
+      await notifyMatch(matchId);
+      // Refresh matches
+      if (selectedLead) {
+        handleLoadMatches(selectedLead.id);
+      }
+    } catch (error) {
+      console.error('Failed to notify match:', error);
+    }
+  }, [notifyMatch, selectedLead, handleLoadMatches]);
+
+  // Handle update match status
+  const handleUpdateMatchStatus = useCallback(async (matchId: string, status: string) => {
+    try {
+      await updateMatchStatus(matchId, status);
+      // Refresh matches
+      if (selectedLead) {
+        handleLoadMatches(selectedLead.id);
+      }
+    } catch (error) {
+      console.error('Failed to update match status:', error);
+    }
+  }, [updateMatchStatus, selectedLead, handleLoadMatches]);
 
   // Initial data load
   useEffect(() => {
@@ -912,6 +976,104 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.notes}</p>
                 </div>
               )}
+
+              {/* Matching Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">🎯 Matching Biens</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleLoadMatches(selectedLead.id)}
+                      disabled={loadingMatches}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      {loadingMatches ? '⏳' : '🔄'} Charger
+                    </button>
+                    <button
+                      onClick={() => handleFindMatches(selectedLead.id)}
+                      disabled={loadingMatches}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {loadingMatches ? '⏳ Recherche...' : '🔍 Trouver des matchs'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Match Results */}
+                {leadMatches.length > 0 ? (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {leadMatches.map((match: any) => (
+                      <div key={match.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {match.properties?.title || 'Bien immobilier'}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {match.properties?.city} • {match.properties?.type} • {((match.properties?.price || 0) / 1000).toFixed(0)}k TND
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${
+                              match.score >= 80 ? 'bg-green-100 text-green-700' :
+                              match.score >= 60 ? 'bg-blue-100 text-blue-700' :
+                              match.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {match.score}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Score Breakdown */}
+                        {match.reason?.breakdown && (
+                          <div className="mt-2 flex gap-2 flex-wrap text-xs">
+                            <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded">
+                              Budget: {match.reason.breakdown.budgetPoints}/40
+                            </span>
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded">
+                              Lieu: {match.reason.breakdown.locationPoints}/30
+                            </span>
+                            <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded">
+                              Type: {match.reason.breakdown.typePoints}/20
+                            </span>
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded">
+                              Bonus: {match.reason.breakdown.bonusPoints}/10
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            onClick={() => handleNotifyMatch(match.id)}
+                            className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          >
+                            📧 Notifier
+                          </button>
+                          <button
+                            onClick={() => handleUpdateMatchStatus(match.id, 'accepted')}
+                            className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100"
+                          >
+                            ✅ Accepter
+                          </button>
+                          <button
+                            onClick={() => handleUpdateMatchStatus(match.id, 'rejected')}
+                            className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                          >
+                            ❌ Rejeter
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+                    <p>Aucun match trouvé</p>
+                    <p className="text-xs mt-1">Cliquez sur "Trouver des matchs" pour lancer la recherche</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
