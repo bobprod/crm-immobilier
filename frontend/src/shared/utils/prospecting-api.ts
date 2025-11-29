@@ -111,13 +111,59 @@ export interface ProspectingMatch {
   lead?: ProspectingLead;
 }
 
+// ============================================
+// MATCH REASON - Aligned with backend matching.dto.ts
+// ============================================
+
+export type BudgetRelation = 'below_range' | 'within_range' | 'above_range' | 'no_budget';
+export type LocationRelation = 'same_city' | 'same_region' | 'same_country' | 'different' | 'unknown';
+export type TypeRelation = 'exact' | 'compatible' | 'unknown' | 'mismatch';
+
+export interface BudgetMatchReason {
+  compatible: boolean;
+  relation: BudgetRelation;
+  leadMin: number | null;
+  leadMax: number | null;
+  propertyPrice: number;
+  score: number; // 0-40
+}
+
+export interface LocationMatchReason {
+  compatible: boolean;
+  relation: LocationRelation;
+  leadCity: string | null;
+  leadCountry: string | null;
+  propertyCity: string | null;
+  score: number; // 0-30
+}
+
+export interface TypeMatchReason {
+  compatible: boolean;
+  relation: TypeRelation;
+  leadTypes: string[];
+  propertyType: string;
+  score: number; // 0-20
+}
+
+export interface MetaMatchReason {
+  urgency: string | null;
+  urgencyBonus: number;    // 0-5
+  seriousnessScore: number | null;
+  seriousnessBonus: number; // 0-5
+  totalBonus: number;       // 0-10 (capped)
+}
+
 export interface MatchReason {
-  priceMatch: number;
-  locationMatch: number;
-  surfaceMatch: number;
-  typeMatch: number;
-  amenitiesMatch?: number;
-  details?: string[];
+  budget: BudgetMatchReason;
+  location: LocationMatchReason;
+  type: TypeMatchReason;
+  meta: MetaMatchReason;
+  breakdown: {
+    budgetPoints: number;
+    locationPoints: number;
+    typePoints: number;
+    bonusPoints: number;
+  };
 }
 
 export interface ProspectingStats {
@@ -182,6 +228,84 @@ export interface ProspectingSource {
   configured: boolean;
   lastSync?: string;
   leadsCount: number;
+}
+
+// ============================================
+// LLM PROSPECTING TYPES
+// ============================================
+
+/**
+ * Element scrappe brut a analyser par le LLM
+ */
+export interface RawScrapedItem {
+  source: string;
+  text: string;
+  url?: string;
+  title?: string;
+  authorName?: string;
+  authorProfile?: string;
+  timestamp?: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Resultat de l'analyse LLM d'un element scrappe
+ */
+export interface LLMAnalysisResult {
+  isRelevant: boolean;
+  leadType: LeadType | 'inconnu';
+  intention: string;
+  confidence: number;
+  propertyType?: string;
+  location?: {
+    city?: string;
+    country?: string;
+    zone?: string;
+  };
+  budget?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  };
+  surface?: number;
+  rooms?: number;
+  urgency?: 'haute' | 'moyenne' | 'basse';
+  seriousnessScore?: number;
+  extractedContact?: {
+    phone?: string;
+    email?: string;
+    name?: string;
+  };
+  rawText?: string;
+}
+
+/**
+ * Lead structure construit a partir d'un element scrappe
+ */
+export interface StructuredLead {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  country?: string;
+  propertyType?: string;
+  propertyTypes?: string[];
+  budgetMin?: number;
+  budgetMax?: number;
+  budgetCurrency?: string;
+  surfaceM2?: number;
+  rooms?: number;
+  leadType: LeadType | 'inconnu';
+  intention?: string;
+  urgency?: string;
+  seriousnessScore?: number;
+  source: string;
+  sourceUrl?: string;
+  rawText?: string;
+  validationStatus?: 'pending' | 'valid' | 'invalid';
+  score?: number;
+  metadata?: Record<string, any>;
 }
 
 // ============================================
@@ -376,6 +500,60 @@ export const prospectingAPI = {
 
   classifyLead: async (leadId: string): Promise<{ leadId: string; type: LeadType; confidence: number; reasoning: string }> => {
     const response = await apiClient.post('/prospecting/ai/classify-lead', { leadId });
+    return response.data;
+  },
+
+  // ============================================
+  // LLM PROSPECTING - Pipeline IA structure
+  // ============================================
+
+  /**
+   * Analyser un element scrappe avec le LLM
+   */
+  llmAnalyzeItem: async (item: RawScrapedItem): Promise<LLMAnalysisResult> => {
+    const response = await apiClient.post('/prospecting/llm/analyze-item', item);
+    return response.data;
+  },
+
+  /**
+   * Construire un lead structure a partir d'un element scrappe
+   */
+  llmBuildLead: async (item: RawScrapedItem): Promise<StructuredLead> => {
+    const response = await apiClient.post('/prospecting/llm/build-lead', item);
+    return response.data;
+  },
+
+  /**
+   * Analyser un batch d'elements scrappes
+   */
+  llmAnalyzeBatch: async (items: RawScrapedItem[]): Promise<{ results: LLMAnalysisResult[]; processed: number }> => {
+    const response = await apiClient.post('/prospecting/llm/analyze-batch', { items });
+    return response.data;
+  },
+
+  /**
+   * Ingerer des elements scrappes dans une campagne via le pipeline LLM
+   */
+  ingestScrapedItems: async (
+    campaignId: string,
+    items: RawScrapedItem[]
+  ): Promise<{ ingested: number; leads: ProspectingLead[] }> => {
+    const response = await apiClient.post(`/prospecting/campaigns/${campaignId}/ingest`, { items });
+    return response.data;
+  },
+
+  /**
+   * Scraper une source et ingerer les resultats via le pipeline LLM
+   */
+  scrapeAndIngest: async (
+    campaignId: string,
+    source: string,
+    config: any
+  ): Promise<{ scraped: number; ingested: number; leads: ProspectingLead[] }> => {
+    const response = await apiClient.post(`/prospecting/campaigns/${campaignId}/scrape-and-ingest`, {
+      source,
+      config,
+    });
     return response.data;
   },
 

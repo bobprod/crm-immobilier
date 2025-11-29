@@ -18,6 +18,9 @@ import {
   ScrapingConfig,
   AIDetectionConfig,
   CampaignConfig,
+  RawScrapedItem,
+  LLMAnalysisResult,
+  StructuredLead,
 } from '../utils/prospecting-api';
 
 // ============================================
@@ -568,6 +571,84 @@ export function useProspecting() {
   }, [updateState, handleError]);
 
   // ============================================
+  // LLM PROSPECTING
+  // ============================================
+
+  const llmAnalyzeItem = useCallback(async (item: RawScrapedItem) => {
+    updateState({ aiProcessingInProgress: true, error: null });
+    try {
+      const result = await prospectingAPI.llmAnalyzeItem(item);
+      updateState({ aiProcessingInProgress: false });
+      return result;
+    } catch (error) {
+      handleError(error, 'Analyse LLM de l\'element');
+      updateState({ aiProcessingInProgress: false });
+      return null;
+    }
+  }, [updateState, handleError]);
+
+  const llmBuildLead = useCallback(async (item: RawScrapedItem) => {
+    updateState({ aiProcessingInProgress: true, error: null });
+    try {
+      const result = await prospectingAPI.llmBuildLead(item);
+      updateState({ aiProcessingInProgress: false });
+      return result;
+    } catch (error) {
+      handleError(error, 'Construction du lead structure');
+      updateState({ aiProcessingInProgress: false });
+      return null;
+    }
+  }, [updateState, handleError]);
+
+  const llmAnalyzeBatch = useCallback(async (items: RawScrapedItem[]) => {
+    updateState({ aiProcessingInProgress: true, error: null });
+    try {
+      const result = await prospectingAPI.llmAnalyzeBatch(items);
+      updateState({ aiProcessingInProgress: false });
+      return result;
+    } catch (error) {
+      handleError(error, 'Analyse LLM du batch');
+      updateState({ aiProcessingInProgress: false });
+      return null;
+    }
+  }, [updateState, handleError]);
+
+  const ingestScrapedItems = useCallback(async (campaignId: string, items: RawScrapedItem[]) => {
+    updateState({ aiProcessingInProgress: true, error: null });
+    try {
+      const result = await prospectingAPI.ingestScrapedItems(campaignId, items);
+      setState(prev => ({
+        ...prev,
+        leads: [...result.leads, ...prev.leads],
+        aiProcessingInProgress: false,
+      }));
+      return result;
+    } catch (error) {
+      handleError(error, 'Ingestion des elements scrappes');
+      updateState({ aiProcessingInProgress: false });
+      return null;
+    }
+  }, [updateState, handleError]);
+
+  const scrapeAndIngest = useCallback(async (campaignId: string, source: string, config: any) => {
+    updateState({ scrapingInProgress: true, aiProcessingInProgress: true, error: null });
+    try {
+      const result = await prospectingAPI.scrapeAndIngest(campaignId, source, config);
+      setState(prev => ({
+        ...prev,
+        leads: [...result.leads, ...prev.leads],
+        scrapingInProgress: false,
+        aiProcessingInProgress: false,
+      }));
+      return result;
+    } catch (error) {
+      handleError(error, 'Scraping et ingestion');
+      updateState({ scrapingInProgress: false, aiProcessingInProgress: false });
+      return null;
+    }
+  }, [updateState, handleError]);
+
+  // ============================================
   // STATISTICS
   // ============================================
 
@@ -772,6 +853,13 @@ export function useProspecting() {
     detectOpportunities,
     analyzeContent,
     classifyLead,
+
+    // LLM Prospecting
+    llmAnalyzeItem,
+    llmBuildLead,
+    llmAnalyzeBatch,
+    ingestScrapedItems,
+    scrapeAndIngest,
 
     // Statistics
     loadGlobalStats,
