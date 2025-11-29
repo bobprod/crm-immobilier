@@ -10,15 +10,17 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { ProspectingService } from './prospecting.service';
 import { ProspectingIntegrationService } from './prospecting-integration.service';
+import { LLMProspectingService } from './llm-prospecting.service';
 import {
   CreateCampaignDto,
   UpdateLeadDto,
   ValidateEmailsDto,
   FunnelConfigDto,
+  RawScrapedItem,
 } from './dto';
 
 @ApiTags('Prospecting - Prospection Intelligente')
@@ -29,6 +31,7 @@ export class ProspectingController {
   constructor(
     private readonly prospectingService: ProspectingService,
     private readonly integrationService: ProspectingIntegrationService,
+    private readonly llmService: LLMProspectingService,
   ) {}
 
   // ============================================
@@ -279,6 +282,70 @@ export class ProspectingController {
   @ApiOperation({ summary: 'Classifier un lead (requete/mandat)' })
   classifyLead(@Request() req, @Body() data: { leadId: string }) {
     return this.integrationService.classifyLead(req.user.userId, data.leadId);
+  }
+
+  // ============================================
+  // LLM PROSPECTING - Pipeline IA structure
+  // ============================================
+
+  @Post('llm/analyze-item')
+  @ApiOperation({ summary: 'Analyser un element scrappe avec le LLM' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', example: 'facebook' },
+        text: { type: 'string', example: 'Je cherche un appartement S+2 a La Marsa...' },
+        url: { type: 'string', example: 'https://facebook.com/post/123' },
+        title: { type: 'string', example: 'Recherche appartement' },
+        authorName: { type: 'string', example: 'Ahmed Ben Ali' },
+      },
+      required: ['source', 'text'],
+    },
+  })
+  async analyzeRawItem(@Body() item: RawScrapedItem) {
+    return this.llmService.analyzeRawItem(item);
+  }
+
+  @Post('llm/build-lead')
+  @ApiOperation({ summary: 'Construire un lead structure a partir d un element scrappe' })
+  async buildLeadFromRaw(@Body() item: RawScrapedItem) {
+    return this.llmService.buildProspectingLeadFromRaw(item);
+  }
+
+  @Post('llm/analyze-batch')
+  @ApiOperation({ summary: 'Analyser un batch d elements scrappes' })
+  async analyzeBatch(@Body() data: { items: RawScrapedItem[] }) {
+    return this.llmService.analyzeBatch(data.items);
+  }
+
+  @Post('campaigns/:campaignId/ingest')
+  @ApiOperation({ summary: 'Ingerer des elements scrappes dans une campagne via le pipeline LLM' })
+  async ingestScrapedItems(
+    @Request() req,
+    @Param('campaignId') campaignId: string,
+    @Body() data: { items: RawScrapedItem[] },
+  ) {
+    return this.integrationService.ingestScrapedItems(
+      req.user.userId,
+      campaignId,
+      data.items,
+    );
+  }
+
+  @Post('campaigns/:campaignId/scrape-and-ingest')
+  @ApiOperation({ summary: 'Scraper une source et ingerer les resultats via le pipeline LLM' })
+  async scrapeAndIngest(
+    @Request() req,
+    @Param('campaignId') campaignId: string,
+    @Body() data: { source: string; config: any },
+  ) {
+    return this.integrationService.scrapeAndIngest(
+      req.user.userId,
+      campaignId,
+      data.source,
+      data.config,
+    );
   }
 
   // ============================================

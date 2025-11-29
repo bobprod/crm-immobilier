@@ -162,3 +162,6 @@ export class ValidateEmailsDto {
   @IsArray()
   emails: string[];
 }
+
+// Export LLM Prospecting types
+export * from './llm-prospecting.dto';
