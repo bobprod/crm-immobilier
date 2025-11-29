@@ -14,6 +14,8 @@ interface SalesFunnelProps {
   leads: ProspectingLead[];
   onLeadClick?: (lead: ProspectingLead) => void;
   onStageChange?: (leadId: string, newStatus: LeadStatus) => void;
+  onExportStats?: () => void;
+  onRelaunchInactive?: (inactiveLeadIds: string[]) => void;
 }
 
 const FUNNEL_STAGES: FunnelStage[] = [
@@ -119,9 +121,12 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   leads,
   onLeadClick,
   onStageChange,
+  onExportStats,
+  onRelaunchInactive,
 }) => {
   const [draggedLead, setDraggedLead] = useState<ProspectingLead | null>(null);
   const [viewMode, setViewMode] = useState<'funnel' | 'kanban'>('funnel');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Group leads by status
   const leadsByStage = useMemo(() => {
@@ -177,6 +182,59 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   const avgScore = totalLeads > 0
     ? (leads.reduce((sum, l) => sum + l.score, 0) / totalLeads).toFixed(0)
     : '0';
+
+  // Find inactive leads (new or contacted for more than 7 days - simulated)
+  const inactiveLeads = useMemo(() => {
+    return leads.filter(lead =>
+      lead.status === 'new' || lead.status === 'contacted'
+    );
+  }, [leads]);
+
+  // Export stats as CSV
+  const handleExportStats = () => {
+    if (onExportStats) {
+      onExportStats();
+    } else {
+      // Default export behavior
+      const stats = {
+        totalLeads,
+        byStage: FUNNEL_STAGES.map(stage => ({
+          stage: stage.name,
+          count: leadsByStage[stage.id].length,
+          rate: totalLeads > 0 ? ((leadsByStage[stage.id].length / totalLeads) * 100).toFixed(1) : '0'
+        })),
+        conversionRate,
+        avgScore
+      };
+
+      const csvContent = [
+        ['Etape', 'Nombre', 'Taux (%)'].join(','),
+        ...stats.byStage.map(s => [s.stage, s.count, s.rate].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `funnel-stats-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Relaunch inactive leads
+  const handleRelaunchInactive = () => {
+    const inactiveIds = inactiveLeads.map(l => l.id);
+    if (onRelaunchInactive) {
+      onRelaunchInactive(inactiveIds);
+    } else if (onStageChange && inactiveIds.length > 0) {
+      // Default: Mark new leads as contacted
+      inactiveLeads
+        .filter(l => l.status === 'new')
+        .forEach(lead => onStageChange(lead.id, 'contacted'));
+      alert(`${inactiveIds.length} leads marques pour relance!`);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -373,13 +431,23 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
         <div className="text-sm text-gray-600">
           <span className="font-medium">{totalLeads}</span> leads au total •
           <span className="text-green-600 font-medium ml-1">{conversionRate}%</span> taux de conversion
+          {inactiveLeads.length > 0 && (
+            <span className="text-orange-600 ml-2">• {inactiveLeads.length} inactif(s)</span>
+          )}
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition">
+          <button
+            onClick={handleExportStats}
+            className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"
+          >
             📊 Exporter stats
           </button>
-          <button className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-            🔄 Relancer les inactifs
+          <button
+            onClick={handleRelaunchInactive}
+            disabled={inactiveLeads.length === 0}
+            className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            🔄 Relancer les inactifs ({inactiveLeads.length})
           </button>
         </div>
       </div>

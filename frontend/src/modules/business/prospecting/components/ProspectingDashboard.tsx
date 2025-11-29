@@ -149,6 +149,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
       demographics: {} as any,
     },
   });
+  const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
+  const [showLeadModal, setShowLeadModal] = useState(false);
 
   const {
     campaigns,
@@ -173,10 +175,18 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     scrapePica,
     scrapeSERP,
     scrapeSocial,
+    scrapeFirecrawl,
+    scrapeWebsites,
     detectOpportunities,
     validateEmails,
     clearError,
   } = useProspecting();
+
+  // Handle lead click - open detail modal
+  const handleLeadClick = useCallback((lead: ProspectingLead) => {
+    setSelectedLead(lead);
+    setShowLeadModal(true);
+  }, []);
 
   // Initial data load
   useEffect(() => {
@@ -447,7 +457,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
             {selectedCampaignId ? (
               <SalesFunnel
                 leads={leads}
-                onLeadClick={(lead) => console.log('Lead clicked:', lead)}
+                onLeadClick={handleLeadClick}
                 onStageChange={handleStageChange}
               />
             ) : (
@@ -537,6 +547,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       if (source.id === 'pica') scrapePica({ query: 'immobilier tunis' });
                       else if (source.id === 'serp') scrapeSERP({ query: 'appartement vendre tunis' });
                       else if (source.id === 'meta') scrapeSocial('meta', 'immobilier');
+                      else if (source.id === 'linkedin') scrapeSocial('linkedin', 'agent immobilier tunis');
+                      else if (source.id === 'firecrawl') scrapeFirecrawl(['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']);
+                      else if (source.id === 'website') scrapeWebsites(['https://www.afif.tn', 'https://www.immobilier.com.tn']);
                     }}
                     disabled={scrapingInProgress}
                     className={`w-full py-2 rounded-lg font-medium transition ${
@@ -742,6 +755,161 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                'Chargement...'}
             </p>
             <p className="text-sm text-gray-500">Veuillez patienter</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lead Detail Modal */}
+      {showLeadModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
+                    {(selectedLead.firstName?.[0] || '') + (selectedLead.lastName?.[0] || 'L')}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      {selectedLead.firstName || ''} {selectedLead.lastName || 'Sans nom'}
+                    </h2>
+                    <p className="text-purple-100 text-sm mt-1">
+                      {getLeadTypeLabel(selectedLead.leadType)} • Score: {selectedLead.score}%
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowLeadModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Contact Info */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">📞 Contact</h3>
+                <div className="space-y-2">
+                  {selectedLead.email && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📧</span> {selectedLead.email}
+                    </div>
+                  )}
+                  {selectedLead.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📱</span> {selectedLead.phone}
+                    </div>
+                  )}
+                  {selectedLead.city && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>📍</span> {selectedLead.city}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Score */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">📊 Statut</h3>
+                <div className="flex items-center gap-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadStatusColor(selectedLead.status)}`}>
+                    {getLeadStatusLabel(selectedLead.status)}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(selectedLead.leadType)}`}>
+                    {getLeadTypeLabel(selectedLead.leadType)}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Score:</span>
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getScoreBadgeColor(selectedLead.score)}`}
+                      style={{ width: `${selectedLead.score}%` }}
+                    />
+                  </div>
+                  <span className="font-bold">{selectedLead.score}%</span>
+                </div>
+              </div>
+
+              {/* Budget */}
+              {selectedLead.budget && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">💰 Budget</h3>
+                  <p className="text-lg text-green-600 font-bold">
+                    {typeof selectedLead.budget === 'object'
+                      ? `${((selectedLead.budget as any).min / 1000).toFixed(0)}k - ${((selectedLead.budget as any).max / 1000).toFixed(0)}k TND`
+                      : `${(selectedLead.budget / 1000).toFixed(0)}k TND`}
+                  </p>
+                </div>
+              )}
+
+              {/* Source */}
+              {selectedLead.source && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">🔗 Source</h3>
+                  <span className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source)}`}>
+                    {getSourceLabel(selectedLead.source)}
+                  </span>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedLead.notes && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">📝 Notes</h3>
+                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-2xl border-t flex justify-between">
+              <button
+                onClick={() => setShowLeadModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Fermer
+              </button>
+              <div className="flex gap-2">
+                {selectedLead.status === 'new' && (
+                  <button
+                    onClick={() => {
+                      updateLead(selectedLead.id, { status: 'contacted' });
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    📞 Marquer contacte
+                  </button>
+                )}
+                {selectedLead.status === 'contacted' && (
+                  <button
+                    onClick={() => {
+                      qualifyLead(selectedLead.id);
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    ✅ Qualifier
+                  </button>
+                )}
+                {selectedLead.status === 'qualified' && (
+                  <button
+                    onClick={() => {
+                      convertLead(selectedLead.id);
+                      setShowLeadModal(false);
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    🎉 Convertir
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
