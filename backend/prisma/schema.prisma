@@ -561,11 +561,25 @@ model prospecting_leads {
   address             String?
   city                String?
   zipCode             String?
+  country             String?               @default("Tunisie")
   propertyType        String?
+  propertyTypes       Json?                 // Array of property types from LLM
   source              String?
   sourceUrl           String?
+  rawText             String?               @db.Text // Original scraped text
+  title               String?               // Title from scraped content
   score               Int                   @default(0)
   status              String                @default("new")
+  leadType            String?               @default("inconnu") // mandat | requete | inconnu
+  intention           String?               // acheter | louer | vendre | investir | inconnu
+  urgency             String?               // basse | moyenne | haute | inconnu
+  validationStatus    String?               @default("pending") // pending | valid | suspicious | spam
+  seriousnessScore    Int?                  // 0-100 from LLM analysis
+  surfaceM2           Int?                  // Surface in square meters
+  rooms               Int?                  // Number of rooms
+  budgetMin           Float?                // Minimum budget
+  budgetMax           Float?                // Maximum budget
+  budgetCurrency      String?               @default("TND")
   prospectType        String?
   subType             String?
   searchCriteria      Json?
@@ -588,6 +602,8 @@ model prospecting_leads {
   @@index([status])
   @@index([score])
   @@index([email])
+  @@index([leadType])
+  @@index([validationStatus])
 }
 
 model prospecting_matches {
