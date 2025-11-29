@@ -795,7 +795,7 @@ export class ProspectingService {
   }
 
   /**
-   * Dédupliquer les leads
+   * Dédupliquer les leads avec matching intelligent
    */
   async deduplicateLeads(userId: string, campaignId?: string) {
     const where: any = { userId };
@@ -803,21 +803,49 @@ export class ProspectingService {
 
     const leads = await this.prisma.prospecting_leads.findMany({
       where,
-      orderBy: { createdAt: 'asc' },
+      orderBy: { score: 'desc' }, // Garder le lead avec le meilleur score
     });
 
-    const seen = new Map<string, string>();
+    const uniqueLeads = new Map<string, any>();
     const duplicates: string[] = [];
+    const mergedData: any[] = [];
 
     for (const lead of leads) {
-      // Clé de déduplication: email ou téléphone
-      const key = lead.email?.toLowerCase() || lead.phone || lead.id;
+      // Générer plusieurs clés pour la déduplication
+      const keys = this.generateDeduplicationKeys(lead);
+      let foundDuplicate = false;
+      let originalLeadId: string | null = null;
 
-      if (seen.has(key)) {
-        duplicates.push(lead.id);
-      } else {
-        seen.set(key, lead.id);
+      for (const key of keys) {
+        if (uniqueLeads.has(key)) {
+          foundDuplicate = true;
+          originalLeadId = uniqueLeads.get(key).id;
+          break;
+        }
       }
+
+      if (foundDuplicate && originalLeadId) {
+        duplicates.push(lead.id);
+        // Fusionner les données du doublon avec l'original
+        const original = uniqueLeads.get(keys[0]);
+        if (original) {
+          mergedData.push({
+            id: originalLeadId,
+            data: this.mergeLeadData(original, lead),
+          });
+        }
+      } else {
+        // Ajouter toutes les clés pour ce lead
+        keys.forEach(key => uniqueLeads.set(key, lead));
+      }
+    }
+
+    // Mettre à jour les leads originaux avec les données fusionnées
+    for (const merge of mergedData) {
+      await this.prisma.prospecting_leads.update({
+        where: { id: merge.id },
+        data: merge.data,
+      });
     }
 
     // Supprimer les doublons
@@ -832,7 +860,182 @@ export class ProspectingService {
       totalProcessed: leads.length,
       duplicatesRemoved: duplicates.length,
       uniqueLeads: leads.length - duplicates.length,
+      mergedRecords: mergedData.length,
     };
+  }
+
+  /**
+   * Générer des clés de déduplication pour un lead
+   */
+  private generateDeduplicationKeys(lead: any): string[] {
+    const keys: string[] = [];
+
+    // Clé email (normalisée)
+    if (lead.email) {
+      keys.push(`email:${lead.email.toLowerCase().trim()}`);
+    }
+
+    // Clé téléphone (normalisé)
+    if (lead.phone) {
+      const normalizedPhone = this.normalizePhone(lead.phone);
+      keys.push(`phone:${normalizedPhone}`);
+    }
+
+    // Clé nom+ville (pour matcher les doublons sans contact)
+    if (lead.firstName && lead.lastName && lead.city) {
+      const nameKey = `name:${this.normalizeText(lead.firstName)}_${this.normalizeText(lead.lastName)}_${this.normalizeText(lead.city)}`;
+      keys.push(nameKey);
+    }
+
+    return keys;
+  }
+
+  /**
+   * Normaliser un numéro de téléphone
+   */
+  private normalizePhone(phone: string): string {
+    // Supprimer tout sauf les chiffres
+    let normalized = phone.replace(/[^0-9]/g, '');
+
+    // Gérer le préfixe tunisien
+    if (normalized.startsWith('00216')) {
+      normalized = normalized.substring(5);
+    } else if (normalized.startsWith('216')) {
+      normalized = normalized.substring(3);
+    } else if (normalized.startsWith('0')) {
+      normalized = normalized.substring(1);
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Normaliser du texte pour comparaison
+   */
+  private normalizeText(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * Fusionner les données de deux leads
+   */
+  private mergeLeadData(original: any, duplicate: any): any {
+    const merged: any = {};
+
+    // Prendre la valeur non-nulle ou la plus récente
+    const fields = ['firstName', 'lastName', 'email', 'phone', 'city', 'zipCode', 'propertyType'];
+
+    for (const field of fields) {
+      if (!original[field] && duplicate[field]) {
+        merged[field] = duplicate[field];
+      }
+    }
+
+    // Fusionner les metadata
+    if (duplicate.metadata) {
+      merged.metadata = {
+        ...original.metadata,
+        ...duplicate.metadata,
+        mergedFrom: [...(original.metadata?.mergedFrom || []), duplicate.id],
+        mergedAt: new Date().toISOString(),
+      };
+    }
+
+    // Garder le meilleur score
+    if (duplicate.score > original.score) {
+      merged.score = duplicate.score;
+    }
+
+    return merged;
+  }
+
+  /**
+   * Calculer la distance de Levenshtein entre deux chaînes
+   */
+  private levenshteinDistance(str1: string, str2: string): number {
+    const m = str1.length;
+    const n = str2.length;
+    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (str1[i - 1] === str2[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+    }
+
+    return dp[m][n];
+  }
+
+  /**
+   * Trouver les doublons potentiels avec fuzzy matching
+   */
+  async findPotentialDuplicates(userId: string, leadId: string) {
+    const lead = await this.getLeadById(userId, leadId);
+
+    const allLeads = await this.prisma.prospecting_leads.findMany({
+      where: { userId, id: { not: leadId } },
+    });
+
+    const potentialDuplicates: any[] = [];
+
+    for (const other of allLeads) {
+      let similarity = 0;
+      let reasons: string[] = [];
+
+      // Comparer les emails
+      if (lead.email && other.email) {
+        if (lead.email.toLowerCase() === other.email.toLowerCase()) {
+          similarity += 50;
+          reasons.push('Email identique');
+        }
+      }
+
+      // Comparer les téléphones
+      if (lead.phone && other.phone) {
+        const phone1 = this.normalizePhone(lead.phone);
+        const phone2 = this.normalizePhone(other.phone);
+        if (phone1 === phone2) {
+          similarity += 40;
+          reasons.push('Téléphone identique');
+        }
+      }
+
+      // Comparer les noms (fuzzy)
+      if (lead.firstName && lead.lastName && other.firstName && other.lastName) {
+        const name1 = `${this.normalizeText(lead.firstName)} ${this.normalizeText(lead.lastName)}`;
+        const name2 = `${this.normalizeText(other.firstName)} ${this.normalizeText(other.lastName)}`;
+        const distance = this.levenshteinDistance(name1, name2);
+        const maxLen = Math.max(name1.length, name2.length);
+        const nameSimilarity = 1 - (distance / maxLen);
+
+        if (nameSimilarity > 0.8) {
+          similarity += 30 * nameSimilarity;
+          reasons.push(`Nom similaire (${Math.round(nameSimilarity * 100)}%)`);
+        }
+      }
+
+      if (similarity >= 40) {
+        potentialDuplicates.push({
+          lead: other,
+          similarity: Math.round(similarity),
+          reasons,
+        });
+      }
+    }
+
+    return potentialDuplicates.sort((a, b) => b.similarity - a.similarity);
   }
 
   /**

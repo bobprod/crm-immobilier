@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 
 // Types pour le ciblage geographique
 interface Zone {
@@ -45,6 +46,22 @@ const QUARTIERS_TUNIS: Zone[] = [
   { id: 'soukra', name: 'La Soukra', type: 'city', coordinates: { lat: 36.8650, lng: 10.1950 }, avgPrice: 350000, selected: false },
 ];
 
+// Composant carte Leaflet charge dynamiquement (SSR safe)
+const LeafletMap = dynamic(
+  () => import('./LeafletMapComponent'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-2">🗺️</div>
+          <p className="text-gray-600">Chargement de la carte...</p>
+        </div>
+      </div>
+    )
+  }
+);
+
 export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   onZonesChange,
   initialZones = [],
@@ -55,14 +72,15 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   const [radiusMode, setRadiusMode] = useState(false);
   const [customRadius, setCustomRadius] = useState(5);
   const [centerPoint, setCenterPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
   const [priceFilter, setPriceFilter] = useState<{ min: number; max: number }>({ min: 0, max: 1000000 });
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
 
   // Filtrer les zones par recherche
-  const filteredZones = zones.filter(zone =>
+  const filteredZones = useMemo(() => zones.filter(zone =>
     zone.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
     (!zone.avgPrice || (zone.avgPrice >= priceFilter.min && zone.avgPrice <= priceFilter.max))
-  );
+  ), [zones, searchQuery, priceFilter]);
 
   // Toggle selection d'une zone
   const toggleZone = useCallback((zoneId: string) => {
@@ -79,25 +97,54 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   }, [zones, onZonesChange]);
 
   // Ajouter une zone de rayon personnalise
-  const addRadiusZone = useCallback(() => {
-    if (!centerPoint) return;
-
+  const addRadiusZone = useCallback((lat: number, lng: number, radius?: number) => {
+    const actualRadius = radius || customRadius;
     const newZone: Zone = {
       id: `radius-${Date.now()}`,
-      name: `Rayon ${customRadius}km`,
+      name: `Zone ${actualRadius}km`,
       type: 'radius',
-      coordinates: centerPoint,
-      radius: customRadius,
+      coordinates: { lat, lng },
+      radius: actualRadius,
       selected: true,
+      population: Math.round(actualRadius * actualRadius * 1000), // Estimation
     };
 
     setZones(prev => [...prev, newZone]);
     setRadiusMode(false);
     setCenterPoint(null);
-  }, [centerPoint, customRadius]);
+  }, [customRadius]);
+
+  // Gestion du clic sur la carte
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    if (radiusMode) {
+      addRadiusZone(lat, lng);
+    }
+  }, [radiusMode, addRadiusZone]);
+
+  // Supprimer une zone
+  const removeZone = useCallback((zoneId: string) => {
+    setZones(prev => prev.filter(z => z.id !== zoneId || !z.id.startsWith('radius-')));
+    setZones(prev => prev.map(z => z.id === zoneId ? { ...z, selected: false } : z));
+  }, []);
 
   // Estimation du reach
-  const estimatedReach = selectedZones.reduce((sum, z) => sum + (z.population || 50000), 0);
+  const estimatedReach = useMemo(() =>
+    selectedZones.reduce((sum, z) => sum + (z.population || 50000), 0),
+    [selectedZones]
+  );
+
+  // Stats des zones selectionnees
+  const zoneStats = useMemo(() => {
+    const withPrice = selectedZones.filter(z => z.avgPrice);
+    return {
+      avgPrice: withPrice.length > 0
+        ? Math.round(withPrice.reduce((sum, z) => sum + (z.avgPrice || 0), 0) / withPrice.length)
+        : 0,
+      totalPop: selectedZones.reduce((sum, z) => sum + (z.population || 0), 0),
+      radiusZones: selectedZones.filter(z => z.type === 'radius').length,
+      cityZones: selectedZones.filter(z => z.type === 'city').length,
+    };
+  }, [selectedZones]);
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -109,12 +156,18 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
               <span>📍</span> Ciblage Geographique
             </h2>
             <p className="text-blue-100 text-sm mt-1">
-              Selectionnez les zones pour votre prospection
+              Selectionnez les zones sur la carte ou dans la liste
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">{selectedZones.length}</div>
-            <div className="text-blue-100 text-sm">zones selectionnees</div>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{selectedZones.length}</div>
+              <div className="text-blue-100 text-xs">zones</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{(estimatedReach / 1000).toFixed(0)}k</div>
+              <div className="text-blue-100 text-xs">portee</div>
+            </div>
           </div>
         </div>
       </div>
@@ -140,7 +193,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
           <div className="flex rounded-lg overflow-hidden border">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm font-medium ${
+              className={`px-4 py-2 text-sm font-medium transition ${
                 viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -148,7 +201,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`px-4 py-2 text-sm font-medium ${
+              className={`px-4 py-2 text-sm font-medium transition ${
                 viewMode === 'map' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -161,54 +214,45 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             onClick={() => setRadiusMode(!radiusMode)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               radiusMode
-                ? 'bg-orange-500 text-white'
+                ? 'bg-orange-500 text-white ring-2 ring-orange-300'
                 : 'bg-white border text-gray-700 hover:bg-gray-50'
             }`}
           >
-            ⭕ Zone par rayon
+            ⭕ {radiusMode ? 'Cliquez sur la carte' : 'Zone par rayon'}
+          </button>
+
+          {/* Heatmap toggle */}
+          <button
+            onClick={() => setHeatmapEnabled(!heatmapEnabled)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              heatmapEnabled
+                ? 'bg-red-500 text-white'
+                : 'bg-white border text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            🔥 Heatmap
           </button>
         </div>
 
         {/* Radius configuration */}
         {radiusMode && (
           <div className="mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-            <h4 className="font-medium text-orange-800 mb-3">Configurer une zone circulaire</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Point central</label>
-                <select
-                  onChange={(e) => {
-                    const zone = zones.find(z => z.id === e.target.value);
-                    if (zone?.coordinates) setCenterPoint(zone.coordinates);
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Choisir un point...</option>
-                  {zones.filter(z => z.coordinates).map(z => (
-                    <option key={z.id} value={z.id}>{z.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Rayon: {customRadius} km</label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-orange-800">Rayon:</span>
                 <input
                   type="range"
                   min="1"
                   max="50"
                   value={customRadius}
                   onChange={(e) => setCustomRadius(Number(e.target.value))}
-                  className="w-full"
+                  className="w-32"
                 />
+                <span className="text-lg font-bold text-orange-900">{customRadius} km</span>
               </div>
-              <div className="flex items-end">
-                <button
-                  onClick={addRadiusZone}
-                  disabled={!centerPoint}
-                  className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
-                >
-                  Ajouter la zone
-                </button>
-              </div>
+              <p className="text-sm text-orange-700">
+                Cliquez sur la carte pour placer la zone
+              </p>
             </div>
           </div>
         )}
@@ -237,9 +281,20 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
 
       {/* Content */}
       <div className="p-4">
-        {viewMode === 'list' ? (
+        {viewMode === 'map' ? (
+          /* Map View with Leaflet */
+          <LeafletMap
+            zones={filteredZones}
+            selectedZones={selectedZones}
+            onZoneClick={toggleZone}
+            onMapClick={handleMapClick}
+            radiusMode={radiusMode}
+            customRadius={customRadius}
+            heatmapEnabled={heatmapEnabled}
+          />
+        ) : (
           /* List View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
             {filteredZones.map(zone => (
               <div
                 key={zone.id}
@@ -275,42 +330,12 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
                   )}
                   {zone.avgPrice && (
                     <span className="text-green-600 font-medium">
-                      💰 {(zone.avgPrice / 1000).toFixed(0)}k TND moy.
+                      💰 {(zone.avgPrice / 1000).toFixed(0)}k TND
                     </span>
                   )}
                 </div>
               </div>
             ))}
-          </div>
-        ) : (
-          /* Map View - Placeholder for actual map integration */
-          <div className="relative h-[400px] bg-gray-100 rounded-lg overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🗺️</div>
-                <p className="text-gray-600">
-                  Integration carte (Leaflet/Mapbox)
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Cliquez sur la carte pour selectionner des zones
-                </p>
-              </div>
-            </div>
-            {/* Simulated map pins */}
-            <div className="absolute inset-0 pointer-events-none">
-              {selectedZones.map((zone, idx) => (
-                <div
-                  key={zone.id}
-                  className="absolute w-8 h-8 bg-blue-500 rounded-full border-3 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold"
-                  style={{
-                    left: `${20 + (idx * 15) % 60}%`,
-                    top: `${20 + (idx * 20) % 60}%`,
-                  }}
-                >
-                  {idx + 1}
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </div>
@@ -319,7 +344,9 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
       {selectedZones.length > 0 && (
         <div className="p-4 bg-gray-50 border-t">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-gray-900">Zones selectionnees</h4>
+            <h4 className="font-medium text-gray-900">
+              {selectedZones.length} zone{selectedZones.length > 1 ? 's' : ''} selectionnee{selectedZones.length > 1 ? 's' : ''}
+            </h4>
             <button
               onClick={() => setZones(prev => prev.map(z => ({ ...z, selected: false })))}
               className="text-sm text-red-600 hover:text-red-700"
@@ -327,28 +354,49 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
               Tout deselectionner
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex flex-wrap gap-2 mb-4">
             {selectedZones.map(zone => (
               <span
                 key={zone.id}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                  zone.type === 'radius'
+                    ? 'bg-orange-100 text-orange-800'
+                    : 'bg-blue-100 text-blue-800'
+                }`}
               >
-                {zone.name}
+                {zone.type === 'radius' ? '⭕' : '📍'} {zone.name}
                 <button
-                  onClick={() => toggleZone(zone.id)}
-                  className="ml-1 hover:text-blue-900"
+                  onClick={() => removeZone(zone.id)}
+                  className="ml-1 hover:opacity-70"
                 >
                   ×
                 </button>
               </span>
             ))}
           </div>
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-blue-800">Portee estimee:</span>
-              <span className="font-bold text-blue-900">
-                ~{(estimatedReach / 1000).toFixed(0)}k personnes
-              </span>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="text-xs text-blue-600 uppercase">Portee</div>
+              <div className="text-lg font-bold text-blue-900">
+                ~{(zoneStats.totalPop / 1000).toFixed(0)}k
+              </div>
+            </div>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <div className="text-xs text-green-600 uppercase">Prix moyen</div>
+              <div className="text-lg font-bold text-green-900">
+                {zoneStats.avgPrice > 0 ? `${(zoneStats.avgPrice / 1000).toFixed(0)}k TND` : '-'}
+              </div>
+            </div>
+            <div className="p-3 bg-indigo-50 rounded-lg">
+              <div className="text-xs text-indigo-600 uppercase">Villes</div>
+              <div className="text-lg font-bold text-indigo-900">{zoneStats.cityZones}</div>
+            </div>
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <div className="text-xs text-orange-600 uppercase">Zones rayon</div>
+              <div className="text-lg font-bold text-orange-900">{zoneStats.radiusZones}</div>
             </div>
           </div>
         </div>
