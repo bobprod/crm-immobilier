@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto } from './dto';
 
 @Injectable()
 export class PropertiesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, data: any) {
+  async create(userId: string, data: CreatePropertyDto) {
     return this.prisma.properties.create({
       data: {
         ...data,
@@ -14,15 +15,19 @@ export class PropertiesService {
     });
   }
 
-  async findAll(userId: string, filters?: any) {
+  async findAll(userId: string, filters?: PropertyFiltersDto) {
     const where: any = { userId };
 
     if (filters?.type) where.type = filters.type;
     if (filters?.category) where.category = filters.category;
     if (filters?.status) where.status = filters.status;
     if (filters?.city) where.city = filters.city;
-    if (filters?.minPrice) where.price = { ...where.price, gte: parseFloat(filters.minPrice) };
-    if (filters?.maxPrice) where.price = { ...where.price, lte: parseFloat(filters.maxPrice) };
+    if (filters?.minPrice) {
+      where.price = { ...(where.price || {}), gte: parseFloat(String(filters.minPrice)) };
+    }
+    if (filters?.maxPrice) {
+      where.price = { ...(where.price || {}), lte: parseFloat(String(filters.maxPrice)) };
+    }
 
     return this.prisma.properties.findMany({
       where,
@@ -36,7 +41,7 @@ export class PropertiesService {
     });
   }
 
-  async update(id: string, userId: string, data: any) {
+  async update(id: string, userId: string, data: UpdatePropertyDto) {
     return this.prisma.properties.update({
       where: { id },
       data,
@@ -109,7 +114,7 @@ export class PropertiesService {
     });
   }
 
-  async search(userId: string, criteria: any) {
+  async search(userId: string, criteria: PropertyFiltersDto & { limit?: number }) {
     const where: any = { userId };
 
     if (criteria.type) where.type = criteria.type;
@@ -118,16 +123,16 @@ export class PropertiesService {
     if (criteria.city) where.city = { contains: criteria.city, mode: 'insensitive' };
     if (criteria.minPrice || criteria.maxPrice) {
       where.price = {};
-      if (criteria.minPrice) where.price.gte = parseFloat(criteria.minPrice);
-      if (criteria.maxPrice) where.price.lte = parseFloat(criteria.maxPrice);
+      if (criteria.minPrice) where.price.gte = Number(criteria.minPrice);
+      if (criteria.maxPrice) where.price.lte = Number(criteria.maxPrice);
     }
     if (criteria.minArea || criteria.maxArea) {
       where.area = {};
-      if (criteria.minArea) where.area.gte = parseFloat(criteria.minArea);
-      if (criteria.maxArea) where.area.lte = parseFloat(criteria.maxArea);
+      if (criteria.minArea) where.area.gte = Number(criteria.minArea);
+      if (criteria.maxArea) where.area.lte = Number(criteria.maxArea);
     }
-    if (criteria.bedrooms) where.bedrooms = { gte: parseInt(criteria.bedrooms) };
-    if (criteria.bathrooms) where.bathrooms = { gte: parseInt(criteria.bathrooms) };
+    if (criteria.bedrooms) where.bedrooms = { gte: Number(criteria.bedrooms) };
+    if (criteria.bathrooms) where.bathrooms = { gte: Number(criteria.bathrooms) };
 
     return this.prisma.properties.findMany({
       where,
@@ -228,7 +233,7 @@ export class PropertiesService {
     return deg * (Math.PI / 180);
   }
 
-  async exportCSV(userId: string, filters?: any) {
+  async exportCSV(userId: string, filters?: PropertyFiltersDto) {
     const properties = await this.findAll(userId, filters);
 
     // Create CSV header

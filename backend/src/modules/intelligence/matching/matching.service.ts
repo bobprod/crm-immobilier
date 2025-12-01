@@ -191,4 +191,243 @@ export class MatchingService {
 
     return { interactions: matches };
   }
+
+  async getStats(userId: string) {
+    const [total, byScore, avgScore] = await Promise.all([
+      this.prisma.matches.count({ where: { properties: { userId } } }),
+      this.prisma.matches.groupBy({
+        by: ['status'],
+        where: { properties: { userId } },
+        _count: true,
+      }),
+      this.prisma.matches.aggregate({
+        where: { properties: { userId } },
+        _avg: { score: true },
+      }),
+    ]);
+
+    const matches = await this.prisma.matches.findMany({
+      where: { properties: { userId } },
+      select: { score: true },
+    });
+
+    const excellent = matches.filter((m) => m.score >= 80).length;
+    const good = matches.filter((m) => m.score >= 60 && m.score < 80).length;
+    const average = matches.filter((m) => m.score < 60).length;
+
+    return {
+      total,
+      excellent,
+      good,
+      average,
+      avgScore: Math.round(avgScore._avg.score || 0),
+      byStatus: byScore,
+    };
+  }
+
+  async getProspectMatches(userId: string, prospectId: string) {
+    return this.prisma.matches.findMany({
+      where: { prospectId, properties: { userId } },
+      include: { properties: true },
+      orderBy: { score: 'desc' },
+    });
+  }
+
+  async getPropertyMatches(userId: string, propertyId: string) {
+    return this.prisma.matches.findMany({
+      where: { propertyId, properties: { userId } },
+      include: { prospects: true },
+      orderBy: { score: 'desc' },
+    });
+  }
+
+  async createManualMatch(userId: string, prospectId: string, propertyId: string) {
+    const property = await this.prisma.properties.findFirst({
+      where: { id: propertyId, userId },
+    });
+
+    const prospect = await this.prisma.prospects.findFirst({
+      where: { id: prospectId, userId },
+    });
+
+    if (!property || !prospect) {
+      throw new Error('Property or prospect not found');
+    }
+
+    // Calculate score using unified algorithm
+    const preferences = (prospect.preferences as Record<string, unknown>) || {};
+    const budget = (prospect.budget as Record<string, number>) || {};
+
+    const result = calculateMatchScore(
+      {
+        budgetMin: budget.min || (preferences.budgetMin as number) || null,
+        budgetMax: budget.max || (preferences.budgetMax as number) || null,
+        city: prospect.city || (preferences.city as string) || null,
+        country: (preferences.country as string) || 'Tunisie',
+        propertyTypes: (preferences.propertyTypes as string[]) || (preferences.type ? [preferences.type as string] : []),
+        urgency: (preferences.urgency as string) || null,
+        seriousnessScore: prospect.score || null,
+      },
+      {
+        price: property.price,
+        city: property.city,
+        type: property.type,
+      },
+    );
+
+    return this.prisma.matches.create({
+      data: {
+        propertyId,
+        prospectId,
+        score: result.score,
+        reasons: result.reasons,
+        status: 'pending',
+      },
+      include: { properties: true, prospects: true },
+    });
+  }
+
+  async findMatchesForProspect(userId: string, prospectId: string, filters?: any) {
+    const prospect = await this.prisma.prospects.findFirst({
+      where: { id: prospectId, userId },
+    });
+
+    if (!prospect) {
+      throw new Error('Prospect not found');
+    }
+
+    const preferences = (prospect.preferences as Record<string, unknown>) || {};
+    const budget = (prospect.budget as Record<string, number>) || {};
+
+    const priceRange = getPriceRangeForSearch(
+      budget.min || (preferences.budgetMin as number) || null,
+      budget.max || (preferences.budgetMax as number) || null,
+    );
+
+    const where: any = { userId, status: 'available' };
+    if (priceRange.max) {
+      where.price = { gte: priceRange.min, lte: priceRange.max };
+    }
+    if (filters?.propertyType) {
+      where.type = filters.propertyType;
+    }
+    if (filters?.location) {
+      where.city = { contains: filters.location as string, mode: 'insensitive' };
+    }
+
+    const properties = await this.prisma.properties.findMany({ where });
+
+    const matches = [];
+    for (const property of properties) {
+      const result = calculateMatchScore(
+        {
+          budgetMin: budget.min || (preferences.budgetMin as number) || null,
+          budgetMax: budget.max || (preferences.budgetMax as number) || null,
+          city: prospect.city || (preferences.city as string) || null,
+          country: (preferences.country as string) || 'Tunisie',
+          propertyTypes: (preferences.propertyTypes as string[]) || [],
+          urgency: (preferences.urgency as string) || null,
+          seriousnessScore: prospect.score || null,
+        },
+        {
+          price: property.price,
+          city: property.city,
+          type: property.type,
+        },
+      );
+
+      if (!filters?.minScore || result.score >= (filters.minScore as number)) {
+        matches.push({
+          id: `temp-${prospect.id}-${property.id}`,
+          prospectId: prospect.id,
+          propertyId: property.id,
+          score: result.score,
+          reasons: result.reasons,
+          property,
+        });
+      }
+    }
+
+    return matches.sort((a, b) => b.score - a.score);
+  }
+
+  async findMatchesForProperty(userId: string, propertyId: string, filters?: any) {
+    const property = await this.prisma.properties.findFirst({
+      where: { id: propertyId, userId },
+    });
+
+    if (!property) {
+      throw new Error('Property not found');
+    }
+
+    const where: any = { userId, status: 'active' };
+    if (filters?.location) {
+      where.city = { contains: filters.location as string, mode: 'insensitive' };
+    }
+
+    const prospects = await this.prisma.prospects.findMany({ where });
+
+    const matches = [];
+    for (const prospect of prospects) {
+      const preferences = (prospect.preferences as Record<string, unknown>) || {};
+      const budget = (prospect.budget as Record<string, number>) || {};
+
+      const result = calculateMatchScore(
+        {
+          budgetMin: budget.min || (preferences.budgetMin as number) || null,
+          budgetMax: budget.max || (preferences.budgetMax as number) || null,
+          city: prospect.city || (preferences.city as string) || null,
+          country: (preferences.country as string) || 'Tunisie',
+          propertyTypes: (preferences.propertyTypes as string[]) || [],
+          urgency: (preferences.urgency as string) || null,
+          seriousnessScore: prospect.score || null,
+        },
+        {
+          price: property.price,
+          city: property.city,
+          type: property.type,
+        },
+      );
+
+      if (!filters?.minScore || result.score >= (filters.minScore as number)) {
+        matches.push({
+          id: `temp-${property.id}-${prospect.id}`,
+          prospectId: prospect.id,
+          propertyId: property.id,
+          score: result.score,
+          reasons: result.reasons,
+          prospect,
+        });
+      }
+    }
+
+    return matches.sort((a, b) => b.score - a.score);
+  }
+
+  async findOne(userId: string, id: string) {
+    const match = await this.prisma.matches.findFirst({
+      where: { id, properties: { userId } },
+      include: { properties: true, prospects: true },
+    });
+
+    if (!match) {
+      throw new Error('Match not found');
+    }
+
+    return match;
+  }
+
+  async deleteMatch(userId: string, id: string) {
+    const match = await this.prisma.matches.findFirst({
+      where: { id, properties: { userId } },
+    });
+
+    if (!match) {
+      throw new Error('Match not found');
+    }
+
+    await this.prisma.matches.delete({ where: { id } });
+
+    return { success: true };
+  }
 }

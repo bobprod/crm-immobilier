@@ -10,6 +10,25 @@ import { ProspectsConversionTrackerService } from './prospects-conversion-tracke
 export class ProspectsConversionTrackerController {
   constructor(private conversionTracker: ProspectsConversionTrackerService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all conversion events with filters' })
+  getAllConversions(
+    @Request() req,
+    @Query('prospectId') prospectId?: string,
+    @Query('eventType') eventType?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('minValue') minValue?: string,
+  ) {
+    return this.conversionTracker.getAllConversions(req.user.userId, {
+      prospectId,
+      eventType,
+      startDate,
+      endDate,
+      minValue: minValue ? parseFloat(minValue) : undefined,
+    });
+  }
+
   @Post(':prospectId/qualified')
   @ApiOperation({ summary: 'Tracker prospect qualifié' })
   trackQualified(@Request() req, @Param('prospectId') prospectId: string, @Body() metadata?: any) {

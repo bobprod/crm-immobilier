@@ -11,6 +11,19 @@ import {
   MetaMatchReason,
   arePropertyTypesCompatible,
 } from './dto/matching.dto';
+import { CreateCampaignDto, UpdateLeadDto } from './dto';
+
+interface CampaignFilters {
+  status?: string;
+  type?: string;
+}
+
+interface LeadFilters {
+  status?: string;
+  minScore?: string;
+  leadType?: string;
+  limit?: string;
+}
 
 @Injectable()
 export class ProspectingService {
@@ -25,7 +38,7 @@ export class ProspectingService {
   /**
    * Créer une campagne de prospection
    */
-  async createCampaign(userId: string, data: any) {
+  async createCampaign(userId: string, data: CreateCampaignDto) {
     this.logger.log(`Creating prospecting campaign for user ${userId}`);
 
     return this.prisma.prospecting_campaigns.create({
@@ -43,8 +56,8 @@ export class ProspectingService {
   /**
    * Récupérer toutes les campagnes
    */
-  async getCampaigns(userId: string, filters?: any) {
-    const where: any = { userId };
+  async getCampaigns(userId: string, filters?: CampaignFilters) {
+    const where: Record<string, unknown> = { userId };
 
     if (filters?.status) where.status = filters.status;
     if (filters?.type) where.type = filters.type;
@@ -138,8 +151,8 @@ export class ProspectingService {
   /**
    * Récupérer tous les leads d'une campagne
    */
-  async getLeads(userId: string, campaignId: string, filters?: any) {
-    const where: any = { campaignId, userId };
+  async getLeads(userId: string, campaignId: string, filters?: LeadFilters) {
+    const where: Record<string, unknown> = { campaignId, userId };
 
     if (filters?.status) where.status = filters.status;
     if (filters?.minScore) where.score = { gte: parseInt(filters.minScore) };
@@ -174,7 +187,7 @@ export class ProspectingService {
   /**
    * Mettre à jour un lead
    */
-  async updateLead(userId: string, leadId: string, data: any) {
+  async updateLead(userId: string, leadId: string, data: UpdateLeadDto) {
     await this.getLeadById(userId, leadId);
 
     return this.prisma.prospecting_leads.update({

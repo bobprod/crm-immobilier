@@ -69,6 +69,13 @@ export class PropertiesController {
     return this.propertiesService.bulkAssign(body.ids, req.user.userId, body.assignedTo);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get property by ID' })
+  findOne(@Request() req, @Param('id') id: string) {
+    return this.propertiesService.findOne(id, req.user.userId);
+  }
+
+  @Put(':id')
   @ApiOperation({ summary: 'Update property' })
   @ApiBody({ type: UpdatePropertyDto })
   update(@Request() req, @Param('id') id: string, @Body() updatePropertyDto: UpdatePropertyDto) {
