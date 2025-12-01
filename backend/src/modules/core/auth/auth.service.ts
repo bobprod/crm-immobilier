@@ -2,6 +2,17 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { GoogleUser } from './strategies/google.strategy';
+import { FacebookUser } from './strategies/facebook.strategy';
+
+interface OAuthUserData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture?: string;
+  provider: 'google' | 'facebook';
+  providerId: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -117,5 +128,88 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  /**
+   * Connexion via Google OAuth
+   */
+  async googleLogin(googleUser: GoogleUser) {
+    if (!googleUser || !googleUser.email) {
+      throw new UnauthorizedException('No user data from Google');
+    }
+
+    return this.oauthLogin({
+      email: googleUser.email,
+      firstName: googleUser.firstName,
+      lastName: googleUser.lastName,
+      picture: googleUser.picture,
+      provider: 'google',
+      providerId: googleUser.googleId,
+    });
+  }
+
+  /**
+   * Connexion via Facebook OAuth
+   */
+  async facebookLogin(facebookUser: FacebookUser) {
+    if (!facebookUser || !facebookUser.email) {
+      throw new UnauthorizedException('No user data from Facebook');
+    }
+
+    return this.oauthLogin({
+      email: facebookUser.email,
+      firstName: facebookUser.firstName,
+      lastName: facebookUser.lastName,
+      picture: facebookUser.picture,
+      provider: 'facebook',
+      providerId: facebookUser.facebookId,
+    });
+  }
+
+  /**
+   * Méthode commune pour la connexion OAuth
+   * Crée un utilisateur s'il n'existe pas, sinon le connecte
+   */
+  private async oauthLogin(userData: OAuthUserData) {
+    // Chercher l'utilisateur par email
+    let user = await this.prisma.users.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (!user) {
+      // Créer un nouvel utilisateur
+      // Générer un mot de passe aléatoire (l'utilisateur OAuth n'en a pas besoin)
+      const randomPassword = Math.random().toString(36).slice(-16);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = await this.prisma.users.create({
+        data: {
+          email: userData.email,
+          password: hashedPassword,
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          role: 'agent',
+        },
+      });
+    }
+
+    // Générer les tokens
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+
+    const refreshPayload = { sub: user.id, type: 'refresh' };
+    const refreshToken = this.jwtService.sign(refreshPayload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+    });
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userWithoutPassword,
+      provider: userData.provider,
+    };
   }
 }
