@@ -37,18 +37,20 @@ export class OpenRouterProvider implements LLMProvider {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'HTTP-Referer': 'https://crm-immobilier.com',
             'X-Title': 'CRM Immobilier SEO AI',
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       return response.data.choices[0]?.message?.content?.trim() || '';
     } catch (error) {
       console.error('OpenRouter API Error:', error);
-      throw new Error(`OpenRouter generation failed: ${error.response?.data?.error?.message || error.message}`);
+      throw new Error(
+        `OpenRouter generation failed: ${error.response?.data?.error?.message || error.message}`,
+      );
     }
   }
 

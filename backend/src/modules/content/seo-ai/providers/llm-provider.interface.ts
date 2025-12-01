@@ -1,6 +1,6 @@
 /**
  * Interface abstraite pour les providers LLM
- * 
+ *
  * Permet de supporter plusieurs providers IA :
  * - Anthropic (Claude)
  * - OpenAI (GPT-4)

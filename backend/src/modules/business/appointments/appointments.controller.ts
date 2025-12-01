@@ -47,23 +47,19 @@ export class AppointmentsController {
   }
 
   @Get('today')
-  @ApiOperation({ summary: 'Rendez-vous d\'aujourd\'hui' })
+  @ApiOperation({ summary: "Rendez-vous d'aujourd'hui" })
   async getToday(@Request() req) {
     return this.appointmentsService.getToday(req.user.userId);
   }
 
   @Get('availability')
-  @ApiOperation({ summary: 'Disponibilités d\'un agent' })
+  @ApiOperation({ summary: "Disponibilités d'un agent" })
   async getAvailability(
     @Request() req,
     @Query('date') date: string,
     @Query('duration') duration?: number,
   ) {
-    return this.appointmentsService.getAvailability(
-      req.user.userId,
-      date,
-      duration,
-    );
+    return this.appointmentsService.getAvailability(req.user.userId, date, duration);
   }
 
   @Get('stats')
@@ -84,11 +80,7 @@ export class AppointmentsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Mettre à jour un rendez-vous' })
-  async update(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: UpdateAppointmentDto,
-  ) {
+  async update(@Request() req, @Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
     return this.appointmentsService.update(id, req.user.userId, dto);
   }
 
@@ -100,36 +92,19 @@ export class AppointmentsController {
 
   @Post(':id/complete')
   @ApiOperation({ summary: 'Marquer un rendez-vous comme terminé' })
-  async complete(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: CompleteAppointmentDto,
-  ) {
-    return this.appointmentsService.complete(
-      id,
-      req.user.userId,
-      dto.outcome,
-      dto.rating,
-    );
+  async complete(@Request() req, @Param('id') id: string, @Body() dto: CompleteAppointmentDto) {
+    return this.appointmentsService.complete(id, req.user.userId, dto.outcome, dto.rating);
   }
 
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Annuler un rendez-vous' })
-  async cancel(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: CancelAppointmentDto,
-  ) {
+  async cancel(@Request() req, @Param('id') id: string, @Body() dto: CancelAppointmentDto) {
     return this.appointmentsService.cancel(id, req.user.userId, dto.reason);
   }
 
   @Post(':id/reschedule')
   @ApiOperation({ summary: 'Reprogrammer un rendez-vous' })
-  async reschedule(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: RescheduleAppointmentDto,
-  ) {
+  async reschedule(@Request() req, @Param('id') id: string, @Body() dto: RescheduleAppointmentDto) {
     return this.appointmentsService.reschedule(
       id,
       req.user.userId,

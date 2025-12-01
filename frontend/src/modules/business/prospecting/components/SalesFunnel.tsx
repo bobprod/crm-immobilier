@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ProspectingLead, LeadStatus } from '@/shared/utils/prospecting-api';
 
 interface FunnelStage {
@@ -127,6 +127,13 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   const [draggedLead, setDraggedLead] = useState<ProspectingLead | null>(null);
   const [viewMode, setViewMode] = useState<'funnel' | 'kanban'>('funnel');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Auto-dismiss notification after 4 seconds
+  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  }, []);
 
   // Group leads by status
   const leadsByStage = useMemo(() => {
@@ -227,17 +234,28 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
     const inactiveIds = inactiveLeads.map(l => l.id);
     if (onRelaunchInactive) {
       onRelaunchInactive(inactiveIds);
+      showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
     } else if (onStageChange && inactiveIds.length > 0) {
       // Default: Mark new leads as contacted
       inactiveLeads
         .filter(l => l.status === 'new')
         .forEach(lead => onStageChange(lead.id, 'contacted'));
-      alert(`${inactiveIds.length} leads marques pour relance!`);
+      showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden relative">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`absolute top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          <span>{notification.type === 'success' ? '✓' : '✕'}</span>
+          <span>{notification.message}</span>
+          <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75">×</button>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
         <div className="flex items-center justify-between mb-4">

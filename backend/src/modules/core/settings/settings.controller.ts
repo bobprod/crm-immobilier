@@ -1,15 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { SetSettingDto, BulkUpdateSettingsDto, SettingResponseDto, TestConnectionResponseDto } from './dto';
+import {
+  SetSettingDto,
+  BulkUpdateSettingsDto,
+  SettingResponseDto,
+  TestConnectionResponseDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SettingsService } from './settings.service';
 
@@ -27,18 +23,14 @@ export class SettingsController {
   }
 
   @Get(':section')
-  @ApiOperation({ summary: 'Obtenir les paramètres d\'une section' })
+  @ApiOperation({ summary: "Obtenir les paramètres d'une section" })
   getSectionSettings(@Request() req, @Param('section') section: string) {
     return this.settingsService.getSectionSettings(req.user.userId, section);
   }
 
   @Get(':section/:key')
   @ApiOperation({ summary: 'Obtenir un paramètre spécifique' })
-  getSetting(
-    @Request() req,
-    @Param('section') section: string,
-    @Param('key') key: string,
-  ) {
+  getSetting(@Request() req, @Param('section') section: string, @Param('key') key: string) {
     return this.settingsService.getSetting(req.user.userId, section, key);
   }
 
@@ -69,20 +61,12 @@ export class SettingsController {
     @Param('section') section: string,
     @Body() data: BulkUpdateSettingsDto,
   ) {
-    return this.settingsService.updateSectionSettings(
-      req.user.userId,
-      section,
-      data.settings,
-    );
+    return this.settingsService.updateSectionSettings(req.user.userId, section, data.settings);
   }
 
   @Delete(':section/:key')
   @ApiOperation({ summary: 'Supprimer un paramètre' })
-  deleteSetting(
-    @Request() req,
-    @Param('section') section: string,
-    @Param('key') key: string,
-  ) {
+  deleteSetting(@Request() req, @Param('section') section: string, @Param('key') key: string) {
     return this.settingsService.deleteSetting(req.user.userId, section, key);
   }
 

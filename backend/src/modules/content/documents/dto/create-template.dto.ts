@@ -11,7 +11,9 @@ export class CreateDocumentTemplateDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: '<h1>Contrat de vente</h1><p>Entre {{sellerName}} et {{buyerName}}...</p>' })
+  @ApiProperty({
+    example: '<h1>Contrat de vente</h1><p>Entre {{sellerName}} et {{buyerName}}...</p>',
+  })
   @IsString()
   content: string;
 

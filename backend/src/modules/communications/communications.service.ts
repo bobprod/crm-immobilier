@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
-import { SendEmailDto, SendSmsDto, SendWhatsAppDto, CreateTemplateDto, UpdateTemplateDto } from './dto';
+import {
+  SendEmailDto,
+  SendSmsDto,
+  SendWhatsAppDto,
+  CreateTemplateDto,
+  UpdateTemplateDto,
+} from './dto';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()

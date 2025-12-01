@@ -13,13 +13,60 @@ export class ProspectsConversionTrackerService {
   ) {}
 
   /**
+   * Récupérer toutes les conversions avec filtres
+   */
+  async getAllConversions(
+    userId: string,
+    filters?: {
+      prospectId?: string;
+      eventType?: string;
+      startDate?: string;
+      endDate?: string;
+      minValue?: number;
+    },
+  ) {
+    const where: any = { userId };
+
+    if (filters?.prospectId) {
+      where.prospectId = filters.prospectId;
+    }
+    if (filters?.eventType) {
+      where.eventType = filters.eventType;
+    }
+    if (filters?.startDate || filters?.endDate) {
+      where.eventDate = {};
+      if (filters.startDate) {
+        where.eventDate.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        where.eventDate.lte = new Date(filters.endDate);
+      }
+    }
+    if (filters?.minValue) {
+      where.eventValue = { gte: filters.minValue };
+    }
+
+    return this.prisma.conversion_events.findMany({
+      where,
+      orderBy: { eventDate: 'desc' },
+      include: {
+        prospects: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
    * Tracker quand un prospect est qualifié
    */
-  async trackProspectQualified(
-    prospectId: string,
-    userId: string,
-    metadata?: any,
-  ) {
+  async trackProspectQualified(prospectId: string, userId: string, metadata?: any) {
     return this.aiMetricsService.trackConversion({
       userId,
       prospectId,
@@ -160,11 +207,7 @@ export class ProspectsConversionTrackerService {
 
     const conversions: any[] = [];
 
-    if (
-      ['qualified', 'searching', 'visiting', 'negotiating', 'signed'].includes(
-        prospect.status,
-      )
-    ) {
+    if (['qualified', 'searching', 'visiting', 'negotiating', 'signed'].includes(prospect.status)) {
       conversions.push({
         type: 'prospect_qualified',
         detected: true,

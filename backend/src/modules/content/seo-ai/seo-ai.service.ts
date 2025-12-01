@@ -6,7 +6,7 @@ import { MAX_TOKENS_DEFAULTS } from './providers/llm-provider.interface';
 
 /**
  * Service d'optimisation SEO automatique avec IA
- * 
+ *
  * Supporte plusieurs providers LLM via LLMProviderFactory
  */
 @Injectable()
@@ -115,7 +115,10 @@ ${property.type} ${property.bedrooms} pièces, ${property.city}, ${property.pric
       maxTokens: MAX_TOKENS_DEFAULTS.keywords,
     });
 
-    return text.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    return text
+      .split(',')
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
   }
 
   private async generateFAQ(property: any, provider: LLMProvider): Promise<any> {
@@ -160,7 +163,8 @@ Bien: ${property.type}, ${property.bedrooms} pièces, ${property.area}m², ${pro
   private calculateSeoScore(property: any, seo: any): number {
     let score = 0;
     if (seo.metaTitle && seo.metaTitle.length > 0 && seo.metaTitle.length <= 60) score += 15;
-    if (seo.metaDescription && seo.metaDescription.length > 0 && seo.metaDescription.length <= 155) score += 15;
+    if (seo.metaDescription && seo.metaDescription.length > 0 && seo.metaDescription.length <= 155)
+      score += 15;
     if (seo.keywords && seo.keywords.length >= 5) score += 10;
     if (seo.description && seo.description.length >= 300) score += 15;
     if (property.images && property.images.length >= 3) score += 10;
@@ -174,16 +178,24 @@ Bien: ${property.type}, ${property.bedrooms} pièces, ${property.area}m², ${pro
   private generateSuggestions(property: any, seo: any): string[] {
     const suggestions = [];
     if (!seo.metaTitle || seo.metaTitle.length === 0) suggestions.push('Générer un meta title');
-    if (!seo.metaDescription || seo.metaDescription.length === 0) suggestions.push('Générer une meta description');
+    if (!seo.metaDescription || seo.metaDescription.length === 0)
+      suggestions.push('Générer une meta description');
     if (!seo.keywords || seo.keywords.length < 5) suggestions.push('Ajouter plus de mots-clés');
     if (!property.images || property.images.length < 3) suggestions.push('Ajouter plus de photos');
-    if (!seo.faq || !seo.faq.questions || seo.faq.questions.length < 3) suggestions.push('Générer une FAQ');
-    if (!seo.description || seo.description.length < 300) suggestions.push('Enrichir la description');
+    if (!seo.faq || !seo.faq.questions || seo.faq.questions.length < 3)
+      suggestions.push('Générer une FAQ');
+    if (!seo.description || seo.description.length < 300)
+      suggestions.push('Enrichir la description');
     if (seo.seoScore < 80) suggestions.push('Améliorer le score SEO');
     return suggestions;
   }
 
-  async generateAltText(propertyId: string, userId: string, imageUrl: string, imageIndex: number): Promise<string> {
+  async generateAltText(
+    propertyId: string,
+    userId: string,
+    imageUrl: string,
+    imageIndex: number,
+  ): Promise<string> {
     const property = await this.prisma.properties.findUnique({
       where: { id: propertyId },
     });
@@ -239,8 +251,8 @@ Bien: ${property.type}, ${property.bedrooms} pièces, ${property.area}m², ${pro
 
     return {
       total: properties.length,
-      optimized: results.filter(r => r.success).length,
-      failed: results.filter(r => !r.success).length,
+      optimized: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
       results,
     };
   }

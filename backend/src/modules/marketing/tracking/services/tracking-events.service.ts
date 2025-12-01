@@ -36,7 +36,7 @@ export class TrackingEventsService {
     // Prédiction ML si PageView ou événement important
     if (event.eventName === 'PageView' || event.eventName === 'ViewContent') {
       const prediction = await this.conversionPrediction.predictConversion(userId, event);
-      
+
       if (prediction) {
         await this.prisma.trackingEvent.update({
           where: { id: savedEvent.id },
@@ -51,13 +51,16 @@ export class TrackingEventsService {
     return savedEvent;
   }
 
-  async getEvents(userId: string, filters?: {
-    platform?: TrackingPlatform;
-    eventName?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  }) {
+  async getEvents(
+    userId: string,
+    filters?: {
+      platform?: TrackingPlatform;
+      eventName?: string;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    },
+  ) {
     return this.prisma.trackingEvent.findMany({
       where: {
         userId,
@@ -99,19 +102,17 @@ export class TrackingEventsService {
       }),
     ]);
 
-    const conversionRate = totalEvents > 0 
-      ? (conversionEvents / totalEvents) * 100 
-      : 0;
+    const conversionRate = totalEvents > 0 ? (conversionEvents / totalEvents) * 100 : 0;
 
     return {
       totalEvents,
       conversionEvents,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      eventsByName: eventsByName.map(e => ({
+      eventsByName: eventsByName.map((e) => ({
         name: e.eventName,
         count: e._count,
       })),
-      eventsByPlatform: eventsByPlatform.map(e => ({
+      eventsByPlatform: eventsByPlatform.map((e) => ({
         platform: e.platform,
         count: e._count,
       })),

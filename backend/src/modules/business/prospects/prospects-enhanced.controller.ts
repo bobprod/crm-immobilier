@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProspectsEnhancedService } from './prospects-enhanced.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
@@ -23,10 +13,7 @@ export class ProspectsEnhancedController {
   @Post()
   @ApiOperation({ summary: 'Créer un prospect enrichi' })
   createProspectEnhanced(@Request() req, @Body() data: any) {
-    return this.prospectsEnhancedService.createProspectEnhanced(
-      req.user.userId,
-      data,
-    );
+    return this.prospectsEnhancedService.createProspectEnhanced(req.user.userId, data);
   }
 
   @Get(':id/full')
@@ -37,30 +24,14 @@ export class ProspectsEnhancedController {
 
   @Post(':id/interactions')
   @ApiOperation({ summary: 'Ajouter une interaction' })
-  addInteraction(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() data: any,
-  ) {
-    return this.prospectsEnhancedService.addInteraction(
-      id,
-      req.user.userId,
-      data,
-    );
+  addInteraction(@Request() req, @Param('id') id: string, @Body() data: any) {
+    return this.prospectsEnhancedService.addInteraction(id, req.user.userId, data);
   }
 
   @Post(':id/preferences')
   @ApiOperation({ summary: 'Définir une préférence' })
-  setPreference(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() data: any,
-  ) {
-    return this.prospectsEnhancedService.setPreference(
-      id,
-      req.user.userId,
-      data,
-    );
+  setPreference(@Request() req, @Param('id') id: string, @Body() data: any) {
+    return this.prospectsEnhancedService.setPreference(id, req.user.userId, data);
   }
 
   @Get(':id/preferences')
@@ -71,39 +42,20 @@ export class ProspectsEnhancedController {
 
   @Post(':id/properties-shown')
   @ApiOperation({ summary: 'Enregistrer un bien montré' })
-  recordPropertyShown(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() data: any,
-  ) {
-    return this.prospectsEnhancedService.recordPropertyShown(
-      id,
-      req.user.userId,
-      data,
-    );
+  recordPropertyShown(@Request() req, @Param('id') id: string, @Body() data: any) {
+    return this.prospectsEnhancedService.recordPropertyShown(id, req.user.userId, data);
   }
 
   @Put(':id/stage')
-  @ApiOperation({ summary: 'Changer l\'étape du funnel' })
-  changeStage(
-    @Request() req,
-    @Param('id') id: string,
-    @Body('stage') stage: string,
-  ) {
-    return this.prospectsEnhancedService.changeStage(
-      id,
-      req.user.userId,
-      stage,
-    );
+  @ApiOperation({ summary: "Changer l'étape du funnel" })
+  changeStage(@Request() req, @Param('id') id: string, @Body('stage') stage: string) {
+    return this.prospectsEnhancedService.changeStage(id, req.user.userId, stage);
   }
 
   @Get('by-type/:type')
   @ApiOperation({ summary: 'Récupérer les prospects par type' })
   getProspectsByType(@Request() req, @Param('type') type: string) {
-    return this.prospectsEnhancedService.getProspectsByType(
-      req.user.userId,
-      type,
-    );
+    return this.prospectsEnhancedService.getProspectsByType(req.user.userId, type);
   }
 
   @Get('actions/today')
@@ -131,11 +83,7 @@ export class ProspectsEnhancedController {
     @Param('id') id: string,
     @Query('limit') limit?: number,
   ) {
-    return this.prospectsEnhancedService.getRecommendedProperties(
-      id,
-      req.user.userId,
-      limit || 10,
-    );
+    return this.prospectsEnhancedService.getRecommendedProperties(id, req.user.userId, limit || 10);
   }
 
   @Post(':prospectId/match/:propertyId')

@@ -1,5 +1,6 @@
-import { IsString, IsArray, IsNumber, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsArray, IsNumber, IsBoolean, IsOptional, IsEnum, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProspectingCampaignConfig, LeadMetadata } from '../../../shared/types/relation-summaries';
 
 /**
  * DTO pour créer une campagne
@@ -18,9 +19,10 @@ export class CreateCampaignDto {
   @IsEnum(['geographic', 'demographic', 'behavioral', 'mixed'])
   type: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Configuration de la campagne' })
   @IsOptional()
-  config?: any;
+  @IsObject()
+  config?: ProspectingCampaignConfig;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -131,7 +133,38 @@ export class UpdateLeadDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  metadata?: any;
+  @IsString()
+  qualificationNotes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  propertyType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budget?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budgetMin?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budgetMax?: number;
+
+  @ApiPropertyOptional({ description: 'Métadonnées du lead' })
+  @IsOptional()
+  @IsObject()
+  metadata?: LeadMetadata;
 }
 
 /**
@@ -165,3 +198,6 @@ export class ValidateEmailsDto {
 
 // Export LLM Prospecting types
 export * from './llm-prospecting.dto';
+
+// Export Matching types
+export * from './matching.dto';

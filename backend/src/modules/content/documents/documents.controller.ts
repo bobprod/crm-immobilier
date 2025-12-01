@@ -51,11 +51,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Uploader un document' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadDocument(
-    @Request() req,
-    @UploadedFile() file: any,
-    @Body() dto: UploadDocumentDto,
-  ) {
+  async uploadDocument(@Request() req, @UploadedFile() file: any, @Body() dto: UploadDocumentDto) {
     if (!file) {
       throw new BadRequestException('Aucun fichier fourni');
     }
@@ -77,13 +73,11 @@ export class DocumentsController {
 
   @Get(':id/download')
   @ApiOperation({ summary: 'Télécharger un document' })
-  async downloadDocument(
-    @Request() req,
-    @Param('id') id: string,
-    @Res() res: Response,
-  ) {
-    const { filePath, filename, mimeType } =
-      await this.documentsService.downloadDocument(req.user.userId, id);
+  async downloadDocument(@Request() req, @Param('id') id: string, @Res() res: Response) {
+    const { filePath, filename, mimeType } = await this.documentsService.downloadDocument(
+      req.user.userId,
+      id,
+    );
 
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -94,11 +88,7 @@ export class DocumentsController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Mettre à jour un document' })
-  async updateDocument(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: UpdateDocumentDto,
-  ) {
+  async updateDocument(@Request() req, @Param('id') id: string, @Body() dto: UpdateDocumentDto) {
     return this.documentsService.updateDocument(req.user.userId, id, dto);
   }
 
@@ -154,11 +144,7 @@ export class DocumentsController {
 
   @Post(':id/ocr')
   @ApiOperation({ summary: "Extraire le texte d'un document avec OCR" })
-  async processOcr(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: OcrDocumentDto,
-  ) {
+  async processOcr(@Request() req, @Param('id') id: string, @Body() dto: OcrDocumentDto) {
     return this.documentsService.processOcr(req.user.userId, id, dto.language);
   }
 
@@ -212,10 +198,7 @@ export class DocumentsController {
 
   @Post('templates')
   @ApiOperation({ summary: 'Créer un template' })
-  async createTemplate(
-    @Request() req,
-    @Body() dto: CreateDocumentTemplateDto,
-  ) {
+  async createTemplate(@Request() req, @Body() dto: CreateDocumentTemplateDto) {
     return this.documentsService.createTemplate(req.user.userId, dto);
   }
 
@@ -254,10 +237,6 @@ export class DocumentsController {
     @Param('id') id: string,
     @Body('variables') variables: Record<string, any>,
   ) {
-    return this.documentsService.generateFromTemplate(
-      req.user.userId,
-      id,
-      variables,
-    );
+    return this.documentsService.generateFromTemplate(req.user.userId, id, variables);
   }
 }

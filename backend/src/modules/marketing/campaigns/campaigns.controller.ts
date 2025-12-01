@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { CampaignsService } from './campaigns.service';
@@ -48,7 +59,7 @@ export class CampaignsController {
   }
 
   @Get(':id/leads')
-  @ApiOperation({ summary: 'Obtenir les leads d\'une campagne' })
+  @ApiOperation({ summary: "Obtenir les leads d'une campagne" })
   getCampaignLeads(@Param('id') id: string, @Request() req) {
     return this.campaignsService.getCampaignLeads(id, req.user.userId);
   }

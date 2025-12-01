@@ -12,13 +12,13 @@ export class IntegrationsService {
         userId_type: { userId, type },
       },
       update: {
-        apiKey,        // ✅ CORRIGÉ: apiKey séparé
+        apiKey, // ✅ CORRIGÉ: apiKey séparé
         data: { config }, // ✅ data contient juste config
       },
       create: {
         userId,
         type,
-        apiKey,        // ✅ CORRIGÉ: apiKey en tant que champ
+        apiKey, // ✅ CORRIGÉ: apiKey en tant que champ
         data: { config }, // ✅ data pour infos additionnelles
         isActive: true,
       },
@@ -31,7 +31,7 @@ export class IntegrationsService {
       select: {
         id: true,
         type: true,
-        apiKey: true,  // ✅ AJOUTÉ: inclure apiKey
+        apiKey: true, // ✅ AJOUTÉ: inclure apiKey
         data: true,
         isActive: true,
         createdAt: true,
@@ -83,11 +83,11 @@ export class IntegrationsService {
       return { success: false, message: 'Integration is not active' };
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       type: integration.type,
       hasApiKey: !!integration.apiKey,
-      data: integration.data 
+      data: integration.data,
     };
   }
 }

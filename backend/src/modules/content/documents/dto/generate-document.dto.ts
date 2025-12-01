@@ -6,9 +6,9 @@ export class GenerateDocumentDto {
   @IsString()
   prompt: string;
 
-  @ApiPropertyOptional({ 
-    example: 'openai', 
-    enum: ['openai', 'gemini', 'anthropic', 'deepseek', 'openrouter']
+  @ApiPropertyOptional({
+    example: 'openai',
+    enum: ['openai', 'gemini', 'anthropic', 'deepseek', 'openrouter'],
   })
   @IsOptional()
   @IsString()

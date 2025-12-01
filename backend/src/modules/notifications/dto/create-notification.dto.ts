@@ -6,7 +6,7 @@ export enum NotificationType {
   LEAD = 'lead',
   SYSTEM = 'system',
   PROPERTY = 'property',
-  MESSAGE = 'message'
+  MESSAGE = 'message',
 }
 
 export class CreateNotificationDto {

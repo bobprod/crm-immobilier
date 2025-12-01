@@ -1,6 +1,15 @@
 import apiClient from './backend-api';
 
-// Types
+// ============================================
+// ENUMS - Aligned with backend validation DTOs
+// ============================================
+
+export type ContactType = 'email' | 'phone' | 'domain';
+
+// ============================================
+// TYPES
+// ============================================
+
 export interface ValidationResult {
   email?: string;
   phone?: string;
@@ -12,7 +21,7 @@ export interface ValidationResult {
   provider?: string;
   reason?: string;
   validationMethod?: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }
 
 export interface ValidationHistory {
@@ -43,12 +52,42 @@ export interface ValidationStats {
 
 export interface BlacklistItem {
   id: string;
-  type: string;
+  type: ContactType;
   value: string;
   reason?: string;
   addedBy?: string;
   isActive: boolean;
   createdAt: string;
+  updatedAt?: string;
+}
+
+export interface WhitelistItem {
+  id: string;
+  type: ContactType;
+  value: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SpamDetectionResult {
+  isSpam: boolean;
+  confidence: number;
+  reasons: string[];
+  riskScore: number;
+}
+
+export interface EnrichedContact {
+  email?: string;
+  phone?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  position?: string;
+  linkedin?: string;
+  location?: string;
+  enrichedAt: string;
+  provider: string;
 }
 
 export const validationAPI = {
@@ -91,7 +130,7 @@ export const validationAPI = {
   // BLACKLIST
   // ============================================
 
-  getBlacklist: async (type?: string): Promise<BlacklistItem[]> => {
+  getBlacklist: async (type?: ContactType): Promise<BlacklistItem[]> => {
     const response = await apiClient.get('/validation/blacklist', {
       params: { type },
     });
@@ -99,7 +138,7 @@ export const validationAPI = {
   },
 
   addToBlacklist: async (
-    type: string,
+    type: ContactType,
     value: string,
     reason?: string,
   ): Promise<BlacklistItem> => {
@@ -120,14 +159,14 @@ export const validationAPI = {
   // WHITELIST
   // ============================================
 
-  getWhitelist: async (type?: string): Promise<BlacklistItem[]> => {
+  getWhitelist: async (type?: ContactType): Promise<WhitelistItem[]> => {
     const response = await apiClient.get('/validation/whitelist', {
       params: { type },
     });
     return response.data;
   },
 
-  addToWhitelist: async (type: string, value: string): Promise<BlacklistItem> => {
+  addToWhitelist: async (type: ContactType, value: string): Promise<WhitelistItem> => {
     const response = await apiClient.post('/validation/whitelist', {
       type,
       value,
@@ -163,7 +202,7 @@ export const validationAPI = {
   validateEmailWithAI: async (
     email: string,
     context?: string,
-  ): Promise<any> => {
+  ): Promise<ValidationResult & { aiAnalysis?: string }> => {
     const response = await apiClient.post('/validation/email/ai', {
       email,
       context,
@@ -175,7 +214,7 @@ export const validationAPI = {
     email: string,
     name?: string,
     message?: string,
-  ): Promise<any> => {
+  ): Promise<SpamDetectionResult> => {
     const response = await apiClient.post('/validation/spam/ai', {
       email,
       name,
@@ -188,7 +227,7 @@ export const validationAPI = {
     email: string,
     phone?: string,
     name?: string,
-  ): Promise<any> => {
+  ): Promise<EnrichedContact> => {
     const response = await apiClient.post('/validation/enrich/ai', {
       email,
       phone,
@@ -197,6 +236,8 @@ export const validationAPI = {
     return response.data;
   },
 };
+
+export default validationAPI;
 
 // Helper functions
 export const getScoreColor = (score: number): string => {

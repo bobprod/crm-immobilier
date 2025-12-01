@@ -40,11 +40,7 @@ export class TasksService {
         properties: { select: { id: true, title: true, reference: true } },
         appointments: { select: { id: true, title: true, startTime: true } },
       },
-      orderBy: [
-        { status: 'asc' },
-        { priority: 'desc' },
-        { dueDate: 'asc' },
-      ],
+      orderBy: [{ status: 'asc' }, { priority: 'desc' }, { dueDate: 'asc' }],
     });
   }
 
@@ -109,13 +105,15 @@ export class TasksService {
         this.prisma.tasks.count({ where: { userId, status: 'todo' } }).catch(() => 0),
         this.prisma.tasks.count({ where: { userId, status: 'in_progress' } }).catch(() => 0),
         this.prisma.tasks.count({ where: { userId, status: 'done' } }).catch(() => 0),
-        this.prisma.tasks.count({
-          where: {
-            userId,
-            status: { in: ['todo', 'in_progress'] },
-            dueDate: { lt: new Date() },
-          },
-        }).catch(() => 0),
+        this.prisma.tasks
+          .count({
+            where: {
+              userId,
+              status: { in: ['todo', 'in_progress'] },
+              dueDate: { lt: new Date() },
+            },
+          })
+          .catch(() => 0),
       ]);
 
       return {

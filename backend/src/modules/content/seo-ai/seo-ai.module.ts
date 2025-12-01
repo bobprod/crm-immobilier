@@ -6,10 +6,10 @@ import { LLMProviderFactory } from './providers/llm-provider.factory';
 
 /**
  * Module SEO AI
- * 
+ *
  * Optimisation automatique du référencement des biens immobiliers
  * via intelligence artificielle multi-provider.
- * 
+ *
  * Fonctionnalités :
  * - Génération meta titles et descriptions
  * - Création de mots-clés pertinents
@@ -17,7 +17,7 @@ import { LLMProviderFactory } from './providers/llm-provider.factory';
  * - Alt text pour images
  * - Score SEO automatique
  * - Suggestions d'amélioration
- * 
+ *
  * Providers supportés :
  * - Anthropic (Claude Sonnet 4)
  * - OpenAI (GPT-4)

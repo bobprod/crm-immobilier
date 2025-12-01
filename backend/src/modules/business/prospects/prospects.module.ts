@@ -14,15 +14,7 @@ import { ProspectsEnhancedService } from './prospects-enhanced.service';
     ProspectsConversionTrackerController,
     ProspectsEnhancedController,
   ],
-  providers: [
-    ProspectsService,
-    ProspectsConversionTrackerService,
-    ProspectsEnhancedService,
-  ],
-  exports: [
-    ProspectsService,
-    ProspectsConversionTrackerService,
-    ProspectsEnhancedService,
-  ],
+  providers: [ProspectsService, ProspectsConversionTrackerService, ProspectsEnhancedService],
+  exports: [ProspectsService, ProspectsConversionTrackerService, ProspectsEnhancedService],
 })
 export class ProspectsModule {}

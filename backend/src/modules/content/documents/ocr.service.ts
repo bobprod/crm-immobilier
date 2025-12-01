@@ -35,8 +35,8 @@ export class OcrService {
           documentId,
           userId,
           imageUrl: document.fileUrl, // ✅ AJOUTÉ: champ requis
-          extractedText: data.text,   // ✅ AJOUTÉ: champ principal
-          text: data.text,            // Alias pour compatibilité
+          extractedText: data.text, // ✅ AJOUTÉ: champ principal
+          text: data.text, // Alias pour compatibilité
           confidence: data.confidence,
           language,
           engine: 'tesseract',

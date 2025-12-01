@@ -12,10 +12,13 @@ export class ConversionPredictionService {
   /**
    * Prédire probabilité de conversion
    */
-  async predictConversion(userId: string, event: TrackingEvent): Promise<ConversionPrediction | null> {
+  async predictConversion(
+    userId: string,
+    event: TrackingEvent,
+  ): Promise<ConversionPrediction | null> {
     // TODO: Implémenter ML réel
     // Pour l'instant, retourne une prédiction simple basée sur des heuristiques
-    
+
     const probability = this.calculateSimpleProbability(event);
     const confidence = 0.75;
 
@@ -33,9 +36,10 @@ export class ConversionPredictionService {
         { name: 'timeOnSite', impact: 0.2, value: '> 2min' },
         { name: 'source', impact: 0.15, value: event.referrer },
       ],
-      recommendation: probability > 0.7 
-        ? 'Forte probabilité de conversion - Contacter rapidement'
-        : 'Probabilité moyenne - Nurturing recommandé',
+      recommendation:
+        probability > 0.7
+          ? 'Forte probabilité de conversion - Contacter rapidement'
+          : 'Probabilité moyenne - Nurturing recommandé',
       timestamp: new Date(),
     };
   }

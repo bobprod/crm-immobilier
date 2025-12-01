@@ -1,6 +1,29 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import {
+  MatchReason,
+  MatchScoreResult,
+  PriceRange,
+  BudgetMatchReason,
+  LocationMatchReason,
+  TypeMatchReason,
+  MetaMatchReason,
+  arePropertyTypesCompatible,
+} from './dto/matching.dto';
+import { CreateCampaignDto, UpdateLeadDto } from './dto';
+
+interface CampaignFilters {
+  status?: string;
+  type?: string;
+}
+
+interface LeadFilters {
+  status?: string;
+  minScore?: string;
+  leadType?: string;
+  limit?: string;
+}
 
 @Injectable()
 export class ProspectingService {
@@ -15,7 +38,7 @@ export class ProspectingService {
   /**
    * Créer une campagne de prospection
    */
-  async createCampaign(userId: string, data: any) {
+  async createCampaign(userId: string, data: CreateCampaignDto) {
     this.logger.log(`Creating prospecting campaign for user ${userId}`);
 
     return this.prisma.prospecting_campaigns.create({
@@ -33,8 +56,8 @@ export class ProspectingService {
   /**
    * Récupérer toutes les campagnes
    */
-  async getCampaigns(userId: string, filters?: any) {
-    const where: any = { userId };
+  async getCampaigns(userId: string, filters?: CampaignFilters) {
+    const where: Record<string, unknown> = { userId };
 
     if (filters?.status) where.status = filters.status;
     if (filters?.type) where.type = filters.type;
@@ -128,8 +151,8 @@ export class ProspectingService {
   /**
    * Récupérer tous les leads d'une campagne
    */
-  async getLeads(userId: string, campaignId: string, filters?: any) {
-    const where: any = { campaignId, userId };
+  async getLeads(userId: string, campaignId: string, filters?: LeadFilters) {
+    const where: Record<string, unknown> = { campaignId, userId };
 
     if (filters?.status) where.status = filters.status;
     if (filters?.minScore) where.score = { gte: parseInt(filters.minScore) };
@@ -164,7 +187,7 @@ export class ProspectingService {
   /**
    * Mettre à jour un lead
    */
-  async updateLead(userId: string, leadId: string, data: any) {
+  async updateLead(userId: string, leadId: string, data: UpdateLeadDto) {
     await this.getLeadById(userId, leadId);
 
     return this.prisma.prospecting_leads.update({
@@ -175,11 +198,69 @@ export class ProspectingService {
 
   /**
    * Convertir un lead en prospect
+   * - Vérifie si un prospect existe déjà (déduplication)
+   * - Préserve toutes les métadonnées de prospection
+   * - Log l'activité
    */
   async convertLeadToProspect(userId: string, leadId: string) {
     const lead = await this.getLeadById(userId, leadId);
 
-    // Créer le prospect
+    // 1. Vérifier si le lead a déjà été converti
+    if (lead.convertedProspectId) {
+      const existingProspect = await this.prisma.prospects.findUnique({
+        where: { id: lead.convertedProspectId },
+      });
+      if (existingProspect) {
+        this.logger.warn(`Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`);
+        return existingProspect;
+      }
+    }
+
+    // 2. Vérifier si un prospect existe avec le même email ou téléphone (déduplication)
+    const existingProspect = await this.findExistingProspect(userId, lead);
+    if (existingProspect) {
+      this.logger.log(`Found existing prospect ${existingProspect.id} matching lead ${leadId}`);
+
+      // Fusionner les données du lead avec le prospect existant
+      const mergedProspect = await this.mergeLeadIntoProspect(existingProspect, lead);
+
+      // Mettre à jour le lead
+      await this.prisma.prospecting_leads.update({
+        where: { id: leadId },
+        data: {
+          status: 'converted',
+          convertedProspectId: mergedProspect.id,
+          convertedAt: new Date(),
+        },
+      });
+
+      // Logger l'activité
+      await this.logActivity(userId, 'lead_merged', leadId, mergedProspect.id);
+
+      return mergedProspect;
+    }
+
+    // 3. Construire les métadonnées enrichies à préserver
+    const prospectingMetadata = {
+      leadType: lead.leadType,
+      intention: lead.intention,
+      urgency: lead.urgency,
+      seriousnessScore: lead.seriousnessScore,
+      validationStatus: lead.validationStatus,
+      qualificationNotes: lead.qualificationNotes,
+      propertyTypes: lead.propertyTypes,
+      surfaceM2: lead.surfaceM2,
+      rooms: lead.rooms,
+      budgetMin: lead.budgetMin,
+      budgetMax: lead.budgetMax,
+      sourceUrl: lead.sourceUrl,
+      rawText: lead.rawText,
+      originalCampaignId: lead.campaignId,
+      convertedFromLeadId: lead.id,
+      convertedAt: new Date().toISOString(),
+    };
+
+    // 4. Créer le prospect avec toutes les métadonnées
     const prospect = await this.prisma.prospects.create({
       data: {
         userId,
@@ -187,16 +268,21 @@ export class ProspectingService {
         lastName: lead.lastName,
         email: lead.email,
         phone: lead.phone,
-        type: 'buyer',
-        budget: lead.budget,
+        address: lead.address,
+        city: lead.city,
+        zipCode: lead.zipCode,
+        type: this.mapLeadTypeToProspectType(lead.leadType, lead.intention),
+        budget: lead.budget || (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
         preferences: lead.metadata,
         source: `Prospection: ${lead.source}`,
         status: 'active',
-        notes: `Converti depuis lead ${leadId}`,
+        score: lead.seriousnessScore || lead.score || 50,
+        notes: lead.qualificationNotes || `Converti depuis lead ${leadId}`,
+        metadata: prospectingMetadata,
       },
     });
 
-    // Mettre à jour le lead
+    // 5. Mettre à jour le lead
     await this.prisma.prospecting_leads.update({
       where: { id: leadId },
       data: {
@@ -206,7 +292,122 @@ export class ProspectingService {
       },
     });
 
+    // 6. Mettre à jour les prospecting_matches existants avec le prospectId
+    await this.prisma.prospecting_matches.updateMany({
+      where: { leadId: lead.id },
+      data: { prospectId: prospect.id },
+    });
+
+    // 7. Logger l'activité
+    await this.logActivity(userId, 'lead_converted', leadId, prospect.id);
+
+    this.logger.log(`Lead ${leadId} converted to prospect ${prospect.id}`);
     return prospect;
+  }
+
+  /**
+   * Rechercher un prospect existant par email ou téléphone
+   */
+  private async findExistingProspect(userId: string, lead: any) {
+    const conditions = [];
+
+    if (lead.email) {
+      conditions.push({ email: lead.email.toLowerCase() });
+    }
+    if (lead.phone) {
+      const normalizedPhone = this.normalizePhone(lead.phone);
+      conditions.push({ phone: normalizedPhone });
+      conditions.push({ phone: lead.phone });
+    }
+
+    if (conditions.length === 0) return null;
+
+    return this.prisma.prospects.findFirst({
+      where: {
+        userId,
+        OR: conditions,
+      },
+    });
+  }
+
+  /**
+   * Fusionner les données d'un lead dans un prospect existant
+   */
+  private async mergeLeadIntoProspect(prospect: any, lead: any) {
+    const updates: any = {};
+
+    // Compléter les champs manquants
+    if (!prospect.firstName && lead.firstName) updates.firstName = lead.firstName;
+    if (!prospect.lastName && lead.lastName) updates.lastName = lead.lastName;
+    if (!prospect.phone && lead.phone) updates.phone = lead.phone;
+    if (!prospect.email && lead.email) updates.email = lead.email;
+    if (!prospect.city && lead.city) updates.city = lead.city;
+    if (!prospect.address && lead.address) updates.address = lead.address;
+
+    // Mettre à jour le score si le lead a un meilleur score
+    const leadScore = lead.seriousnessScore || lead.score || 0;
+    if (leadScore > (prospect.score || 0)) {
+      updates.score = leadScore;
+    }
+
+    // Fusionner les métadonnées
+    const existingMetadata = prospect.metadata || {};
+    updates.metadata = {
+      ...existingMetadata,
+      mergedFromLeads: [...(existingMetadata.mergedFromLeads || []), lead.id],
+      lastMergedAt: new Date().toISOString(),
+      leadType: lead.leadType,
+      intention: lead.intention,
+      urgency: lead.urgency,
+      seriousnessScore: lead.seriousnessScore,
+    };
+
+    // Ajouter une note sur la fusion
+    const mergeNote = `\n[${new Date().toLocaleDateString('fr-FR')}] Fusionné avec lead ${lead.id} (${lead.source})`;
+    updates.notes = (prospect.notes || '') + mergeNote;
+
+    if (Object.keys(updates).length > 0) {
+      return this.prisma.prospects.update({
+        where: { id: prospect.id },
+        data: updates,
+      });
+    }
+
+    return prospect;
+  }
+
+  /**
+   * Mapper le type de lead vers le type de prospect
+   */
+  private mapLeadTypeToProspectType(leadType: string | null, intention: string | null): string {
+    if (intention === 'acheter' || intention === 'investir') return 'buyer';
+    if (intention === 'louer') return 'tenant';
+    if (intention === 'vendre' || leadType === 'mandat') return 'seller';
+    if (leadType === 'requete') return 'buyer';
+    return 'buyer'; // default
+  }
+
+  /**
+   * Logger une activité de prospection
+   */
+  private async logActivity(userId: string, type: string, leadId: string, prospectId?: string) {
+    try {
+      await this.prisma.activity.create({
+        data: {
+          userId,
+          type,
+          entityType: 'prospecting_lead',
+          entityId: leadId,
+          description: type === 'lead_converted'
+            ? `Lead converti en prospect ${prospectId}`
+            : `Lead fusionné avec prospect existant ${prospectId}`,
+          metadata: { leadId, prospectId },
+        },
+      });
+    } catch (error) {
+      // Ne pas bloquer si le logging échoue
+      this.logger.warn(`Failed to log activity: ${error.message}`);
+    }
   }
 
   /**
@@ -232,9 +433,8 @@ export class ProspectingService {
 
     // Budget défini: +20
     if (lead.budget) {
-      const budgetValue = typeof lead.budget === 'object'
-        ? (lead.budget.max || lead.budget.min || 0)
-        : lead.budget;
+      const budgetValue =
+        typeof lead.budget === 'object' ? lead.budget.max || lead.budget.min || 0 : lead.budget;
       if (budgetValue > 0) {
         score += 20;
       }
@@ -263,70 +463,76 @@ export class ProspectingService {
   // ============================================
 
   /**
-   * Trouver des matchs pour un lead
+   * Trouver des matchs pour un lead avec scoring intelligent
+   * Utilise les nouveaux champs IA: budgetMin/Max, city, propertyTypes, urgency, seriousnessScore
    */
   async findMatchesForLead(userId: string, leadId: string) {
     const lead = await this.getLeadById(userId, leadId);
+    this.logger.log(
+      `Finding matches for lead ${leadId} - City: ${lead.city}, Budget: ${lead.budgetMin}-${lead.budgetMax}`,
+    );
 
-    // Récupérer les propriétés compatibles
-    const where: any = { userId };
+    // 1. Déterminer l'intervalle de prix pour le filtre SQL (large pour ne pas rater de biens)
+    const priceRange = this.getPriceRangeForSearch(lead);
 
-    if (lead.propertyType) {
-      where.type = lead.propertyType;
+    // 2. Construire le filtre de base
+    const where: any = {
+      userId,
+      status: 'available',
+    };
+
+    // Filtre sur le prix si on a un budget
+    if (priceRange.min !== null && priceRange.max !== null) {
+      where.price = {
+        gte: priceRange.min,
+        lte: priceRange.max,
+      };
     }
 
-    // Budget est maintenant un objet Json { min?, max?, currency? }
-    if (lead.budget) {
-      const budgetObj = lead.budget as any;
-      const budgetValue = typeof lead.budget === 'object' 
-        ? (budgetObj.max || budgetObj.min || 0)
-        : lead.budget;
-      
-      if (budgetValue > 0) {
-        where.price = {
-          gte: budgetValue * 0.8,
-          lte: budgetValue * 1.2,
-        };
-      }
-    }
-
-    if (lead.city) {
-      where.city = { contains: lead.city, mode: 'insensitive' };
-    }
-
+    // 3. Pré-filtrer les biens candidats
     const properties = await this.prisma.properties.findMany({
       where,
-      take: 10,
+      take: 200, // Limite pour éviter surcharge
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Créer les matchs
+    this.logger.log(`Found ${properties.length} candidate properties for matching`);
+
+    // 4. Calculer le score pour chaque bien et créer les matchs
     const matches = [];
+    let matchesCreated = 0;
 
     for (const property of properties) {
-      const matchScore = this.calculateMatchScore(lead, property);
+      const matchResult = this.calculateMatchScore(lead, property);
 
-      if (matchScore >= 50) {
-        const match = await this.prisma.prospecting_matches.create({
-          data: {
-            leadId: lead.id,
-            propertyId: property.id,
-            score: matchScore,
-            reason: {
-              budget: this.isBudgetCompatible(lead.budget, property.price),
-              location: lead.city === property.city,
-              type: lead.propertyType === property.type,
+      // Créer le match si score >= 50
+      if (matchResult.isQualified) {
+        try {
+          const match = await this.prisma.prospecting_matches.create({
+            data: {
+              leadId: lead.id,
+              propertyId: property.id,
+              score: matchResult.score,
+              reason: matchResult.reasons as any,
+              status: 'pending',
             },
-          },
-          include: {
-            properties: true,
-          },
-        });
+            include: {
+              properties: true,
+            },
+          });
 
-        matches.push(match);
+          matches.push(match);
+          matchesCreated++;
+        } catch (error) {
+          // Skip si le match existe déjà (contrainte unique)
+          if (error.code !== 'P2002') {
+            this.logger.warn(`Failed to create match: ${error.message}`);
+          }
+        }
       }
     }
 
-    // Mettre à jour le lead
+    // 5. Mettre à jour le lead avec les IDs des propriétés matchées
     if (matches.length > 0) {
       await this.prisma.prospecting_leads.update({
         where: { id: leadId },
@@ -336,45 +542,405 @@ export class ProspectingService {
       });
     }
 
-    return matches;
+    this.logger.log(`Created ${matchesCreated} matches for lead ${leadId}`);
+
+    return {
+      leadId: lead.id,
+      matchesCreated,
+      matches,
+    };
+  }
+
+  /**
+   * Calculer l'intervalle de prix pour le filtre SQL (élargi pour ne pas rater de biens)
+   * Retourne un intervalle large (±30%) pour le pré-filtrage
+   */
+  getPriceRangeForSearch(lead: any): PriceRange {
+    const budgetMin = lead.budgetMin as number | null;
+    const budgetMax = lead.budgetMax as number | null;
+
+    // Si les deux sont définis
+    if (budgetMin != null && budgetMax != null) {
+      return {
+        min: Math.round(budgetMin * 0.7),
+        max: Math.round(budgetMax * 1.3),
+      };
+    }
+
+    // Si seulement budgetMin
+    if (budgetMin != null) {
+      return {
+        min: Math.round(budgetMin * 0.7),
+        max: Math.round(budgetMin * 1.5), // Plus large vers le haut
+      };
+    }
+
+    // Si seulement budgetMax
+    if (budgetMax != null) {
+      return {
+        min: Math.round(budgetMax * 0.5), // Plus large vers le bas
+        max: Math.round(budgetMax * 1.3),
+      };
+    }
+
+    // Fallback sur l'ancien champ budget (JSON)
+    if (lead.budget) {
+      const budgetObj = lead.budget as any;
+      const min = budgetObj.min || budgetObj.max;
+      const max = budgetObj.max || budgetObj.min;
+      if (min || max) {
+        return {
+          min: min ? Math.round(min * 0.7) : null,
+          max: max ? Math.round(max * 1.3) : null,
+        };
+      }
+    }
+
+    // Pas de budget défini
+    return { min: null, max: null };
   }
 
   /**
    * Calculer le score de match entre un lead et une propriété
+   * Scoring pondéré: Budget (40) + Location (30) + Type (20) + Bonus (10) = 100 max
    */
-  calculateMatchScore(lead: any, property: any): number {
-    let score = 0;
+  calculateMatchScore(lead: any, property: any): MatchScoreResult {
+    // 1. Score Budget (0-40 points)
+    const budgetResult = this.calculateBudgetScore(lead, property);
 
-    // Budget compatible: +40
-    if (lead.budget && property.price) {
-      const budgetValue = typeof lead.budget === 'object'
-        ? (lead.budget.max || lead.budget.min || 0)
-        : lead.budget;
-      
-      if (budgetValue > 0) {
-        const diff = Math.abs((budgetValue - property.price) / budgetValue);
-        if (diff < 0.1) score += 40;
-        else if (diff < 0.2) score += 30;
-        else if (diff < 0.3) score += 20;
+    // 2. Score Location (0-30 points)
+    const locationResult = this.calculateLocationScore(lead, property);
+
+    // 3. Score Type de bien (0-20 points)
+    const typeResult = this.calculateTypeScore(lead, property);
+
+    // 4. Bonus Urgence/Sérieux (0-10 points)
+    const metaResult = this.calculateMetaBonus(lead);
+
+    // Score total
+    const totalScore =
+      budgetResult.score + locationResult.score + typeResult.score + metaResult.totalBonus;
+    const finalScore = Math.min(100, totalScore);
+
+    const reasons: MatchReason = {
+      budget: budgetResult,
+      location: locationResult,
+      type: typeResult,
+      meta: metaResult,
+      breakdown: {
+        budgetPoints: budgetResult.score,
+        locationPoints: locationResult.score,
+        typePoints: typeResult.score,
+        bonusPoints: metaResult.totalBonus,
+      },
+    };
+
+    return {
+      score: finalScore,
+      reasons,
+      isQualified: finalScore >= 50,
+    };
+  }
+
+  /**
+   * Calculer le score Budget (0-40 points)
+   */
+  private calculateBudgetScore(lead: any, property: any): BudgetMatchReason {
+    const propertyPrice = property.price as number;
+    const leadMin = (lead.budgetMin as number | null) ?? (lead.budget as any)?.min ?? null;
+    const leadMax = (lead.budgetMax as number | null) ?? (lead.budget as any)?.max ?? null;
+
+    // Si pas de prix sur la propriété
+    if (!propertyPrice || propertyPrice <= 0) {
+      return {
+        compatible: false,
+        relation: 'no_budget',
+        leadMin,
+        leadMax,
+        propertyPrice: propertyPrice || 0,
+        score: 0,
+      };
+    }
+
+    // Si le lead n'a pas de budget
+    if (leadMin === null && leadMax === null) {
+      return {
+        compatible: false,
+        relation: 'no_budget',
+        leadMin: null,
+        leadMax: null,
+        propertyPrice,
+        score: 0,
+      };
+    }
+
+    // Cas: les deux bornes sont définies
+    if (leadMin !== null && leadMax !== null) {
+      // Dans la fourchette exacte: 40 points
+      if (propertyPrice >= leadMin && propertyPrice <= leadMax) {
+        return {
+          compatible: true,
+          relation: 'within_range',
+          leadMin,
+          leadMax,
+          propertyPrice,
+          score: 40,
+        };
+      }
+      // Dans ±10% de la fourchette: 30 points
+      if (propertyPrice >= leadMin * 0.9 && propertyPrice <= leadMax * 1.1) {
+        return {
+          compatible: true,
+          relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+          leadMin,
+          leadMax,
+          propertyPrice,
+          score: 30,
+        };
+      }
+      // Dans ±20% de la fourchette: 20 points
+      if (propertyPrice >= leadMin * 0.8 && propertyPrice <= leadMax * 1.2) {
+        return {
+          compatible: true,
+          relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+          leadMin,
+          leadMax,
+          propertyPrice,
+          score: 20,
+        };
+      }
+      // Hors budget
+      return {
+        compatible: false,
+        relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+        leadMin,
+        leadMax,
+        propertyPrice,
+        score: 0,
+      };
+    }
+
+    // Cas: seulement une borne (min OU max)
+    const singleBudget = leadMin ?? leadMax!;
+    const tolerance20 = singleBudget * 0.2;
+    const tolerance10 = singleBudget * 0.1;
+
+    if (Math.abs(propertyPrice - singleBudget) <= tolerance10) {
+      return {
+        compatible: true,
+        relation: 'within_range',
+        leadMin,
+        leadMax,
+        propertyPrice,
+        score: 40,
+      };
+    }
+    if (Math.abs(propertyPrice - singleBudget) <= tolerance20) {
+      return {
+        compatible: true,
+        relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+        leadMin,
+        leadMax,
+        propertyPrice,
+        score: 30,
+      };
+    }
+    if (Math.abs(propertyPrice - singleBudget) <= singleBudget * 0.3) {
+      return {
+        compatible: true,
+        relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+        leadMin,
+        leadMax,
+        propertyPrice,
+        score: 20,
+      };
+    }
+
+    return {
+      compatible: false,
+      relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+      leadMin,
+      leadMax,
+      propertyPrice,
+      score: 0,
+    };
+  }
+
+  /**
+   * Calculer le score Location (0-30 points)
+   */
+  private calculateLocationScore(lead: any, property: any): LocationMatchReason {
+    const leadCity = (lead.city as string | null)?.toLowerCase().trim() ?? null;
+    const leadCountry = (lead.country as string | null)?.toLowerCase().trim() ?? 'tunisie';
+    const propertyCity = (property.city as string | null)?.toLowerCase().trim() ?? null;
+
+    // Pas de ville sur le lead ou la propriété
+    if (!leadCity || !propertyCity) {
+      return {
+        compatible: false,
+        relation: 'unknown',
+        leadCity: lead.city ?? null,
+        leadCountry: lead.country ?? null,
+        propertyCity: property.city ?? null,
+        score: 0,
+      };
+    }
+
+    // Même ville: 30 points
+    if (leadCity === propertyCity) {
+      return {
+        compatible: true,
+        relation: 'same_city',
+        leadCity: lead.city,
+        leadCountry: lead.country,
+        propertyCity: property.city,
+        score: 30,
+      };
+    }
+
+    // Check si ville contenue dans l'autre (ex: "La Marsa" contient "Marsa")
+    if (leadCity.includes(propertyCity) || propertyCity.includes(leadCity)) {
+      return {
+        compatible: true,
+        relation: 'same_city',
+        leadCity: lead.city,
+        leadCountry: lead.country,
+        propertyCity: property.city,
+        score: 25,
+      };
+    }
+
+    // Même pays (Tunisie par défaut): 15 points
+    // Note: properties n'a pas de champ country, on assume Tunisie
+    if (leadCountry === 'tunisie') {
+      return {
+        compatible: true,
+        relation: 'same_country',
+        leadCity: lead.city,
+        leadCountry: lead.country,
+        propertyCity: property.city,
+        score: 15,
+      };
+    }
+
+    // Pays différent
+    return {
+      compatible: false,
+      relation: 'different',
+      leadCity: lead.city,
+      leadCountry: lead.country,
+      propertyCity: property.city,
+      score: 0,
+    };
+  }
+
+  /**
+   * Calculer le score Type de bien (0-20 points)
+   */
+  private calculateTypeScore(lead: any, property: any): TypeMatchReason {
+    const propertyType = (property.type as string)?.toLowerCase().trim() ?? '';
+
+    // Récupérer les types du lead (nouveau champ propertyTypes ou ancien propertyType)
+    let leadTypes: string[] = [];
+
+    if (lead.propertyTypes && Array.isArray(lead.propertyTypes)) {
+      leadTypes = (lead.propertyTypes as string[]).map((t) => t.toLowerCase().trim());
+    } else if (lead.propertyType) {
+      leadTypes = [(lead.propertyType as string).toLowerCase().trim()];
+    }
+
+    // Pas de type défini sur le lead: 10 points (type inconnu, pas bloquant)
+    if (leadTypes.length === 0) {
+      return {
+        compatible: true,
+        relation: 'unknown',
+        leadTypes: [],
+        propertyType: property.type ?? '',
+        score: 10,
+      };
+    }
+
+    // Pas de type sur la propriété
+    if (!propertyType) {
+      return {
+        compatible: false,
+        relation: 'mismatch',
+        leadTypes,
+        propertyType: '',
+        score: 0,
+      };
+    }
+
+    // Match exact: 20 points
+    if (leadTypes.includes(propertyType)) {
+      return {
+        compatible: true,
+        relation: 'exact',
+        leadTypes,
+        propertyType: property.type,
+        score: 20,
+      };
+    }
+
+    // Match compatible (ex: appartement ↔ studio): 15 points
+    for (const leadType of leadTypes) {
+      if (arePropertyTypesCompatible(leadType, propertyType)) {
+        return {
+          compatible: true,
+          relation: 'compatible',
+          leadTypes,
+          propertyType: property.type,
+          score: 15,
+        };
       }
     }
 
-    // Ville identique: +30
-    if (lead.city && property.city && lead.city.toLowerCase() === property.city.toLowerCase()) {
-      score += 30;
+    // Pas de match
+    return {
+      compatible: false,
+      relation: 'mismatch',
+      leadTypes,
+      propertyType: property.type,
+      score: 0,
+    };
+  }
+
+  /**
+   * Calculer le bonus Urgence/Sérieux (0-10 points max)
+   */
+  private calculateMetaBonus(lead: any): MetaMatchReason {
+    const urgency = lead.urgency as string | null;
+    const seriousnessScore = lead.seriousnessScore as number | null;
+
+    let urgencyBonus = 0;
+    let seriousnessBonus = 0;
+
+    // Bonus urgence
+    if (urgency === 'haute') {
+      urgencyBonus = 5;
+    } else if (urgency === 'moyenne') {
+      urgencyBonus = 3;
     }
 
-    // Type de propriété identique: +20
-    if (lead.propertyType && property.type && lead.propertyType === property.type) {
-      score += 20;
+    // Bonus sérieux
+    if (seriousnessScore !== null) {
+      if (seriousnessScore >= 80) {
+        seriousnessBonus = 5;
+      } else if (seriousnessScore >= 60) {
+        seriousnessBonus = 3;
+      }
     }
 
-    // Code postal proche: +10
-    if (lead.zipCode && property.zipCode && lead.zipCode === property.zipCode) {
-      score += 10;
-    }
+    // Cap total à 10 points
+    const totalBonus = Math.min(10, urgencyBonus + seriousnessBonus);
 
-    return Math.min(score, 100);
+    return {
+      urgency,
+      urgencyBonus,
+      seriousnessScore,
+      seriousnessBonus,
+      totalBonus,
+    };
   }
 
   /**
@@ -605,13 +1171,11 @@ export class ProspectingService {
 
   private isBudgetCompatible(budget: any, price: number): boolean {
     if (!budget || !price) return false;
-    
-    const budgetValue = typeof budget === 'object'
-      ? (budget.max || budget.min || 0)
-      : budget;
-    
+
+    const budgetValue = typeof budget === 'object' ? budget.max || budget.min || 0 : budget;
+
     if (budgetValue <= 0) return false;
-    
+
     const diff = Math.abs((budgetValue - price) / budgetValue);
     return diff < 0.2;
   }
@@ -761,7 +1325,7 @@ export class ProspectingService {
    * ROI de la prospection
    */
   async getROIStats(userId: string) {
-    const [campaigns, convertedLeads] = await Promise.all([
+    const [campaigns, convertedLeads, allLeads] = await Promise.all([
       this.prisma.prospecting_campaigns.findMany({
         where: { userId },
         include: {
@@ -771,6 +1335,10 @@ export class ProspectingService {
       this.prisma.prospecting_leads.findMany({
         where: { userId, status: 'converted' },
         include: { convertedProspect: true },
+      }),
+      this.prisma.prospecting_leads.findMany({
+        where: { userId },
+        select: { metadata: true, source: true },
       }),
     ]);
 
@@ -782,6 +1350,38 @@ export class ProspectingService {
       return sum + (budget?.max || budget?.min || budget || 0);
     }, 0);
 
+    // Calculer les coûts par source (estimation basée sur les coûts API typiques)
+    const apiCosts: Record<string, number> = {
+      pica: 0.05, // ~0.05 TND par lead
+      serp: 0.02, // ~0.02 TND par requête
+      meta: 0.03, // ~0.03 TND par lead (Facebook/Instagram)
+      linkedin: 0.1, // ~0.10 TND par lead
+      firecrawl: 0.01, // ~0.01 TND par page
+      website: 0.005, // ~0.005 TND par scrape
+      manual: 0, // Gratuit
+    };
+
+    // Calculer le coût total basé sur les sources des leads
+    const totalCost = allLeads.reduce((sum, lead) => {
+      const source = (lead.source || 'manual').toLowerCase();
+      const metadata = lead.metadata as any;
+      // Vérifier si un coût est stocké dans les métadonnées
+      if (metadata?.apiCost) {
+        return sum + metadata.apiCost;
+      }
+      return sum + (apiCosts[source] || 0);
+    }, 0);
+
+    const costPerLead = totalLeads > 0 ? Math.round((totalCost / totalLeads) * 100) / 100 : 0;
+
+    // Calculer le ROI: (Valeur générée - Coût) / Coût * 100
+    const roi =
+      totalCost > 0
+        ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
+        : estimatedValue > 0
+          ? 100
+          : 0;
+
     return {
       totalCampaigns: campaigns.length,
       totalLeads,
@@ -789,8 +1389,9 @@ export class ProspectingService {
       conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
       estimatedValue,
       avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
-      costPerLead: 0, // À calculer selon les coûts API
-      roi: 0, // À calculer
+      totalCost: Math.round(totalCost * 100) / 100,
+      costPerLead,
+      roi,
     };
   }
 
@@ -836,7 +1437,7 @@ export class ProspectingService {
         }
       } else {
         // Ajouter toutes les clés pour ce lead
-        keys.forEach(key => uniqueLeads.set(key, lead));
+        keys.forEach((key) => uniqueLeads.set(key, lead));
       }
     }
 
@@ -960,7 +1561,9 @@ export class ProspectingService {
   private levenshteinDistance(str1: string, str2: string): number {
     const m = str1.length;
     const n = str2.length;
-    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    const dp: number[][] = Array(m + 1)
+      .fill(null)
+      .map(() => Array(n + 1).fill(0));
 
     for (let i = 0; i <= m; i++) dp[i][0] = i;
     for (let j = 0; j <= n; j++) dp[0][j] = j;
@@ -992,7 +1595,7 @@ export class ProspectingService {
 
     for (const other of allLeads) {
       let similarity = 0;
-      let reasons: string[] = [];
+      const reasons: string[] = [];
 
       // Comparer les emails
       if (lead.email && other.email) {
@@ -1018,7 +1621,7 @@ export class ProspectingService {
         const name2 = `${this.normalizeText(other.firstName)} ${this.normalizeText(other.lastName)}`;
         const distance = this.levenshteinDistance(name1, name2);
         const maxLen = Math.max(name1.length, name2.length);
-        const nameSimilarity = 1 - (distance / maxLen);
+        const nameSimilarity = 1 - distance / maxLen;
 
         if (nameSimilarity > 0.8) {
           similarity += 30 * nameSimilarity;
@@ -1052,7 +1655,18 @@ export class ProspectingService {
     }
 
     // Format CSV
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Ville', 'Type', 'Budget', 'Score', 'Statut', 'Source'];
+    const headers = [
+      'Prénom',
+      'Nom',
+      'Email',
+      'Téléphone',
+      'Ville',
+      'Type',
+      'Budget',
+      'Score',
+      'Statut',
+      'Source',
+    ];
     const rows = leads.map((lead) => [
       lead.firstName || '',
       lead.lastName || '',

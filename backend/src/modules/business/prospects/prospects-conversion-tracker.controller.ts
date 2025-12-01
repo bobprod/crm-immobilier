@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { ProspectsConversionTrackerService } from './prospects-conversion-tracker.service';
@@ -17,22 +8,31 @@ import { ProspectsConversionTrackerService } from './prospects-conversion-tracke
 @UseGuards(JwtAuthGuard)
 @Controller('prospects-conversion')
 export class ProspectsConversionTrackerController {
-  constructor(
-    private conversionTracker: ProspectsConversionTrackerService,
-  ) {}
+  constructor(private conversionTracker: ProspectsConversionTrackerService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get all conversion events with filters' })
+  getAllConversions(
+    @Request() req,
+    @Query('prospectId') prospectId?: string,
+    @Query('eventType') eventType?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('minValue') minValue?: string,
+  ) {
+    return this.conversionTracker.getAllConversions(req.user.userId, {
+      prospectId,
+      eventType,
+      startDate,
+      endDate,
+      minValue: minValue ? parseFloat(minValue) : undefined,
+    });
+  }
 
   @Post(':prospectId/qualified')
   @ApiOperation({ summary: 'Tracker prospect qualifié' })
-  trackQualified(
-    @Request() req,
-    @Param('prospectId') prospectId: string,
-    @Body() metadata?: any,
-  ) {
-    return this.conversionTracker.trackProspectQualified(
-      prospectId,
-      req.user.userId,
-      metadata,
-    );
+  trackQualified(@Request() req, @Param('prospectId') prospectId: string, @Body() metadata?: any) {
+    return this.conversionTracker.trackProspectQualified(prospectId, req.user.userId, metadata);
   }
 
   @Post(':prospectId/meeting-booked')
@@ -107,22 +107,13 @@ export class ProspectsConversionTrackerController {
   @Get(':prospectId/detect-conversions')
   @ApiOperation({ summary: 'Détecter conversions automatiquement' })
   detectConversions(@Request() req, @Param('prospectId') prospectId: string) {
-    return this.conversionTracker.detectAndTrackConversions(
-      prospectId,
-      req.user.userId,
-    );
+    return this.conversionTracker.detectAndTrackConversions(prospectId, req.user.userId);
   }
 
   @Get(':prospectId/agent-contribution')
   @ApiOperation({ summary: 'Contribution des agents à un prospect' })
-  getAgentContribution(
-    @Request() req,
-    @Param('prospectId') prospectId: string,
-  ) {
-    return this.conversionTracker.calculateAgentContribution(
-      prospectId,
-      req.user.userId,
-    );
+  getAgentContribution(@Request() req, @Param('prospectId') prospectId: string) {
+    return this.conversionTracker.calculateAgentContribution(prospectId, req.user.userId);
   }
 
   @Get('high-roi')
@@ -136,13 +127,7 @@ export class ProspectsConversionTrackerController {
 
   @Get(':prospectId/performance-report')
   @ApiOperation({ summary: 'Rapport de performance prospect' })
-  getPerformanceReport(
-    @Request() req,
-    @Param('prospectId') prospectId: string,
-  ) {
-    return this.conversionTracker.getProspectPerformanceReport(
-      prospectId,
-      req.user.userId,
-    );
+  getPerformanceReport(@Request() req, @Param('prospectId') prospectId: string) {
+    return this.conversionTracker.getProspectPerformanceReport(prospectId, req.user.userId);
   }
 }

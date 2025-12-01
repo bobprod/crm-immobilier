@@ -31,9 +31,7 @@ export class AnthropicProvider implements LLMProvider {
         ],
       });
 
-      return message.content[0].type === 'text' 
-        ? message.content[0].text.trim()
-        : '';
+      return message.content[0].type === 'text' ? message.content[0].text.trim() : '';
     } catch (error) {
       console.error('Anthropic API Error:', error);
       throw new Error(`Anthropic generation failed: ${error.message}`);

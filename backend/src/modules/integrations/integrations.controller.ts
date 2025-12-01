@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Put,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { IntegrationsService } from './integrations.service';
@@ -14,12 +24,7 @@ export class IntegrationsController {
   @Post()
   @ApiOperation({ summary: 'Créer ou mettre à jour une intégration' })
   create(@Request() req, @Body() dto: CreateIntegrationDto) {
-    return this.integrationsService.create(
-      req.user.userId,
-      dto.type,
-      dto.apiKey,
-      dto.config,
-    );
+    return this.integrationsService.create(req.user.userId, dto.type, dto.apiKey, dto.config);
   }
 
   @Get()
@@ -36,16 +41,8 @@ export class IntegrationsController {
 
   @Put(':type/toggle')
   @ApiOperation({ summary: 'Activer/Désactiver une intégration' })
-  toggleActive(
-    @Request() req,
-    @Param('type') type: string,
-    @Body() dto: ToggleIntegrationDto,
-  ) {
-    return this.integrationsService.toggleActive(
-      req.user.userId,
-      type,
-      dto.isActive,
-    );
+  toggleActive(@Request() req, @Param('type') type: string, @Body() dto: ToggleIntegrationDto) {
+    return this.integrationsService.toggleActive(req.user.userId, type, dto.isActive);
   }
 
   @Delete(':type')

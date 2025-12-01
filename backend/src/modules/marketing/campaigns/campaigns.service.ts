@@ -14,7 +14,7 @@ export class CampaignsService {
         description: dto.description,
         type: dto.type,
         content: dto.config || {}, // ✅ CORRIGÉ: utiliser 'content' au lieu de 'config'
-        recipients: [],             // ✅ AJOUTÉ: recipients est requis
+        recipients: [], // ✅ AJOUTÉ: recipients est requis
         stats: dto.stats || {},
       },
     });
@@ -76,6 +76,34 @@ export class CampaignsService {
   }
 
   async convertLeadToProspect(userId: string, dto: ConvertLeadDto) {
+    // Vérifier si un prospect existe déjà avec le même email ou téléphone
+    const existingConditions = [];
+    if (dto.email) existingConditions.push({ email: dto.email.toLowerCase() });
+    if (dto.phone) existingConditions.push({ phone: dto.phone });
+
+    if (existingConditions.length > 0) {
+      const existingProspect = await this.prisma.prospects.findFirst({
+        where: {
+          userId,
+          OR: existingConditions,
+        },
+      });
+
+      if (existingProspect) {
+        // Mettre à jour le prospect existant avec les nouvelles données
+        return this.prisma.prospects.update({
+          where: { id: existingProspect.id },
+          data: {
+            firstName: dto.firstName || existingProspect.firstName,
+            lastName: dto.lastName || existingProspect.lastName,
+            budget: dto.budget || existingProspect.budget,
+            preferences: dto.preferences || existingProspect.preferences,
+            notes: (existingProspect.notes || '') + `\n[${new Date().toLocaleDateString('fr-FR')}] Mis à jour depuis campagne marketing`,
+          },
+        });
+      }
+    }
+
     const prospect = await this.prisma.prospects.create({
       data: {
         userId,
@@ -84,7 +112,7 @@ export class CampaignsService {
         email: dto.email,
         phone: dto.phone,
         type: dto.type || 'buyer',
-        budget: dto.budget,  // ✅ Déjà correct (objet Json)
+        budget: dto.budget,
         currency: dto.currency || 'TND',
         preferences: dto.preferences || {},
         source: 'campaign',

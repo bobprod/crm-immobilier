@@ -45,7 +45,7 @@ export class ExcelGenerator {
       column.width = Math.min(maxLength + 2, 50);
     });
 
-    return await workbook.xlsx.writeBuffer() as unknown as Buffer;
+    return (await workbook.xlsx.writeBuffer()) as unknown as Buffer;
   }
 
   /**

@@ -58,7 +58,7 @@ export class LLMConfigController {
    * Statistiques d'utilisation
    */
   @Get('usage')
-  @ApiOperation({ summary: 'Statistiques d\'utilisation LLM' })
+  @ApiOperation({ summary: "Statistiques d'utilisation LLM" })
   @ApiResponse({ status: 200, type: UsageStatsDto })
   async getUsage(@Request() req) {
     return this.llmConfigService.getUsageStats(req.user.userId);
@@ -95,4 +95,3 @@ export class LLMConfigController {
     return this.llmConfigService.checkBudget(req.user.userId, budgetLimit);
   }
 }
-

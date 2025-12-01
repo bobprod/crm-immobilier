@@ -12,10 +12,13 @@ import {
   getSourceColor,
   getScoreBadgeColor,
   CampaignType,
+  CampaignConfig,
   LeadType,
   LeadStatus,
+  MatchStatus,
   ProspectingCampaign,
   ProspectingLead,
+  ProspectingMatch,
 } from '@/shared/utils/prospecting-api';
 import { GeographicTargeting } from './GeographicTargeting';
 import { DemographicTargeting } from './DemographicTargeting';
@@ -139,18 +142,39 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [campaignStep, setCampaignStep] = useState(1);
-  const [newCampaign, setNewCampaign] = useState({
+  const [newCampaign, setNewCampaign] = useState<{
+    name: string;
+    description: string;
+    type: CampaignType;
+    targetCount: number;
+    config: CampaignConfig;
+  }>({
     name: '',
     description: '',
-    type: 'requete' as CampaignType,
+    type: 'requete',
     targetCount: 100,
     config: {
-      zones: [] as any[],
-      demographics: {} as any,
+      locations: [],
+      propertyTypes: [],
+      sources: [],
+      keywords: [],
     },
   });
   const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const [leadMatches, setLeadMatches] = useState<ProspectingMatch[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+  // Scraping configuration
+  const [showScrapingConfig, setShowScrapingConfig] = useState(false);
+  const [scrapingSource, setScrapingSource] = useState<string | null>(null);
+  const [scrapingConfig, setScrapingConfig] = useState({
+    query: '',
+    urls: [''],
+    maxResults: 50,
+  });
+  // Notes editing
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
 
   const {
     campaigns,
@@ -180,13 +204,75 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     detectOpportunities,
     validateEmails,
     clearError,
+    // Matching functions
+    findMatches,
+    loadMatches,
+    notifyMatch,
+    updateMatchStatus,
   } = useProspecting();
 
   // Handle lead click - open detail modal
   const handleLeadClick = useCallback((lead: ProspectingLead) => {
     setSelectedLead(lead);
     setShowLeadModal(true);
+    setLeadMatches([]);
   }, []);
+
+  // Handle find matches for a lead
+  const handleFindMatches = useCallback(async (leadId: string) => {
+    setLoadingMatches(true);
+    try {
+      const matches = await findMatches(leadId);
+      if (matches && Array.isArray(matches)) {
+        setLeadMatches(matches);
+      }
+    } catch (error) {
+      console.error('Failed to find matches:', error);
+    } finally {
+      setLoadingMatches(false);
+    }
+  }, [findMatches]);
+
+  // Handle load existing matches for a lead
+  const handleLoadMatches = useCallback(async (leadId: string) => {
+    setLoadingMatches(true);
+    try {
+      const matches = await loadMatches(leadId);
+      if (matches) {
+        setLeadMatches(matches);
+      }
+    } catch (error) {
+      console.error('Failed to load matches:', error);
+    } finally {
+      setLoadingMatches(false);
+    }
+  }, [loadMatches]);
+
+  // Handle notify match
+  const handleNotifyMatch = useCallback(async (matchId: string) => {
+    try {
+      await notifyMatch(matchId);
+      // Refresh matches
+      if (selectedLead) {
+        handleLoadMatches(selectedLead.id);
+      }
+    } catch (error) {
+      console.error('Failed to notify match:', error);
+    }
+  }, [notifyMatch, selectedLead, handleLoadMatches]);
+
+  // Handle update match status
+  const handleUpdateMatchStatus = useCallback(async (matchId: string, status: MatchStatus) => {
+    try {
+      await updateMatchStatus(matchId, status);
+      // Refresh matches
+      if (selectedLead) {
+        handleLoadMatches(selectedLead.id);
+      }
+    } catch (error) {
+      console.error('Failed to update match status:', error);
+    }
+  }, [updateMatchStatus, selectedLead, handleLoadMatches]);
 
   // Initial data load
   useEffect(() => {
@@ -214,7 +300,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         description: '',
         type: 'requete',
         targetCount: 100,
-        config: { zones: [], demographics: {} },
+        config: { locations: [], propertyTypes: [], sources: [], keywords: [] },
       });
       setCampaignStep(1);
     }
@@ -223,18 +309,67 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const handleLeadValidation = useCallback(async (leadIds: string[]) => {
     const leadsToValidate = leads.filter(l => leadIds.includes(l.id));
     const emails = leadsToValidate.map(l => l.email).filter(Boolean) as string[];
+    const phones = leadsToValidate.map(l => l.phone).filter(Boolean) as string[];
+
+    // Call actual validation APIs
+    let validEmails: string[] = [];
+    let invalidEmails: string[] = [];
 
     if (emails.length > 0) {
-      await validateEmails(emails);
+      try {
+        const response = await validateEmails(emails);
+        if (response) {
+          validEmails = response.valid || [];
+          invalidEmails = response.invalid || [];
+        }
+      } catch (error) {
+        console.error('Email validation failed:', error);
+      }
     }
 
-    return leadIds.map(id => ({
-      leadId: id,
-      email: { valid: true, deliverable: true, disposable: false, role: false, score: 85 },
-      phone: { valid: true, formatted: '', type: 'mobile' as const },
-      name: { valid: true, confidence: 90, issues: [] },
-      overall: { score: 85, status: 'valid' as const, flags: [] },
-    }));
+    // Build validation results from actual API responses
+    return leadIds.map(id => {
+      const lead = leadsToValidate.find(l => l.id === id);
+      const isEmailValid = lead?.email ? validEmails.includes(lead.email) : false;
+
+      // Calculate scores based on actual validation
+      const emailScore = isEmailValid ? 90 : (lead?.email ? 30 : 0);
+      const hasPhone = !!lead?.phone;
+      const hasName = !!(lead?.firstName || lead?.lastName);
+      const phoneScore = hasPhone ? 70 : 0;
+      const nameScore = hasName ? 80 : 40;
+      const overallScore = Math.round((emailScore + phoneScore + nameScore) / 3);
+
+      return {
+        leadId: id,
+        email: {
+          valid: isEmailValid,
+          deliverable: isEmailValid,
+          disposable: false,
+          role: false,
+          score: emailScore,
+        },
+        phone: {
+          valid: hasPhone,
+          formatted: lead?.phone || '',
+          type: 'mobile' as const,
+        },
+        name: {
+          valid: hasName,
+          confidence: hasName ? 85 : 0,
+          issues: hasName ? [] : ['Nom manquant'],
+        },
+        overall: {
+          score: overallScore,
+          status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'spam') as 'valid' | 'suspicious' | 'spam',
+          flags: [
+            ...(!isEmailValid ? ['Email invalide'] : []),
+            ...(!hasPhone ? ['Téléphone manquant'] : []),
+            ...(!hasName ? ['Nom manquant'] : []),
+          ],
+        },
+      };
+    });
   }, [leads, validateEmails]);
 
   const handleLeadUpdate = useCallback((leadId: string, data: Partial<ProspectingLead>) => {
@@ -243,6 +378,99 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
   const handleStageChange = useCallback((leadId: string, newStatus: LeadStatus) => {
     updateLead(leadId, { status: newStatus });
+  }, [updateLead]);
+
+  // Handle scraping with user config
+  const handleLaunchScraping = useCallback(async () => {
+    if (!scrapingSource) return;
+
+    try {
+      if (scrapingSource === 'pica') {
+        await scrapePica({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+      } else if (scrapingSource === 'serp') {
+        await scrapeSERP({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+      } else if (scrapingSource === 'meta') {
+        await scrapeSocial('meta', scrapingConfig.query);
+      } else if (scrapingSource === 'linkedin') {
+        await scrapeSocial('linkedin', scrapingConfig.query);
+      } else if (scrapingSource === 'firecrawl') {
+        await scrapeFirecrawl(scrapingConfig.urls.filter(Boolean));
+      } else if (scrapingSource === 'website') {
+        await scrapeWebsites(scrapingConfig.urls.filter(Boolean));
+      }
+    } catch (error) {
+      console.error('Failed to launch scraping:', error);
+    } finally {
+      setShowScrapingConfig(false);
+      setScrapingSource(null);
+      setScrapingConfig({ query: '', urls: [''], maxResults: 50 });
+    }
+  }, [scrapingSource, scrapingConfig, scrapePica, scrapeSERP, scrapeSocial, scrapeFirecrawl, scrapeWebsites]);
+
+  // Handle detect opportunities with AI
+  const handleDetectOpportunities = useCallback(async () => {
+    // Check if we have at least one campaign
+    if (campaigns.length === 0) {
+      console.warn('No campaigns available for opportunity detection');
+      return;
+    }
+
+    try {
+      await detectOpportunities({
+        sources: ['pica', 'serp', 'meta'],
+        keywords: ['immobilier', 'appartement', 'villa', 'terrain'],
+        locations: ['Tunis', 'La Marsa', 'Sousse', 'Sfax'],
+        confidence: 0.7,
+      });
+    } catch (error) {
+      console.error('Failed to detect opportunities:', error);
+    }
+  }, [campaigns, detectOpportunities]);
+
+  // Handle save notes
+  const handleSaveNotes = useCallback(async () => {
+    if (selectedLead) {
+      try {
+        await updateLead(selectedLead.id, { qualificationNotes: notesValue });
+        setSelectedLead({ ...selectedLead, qualificationNotes: notesValue });
+        setEditingNotes(false);
+      } catch (error) {
+        console.error('Failed to save notes:', error);
+      }
+    }
+  }, [selectedLead, notesValue, updateLead]);
+
+  // Handle export stats from funnel
+  const handleExportStats = useCallback(() => {
+    // Export funnel statistics as CSV
+    const stats = leads.reduce((acc, lead) => {
+      acc[lead.status] = (acc[lead.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const csv = Object.entries(stats)
+      .map(([status, count]) => `${status},${count}`)
+      .join('\n');
+
+    const blob = new Blob([`Status,Count\n${csv}`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'funnel-stats.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [leads]);
+
+  // Handle relaunch inactive leads
+  const handleRelaunchInactive = useCallback(async (leadIds: string[]) => {
+    // Update inactive leads status to trigger follow-up
+    try {
+      for (const id of leadIds) {
+        await updateLead(id, { status: 'contacted' });
+      }
+    } catch (error) {
+      console.error('Failed to relaunch inactive leads:', error);
+    }
   }, [updateLead]);
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
@@ -327,21 +555,18 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 title="Total Leads"
                 value={globalStats?.total || 0}
                 icon="👥"
-                change={12}
                 color="purple"
               />
               <StatCard
                 title="Leads Convertis"
                 value={globalStats?.converted || 0}
                 icon="✅"
-                change={8}
                 color="green"
               />
               <StatCard
                 title="Taux de Conversion"
                 value={`${(globalStats?.conversionRate || 0).toFixed(1)}%`}
                 icon="📈"
-                change={5}
                 color="blue"
               />
               <StatCard
@@ -459,6 +684,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 leads={leads}
                 onLeadClick={handleLeadClick}
                 onStageChange={handleStageChange}
+                onExportStats={handleExportStats}
+                onRelaunchInactive={handleRelaunchInactive}
               />
             ) : (
               <div className="bg-white rounded-xl shadow-lg p-12 text-center">
@@ -521,47 +748,83 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
         {/* Scraping Tab */}
         {activeTab === 'scraping' && (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple' },
-                { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue' },
-                { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo' },
-                { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan' },
-                { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange' },
-                { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray' },
-              ].map(source => (
-                <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
-                      {source.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">{source.name}</h3>
-                      <p className="text-sm text-gray-500">{source.desc}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (source.id === 'pica') scrapePica({ query: 'immobilier tunis' });
-                      else if (source.id === 'serp') scrapeSERP({ query: 'appartement vendre tunis' });
-                      else if (source.id === 'meta') scrapeSocial('meta', 'immobilier');
-                      else if (source.id === 'linkedin') scrapeSocial('linkedin', 'agent immobilier tunis');
-                      else if (source.id === 'firecrawl') scrapeFirecrawl(['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']);
-                      else if (source.id === 'website') scrapeWebsites(['https://www.afif.tn', 'https://www.immobilier.com.tn']);
-                    }}
-                    disabled={scrapingInProgress}
-                    className={`w-full py-2 rounded-lg font-medium transition ${
-                      scrapingInProgress
-                        ? 'bg-gray-100 text-gray-400'
-                        : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
-                    }`}
-                  >
-                    {scrapingInProgress ? 'Scraping...' : 'Lancer'}
-                  </button>
+          <div className="space-y-6">
+            {/* AI Detection Button */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold">🤖 Detection IA d&apos;Opportunites</h3>
+                  <p className="text-purple-100 text-sm mt-1">
+                    Analysez automatiquement les sources pour trouver des leads qualifies
+                  </p>
                 </div>
-              ))}
+                <button
+                  onClick={handleDetectOpportunities}
+                  disabled={aiProcessingInProgress}
+                  className="px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 disabled:opacity-50 transition"
+                >
+                  {aiProcessingInProgress ? '⏳ Analyse en cours...' : '🚀 Lancer la detection IA'}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple', needsQuery: true },
+                  { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue', needsQuery: true },
+                  { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo', needsQuery: true },
+                  { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan', needsQuery: true },
+                  { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange', needsQuery: false },
+                  { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray', needsQuery: false },
+                ].map(source => (
+                  <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
+                        {source.icon}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">{source.name}</h3>
+                        <p className="text-sm text-gray-500">{source.desc}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setScrapingSource(source.id);
+                        setShowScrapingConfig(true);
+                        // Set default values based on source
+                        if (source.needsQuery) {
+                          setScrapingConfig({
+                            query: source.id === 'pica' ? 'immobilier tunis' :
+                                   source.id === 'serp' ? 'appartement vendre tunis' :
+                                   source.id === 'meta' ? 'immobilier tunisie' :
+                                   'agent immobilier tunis',
+                            urls: [''],
+                            maxResults: 50,
+                          });
+                        } else {
+                          setScrapingConfig({
+                            query: '',
+                            urls: source.id === 'firecrawl'
+                              ? ['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']
+                              : ['https://www.afif.tn', 'https://www.immobilier.com.tn'],
+                            maxResults: 50,
+                          });
+                        }
+                      }}
+                      disabled={scrapingInProgress}
+                      className={`w-full py-2 rounded-lg font-medium transition ${
+                        scrapingInProgress
+                          ? 'bg-gray-100 text-gray-400'
+                          : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
+                      }`}
+                    >
+                      {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -680,11 +943,16 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage geographique</h3>
                   <GeographicTargeting
-                    onZonesChange={(zones) => setNewCampaign(prev => ({
+                    onZonesChange={(zones: any) => setNewCampaign(prev => ({
                       ...prev,
-                      config: { ...prev.config, zones }
+                      config: { ...prev.config, locations: zones.map((z: any) => z.name || z) }
                     }))}
-                    initialZones={newCampaign.config.zones}
+                    initialZones={newCampaign.config.locations?.map((l, idx) => ({
+                      id: `zone-${idx}`,
+                      name: l,
+                      type: 'city' as const,
+                      selected: true
+                    })) || []}
                   />
                 </div>
               )}
@@ -693,11 +961,22 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage demographique</h3>
                   <DemographicTargeting
-                    onChange={(demographics) => setNewCampaign(prev => ({
+                    onChange={(demographics: any) => setNewCampaign(prev => ({
                       ...prev,
-                      config: { ...prev.config, demographics }
+                      config: {
+                        ...prev.config,
+                        propertyTypes: demographics.propertyTypes || prev.config.propertyTypes,
+                        minPrice: demographics.budgetRange?.min || prev.config.minPrice,
+                        maxPrice: demographics.budgetRange?.max || prev.config.maxPrice,
+                      }
                     }))}
-                    initialCriteria={newCampaign.config.demographics}
+                    initialCriteria={{
+                      propertyTypes: newCampaign.config.propertyTypes,
+                      budgetRange: {
+                        min: newCampaign.config.minPrice || 0,
+                        max: newCampaign.config.maxPrice || 1000000
+                      },
+                    }}
                   />
                 </div>
               )}
@@ -858,12 +1137,159 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               )}
 
               {/* Notes */}
-              {selectedLead.notes && (
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">📝 Notes</h3>
-                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.notes}</p>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">📝 Notes</h3>
+                  {!editingNotes && (
+                    <button
+                      onClick={() => {
+                        setEditingNotes(true);
+                        setNotesValue(selectedLead.qualificationNotes || '');
+                      }}
+                      className="text-sm text-purple-600 hover:text-purple-700"
+                    >
+                      ✏️ Modifier
+                    </button>
+                  )}
                 </div>
-              )}
+                {editingNotes ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      rows={4}
+                      placeholder="Ajouter des notes sur ce lead..."
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditingNotes(false)}
+                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={handleSaveNotes}
+                        className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                      >
+                        💾 Enregistrer
+                      </button>
+                    </div>
+                  </div>
+                ) : selectedLead.qualificationNotes ? (
+                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.qualificationNotes}</p>
+                ) : (
+                  <p className="text-gray-400 bg-gray-50 rounded-lg p-3 italic">Aucune note. Cliquez sur Modifier pour en ajouter.</p>
+                )}
+              </div>
+
+              {/* Matching Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">🎯 Matching Biens</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleLoadMatches(selectedLead.id)}
+                      disabled={loadingMatches}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      {loadingMatches ? '⏳' : '🔄'} Charger
+                    </button>
+                    <button
+                      onClick={() => handleFindMatches(selectedLead.id)}
+                      disabled={loadingMatches}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      {loadingMatches ? '⏳ Recherche...' : '🔍 Trouver des matchs'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Match Results */}
+                {leadMatches.length > 0 ? (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {leadMatches.map((match: ProspectingMatch) => (
+                      <div key={match.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">
+                              {match.property?.title || 'Bien immobilier'}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {match.property?.city} • {match.property?.type} • {((match.property?.price || 0) / 1000).toFixed(0)}k TND
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${
+                              match.score >= 80 ? 'bg-green-100 text-green-700' :
+                              match.score >= 60 ? 'bg-blue-100 text-blue-700' :
+                              match.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {match.score}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Score Breakdown */}
+                        {match.reason?.breakdown && (
+                          <div className="mt-2 flex gap-2 flex-wrap text-xs">
+                            <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded">
+                              Budget: {match.reason.breakdown.budgetPoints}/40
+                            </span>
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded">
+                              Lieu: {match.reason.breakdown.locationPoints}/30
+                            </span>
+                            <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded">
+                              Type: {match.reason.breakdown.typePoints}/20
+                            </span>
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded">
+                              Bonus: {match.reason.breakdown.bonusPoints}/10
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="mt-2 flex gap-2">
+                          {match.property && (
+                            <a
+                              href={`/properties/${match.propertyId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                            >
+                              👁️ Voir le bien
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleNotifyMatch(match.id)}
+                            className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          >
+                            📧 Notifier
+                          </button>
+                          <button
+                            onClick={() => handleUpdateMatchStatus(match.id, 'converted')}
+                            className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100"
+                          >
+                            ✅ Accepter
+                          </button>
+                          <button
+                            onClick={() => handleUpdateMatchStatus(match.id, 'ignored')}
+                            className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                          >
+                            ❌ Rejeter
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
+                    <p>Aucun match trouvé</p>
+                    <p className="text-xs mt-1">Cliquez sur "Trouver des matchs" pour lancer la recherche</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -899,8 +1325,17 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 )}
                 {selectedLead.status === 'qualified' && (
                   <button
-                    onClick={() => {
-                      convertLead(selectedLead.id);
+                    onClick={async () => {
+                      const result = await convertLead(selectedLead.id);
+                      if (result?.prospect) {
+                        // Dispatch event to notify other modules (prospects, etc.)
+                        window.dispatchEvent(new CustomEvent('prospecting:lead-converted', {
+                          detail: {
+                            leadId: selectedLead.id,
+                            prospect: result.prospect,
+                          }
+                        }));
+                      }
                       setShowLeadModal(false);
                     }}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
@@ -909,6 +1344,108 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scraping Configuration Modal */}
+      {showScrapingConfig && scrapingSource && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold">Configuration du Scraping</h2>
+                  <p className="text-purple-100 text-sm mt-1">
+                    {scrapingSource === 'pica' && 'Pica API - SERP + Firecrawl'}
+                    {scrapingSource === 'serp' && 'Google SERP - Recherche Google'}
+                    {scrapingSource === 'meta' && 'Meta/Facebook - Marketplace'}
+                    {scrapingSource === 'linkedin' && 'LinkedIn - Profils pro'}
+                    {scrapingSource === 'firecrawl' && 'Firecrawl - Web scraping'}
+                    {scrapingSource === 'website' && 'Sites web - Agences immo'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowScrapingConfig(false);
+                    setScrapingSource(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              {['pica', 'serp', 'meta', 'linkedin'].includes(scrapingSource) ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Requete de recherche
+                    </label>
+                    <input
+                      type="text"
+                      value={scrapingConfig.query}
+                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, query: e.target.value }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      placeholder="Ex: appartement vendre tunis"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre maximum de resultats
+                    </label>
+                    <input
+                      type="number"
+                      value={scrapingConfig.maxResults}
+                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, maxResults: parseInt(e.target.value) || 50 }))}
+                      className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                      min={1}
+                      max={200}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    URLs a scraper (une par ligne)
+                  </label>
+                  <textarea
+                    value={scrapingConfig.urls.join('\n')}
+                    onChange={(e) => setScrapingConfig(prev => ({ ...prev, urls: e.target.value.split('\n').filter(Boolean) }))}
+                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
+                    rows={5}
+                    placeholder="https://www.mubawab.tn&#10;https://www.tayara.tn/immobilier"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Entrez les URLs completes des pages a analyser
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 rounded-b-2xl border-t flex justify-between">
+              <button
+                onClick={() => {
+                  setShowScrapingConfig(false);
+                  setScrapingSource(null);
+                }}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleLaunchScraping}
+                disabled={scrapingInProgress || (!scrapingConfig.query && scrapingConfig.urls.filter(Boolean).length === 0)}
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+              >
+                {scrapingInProgress ? '⏳ Scraping...' : '🚀 Lancer le scraping'}
+              </button>
             </div>
           </div>
         </div>

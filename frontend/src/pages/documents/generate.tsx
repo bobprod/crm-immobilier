@@ -129,73 +129,80 @@ Signatures:
                         <CardHeader>
                             <CardTitle className="flex items-center">
                                 <Wand2 className="h-5 w-5 mr-2" />
-                                <Label htmlFor="title">Titre du Document</Label>
-                                <Input
-                                    id="title"
-                                    type="text"
-                                    placeholder="Ex: Contrat de vente - Appartement Paris 15e"
-                                    value={formData.title}
-                                    onChange={(e) => handleChange('title', e.target.value)}
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
+                                Paramètres du Document
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Title */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="title">Titre du Document</Label>
+                                    <Input
+                                        id="title"
+                                        type="text"
+                                        placeholder="Ex: Contrat de vente - Appartement Paris 15e"
+                                        value={formData.title}
+                                        onChange={(e) => handleChange('title', e.target.value)}
+                                        required
+                                        disabled={loading}
+                                    />
+                                </div>
 
-                            {/* Description */}
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    placeholder="Décrivez brièvement le document..."
-                                    value={formData.description}
-                                    onChange={(e) => handleChange('description', e.target.value)}
-                                    required
-                                    disabled={loading}
-                                    rows={3}
-                                />
-                            </div>
+                                {/* Description */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="description">Description</Label>
+                                    <Textarea
+                                        id="description"
+                                        placeholder="Décrivez brièvement le document..."
+                                        value={formData.description}
+                                        onChange={(e) => handleChange('description', e.target.value)}
+                                        required
+                                        disabled={loading}
+                                        rows={3}
+                                    />
+                                </div>
 
-                            {/* Context */}
-                            <div className="space-y-2">
-                                <Label htmlFor="context">Contexte / Informations Supplémentaires</Label>
-                                <Textarea
-                                    id="context"
-                                    placeholder="Ajoutez des détails spécifiques..."
-                                    value={formData.context}
-                                    onChange={(e) => handleChange('context', e.target.value)}
-                                    disabled={loading}
-                                    rows={4}
-                                />
-                            </div>
+                                {/* Context */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="context">Contexte / Informations Supplémentaires</Label>
+                                    <Textarea
+                                        id="context"
+                                        placeholder="Ajoutez des détails spécifiques..."
+                                        value={formData.context}
+                                        onChange={(e) => handleChange('context', e.target.value)}
+                                        disabled={loading}
+                                        rows={4}
+                                    />
+                                </div>
 
-                            {/* Actions */}
-                            <div className="flex gap-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => router.push('/dashboard')}
-                                    disabled={loading}
-                                    className="flex-1"
-                                >
-                                    Annuler
-                                </Button>
-                                <Button type="submit" disabled={loading} className="flex-1">
-                                    {loading ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                            Génération...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="h-4 w-4 mr-2" />
-                                            Générer
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                                {/* Actions */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => router.push('/dashboard')}
+                                        disabled={loading}
+                                        className="flex-1"
+                                    >
+                                        Annuler
+                                    </Button>
+                                    <Button type="submit" disabled={loading} className="flex-1">
+                                        {loading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                Génération...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="h-4 w-4 mr-2" />
+                                                Générer
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
 
                 {/* Preview */}
                 <Card>
@@ -230,8 +237,8 @@ Signatures:
                         )}
                     </CardContent>
                 </Card>
+                </div>
             </div>
-        </div>
-        </Layout >
+        </Layout>
     );
 }

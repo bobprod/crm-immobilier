@@ -21,27 +21,35 @@ export class DashboardService {
       ] = await Promise.all([
         this.prisma.prospects.count({ where: { userId, status: 'active' } }).catch(() => 0),
         this.prisma.properties.count({ where: { userId, status: 'available' } }).catch(() => 0),
-        this.prisma.appointments.count({
-          where: {
-            userId,
-            startTime: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0)),
-              lt: new Date(new Date().setHours(23, 59, 59, 999)),
+        this.prisma.appointments
+          .count({
+            where: {
+              userId,
+              startTime: {
+                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                lt: new Date(new Date().setHours(23, 59, 59, 999)),
+              },
             },
-          },
-        }).catch(() => 0),
-        this.prisma.matches.count({
-          where: {
-            properties: { userId },
-            status: 'pending',
-          },
-        }).catch(() => 0),
-        this.prisma.prospecting_campaigns.count({
-          where: { userId, status: 'active' },
-        }).catch(() => 0),
-        this.prisma.tasks.count({
-          where: { userId, status: { in: ['todo', 'in_progress'] } },
-        }).catch(() => 0),
+          })
+          .catch(() => 0),
+        this.prisma.matches
+          .count({
+            where: {
+              properties: { userId },
+              status: 'pending',
+            },
+          })
+          .catch(() => 0),
+        this.prisma.prospecting_campaigns
+          .count({
+            where: { userId, status: 'active' },
+          })
+          .catch(() => 0),
+        this.prisma.tasks
+          .count({
+            where: { userId, status: { in: ['todo', 'in_progress'] } },
+          })
+          .catch(() => 0),
         this.prisma.communications.count({ where: { userId } }).catch(() => 0),
       ]);
 
@@ -97,57 +105,56 @@ export class DashboardService {
    * Activités récentes
    */
   async getRecentActivities(userId: string) {
-    const [recentProspects, recentProperties, recentAppointments, recentComms] =
-      await Promise.all([
-        this.prisma.prospects.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            createdAt: true,
-            status: true,
-          },
-        }),
-        this.prisma.properties.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            title: true,
-            createdAt: true,
-            price: true,
-            status: true,
-          },
-        }),
-        this.prisma.appointments.findMany({
-          where: { userId },
-          orderBy: { startTime: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            title: true,
-            startTime: true,
-            status: true,
-          },
-        }),
-        this.prisma.communications.findMany({
-          where: { userId },
-          orderBy: { sentAt: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            type: true,
-            to: true,
-            subject: true,
-            sentAt: true,
-            status: true,
-          },
-        }),
-      ]);
+    const [recentProspects, recentProperties, recentAppointments, recentComms] = await Promise.all([
+      this.prisma.prospects.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          status: true,
+        },
+      }),
+      this.prisma.properties.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          createdAt: true,
+          price: true,
+          status: true,
+        },
+      }),
+      this.prisma.appointments.findMany({
+        where: { userId },
+        orderBy: { startTime: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          startTime: true,
+          status: true,
+        },
+      }),
+      this.prisma.communications.findMany({
+        where: { userId },
+        orderBy: { sentAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          type: true,
+          to: true,
+          subject: true,
+          sentAt: true,
+          status: true,
+        },
+      }),
+    ]);
 
     return {
       recentProspects,

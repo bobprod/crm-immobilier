@@ -203,9 +203,7 @@ export class ProspectsEnhancedService {
     });
 
     if (currentStage) {
-      const duration = Math.floor(
-        (Date.now() - currentStage.enteredAt.getTime()) / 1000 / 60,
-      );
+      const duration = Math.floor((Date.now() - currentStage.enteredAt.getTime()) / 1000 / 60);
       await this.prisma.prospect_timeline.update({
         where: { id: currentStage.id },
         data: {

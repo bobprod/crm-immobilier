@@ -42,11 +42,7 @@ export class ValidationController {
   @Post('email')
   @ApiOperation({ summary: 'Valider un email' })
   async validateEmail(@Request() req, @Body() body: ValidateEmailDto) {
-    return this.validationService.validateEmail(
-      req.user.userId,
-      body.email,
-      body.prospectId,
-    );
+    return this.validationService.validateEmail(req.user.userId, body.email, body.prospectId);
   }
 
   @Post('emails')
@@ -62,11 +58,7 @@ export class ValidationController {
   @Post('phone')
   @ApiOperation({ summary: 'Valider un téléphone' })
   async validatePhone(@Request() req, @Body() body: ValidatePhoneDto) {
-    return this.validationService.validatePhone(
-      req.user.userId,
-      body.phone,
-      body.prospectId,
-    );
+    return this.validationService.validatePhone(req.user.userId, body.phone, body.prospectId);
   }
 
   // ============================================
@@ -109,11 +101,7 @@ export class ValidationController {
   @Post('whitelist')
   @ApiOperation({ summary: 'Ajouter à la whitelist' })
   async addToWhitelist(@Request() req, @Body() body: AddToWhitelistDto) {
-    return this.validationService.addToWhitelist(
-      body.type,
-      body.value,
-      req.user.userId,
-    );
+    return this.validationService.addToWhitelist(body.type, body.value, req.user.userId);
   }
 
   // ============================================
@@ -122,14 +110,8 @@ export class ValidationController {
 
   @Get('history')
   @ApiOperation({ summary: 'Historique des validations' })
-  async getHistory(
-    @Request() req,
-    @Query() filters: ValidationHistoryFiltersDto,
-  ) {
-    return this.validationService.getValidationHistory(
-      req.user.userId,
-      filters,
-    );
+  async getHistory(@Request() req, @Query() filters: ValidationHistoryFiltersDto) {
+    return this.validationService.getValidationHistory(req.user.userId, filters);
   }
 
   @Get('stats')
@@ -145,11 +127,7 @@ export class ValidationController {
   @Post('email/ai')
   @ApiOperation({ summary: 'Valider un email avec AI' })
   async validateEmailWithAI(@Request() req, @Body() body: ValidateEmailAIDto) {
-    return this.validationAIService.validateEmailWithAI(
-      req.user.userId,
-      body.email,
-      body.context,
-    );
+    return this.validationAIService.validateEmailWithAI(req.user.userId, body.email, body.context);
   }
 
   @Post('spam/ai')

@@ -18,7 +18,7 @@ export class GeminiProvider implements LLMProvider {
 
   async generate(prompt: string, options?: GenerateOptions): Promise<string> {
     try {
-      const model = this.client.getGenerativeModel({ 
+      const model = this.client.getGenerativeModel({
         model: options?.model || this.model,
       });
 

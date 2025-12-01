@@ -56,9 +56,7 @@ export class ProspectingIntegrationService {
     });
 
     if (settings?.value) {
-      return typeof settings.value === 'string'
-        ? JSON.parse(settings.value)
-        : settings.value;
+      return typeof settings.value === 'string' ? JSON.parse(settings.value) : settings.value;
     }
 
     // Fallback sur les variables d'environnement
@@ -153,10 +151,9 @@ export class ProspectingIntegrationService {
 
   private async testSerpAPI(config: any): Promise<any> {
     try {
-      const response = await axios.get(
-        `https://serpapi.com/account?api_key=${config.apiKey}`,
-        { timeout: 5000 },
-      );
+      const response = await axios.get(`https://serpapi.com/account?api_key=${config.apiKey}`, {
+        timeout: 5000,
+      });
       return { success: true, credits: response.data?.account_credits };
     } catch {
       return { success: false, error: 'SERP API indisponible' };
@@ -196,7 +193,7 @@ export class ProspectingIntegrationService {
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
-      (lead) => lead.validationStatus !== 'spam' && lead.status !== 'rejete',
+      (lead) => lead.validationStatus !== 'spam' && lead.status !== 'rejected',
     );
 
     const rejectedCount = leadsToCreate.length - validLeads.length;
@@ -215,11 +212,13 @@ export class ProspectingIntegrationService {
             phone: lead.phone,
             city: lead.city,
             propertyType: lead.propertyTypes?.[0],
-            budget: lead.budgetMax ? {
-              min: lead.budgetMin,
-              max: lead.budgetMax,
-              currency: lead.budgetCurrency || 'TND',
-            } : undefined,
+            budget: lead.budgetMax
+              ? {
+                  min: lead.budgetMin,
+                  max: lead.budgetMax,
+                  currency: lead.budgetCurrency || 'TND',
+                }
+              : undefined,
             source: lead.source,
             sourceUrl: lead.url,
             prospectType: lead.leadType === 'mandat' ? 'mandat' : 'requete',
@@ -265,10 +264,7 @@ export class ProspectingIntegrationService {
   /**
    * Convertit les donnees brutes d'un scraper en RawScrapedItem
    */
-  convertToRawScrapedItems(
-    data: any[],
-    source: string,
-  ): RawScrapedItem[] {
+  convertToRawScrapedItems(data: any[], source: string): RawScrapedItem[] {
     return data.map((item) => ({
       id: item.id,
       source,
@@ -335,7 +331,9 @@ export class ProspectingIntegrationService {
 
     const apiConfig = await this.getApiConfig(userId, 'pica');
     if (!apiConfig) {
-      throw new BadRequestException('Pica API non configuree. Configurez la cle API dans les parametres.');
+      throw new BadRequestException(
+        'Pica API non configuree. Configurez la cle API dans les parametres.',
+      );
     }
 
     try {
@@ -556,18 +554,15 @@ export class ProspectingIntegrationService {
 
   private async scrapeFromMeta(config: any, data: any): Promise<any> {
     // Meta Marketing API pour rechercher dans les groupes/marketplace
-    const response = await axios.get(
-      `https://graph.facebook.com/v18.0/search`,
-      {
-        params: {
-          access_token: config.apiKey,
-          q: data.query,
-          type: 'post',
-          fields: 'message,from,created_time',
-        },
-        timeout: 15000,
+    const response = await axios.get(`https://graph.facebook.com/v18.0/search`, {
+      params: {
+        access_token: config.apiKey,
+        q: data.query,
+        type: 'post',
+        fields: 'message,from,created_time',
       },
-    );
+      timeout: 15000,
+    });
 
     const leads = this.extractLeadsFromMetaPosts(response.data?.data || []);
     return { success: true, leads, count: leads.length };
@@ -719,8 +714,11 @@ export class ProspectingIntegrationService {
 
     try {
       const result = await this.callLLM(llmConfig, prompt);
-      return { success: true, analysis: result };
+      return { success: true, analysis: result, method: 'llm' };
     } catch (error) {
+      // Log l'erreur pour le debugging
+      this.logger.warn(`LLM analysis failed, falling back to regex: ${error.message}`);
+
       // Fallback sur extraction regex
       const contact = this.extractContactFromText(content);
       return {
@@ -730,6 +728,8 @@ export class ProspectingIntegrationService {
           leadType: this.detectLeadType(content),
           score: contact?.email ? 60 : 30,
         },
+        method: 'fallback_regex',
+        llmError: error.message,
       };
     }
   }
@@ -780,11 +780,21 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, classification: result };
-    } catch {
+      return { success: true, classification: result, method: 'llm' };
+    } catch (error) {
+      // Log l'erreur pour le debugging
+      this.logger.warn(
+        `LLM classification failed for lead ${leadId}, using basic rules: ${error.message}`,
+      );
+
       // Classification basique sans IA
       const classification = this.classifyLeadBasic(lead);
-      return { success: true, classification };
+      return {
+        success: true,
+        classification,
+        method: 'fallback_rules',
+        llmError: error.message,
+      };
     }
   }
 
@@ -959,7 +969,15 @@ export class ProspectingIntegrationService {
     const textLower = text.toLowerCase();
 
     // Indicateurs de mandat (vendeur/bailleur)
-    const mandatKeywords = ['a vendre', 'vends', 'je vends', 'a louer', 'loue', 'proprietaire', 'cede'];
+    const mandatKeywords = [
+      'a vendre',
+      'vends',
+      'je vends',
+      'a louer',
+      'loue',
+      'proprietaire',
+      'cede',
+    ];
     for (const keyword of mandatKeywords) {
       if (textLower.includes(keyword)) return 'mandat';
     }

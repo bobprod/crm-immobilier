@@ -95,9 +95,7 @@ TYPES DE BIENS:
   /**
    * Transforme un RawScrapedItem directement en ProspectingLead pret a etre insere en BDD
    */
-  async buildProspectingLeadFromRaw(
-    raw: RawScrapedItem,
-  ): Promise<ProspectingLeadCreateInput> {
+  async buildProspectingLeadFromRaw(raw: RawScrapedItem): Promise<ProspectingLeadCreateInput> {
     // 1. Analyser avec le LLM
     const analyzed = await this.analyzeRawItem(raw);
 
@@ -138,7 +136,7 @@ TYPES DE BIENS:
 
       validationStatus: validation.status,
       score,
-      status: 'nouveau',
+      status: 'new',
 
       metadata: {
         analyzedAt: new Date().toISOString(),
@@ -268,9 +266,7 @@ TYPES DE BIENS:
         where: { key: 'llm_config' },
       });
       if (settings?.value) {
-        return typeof settings.value === 'string'
-          ? JSON.parse(settings.value)
-          : settings.value;
+        return typeof settings.value === 'string' ? JSON.parse(settings.value) : settings.value;
       }
     } catch {
       // Ignore
@@ -345,7 +341,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
       },
       {
         headers: {
-          'Authorization': `Bearer ${config.apiKey}`,
+          Authorization: `Bearer ${config.apiKey}`,
           'Content-Type': 'application/json',
         },
         timeout: 30000,
@@ -363,9 +359,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
         model: config.model,
         max_tokens: 1000,
         system: this.ANALYSIS_SYSTEM_PROMPT,
-        messages: [
-          { role: 'user', content: userPrompt },
-        ],
+        messages: [{ role: 'user', content: userPrompt }],
       },
       {
         headers: {
@@ -507,7 +501,10 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     return undefined;
   }
 
-  private extractName(text: string, authorName?: string): { firstName?: string; lastName?: string } {
+  private extractName(
+    text: string,
+    authorName?: string,
+  ): { firstName?: string; lastName?: string } {
     // Utiliser le nom de l'auteur si disponible
     if (authorName) {
       const parts = authorName.trim().split(/\s+/);
@@ -529,14 +526,40 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
 
   private extractCity(text: string): string | undefined {
     const tunisianCities = [
-      'tunis', 'la marsa', 'carthage', 'sidi bou said', 'gammarth',
-      'ariana', 'la soukra', 'raoued', 'menzah', 'ennasr', 'lac',
-      'sousse', 'monastir', 'mahdia', 'sfax', 'gabes',
-      'bizerte', 'nabeul', 'hammamet', 'kelibia',
-      'djerba', 'zarzis', 'medenine',
-      'kairouan', 'kasserine', 'gafsa', 'tozeur',
-      'beja', 'jendouba', 'le kef', 'siliana',
-      'zaghouan', 'ben arous', 'manouba',
+      'tunis',
+      'la marsa',
+      'carthage',
+      'sidi bou said',
+      'gammarth',
+      'ariana',
+      'la soukra',
+      'raoued',
+      'menzah',
+      'ennasr',
+      'lac',
+      'sousse',
+      'monastir',
+      'mahdia',
+      'sfax',
+      'gabes',
+      'bizerte',
+      'nabeul',
+      'hammamet',
+      'kelibia',
+      'djerba',
+      'zarzis',
+      'medenine',
+      'kairouan',
+      'kasserine',
+      'gafsa',
+      'tozeur',
+      'beja',
+      'jendouba',
+      'le kef',
+      'siliana',
+      'zaghouan',
+      'ben arous',
+      'manouba',
     ];
 
     const textLower = text.toLowerCase();
@@ -544,8 +567,9 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     for (const city of tunisianCities) {
       if (textLower.includes(city)) {
         // Capitaliser correctement
-        return city.split(' ')
-          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        return city
+          .split(' ')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(' ');
       }
     }
@@ -605,17 +629,17 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
   private extractPropertyTypes(text: string): string[] {
     const types: string[] = [];
     const typeKeywords: Record<string, string[]> = {
-      'appartement': ['appartement', 'appart', 'apt'],
-      'studio': ['studio', 's+0'],
-      'duplex': ['duplex'],
-      'triplex': ['triplex'],
-      'maison': ['maison'],
-      'villa': ['villa'],
-      'terrain': ['terrain', 'parcelle'],
+      appartement: ['appartement', 'appart', 'apt'],
+      studio: ['studio', 's+0'],
+      duplex: ['duplex'],
+      triplex: ['triplex'],
+      maison: ['maison'],
+      villa: ['villa'],
+      terrain: ['terrain', 'parcelle'],
       'local commercial': ['local commercial', 'commerce', 'boutique'],
-      'bureau': ['bureau', 'office'],
-      'immeuble': ['immeuble'],
-      'ferme': ['ferme', 'agricole'],
+      bureau: ['bureau', 'office'],
+      immeuble: ['immeuble'],
+      ferme: ['ferme', 'agricole'],
     };
 
     for (const [type, keywords] of Object.entries(typeKeywords)) {
@@ -652,11 +676,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
 
   private extractRooms(text: string): number | undefined {
     // Patterns: "S+2", "3 pieces", "4 chambres"
-    const patterns = [
-      /s\+(\d)/i,
-      /(\d)\s*pi[eè]ces?/i,
-      /(\d)\s*chambres?/i,
-    ];
+    const patterns = [/s\+(\d)/i, /(\d)\s*pi[eè]ces?/i, /(\d)\s*chambres?/i];
 
     for (const pattern of patterns) {
       const match = text.match(pattern);
@@ -670,17 +690,36 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
 
   private detectLeadTypeFromText(text: string): 'mandat' | 'requete' | 'inconnu' {
     const mandatKeywords = [
-      'a vendre', 'à vendre', 'vends', 'je vends',
-      'a louer', 'à louer', 'loue', 'je loue',
-      'proprietaire', 'propriétaire', 'cede', 'cède',
-      'mise en vente', 'offre', 'propose',
+      'a vendre',
+      'à vendre',
+      'vends',
+      'je vends',
+      'a louer',
+      'à louer',
+      'loue',
+      'je loue',
+      'proprietaire',
+      'propriétaire',
+      'cede',
+      'cède',
+      'mise en vente',
+      'offre',
+      'propose',
     ];
 
     const requeteKeywords = [
-      'cherche', 'recherche', 'je cherche',
-      'besoin', 'souhaite', 'interesse', 'intéressé',
-      'acheter', 'acquerir', 'acquérir',
-      'louer un', 'prendre en location',
+      'cherche',
+      'recherche',
+      'je cherche',
+      'besoin',
+      'souhaite',
+      'interesse',
+      'intéressé',
+      'acheter',
+      'acquerir',
+      'acquérir',
+      'louer un',
+      'prendre en location',
     ];
 
     for (const keyword of mandatKeywords) {
@@ -695,7 +734,11 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
   }
 
   private detectIntention(text: string): 'acheter' | 'louer' | 'vendre' | 'investir' | 'inconnu' {
-    if (text.includes('investir') || text.includes('investissement') || text.includes('rendement')) {
+    if (
+      text.includes('investir') ||
+      text.includes('investissement') ||
+      text.includes('rendement')
+    ) {
       return 'investir';
     }
     if (text.includes('vendre') || text.includes('vente') || text.includes('cede')) {
@@ -712,14 +755,24 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
 
   private detectUrgency(text: string): 'basse' | 'moyenne' | 'haute' | 'inconnu' {
     const highUrgencyKeywords = [
-      'urgent', 'tres urgent', 'très urgent', 'rapidement',
-      'immediatement', 'immédiatement', 'asap', 'vite',
-      'des que possible', 'dès que possible',
+      'urgent',
+      'tres urgent',
+      'très urgent',
+      'rapidement',
+      'immediatement',
+      'immédiatement',
+      'asap',
+      'vite',
+      'des que possible',
+      'dès que possible',
     ];
 
     const mediumUrgencyKeywords = [
-      'bientot', 'bientôt', 'prochainement',
-      'dans les semaines', 'ce mois',
+      'bientot',
+      'bientôt',
+      'prochainement',
+      'dans les semaines',
+      'ce mois',
     ];
 
     for (const keyword of highUrgencyKeywords) {
@@ -880,10 +933,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     return normalized;
   }
 
-  private calculateGlobalScore(
-    analyzed: LLMAnalyzedLead,
-    validation: ValidationResult,
-  ): number {
+  private calculateGlobalScore(analyzed: LLMAnalyzedLead, validation: ValidationResult): number {
     // Combiner le score de serieux et le score de validation
     const seriousness = analyzed.seriousnessScore || 50;
     const validationScore = validation.score;
@@ -901,7 +951,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
       leadType: 'inconnu',
       validationStatus: 'pending',
       score: 0,
-      status: 'nouveau',
+      status: 'new',
       metadata: {
         error: errorMessage,
         analyzedAt: new Date().toISOString(),
@@ -910,6 +960,6 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

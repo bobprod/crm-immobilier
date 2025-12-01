@@ -1,19 +1,5 @@
 import { useState, useEffect } from 'react';
-
-interface Property {
-  id: string;
-  title: string;
-  type: string;
-  address: string;
-  city: string;
-  price: number;
-  surface?: number;
-  rooms?: number;
-  bedrooms?: number;
-  images?: string[];
-  description?: string;
-  [key: string]: any;
-}
+import { Property } from '../utils/properties-api';
 
 export function useProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -23,7 +9,7 @@ export function useProperties() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -54,7 +40,10 @@ export function useProperties() {
   };
 
   useEffect(() => {
-    loadProperties();
+    // Only load on client-side to avoid SSR issues
+    if (typeof window !== 'undefined') {
+      loadProperties();
+    }
   }, []);
 
   const createProperty = async (data: Partial<Property>) => {

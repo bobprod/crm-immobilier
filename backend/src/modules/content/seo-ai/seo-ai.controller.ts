@@ -1,19 +1,11 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { SeoAiService } from './seo-ai.service';
 import { JwtAuthGuard } from '@/modules/core/auth/guards/jwt-auth.guard';
 import { GenerateAltTextDto, OptimizeBatchDto } from './dto';
 
 /**
  * Controller pour le module SEO AI
- * 
+ *
  * Permet l'optimisation automatique du SEO des biens immobiliers
  * via intelligence artificielle (Multi-Provider: Claude, GPT, Gemini, etc.)
  */
@@ -27,10 +19,7 @@ export class SeoAiController {
    * POST /seo-ai/optimize/:propertyId
    */
   @Post('optimize/:propertyId')
-  async optimizeProperty(
-    @Request() req,
-    @Param('propertyId') propertyId: string,
-  ) {
+  async optimizeProperty(@Request() req, @Param('propertyId') propertyId: string) {
     return this.seoAiService.optimizeProperty(propertyId, req.user.userId);
   }
 
@@ -39,10 +28,7 @@ export class SeoAiController {
    * GET /seo-ai/property/:propertyId
    */
   @Get('property/:propertyId')
-  async getPropertySeo(
-    @Request() req,
-    @Param('propertyId') propertyId: string,
-  ) {
+  async getPropertySeo(@Request() req, @Param('propertyId') propertyId: string) {
     return this.seoAiService.getPropertySeo(propertyId);
   }
 
@@ -51,10 +37,7 @@ export class SeoAiController {
    * POST /seo-ai/generate/alt-text
    */
   @Post('generate/alt-text')
-  async generateAltText(
-    @Request() req,
-    @Body() body: GenerateAltTextDto,
-  ) {
+  async generateAltText(@Request() req, @Body() body: GenerateAltTextDto) {
     return this.seoAiService.generateAltText(
       body.propertyId,
       req.user.userId,
@@ -68,10 +51,7 @@ export class SeoAiController {
    * POST /seo-ai/optimize/batch
    */
   @Post('optimize/batch')
-  async optimizeBatch(
-    @Request() req,
-    @Body() body: OptimizeBatchDto,
-  ) {
+  async optimizeBatch(@Request() req, @Body() body: OptimizeBatchDto) {
     return this.seoAiService.bulkOptimize(req.user.userId, body.propertyIds);
   }
 }

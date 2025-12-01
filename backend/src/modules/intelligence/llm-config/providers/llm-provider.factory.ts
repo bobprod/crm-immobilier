@@ -1,51 +1,129 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../../../shared/database/prisma.service';
+import {
+  LLMProvider,
+  LLMConfig,
+  PRICING_PER_1M_TOKENS,
+} from './llm-provider.interface';
+import { AnthropicProvider } from './anthropic.provider';
+import { OpenAIProvider } from './openai.provider';
+import { GeminiProvider } from './gemini.provider';
+import { OpenRouterProvider } from './openrouter.provider';
+import { DeepSeekProvider } from './deepseek.provider';
 
 /**
  * Factory pour créer des instances de providers LLM
  */
 @Injectable()
 export class LLMProviderFactory {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
-   * Tester un provider LLM
+   * Créer un provider LLM selon la config de l'utilisateur
    */
-  async testProvider(config: any): Promise<boolean> {
+  async createProvider(userId: string): Promise<LLMProvider> {
+    const config = await this.prisma.llmConfig.findUnique({
+      where: { userId },
+    });
+
+    if (!config) {
+      throw new BadRequestException(
+        'Configuration LLM manquante. Veuillez configurer vos clés API dans Paramètres > LLM.',
+      );
+    }
+
+    if (!config.apiKey) {
+      throw new BadRequestException(
+        `Clé API ${config.provider} manquante. Veuillez la configurer dans les paramètres.`,
+      );
+    }
+
+    return this.createProviderInstance({
+      provider: config.provider as LLMConfig['provider'],
+      apiKey: config.apiKey,
+      model: config.model || undefined,
+    });
+  }
+
+  /**
+   * Créer une instance de provider à partir d'une config explicite
+   */
+  createProviderFromConfig(config: LLMConfig): LLMProvider {
+    return this.createProviderInstance(config);
+  }
+
+  /**
+   * Créer une instance de provider selon le type
+   */
+  private createProviderInstance(config: LLMConfig): LLMProvider {
+    let provider: LLMProvider;
+
+    switch (config.provider) {
+      case 'anthropic':
+        provider = new AnthropicProvider(config.apiKey, config.model);
+        break;
+
+      case 'openai':
+        provider = new OpenAIProvider(config.apiKey, config.model);
+        break;
+
+      case 'gemini':
+        provider = new GeminiProvider(config.apiKey, config.model);
+        break;
+
+      case 'openrouter':
+        provider = new OpenRouterProvider(config.apiKey, config.model);
+        break;
+
+      case 'deepseek':
+        provider = new DeepSeekProvider(config.apiKey, config.model);
+        break;
+
+      default:
+        throw new BadRequestException(`Provider LLM non supporté : ${config.provider}`);
+    }
+
+    if (!provider.isConfigured()) {
+      throw new BadRequestException(
+        `Clé API ${config.provider} invalide. Veuillez vérifier votre configuration.`,
+      );
+    }
+
+    return provider;
+  }
+
+  /**
+   * Tester une configuration LLM
+   */
+  async testProvider(config: LLMConfig): Promise<boolean> {
     try {
-      // TODO: Implémenter le test réel selon le provider
-      // Pour l'instant, on valide juste la structure
-      return !!(config.provider && config.apiKey && config.model);
+      const provider = this.createProviderInstance(config);
+
+      const result = await provider.generate('Réponds uniquement "OK"', {
+        maxTokens: 10,
+      });
+
+      return result.toLowerCase().includes('ok');
     } catch (error) {
-      console.error('Error testing LLM provider:', error);
+      console.error('Test provider failed:', error);
       return false;
     }
   }
 
   /**
-   * Créer une instance de provider
+   * Estimer le coût d'une requête
    */
-  createProvider(config: any) {
-    // TODO: Implémenter la création réelle des providers
-    // selon le type (Anthropic, OpenAI, Gemini, etc.)
-    return {
-      provider: config.provider,
-      model: config.model,
-      generate: async (prompt: string) => {
-        throw new Error('Provider not implemented yet');
-      },
-    };
+  estimateCost(provider: string, inputTokens: number, outputTokens: number): number {
+    const pricing = PRICING_PER_1M_TOKENS[provider] || { input: 5.0, output: 15.0 };
+    const inputCost = (inputTokens / 1000000) * pricing.input;
+    const outputCost = (outputTokens / 1000000) * pricing.output;
+    return inputCost + outputCost;
   }
 
   /**
-   * Estimer le coût d'une requête
+   * Obtenir les informations de pricing pour un provider
    */
-  estimateCost(provider: string, model: string, tokens: number): number {
-    const pricing: Record<string, number> = {
-      'anthropic': 3.0,
-      'openai': 10.0,
-      'gemini': 1.25,
-      'deepseek': 0.27,
-    };
-
-    const costPer1M = pricing[provider] || 5.0;
-    return (tokens / 1000000) * costPer1M;
+  getPricing(provider: string): { input: number; output: number } {
+    return PRICING_PER_1M_TOKENS[provider] || { input: 5.0, output: 15.0 };
   }
 }

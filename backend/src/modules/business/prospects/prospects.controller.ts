@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { ProspectsService } from './prospects.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
@@ -9,7 +20,7 @@ import { CreateProspectDto, UpdateProspectDto } from './dto';
 @UseGuards(JwtAuthGuard)
 @Controller('prospects')
 export class ProspectsController {
-  constructor(private prospectsService: ProspectsService) { }
+  constructor(private prospectsService: ProspectsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create prospect' })

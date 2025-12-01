@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto } from './dto';
 
 @Injectable()
 export class PropertiesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, data: any) {
+  async create(userId: string, data: CreatePropertyDto) {
     return this.prisma.properties.create({
       data: {
         ...data,
@@ -14,15 +15,19 @@ export class PropertiesService {
     });
   }
 
-  async findAll(userId: string, filters?: any) {
+  async findAll(userId: string, filters?: PropertyFiltersDto) {
     const where: any = { userId };
 
     if (filters?.type) where.type = filters.type;
     if (filters?.category) where.category = filters.category;
     if (filters?.status) where.status = filters.status;
     if (filters?.city) where.city = filters.city;
-    if (filters?.minPrice) where.price = { ...where.price, gte: parseFloat(filters.minPrice) };
-    if (filters?.maxPrice) where.price = { ...where.price, lte: parseFloat(filters.maxPrice) };
+    if (filters?.minPrice) {
+      where.price = { ...(where.price || {}), gte: parseFloat(String(filters.minPrice)) };
+    }
+    if (filters?.maxPrice) {
+      where.price = { ...(where.price || {}), lte: parseFloat(String(filters.maxPrice)) };
+    }
 
     return this.prisma.properties.findMany({
       where,
@@ -36,7 +41,7 @@ export class PropertiesService {
     });
   }
 
-  async update(id: string, userId: string, data: any) {
+  async update(id: string, userId: string, data: UpdatePropertyDto) {
     return this.prisma.properties.update({
       where: { id },
       data,
@@ -72,7 +77,7 @@ export class PropertiesService {
     // In production, upload to cloud storage (S3, Cloudinary, etc.)
     // For now, we'll just store file names
     const existingImages = (property.images as string[]) || [];
-    const newImages = files.map(file => `/uploads/properties/${id}/${file.filename}`);
+    const newImages = files.map((file) => `/uploads/properties/${id}/${file.filename}`);
 
     return this.prisma.properties.update({
       where: { id },
@@ -92,7 +97,7 @@ export class PropertiesService {
     }
 
     const images = (property.images as string[]) || [];
-    const updatedImages = images.filter(img => img !== imageUrl);
+    const updatedImages = images.filter((img) => img !== imageUrl);
 
     return this.prisma.properties.update({
       where: { id },
@@ -109,7 +114,7 @@ export class PropertiesService {
     });
   }
 
-  async search(userId: string, criteria: any) {
+  async search(userId: string, criteria: PropertyFiltersDto & { limit?: number }) {
     const where: any = { userId };
 
     if (criteria.type) where.type = criteria.type;
@@ -118,16 +123,16 @@ export class PropertiesService {
     if (criteria.city) where.city = { contains: criteria.city, mode: 'insensitive' };
     if (criteria.minPrice || criteria.maxPrice) {
       where.price = {};
-      if (criteria.minPrice) where.price.gte = parseFloat(criteria.minPrice);
-      if (criteria.maxPrice) where.price.lte = parseFloat(criteria.maxPrice);
+      if (criteria.minPrice) where.price.gte = Number(criteria.minPrice);
+      if (criteria.maxPrice) where.price.lte = Number(criteria.maxPrice);
     }
     if (criteria.minArea || criteria.maxArea) {
       where.area = {};
-      if (criteria.minArea) where.area.gte = parseFloat(criteria.minArea);
-      if (criteria.maxArea) where.area.lte = parseFloat(criteria.maxArea);
+      if (criteria.minArea) where.area.gte = Number(criteria.minArea);
+      if (criteria.maxArea) where.area.lte = Number(criteria.maxArea);
     }
-    if (criteria.bedrooms) where.bedrooms = { gte: parseInt(criteria.bedrooms) };
-    if (criteria.bathrooms) where.bathrooms = { gte: parseInt(criteria.bathrooms) };
+    if (criteria.bedrooms) where.bedrooms = { gte: Number(criteria.bedrooms) };
+    if (criteria.bathrooms) where.bathrooms = { gte: Number(criteria.bathrooms) };
 
     return this.prisma.properties.findMany({
       where,
@@ -175,14 +180,14 @@ export class PropertiesService {
       },
     });
 
-    return properties.filter(property => {
+    return properties.filter((property) => {
       if (!property.latitude || !property.longitude) return false;
 
       const distance = this.calculateDistance(
         latitude,
         longitude,
         property.latitude,
-        property.longitude
+        property.longitude,
       );
 
       return distance <= radiusKm;
@@ -210,21 +215,16 @@ export class PropertiesService {
     };
   }
 
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371; // Earth's radius in km
     const dLat = this.deg2rad(lat2 - lat1);
     const dLon = this.deg2rad(lon2 - lon1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.deg2rad(lat1)) *
-      Math.cos(this.deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -233,18 +233,29 @@ export class PropertiesService {
     return deg * (Math.PI / 180);
   }
 
-  async exportCSV(userId: string, filters?: any) {
+  async exportCSV(userId: string, filters?: PropertyFiltersDto) {
     const properties = await this.findAll(userId, filters);
 
     // Create CSV header
     const headers = [
-      'ID', 'Titre', 'Type', 'Catégorie', 'Prix', 'Surface',
-      'Chambres', 'Salles de bain', 'Adresse', 'Ville',
-      'Délégation', 'Code Postal', 'Statut', 'Date de création'
+      'ID',
+      'Titre',
+      'Type',
+      'Catégorie',
+      'Prix',
+      'Surface',
+      'Chambres',
+      'Salles de bain',
+      'Adresse',
+      'Ville',
+      'Délégation',
+      'Code Postal',
+      'Statut',
+      'Date de création',
     ];
 
     // Create CSV rows
-    const rows = properties.map(p => [
+    const rows = properties.map((p) => [
       p.id,
       p.title,
       p.type,
@@ -258,19 +269,19 @@ export class PropertiesService {
       p.delegation || '',
       p.zipCode || '',
       p.status,
-      new Date(p.createdAt).toLocaleDateString('fr-FR')
+      new Date(p.createdAt).toLocaleDateString('fr-FR'),
     ]);
 
     // Combine headers and rows
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     return {
       content: csvContent,
       filename: `properties_${new Date().toISOString().split('T')[0]}.csv`,
-      mimeType: 'text/csv'
+      mimeType: 'text/csv',
     };
   }
 
@@ -284,7 +295,7 @@ export class PropertiesService {
     }
 
     // Skip header
-    const dataLines = lines.slice(1).filter(line => line.trim());
+    const dataLines = lines.slice(1).filter((line) => line.trim());
 
     const imported = [];
     const errors = [];
@@ -292,7 +303,7 @@ export class PropertiesService {
     for (let i = 0; i < dataLines.length; i++) {
       try {
         // Simple CSV parsing (in production, use a proper CSV parser library)
-        const values = dataLines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+        const values = dataLines[i].split(',').map((v) => v.replace(/^"|"$/g, '').trim());
 
         const propertyData = {
           title: values[1] || `Propriété importée ${i + 1}`,
@@ -328,7 +339,6 @@ export class PropertiesService {
       errors: errors.length,
       details: errors,
       properties: imported,
-
     };
   }
 

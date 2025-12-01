@@ -3,7 +3,7 @@ import { IsEnum, IsOptional, IsInt, Min, Max } from 'class-validator';
 
 export class QueryPeriodDto {
   @ApiProperty({
-    description: 'Période d\'analyse',
+    description: "Période d'analyse",
     enum: ['week', 'month', 'year'],
     default: 'month',
     required: false,

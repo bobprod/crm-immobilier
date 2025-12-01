@@ -100,23 +100,26 @@ export class DOCXGenerator {
    * Générer un contrat DOCX
    */
   static async generateContract(data: any): Promise<Buffer> {
-    return this.generateDOCX({
-      title: 'CONTRAT DE VENTE IMMOBILIÈRE',
-      date: data.date || new Date().toLocaleDateString('fr-FR'),
-      sections: [
-        {
-          title: 'ENTRE LES SOUSSIGNÉS',
-          content: `Le vendeur : ${data.sellerName || 'N/A'}\nL'acheteur : ${data.buyerName || 'N/A'}`,
-        },
-        {
-          title: 'OBJET DU CONTRAT',
-          content: `Vente du bien situé : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}`,
-        },
-        {
-          title: 'PRIX',
-          content: `Prix de vente : ${data.price || 'N/A'} ${data.currency || 'TND'}`,
-        },
-      ],
-    }, { includeSignature: true });
+    return this.generateDOCX(
+      {
+        title: 'CONTRAT DE VENTE IMMOBILIÈRE',
+        date: data.date || new Date().toLocaleDateString('fr-FR'),
+        sections: [
+          {
+            title: 'ENTRE LES SOUSSIGNÉS',
+            content: `Le vendeur : ${data.sellerName || 'N/A'}\nL'acheteur : ${data.buyerName || 'N/A'}`,
+          },
+          {
+            title: 'OBJET DU CONTRAT',
+            content: `Vente du bien situé : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}`,
+          },
+          {
+            title: 'PRIX',
+            content: `Prix de vente : ${data.price || 'N/A'} ${data.currency || 'TND'}`,
+          },
+        ],
+      },
+      { includeSignature: true },
+    );
   }
 }
