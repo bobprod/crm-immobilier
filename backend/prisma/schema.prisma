@@ -580,6 +580,7 @@ model prospecting_leads {
   budgetMin           Float?                // Minimum budget
   budgetMax           Float?                // Maximum budget
   budgetCurrency      String?               @default("TND")
+  qualificationNotes  String?               @db.Text // Notes de qualification du lead
   prospectType        String?
   subType             String?
   searchCriteria      Json?
@@ -604,6 +605,7 @@ model prospecting_leads {
   @@index([email])
   @@index([leadType])
   @@index([validationStatus])
+  @@index([city])
 }
 
 model prospecting_matches {
@@ -627,6 +629,7 @@ model prospecting_matches {
   properties     properties @relation("PropertyMatches", fields: [propertyId], references: [id], onDelete: Cascade)
   prospects      prospects? @relation("ProspectMatches", fields: [prospectId], references: [id])
 
+  @@unique([leadId, propertyId])
   @@index([leadId])
   @@index([prospectId])
   @@index([propertyId])
