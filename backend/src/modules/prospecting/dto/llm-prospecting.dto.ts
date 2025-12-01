@@ -94,7 +94,7 @@ export interface ProspectingLeadCreateInput {
 
   validationStatus: 'pending' | 'valid' | 'suspicious' | 'spam';
   score: number; // score global 0-100
-  status: 'nouveau' | 'contacte' | 'qualifie' | 'converti' | 'rejete';
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'rejected';
 
   metadata?: any; // JSON complet avec tout ce que le LLM a rendu
 }
@@ -130,7 +130,7 @@ export interface AnalysisConfig {
 
 export type ValidationStatus = 'pending' | 'valid' | 'suspicious' | 'spam';
 export type LeadType = 'mandat' | 'requete' | 'inconnu';
-export type LeadStatus = 'nouveau' | 'contacte' | 'qualifie' | 'converti' | 'rejete';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'rejected';
 export type Intention = 'acheter' | 'louer' | 'vendre' | 'investir' | 'inconnu';
 export type Urgency = 'basse' | 'moyenne' | 'haute' | 'inconnu';
 

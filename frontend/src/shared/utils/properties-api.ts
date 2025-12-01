@@ -4,21 +4,26 @@ export interface Property {
   id: string;
   title: string;
   description: string;
-  type: 'house' | 'apartment' | 'land' | 'commercial';
-  status: 'available' | 'reserved' | 'sold' | 'rented';
+  type: PropertyType;
+  category?: 'sale' | 'rent';
+  status: PropertyStatus;
   price: number;
-  surface: number;
+  currency?: string;
+  // Use 'area' to match backend Prisma schema (surface is alias for backward compat)
+  area?: number;
+  surface?: number; // @deprecated - use area
   rooms?: number;
   bedrooms?: number;
   bathrooms?: number;
-  address: string;
-  city: string;
-  zipCode: string;
+  address?: string;
+  city?: string;
+  delegation?: string;
+  zipCode?: string;
   latitude?: number;
   longitude?: number;
-  images: string[];
-  features: string[];
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  images?: string[];
+  features?: string[];
+  priority?: PropertyPriority;
   tags?: string[];
   assignedTo?: string;
   isFeatured?: boolean;
@@ -34,26 +39,42 @@ export interface Property {
   netPrice?: number;
   fees?: number;
   feesPercentage?: number;
+  viewsCount?: number;
+  reference?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+// Type definitions aligned with backend
+export type PropertyType = 'house' | 'apartment' | 'villa' | 'studio' | 'land' | 'commercial' | 'office' | 'terrain' | 'appartement' | 'maison';
+export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending';
+export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+// Helper to get surface/area value (handles both field names)
+export const getPropertyArea = (property: Property): number | undefined => {
+  return property.area ?? property.surface;
+};
+
 export interface CreatePropertyDTO {
   title: string;
-  description: string;
-  type: 'house' | 'apartment' | 'land' | 'commercial';
+  description?: string;
+  type: PropertyType;
+  category?: 'sale' | 'rent';
   price: number;
-  surface: number;
+  currency?: string;
+  area?: number;
   rooms?: number;
   bedrooms?: number;
   bathrooms?: number;
-  address: string;
-  city: string;
-  zipCode: string;
+  address?: string;
+  city?: string;
+  delegation?: string;
+  zipCode?: string;
   latitude?: number;
   longitude?: number;
+  images?: string[];
   features?: string[];
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  priority?: PropertyPriority;
   tags?: string[];
   assignedTo?: string;
   isFeatured?: boolean;
@@ -66,9 +87,13 @@ export interface CreatePropertyDTO {
 
 export interface PropertyFilters {
   type?: string;
+  category?: string;
   status?: string;
   minPrice?: number;
   maxPrice?: number;
+  minArea?: number;
+  maxArea?: number;
+  // Aliases for backward compatibility
   minSurface?: number;
   maxSurface?: number;
   city?: string;

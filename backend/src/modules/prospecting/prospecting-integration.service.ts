@@ -193,7 +193,7 @@ export class ProspectingIntegrationService {
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
-      (lead) => lead.validationStatus !== 'spam' && lead.status !== 'rejete',
+      (lead) => lead.validationStatus !== 'spam' && lead.status !== 'rejected',
     );
 
     const rejectedCount = leadsToCreate.length - validLeads.length;

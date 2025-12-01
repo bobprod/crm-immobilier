@@ -5,12 +5,21 @@ import { Property } from './properties-api';
 // TYPES - Types pour la Prospection Intelligente
 // ============================================
 
+// ============================================
+// ENUMS - Aligned with backend types
+// ============================================
+
 export type CampaignType = 'geographic' | 'demographic' | 'behavioral' | 'custom' | 'requete' | 'mandat';
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'rejected';
-export type LeadType = 'requete' | 'mandat'; // requete = cherche bien, mandat = a un bien
+export type LeadType = 'requete' | 'mandat' | 'inconnu'; // requete = cherche bien, mandat = a un bien
 export type MatchStatus = 'pending' | 'notified' | 'contacted' | 'converted' | 'ignored';
 export type ScrapingSource = 'pica' | 'serp' | 'firecrawl' | 'meta' | 'linkedin' | 'website';
+
+// Aligned with backend llm-prospecting.dto.ts
+export type ValidationStatus = 'pending' | 'valid' | 'suspicious' | 'spam';
+export type Intention = 'acheter' | 'louer' | 'vendre' | 'investir' | 'inconnu';
+export type Urgency = 'basse' | 'moyenne' | 'haute' | 'inconnu';
 
 export interface ProspectingCampaign {
   id: string;
@@ -71,18 +80,28 @@ export interface ProspectingLead {
   zipCode?: string;
   country?: string;
   propertyType?: string;
+  propertyTypes?: string[]; // Array of property types (aligned with backend)
   budget?: number | BudgetRange;
+  budgetMin?: number;
+  budgetMax?: number;
+  budgetCurrency?: string;
   surface?: number;
+  surfaceM2?: number; // Alias aligned with backend
   surfaceMin?: number;
   surfaceMax?: number;
   rooms?: number;
   // Lead classification
   leadType: LeadType;
-  source: ScrapingSource;
+  intention?: Intention; // Typed enum instead of string
+  urgency?: Urgency;     // Typed enum instead of string
+  source: ScrapingSource | string;
   sourceUrl?: string;
-  // Scoring
+  rawText?: string;
+  // Scoring & Validation (aligned with backend)
   score: number;
   aiScore?: number;
+  seriousnessScore?: number; // 0-100 estimation du sérieux
+  validationStatus?: ValidationStatus; // pending, valid, suspicious, spam
   qualificationNotes?: string;
   // Status
   status: LeadStatus;
@@ -103,6 +122,7 @@ export interface ProspectingMatch {
   propertyId: string;
   score: number;
   reason: MatchReason;
+  isQualified?: boolean; // score >= 50 (aligned with backend MatchScoreResult)
   status: MatchStatus;
   notifiedAt?: string;
   createdAt: string;
@@ -268,13 +288,16 @@ export interface RawScrapedItem {
 
 /**
  * Resultat de l'analyse LLM d'un element scrappe
+ * Aligned with backend LLMAnalyzedLead interface
  */
 export interface LLMAnalysisResult {
   isRelevant: boolean;
-  leadType: LeadType | 'inconnu';
-  intention: string;
+  isLead?: boolean; // Alias for backend compat
+  leadType: LeadType;
+  intention: Intention;
   confidence: number;
   propertyType?: string;
+  propertyTypes?: string[];
   location?: {
     city?: string;
     country?: string;
@@ -286,8 +309,9 @@ export interface LLMAnalysisResult {
     currency?: string;
   };
   surface?: number;
+  surfaceM2?: number;
   rooms?: number;
-  urgency?: 'haute' | 'moyenne' | 'basse';
+  urgency?: Urgency;
   seriousnessScore?: number;
   extractedContact?: {
     phone?: string;
@@ -295,10 +319,12 @@ export interface LLMAnalysisResult {
     name?: string;
   };
   rawText?: string;
+  notes?: string;
 }
 
 /**
  * Lead structure construit a partir d'un element scrappe
+ * Aligned with backend ProspectingLeadCreateInput
  */
 export interface StructuredLead {
   firstName?: string;
@@ -314,15 +340,18 @@ export interface StructuredLead {
   budgetCurrency?: string;
   surfaceM2?: number;
   rooms?: number;
-  leadType: LeadType | 'inconnu';
-  intention?: string;
-  urgency?: string;
+  leadType: LeadType;
+  intention?: Intention;
+  urgency?: Urgency;
   seriousnessScore?: number;
   source: string;
   sourceUrl?: string;
   rawText?: string;
-  validationStatus?: 'pending' | 'valid' | 'invalid';
+  title?: string;
+  url?: string;
+  validationStatus?: ValidationStatus;
   score?: number;
+  status?: LeadStatus;
   metadata?: Record<string, any>;
 }
 

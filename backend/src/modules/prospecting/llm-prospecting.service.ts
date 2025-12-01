@@ -136,7 +136,7 @@ TYPES DE BIENS:
 
       validationStatus: validation.status,
       score,
-      status: 'nouveau',
+      status: 'new',
 
       metadata: {
         analyzedAt: new Date().toISOString(),
@@ -951,7 +951,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
       leadType: 'inconnu',
       validationStatus: 'pending',
       score: 0,
-      status: 'nouveau',
+      status: 'new',
       metadata: {
         error: errorMessage,
         analyzedAt: new Date().toISOString(),
