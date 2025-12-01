@@ -1,5 +1,7 @@
-import { IsEmail, IsString, IsOptional, IsArray } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { CommunicationAttachment } from '../../../shared/types/relation-summaries';
 
 export class SendEmailDto {
   @ApiProperty({ example: 'client@example.com' })
@@ -29,10 +31,10 @@ export class SendEmailDto {
   @IsString()
   templateId?: string;
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiPropertyOptional({ description: 'Pièces jointes', type: 'array' })
   @IsOptional()
   @IsArray()
-  attachments?: any[];
+  attachments?: CommunicationAttachment[];
 }
 
 export class SendSmsDto {

@@ -1,5 +1,6 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsEmail } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsEmail, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProspectPreferences } from '../../../../shared/types/relation-summaries';
 
 export class CreateProspectDto {
   @ApiProperty()
@@ -28,9 +29,10 @@ export class CreateProspectDto {
   @IsNumber()
   budget?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Préférences de recherche du prospect' })
   @IsOptional()
-  preferences?: any;
+  @IsObject()
+  preferences?: ProspectPreferences;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -69,9 +71,10 @@ export class UpdateProspectDto {
   @IsNumber()
   budget?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Préférences de recherche du prospect' })
   @IsOptional()
-  preferences?: any;
+  @IsObject()
+  preferences?: ProspectPreferences;
 
   @ApiPropertyOptional()
   @IsOptional()

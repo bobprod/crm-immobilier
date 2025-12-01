@@ -153,3 +153,153 @@ export function arePropertyTypesCompatible(leadType: string, propertyType: strin
 
   return false;
 }
+
+// ============================================
+// PROSPECTING MATCH DTOs
+// ============================================
+
+import { IsString, IsNumber, IsOptional, IsBoolean, IsEnum, IsObject } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { LeadSummary, PropertySummary, ProspectSummary } from '../../../shared/types/relation-summaries';
+
+export type MatchStatus = 'pending' | 'notified' | 'contacted' | 'converted' | 'ignored';
+
+/**
+ * DTO pour créer un match
+ */
+export class CreateProspectingMatchDto {
+  @ApiProperty({ description: 'ID du lead source' })
+  @IsString()
+  leadId: string;
+
+  @ApiProperty({ description: 'ID de la propriété matchée' })
+  @IsString()
+  propertyId: string;
+
+  @ApiPropertyOptional({ description: 'ID du prospect si converti' })
+  @IsOptional()
+  @IsString()
+  prospectId?: string;
+
+  @ApiProperty({ description: 'Score du match (0-100)' })
+  @IsNumber()
+  score: number;
+
+  @ApiProperty({ description: 'Raisons détaillées du match' })
+  @IsObject()
+  reason: MatchReason;
+
+  @ApiPropertyOptional({ description: 'Match qualifié (score >= 50)', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isQualified?: boolean;
+}
+
+/**
+ * DTO pour mettre à jour un match
+ */
+export class UpdateProspectingMatchDto {
+  @ApiPropertyOptional({ enum: ['pending', 'notified', 'contacted', 'converted', 'ignored'] })
+  @IsOptional()
+  @IsEnum(['pending', 'notified', 'contacted', 'converted', 'ignored'])
+  status?: MatchStatus;
+
+  @ApiPropertyOptional({ description: 'ID du prospect si converti' })
+  @IsOptional()
+  @IsString()
+  prospectId?: string;
+
+  @ApiPropertyOptional({ description: 'Date de notification' })
+  @IsOptional()
+  notifiedAt?: Date;
+
+  @ApiPropertyOptional({ description: 'Date de contact' })
+  @IsOptional()
+  contactedAt?: Date;
+}
+
+/**
+ * DTO de réponse pour un match
+ */
+export class ProspectingMatchResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  leadId: string;
+
+  @ApiPropertyOptional()
+  prospectId?: string;
+
+  @ApiProperty()
+  propertyId: string;
+
+  @ApiProperty({ description: 'Score du match (0-100)' })
+  score: number;
+
+  @ApiProperty({ description: 'Raisons détaillées du match' })
+  reason: MatchReason;
+
+  @ApiProperty({ description: 'Match qualifié (score >= 50)' })
+  isQualified: boolean;
+
+  @ApiProperty({ enum: ['pending', 'notified', 'contacted', 'converted', 'ignored'] })
+  status: MatchStatus;
+
+  @ApiPropertyOptional()
+  notifiedAt?: Date;
+
+  @ApiPropertyOptional()
+  contactedAt?: Date;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+
+  // Relations (optional, populated on demand)
+  @ApiPropertyOptional({ description: 'Lead source du match' })
+  lead?: LeadSummary;
+
+  @ApiPropertyOptional({ description: 'Propriété matchée' })
+  property?: PropertySummary;
+
+  @ApiPropertyOptional({ description: 'Prospect converti' })
+  prospect?: ProspectSummary;
+}
+
+/**
+ * DTO pour les filtres de recherche de matches
+ */
+export class ProspectingMatchFiltersDto {
+  @ApiPropertyOptional({ description: 'Score minimum' })
+  @IsOptional()
+  @IsNumber()
+  minScore?: number;
+
+  @ApiPropertyOptional({ enum: ['pending', 'notified', 'contacted', 'converted', 'ignored'] })
+  @IsOptional()
+  @IsEnum(['pending', 'notified', 'contacted', 'converted', 'ignored'])
+  status?: MatchStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  leadId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  propertyId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  prospectId?: string;
+
+  @ApiPropertyOptional({ description: 'Uniquement les matches qualifiés' })
+  @IsOptional()
+  @IsBoolean()
+  isQualified?: boolean;
+}

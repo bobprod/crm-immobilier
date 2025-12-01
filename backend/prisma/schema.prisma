@@ -7,6 +7,98 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// ENUMS - Typed values for database constraints
+// ============================================
+
+enum PropertyStatus {
+  available
+  reserved
+  sold
+  rented
+  pending
+}
+
+enum PropertyType {
+  apartment
+  house
+  villa
+  studio
+  land
+  commercial
+  office
+  appartement
+  maison
+  terrain
+}
+
+enum PropertyCategory {
+  sale
+  rent
+}
+
+enum PropertyPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  converted
+  rejected
+}
+
+enum LeadType {
+  requete
+  mandat
+  inconnu
+}
+
+enum ValidationStatus {
+  pending
+  valid
+  suspicious
+  spam
+}
+
+enum MatchStatus {
+  pending
+  notified
+  contacted
+  converted
+  ignored
+}
+
+enum Intention {
+  acheter
+  louer
+  vendre
+  investir
+  inconnu
+}
+
+enum Urgency {
+  basse
+  moyenne
+  haute
+  inconnu
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  completed
+}
+
+// ============================================
+// MODELS
+// ============================================
+
 model ProspectingSource {
   id          String    @id @default(cuid())
   name        String
@@ -132,8 +224,8 @@ model properties {
   reference           String?
   title               String
   description         String?
-  type                String
-  category            String
+  type                String                      // PropertyType as string for flexibility
+  category            PropertyCategory            @default(sale)
   price               Float
   currency            String                      @default("TND")
   address             String?
@@ -145,9 +237,9 @@ model properties {
   bedrooms            Int?
   bathrooms           Int?
   area                Float?
-  images              Json?
-  features            Json?
-  status              String                      @default("available")
+  images              String[]                    // Array of image URLs
+  features            String[]                    // Array of feature strings
+  status              PropertyStatus              @default(available)
   viewsCount          Int                         @default(0)
   // DEPRECATED: These fields couple properties to prospecting domain
   // Should be moved to prospecting_matches or a separate junction table
@@ -180,8 +272,8 @@ model properties {
   tasks               tasks[]                     @relation("PropertyTasks")
 
   // Priority & Organization
-  priority            String                      @default("medium")
-  tags                Json?
+  priority            PropertyPriority            @default(medium)
+  tags                String[]                    // Array of tag strings
   assignedTo          String?
   isFeatured          Boolean                     @default(false)
   notes               String?
@@ -534,9 +626,9 @@ model prospecting_campaigns {
   userId         String
   name           String
   description    String?
-  type           String
+  type           String              // CampaignType as string for flexibility
   config         Json
-  status         String              @default("draft")
+  status         CampaignStatus      @default(draft)
   prospectType   String?
   subType        String?
   searchCriteria Json?
@@ -572,17 +664,17 @@ model prospecting_leads {
   zipCode             String?
   country             String?               @default("Tunisie")
   propertyType        String?
-  propertyTypes       Json?                 // Array of property types from LLM
+  propertyTypes       String[]              // Array of property types from LLM
   source              String?
   sourceUrl           String?
   rawText             String?               @db.Text // Original scraped text
   title               String?               // Title from scraped content
   score               Int                   @default(0)
-  status              String                @default("new")
-  leadType            String?               @default("inconnu") // mandat | requete | inconnu
-  intention           String?               // acheter | louer | vendre | investir | inconnu
-  urgency             String?               // basse | moyenne | haute | inconnu
-  validationStatus    String?               @default("pending") // pending | valid | suspicious | spam
+  status              LeadStatus            @default(new)
+  leadType            LeadType              @default(inconnu)
+  intention           Intention?
+  urgency             Urgency?
+  validationStatus    ValidationStatus      @default(pending)
   seriousnessScore    Int?                  // 0-100 from LLM analysis
   surfaceM2           Int?                  // Surface in square meters
   rooms               Int?                  // Number of rooms
@@ -590,14 +682,14 @@ model prospecting_leads {
   budgetMax           Float?                // Maximum budget
   budgetCurrency      String?               @default("TND")
   qualificationNotes  String?               @db.Text // Notes de qualification du lead
-  prospectType        String?
-  subType             String?
-  searchCriteria      Json?
-  mandatInfo          Json?
-  profiling           Json?
-  timeline            String?
-  budget              Json?
-  matchedPropertyIds  Json?
+  prospectType        String?               // @deprecated
+  subType             String?               // @deprecated
+  searchCriteria      Json?                 // @deprecated
+  mandatInfo          Json?                 // @deprecated
+  profiling           Json?                 // @deprecated
+  timeline            String?               // @deprecated
+  budget              Json?                 // @deprecated
+  matchedPropertyIds  String[]              // Array of matched property IDs
   metadata            Json?
   convertedProspectId String?
   convertedAt         DateTime?
@@ -606,6 +698,7 @@ model prospecting_leads {
   campaigns           prospecting_campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   convertedProspect   prospects?            @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
   users               users                 @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
+  prospecting_matches prospecting_matches[] @relation("LeadMatches")
 
   @@index([campaignId])
   @@index([userId])
@@ -618,13 +711,15 @@ model prospecting_leads {
 }
 
 model prospecting_matches {
-  id             String     @id @default(cuid())
+  id             String            @id @default(cuid())
   leadId         String
   prospectId     String?
   propertyId     String
   score          Int
-  reason         Json
-  status         String     @default("pending")
+  reason         Json              // MatchReason structure from matching algorithm
+  status         MatchStatus       @default(pending)
+  isQualified    Boolean           @default(false) // score >= 50
+  // @deprecated fields - will be removed
   prospectType   String?
   subType        String?
   searchCriteria Json?
@@ -632,11 +727,15 @@ model prospecting_matches {
   profiling      Json?
   timeline       String?
   budget         Json?
+  // Tracking
   notifiedAt     DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  properties     properties @relation("PropertyMatches", fields: [propertyId], references: [id], onDelete: Cascade)
-  prospects      prospects? @relation("ProspectMatches", fields: [prospectId], references: [id])
+  contactedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  // Relations
+  lead           prospecting_leads @relation("LeadMatches", fields: [leadId], references: [id], onDelete: Cascade)
+  properties     properties        @relation("PropertyMatches", fields: [propertyId], references: [id], onDelete: Cascade)
+  prospects      prospects?        @relation("ProspectMatches", fields: [prospectId], references: [id])
 
   @@unique([leadId, propertyId])
   @@index([leadId])
@@ -644,6 +743,7 @@ model prospecting_matches {
   @@index([propertyId])
   @@index([score])
   @@index([status])
+  @@index([isQualified])
 }
 
 model contact_validations {

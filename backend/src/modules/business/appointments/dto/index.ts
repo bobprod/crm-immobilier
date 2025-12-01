@@ -11,6 +11,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AppointmentAttendee, AppointmentRecurrence } from '../../../../shared/types/relation-summaries';
 
 // Enums
 export enum AppointmentType {
@@ -103,10 +104,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   reminderTime?: number;
 
-  @ApiPropertyOptional({ description: 'Liste des participants (JSON)' })
+  @ApiPropertyOptional({ description: 'Liste des participants' })
   @IsArray()
   @IsOptional()
-  attendees?: any[];
+  attendees?: AppointmentAttendee[];
 
   @ApiPropertyOptional({ description: 'Notes' })
   @IsString()
@@ -118,10 +119,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   color?: string;
 
-  @ApiPropertyOptional({ description: 'Règles de récurrence (JSON)' })
+  @ApiPropertyOptional({ description: 'Règles de récurrence' })
   @IsObject()
   @IsOptional()
-  recurrence?: any;
+  recurrence?: AppointmentRecurrence;
 }
 
 // DTO: Mettre à jour un rendez-vous
