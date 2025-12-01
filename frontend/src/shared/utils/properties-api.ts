@@ -1,6 +1,6 @@
 import apiClient from './backend-api';
 
-interface Property {
+export interface Property {
   id: string;
   title: string;
   description: string;
@@ -38,7 +38,7 @@ interface Property {
   updatedAt: string;
 }
 
-interface CreatePropertyDTO {
+export interface CreatePropertyDTO {
   title: string;
   description: string;
   type: 'house' | 'apartment' | 'land' | 'commercial';
@@ -64,7 +64,7 @@ interface CreatePropertyDTO {
   feesPercentage?: number;
 }
 
-interface PropertyFilters {
+export interface PropertyFilters {
   type?: string;
   status?: string;
   minPrice?: number;

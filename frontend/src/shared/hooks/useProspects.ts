@@ -51,6 +51,16 @@ export function useProspects() {
 
   useEffect(() => {
     loadProspects();
+
+    // Listen for lead conversion events from prospecting module
+    const handleLeadConverted = () => {
+      loadProspects();
+    };
+
+    window.addEventListener('prospecting:lead-converted', handleLeadConverted);
+    return () => {
+      window.removeEventListener('prospecting:lead-converted', handleLeadConverted);
+    };
   }, []);
 
   const createProspect = async (data: Partial<Prospect>) => {

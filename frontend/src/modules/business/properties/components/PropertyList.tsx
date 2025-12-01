@@ -5,26 +5,10 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { propertiesAPI } from '@/shared/utils/properties-api';
+import { propertiesAPI, Property } from '@/shared/utils/properties-api';
 import { PropertyFilters } from './PropertyFilters';
 import { PropertyBulkActions } from './PropertyBulkActions';
 import { Plus, Eye, Edit, Trash } from 'lucide-react';
-
-interface Property {
-    id: string;
-    title: string;
-    type: string;
-    price: number;
-    currency: string;
-    city: string; // Changed from location to match API
-    bedrooms?: number;
-    bathrooms?: number;
-    area?: number;
-    status: string;
-    priority?: string;
-    tags?: string[];
-    createdAt: string;
-}
 
 interface PropertyListProps {
     initialLoading?: boolean;
@@ -204,7 +188,7 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
                                             {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.price)}
                                         </TableCell>
                                         <TableCell>
-                                            {property.area ? `${property.area} m²` : '-'}
+                                            {property.surface ? `${property.surface} m²` : '-'}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={getPriorityColor(property.priority)} variant="secondary">

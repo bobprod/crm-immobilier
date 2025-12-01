@@ -946,7 +946,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       ...prev,
                       config: { ...prev.config, locations: zones.map((z: any) => z.name || z) }
                     }))}
-                    initialZones={newCampaign.config.locations?.map(l => ({ name: l, selected: true })) || []}
+                    initialZones={newCampaign.config.locations?.map((l, idx) => ({
+                      id: `zone-${idx}`,
+                      name: l,
+                      type: 'city' as const,
+                      selected: true
+                    })) || []}
                   />
                 </div>
               )}
@@ -960,14 +965,16 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       config: {
                         ...prev.config,
                         propertyTypes: demographics.propertyTypes || prev.config.propertyTypes,
-                        minPrice: demographics.budgetMin || prev.config.minPrice,
-                        maxPrice: demographics.budgetMax || prev.config.maxPrice,
+                        minPrice: demographics.budgetRange?.min || prev.config.minPrice,
+                        maxPrice: demographics.budgetRange?.max || prev.config.maxPrice,
                       }
                     }))}
                     initialCriteria={{
                       propertyTypes: newCampaign.config.propertyTypes,
-                      budgetMin: newCampaign.config.minPrice,
-                      budgetMax: newCampaign.config.maxPrice,
+                      budgetRange: {
+                        min: newCampaign.config.minPrice || 0,
+                        max: newCampaign.config.maxPrice || 1000000
+                      },
                     }}
                   />
                 </div>
@@ -1307,8 +1314,17 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 )}
                 {selectedLead.status === 'qualified' && (
                   <button
-                    onClick={() => {
-                      convertLead(selectedLead.id);
+                    onClick={async () => {
+                      const result = await convertLead(selectedLead.id);
+                      if (result?.prospect) {
+                        // Dispatch event to notify other modules (prospects, etc.)
+                        window.dispatchEvent(new CustomEvent('prospecting:lead-converted', {
+                          detail: {
+                            leadId: selectedLead.id,
+                            prospect: result.prospect,
+                          }
+                        }));
+                      }
                       setShowLeadModal(false);
                     }}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
