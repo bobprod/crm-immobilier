@@ -12,8 +12,10 @@ import {
   getSourceColor,
   getScoreBadgeColor,
   CampaignType,
+  CampaignConfig,
   LeadType,
   LeadStatus,
+  MatchStatus,
   ProspectingCampaign,
   ProspectingLead,
 } from '@/shared/utils/prospecting-api';
@@ -139,14 +141,22 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [campaignStep, setCampaignStep] = useState(1);
-  const [newCampaign, setNewCampaign] = useState({
+  const [newCampaign, setNewCampaign] = useState<{
+    name: string;
+    description: string;
+    type: CampaignType;
+    targetCount: number;
+    config: CampaignConfig;
+  }>({
     name: '',
     description: '',
-    type: 'requete' as CampaignType,
+    type: 'requete',
     targetCount: 100,
     config: {
-      zones: [] as any[],
-      demographics: {} as any,
+      locations: [],
+      propertyTypes: [],
+      sources: [],
+      keywords: [],
     },
   });
   const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
@@ -211,9 +221,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const handleFindMatches = useCallback(async (leadId: string) => {
     setLoadingMatches(true);
     try {
-      const result = await findMatches(leadId);
-      if (result?.matches) {
-        setLeadMatches(result.matches);
+      const matches = await findMatches(leadId);
+      if (matches && Array.isArray(matches)) {
+        setLeadMatches(matches);
       }
     } catch (error) {
       console.error('Failed to find matches:', error);
@@ -251,7 +261,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   }, [notifyMatch, selectedLead, handleLoadMatches]);
 
   // Handle update match status
-  const handleUpdateMatchStatus = useCallback(async (matchId: string, status: string) => {
+  const handleUpdateMatchStatus = useCallback(async (matchId: string, status: MatchStatus) => {
     try {
       await updateMatchStatus(matchId, status);
       // Refresh matches
@@ -289,7 +299,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         description: '',
         type: 'requete',
         targetCount: 100,
-        config: { zones: [], demographics: {} },
+        config: { locations: [], propertyTypes: [], sources: [], keywords: [] },
       });
       setCampaignStep(1);
     }
@@ -301,14 +311,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     const phones = leadsToValidate.map(l => l.phone).filter(Boolean) as string[];
 
     // Call actual validation APIs
-    let emailResults: Record<string, any> = {};
-    let phoneResults: Record<string, any> = {};
+    let validEmails: string[] = [];
+    let invalidEmails: string[] = [];
 
     if (emails.length > 0) {
       try {
         const response = await validateEmails(emails);
-        if (response?.results) {
-          emailResults = response.results;
+        if (response) {
+          validEmails = response.valid || [];
+          invalidEmails = response.invalid || [];
         }
       } catch (error) {
         console.error('Email validation failed:', error);
@@ -318,10 +329,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     // Build validation results from actual API responses
     return leadIds.map(id => {
       const lead = leadsToValidate.find(l => l.id === id);
-      const emailValidation = lead?.email ? emailResults[lead.email] : null;
+      const isEmailValid = lead?.email ? validEmails.includes(lead.email) : false;
 
       // Calculate scores based on actual validation
-      const emailScore = emailValidation?.valid ? (emailValidation.deliverable ? 90 : 60) : 30;
+      const emailScore = isEmailValid ? 90 : (lead?.email ? 30 : 0);
       const hasPhone = !!lead?.phone;
       const hasName = !!(lead?.firstName || lead?.lastName);
       const phoneScore = hasPhone ? 70 : 0;
@@ -330,13 +341,13 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
       return {
         leadId: id,
-        email: emailValidation ? {
-          valid: emailValidation.valid ?? false,
-          deliverable: emailValidation.deliverable ?? false,
-          disposable: emailValidation.disposable ?? false,
-          role: emailValidation.role ?? false,
+        email: {
+          valid: isEmailValid,
+          deliverable: isEmailValid,
+          disposable: false,
+          role: false,
           score: emailScore,
-        } : { valid: false, deliverable: false, disposable: false, role: false, score: 0 },
+        },
         phone: {
           valid: hasPhone,
           formatted: lead?.phone || '',
@@ -349,9 +360,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         },
         overall: {
           score: overallScore,
-          status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'invalid') as 'valid' | 'suspicious' | 'invalid',
+          status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'spam') as 'valid' | 'suspicious' | 'spam',
           flags: [
-            ...(!emailValidation?.valid ? ['Email invalide'] : []),
+            ...(!isEmailValid ? ['Email invalide'] : []),
             ...(!hasPhone ? ['Téléphone manquant'] : []),
             ...(!hasName ? ['Nom manquant'] : []),
           ],
@@ -931,11 +942,11 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage geographique</h3>
                   <GeographicTargeting
-                    onZonesChange={(zones) => setNewCampaign(prev => ({
+                    onZonesChange={(zones: any) => setNewCampaign(prev => ({
                       ...prev,
-                      config: { ...prev.config, zones }
+                      config: { ...prev.config, locations: zones.map((z: any) => z.name || z) }
                     }))}
-                    initialZones={newCampaign.config.zones}
+                    initialZones={newCampaign.config.locations?.map(l => ({ name: l, selected: true })) || []}
                   />
                 </div>
               )}
@@ -944,11 +955,20 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage demographique</h3>
                   <DemographicTargeting
-                    onChange={(demographics) => setNewCampaign(prev => ({
+                    onChange={(demographics: any) => setNewCampaign(prev => ({
                       ...prev,
-                      config: { ...prev.config, demographics }
+                      config: {
+                        ...prev.config,
+                        propertyTypes: demographics.propertyTypes || prev.config.propertyTypes,
+                        minPrice: demographics.budgetMin || prev.config.minPrice,
+                        maxPrice: demographics.budgetMax || prev.config.maxPrice,
+                      }
                     }))}
-                    initialCriteria={newCampaign.config.demographics}
+                    initialCriteria={{
+                      propertyTypes: newCampaign.config.propertyTypes,
+                      budgetMin: newCampaign.config.minPrice,
+                      budgetMax: newCampaign.config.maxPrice,
+                    }}
                   />
                 </div>
               )}
@@ -1230,13 +1250,13 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                             📧 Notifier
                           </button>
                           <button
-                            onClick={() => handleUpdateMatchStatus(match.id, 'accepted')}
+                            onClick={() => handleUpdateMatchStatus(match.id, 'converted')}
                             className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100"
                           >
                             ✅ Accepter
                           </button>
                           <button
-                            onClick={() => handleUpdateMatchStatus(match.id, 'rejected')}
+                            onClick={() => handleUpdateMatchStatus(match.id, 'ignored')}
                             className="text-xs px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
                           >
                             ❌ Rejeter
