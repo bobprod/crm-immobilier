@@ -372,46 +372,59 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   const handleLaunchScraping = useCallback(async () => {
     if (!scrapingSource) return;
 
-    if (scrapingSource === 'pica') {
-      await scrapePica({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
-    } else if (scrapingSource === 'serp') {
-      await scrapeSERP({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
-    } else if (scrapingSource === 'meta') {
-      await scrapeSocial('meta', scrapingConfig.query);
-    } else if (scrapingSource === 'linkedin') {
-      await scrapeSocial('linkedin', scrapingConfig.query);
-    } else if (scrapingSource === 'firecrawl') {
-      await scrapeFirecrawl(scrapingConfig.urls.filter(Boolean));
-    } else if (scrapingSource === 'website') {
-      await scrapeWebsites(scrapingConfig.urls.filter(Boolean));
+    try {
+      if (scrapingSource === 'pica') {
+        await scrapePica({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+      } else if (scrapingSource === 'serp') {
+        await scrapeSERP({ query: scrapingConfig.query, maxResults: scrapingConfig.maxResults });
+      } else if (scrapingSource === 'meta') {
+        await scrapeSocial('meta', scrapingConfig.query);
+      } else if (scrapingSource === 'linkedin') {
+        await scrapeSocial('linkedin', scrapingConfig.query);
+      } else if (scrapingSource === 'firecrawl') {
+        await scrapeFirecrawl(scrapingConfig.urls.filter(Boolean));
+      } else if (scrapingSource === 'website') {
+        await scrapeWebsites(scrapingConfig.urls.filter(Boolean));
+      }
+    } catch (error) {
+      console.error('Failed to launch scraping:', error);
+    } finally {
+      setShowScrapingConfig(false);
+      setScrapingSource(null);
+      setScrapingConfig({ query: '', urls: [''], maxResults: 50 });
     }
-
-    setShowScrapingConfig(false);
-    setScrapingSource(null);
-    setScrapingConfig({ query: '', urls: [''], maxResults: 50 });
   }, [scrapingSource, scrapingConfig, scrapePica, scrapeSERP, scrapeSocial, scrapeFirecrawl, scrapeWebsites]);
 
   // Handle detect opportunities with AI
   const handleDetectOpportunities = useCallback(async () => {
-    if (!selectedCampaignId) {
-      // Use first campaign or show error
-      const campaign = campaigns[0];
-      if (!campaign) return;
+    // Check if we have at least one campaign
+    if (campaigns.length === 0) {
+      console.warn('No campaigns available for opportunity detection');
+      return;
     }
-    await detectOpportunities({
-      sources: ['pica', 'serp', 'meta'],
-      keywords: ['immobilier', 'appartement', 'villa', 'terrain'],
-      locations: ['Tunis', 'La Marsa', 'Sousse', 'Sfax'],
-      confidence: 0.7,
-    });
-  }, [selectedCampaignId, campaigns, detectOpportunities]);
+
+    try {
+      await detectOpportunities({
+        sources: ['pica', 'serp', 'meta'],
+        keywords: ['immobilier', 'appartement', 'villa', 'terrain'],
+        locations: ['Tunis', 'La Marsa', 'Sousse', 'Sfax'],
+        confidence: 0.7,
+      });
+    } catch (error) {
+      console.error('Failed to detect opportunities:', error);
+    }
+  }, [campaigns, detectOpportunities]);
 
   // Handle save notes
   const handleSaveNotes = useCallback(async () => {
     if (selectedLead) {
-      await updateLead(selectedLead.id, { qualificationNotes: notesValue });
-      setSelectedLead({ ...selectedLead, qualificationNotes: notesValue });
-      setEditingNotes(false);
+      try {
+        await updateLead(selectedLead.id, { qualificationNotes: notesValue });
+        setSelectedLead({ ...selectedLead, qualificationNotes: notesValue });
+        setEditingNotes(false);
+      } catch (error) {
+        console.error('Failed to save notes:', error);
+      }
     }
   }, [selectedLead, notesValue, updateLead]);
 
@@ -439,8 +452,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   // Handle relaunch inactive leads
   const handleRelaunchInactive = useCallback(async (leadIds: string[]) => {
     // Update inactive leads status to trigger follow-up
-    for (const id of leadIds) {
-      await updateLead(id, { status: 'contacted' });
+    try {
+      for (const id of leadIds) {
+        await updateLead(id, { status: 'contacted' });
+      }
+    } catch (error) {
+      console.error('Failed to relaunch inactive leads:', error);
     }
   }, [updateLead]);
 

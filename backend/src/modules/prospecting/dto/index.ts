@@ -131,6 +131,36 @@ export class UpdateLeadDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  qualificationNotes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  propertyType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budget?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budgetMin?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  budgetMax?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   metadata?: any;
 }
 
