@@ -185,11 +185,69 @@ export class ProspectingService {
 
   /**
    * Convertir un lead en prospect
+   * - Vérifie si un prospect existe déjà (déduplication)
+   * - Préserve toutes les métadonnées de prospection
+   * - Log l'activité
    */
   async convertLeadToProspect(userId: string, leadId: string) {
     const lead = await this.getLeadById(userId, leadId);
 
-    // Créer le prospect
+    // 1. Vérifier si le lead a déjà été converti
+    if (lead.convertedProspectId) {
+      const existingProspect = await this.prisma.prospects.findUnique({
+        where: { id: lead.convertedProspectId },
+      });
+      if (existingProspect) {
+        this.logger.warn(`Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`);
+        return existingProspect;
+      }
+    }
+
+    // 2. Vérifier si un prospect existe avec le même email ou téléphone (déduplication)
+    const existingProspect = await this.findExistingProspect(userId, lead);
+    if (existingProspect) {
+      this.logger.log(`Found existing prospect ${existingProspect.id} matching lead ${leadId}`);
+
+      // Fusionner les données du lead avec le prospect existant
+      const mergedProspect = await this.mergeLeadIntoProspect(existingProspect, lead);
+
+      // Mettre à jour le lead
+      await this.prisma.prospecting_leads.update({
+        where: { id: leadId },
+        data: {
+          status: 'converted',
+          convertedProspectId: mergedProspect.id,
+          convertedAt: new Date(),
+        },
+      });
+
+      // Logger l'activité
+      await this.logActivity(userId, 'lead_merged', leadId, mergedProspect.id);
+
+      return mergedProspect;
+    }
+
+    // 3. Construire les métadonnées enrichies à préserver
+    const prospectingMetadata = {
+      leadType: lead.leadType,
+      intention: lead.intention,
+      urgency: lead.urgency,
+      seriousnessScore: lead.seriousnessScore,
+      validationStatus: lead.validationStatus,
+      qualificationNotes: lead.qualificationNotes,
+      propertyTypes: lead.propertyTypes,
+      surfaceM2: lead.surfaceM2,
+      rooms: lead.rooms,
+      budgetMin: lead.budgetMin,
+      budgetMax: lead.budgetMax,
+      sourceUrl: lead.sourceUrl,
+      rawText: lead.rawText,
+      originalCampaignId: lead.campaignId,
+      convertedFromLeadId: lead.id,
+      convertedAt: new Date().toISOString(),
+    };
+
+    // 4. Créer le prospect avec toutes les métadonnées
     const prospect = await this.prisma.prospects.create({
       data: {
         userId,
@@ -197,16 +255,21 @@ export class ProspectingService {
         lastName: lead.lastName,
         email: lead.email,
         phone: lead.phone,
-        type: 'buyer',
-        budget: lead.budget,
+        address: lead.address,
+        city: lead.city,
+        zipCode: lead.zipCode,
+        type: this.mapLeadTypeToProspectType(lead.leadType, lead.intention),
+        budget: lead.budget || (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
         preferences: lead.metadata,
         source: `Prospection: ${lead.source}`,
         status: 'active',
-        notes: `Converti depuis lead ${leadId}`,
+        score: lead.seriousnessScore || lead.score || 50,
+        notes: lead.qualificationNotes || `Converti depuis lead ${leadId}`,
+        metadata: prospectingMetadata,
       },
     });
 
-    // Mettre à jour le lead
+    // 5. Mettre à jour le lead
     await this.prisma.prospecting_leads.update({
       where: { id: leadId },
       data: {
@@ -216,7 +279,122 @@ export class ProspectingService {
       },
     });
 
+    // 6. Mettre à jour les prospecting_matches existants avec le prospectId
+    await this.prisma.prospecting_matches.updateMany({
+      where: { leadId: lead.id },
+      data: { prospectId: prospect.id },
+    });
+
+    // 7. Logger l'activité
+    await this.logActivity(userId, 'lead_converted', leadId, prospect.id);
+
+    this.logger.log(`Lead ${leadId} converted to prospect ${prospect.id}`);
     return prospect;
+  }
+
+  /**
+   * Rechercher un prospect existant par email ou téléphone
+   */
+  private async findExistingProspect(userId: string, lead: any) {
+    const conditions = [];
+
+    if (lead.email) {
+      conditions.push({ email: lead.email.toLowerCase() });
+    }
+    if (lead.phone) {
+      const normalizedPhone = this.normalizePhone(lead.phone);
+      conditions.push({ phone: normalizedPhone });
+      conditions.push({ phone: lead.phone });
+    }
+
+    if (conditions.length === 0) return null;
+
+    return this.prisma.prospects.findFirst({
+      where: {
+        userId,
+        OR: conditions,
+      },
+    });
+  }
+
+  /**
+   * Fusionner les données d'un lead dans un prospect existant
+   */
+  private async mergeLeadIntoProspect(prospect: any, lead: any) {
+    const updates: any = {};
+
+    // Compléter les champs manquants
+    if (!prospect.firstName && lead.firstName) updates.firstName = lead.firstName;
+    if (!prospect.lastName && lead.lastName) updates.lastName = lead.lastName;
+    if (!prospect.phone && lead.phone) updates.phone = lead.phone;
+    if (!prospect.email && lead.email) updates.email = lead.email;
+    if (!prospect.city && lead.city) updates.city = lead.city;
+    if (!prospect.address && lead.address) updates.address = lead.address;
+
+    // Mettre à jour le score si le lead a un meilleur score
+    const leadScore = lead.seriousnessScore || lead.score || 0;
+    if (leadScore > (prospect.score || 0)) {
+      updates.score = leadScore;
+    }
+
+    // Fusionner les métadonnées
+    const existingMetadata = prospect.metadata || {};
+    updates.metadata = {
+      ...existingMetadata,
+      mergedFromLeads: [...(existingMetadata.mergedFromLeads || []), lead.id],
+      lastMergedAt: new Date().toISOString(),
+      leadType: lead.leadType,
+      intention: lead.intention,
+      urgency: lead.urgency,
+      seriousnessScore: lead.seriousnessScore,
+    };
+
+    // Ajouter une note sur la fusion
+    const mergeNote = `\n[${new Date().toLocaleDateString('fr-FR')}] Fusionné avec lead ${lead.id} (${lead.source})`;
+    updates.notes = (prospect.notes || '') + mergeNote;
+
+    if (Object.keys(updates).length > 0) {
+      return this.prisma.prospects.update({
+        where: { id: prospect.id },
+        data: updates,
+      });
+    }
+
+    return prospect;
+  }
+
+  /**
+   * Mapper le type de lead vers le type de prospect
+   */
+  private mapLeadTypeToProspectType(leadType: string | null, intention: string | null): string {
+    if (intention === 'acheter' || intention === 'investir') return 'buyer';
+    if (intention === 'louer') return 'tenant';
+    if (intention === 'vendre' || leadType === 'mandat') return 'seller';
+    if (leadType === 'requete') return 'buyer';
+    return 'buyer'; // default
+  }
+
+  /**
+   * Logger une activité de prospection
+   */
+  private async logActivity(userId: string, type: string, leadId: string, prospectId?: string) {
+    try {
+      await this.prisma.activity.create({
+        data: {
+          userId,
+          type,
+          entityType: 'prospecting_lead',
+          entityId: leadId,
+          description: type === 'lead_converted'
+            ? `Lead converti en prospect ${prospectId}`
+            : `Lead fusionné avec prospect existant ${prospectId}`,
+          metadata: { leadId, prospectId },
+        },
+      });
+    } catch (error) {
+      // Ne pas bloquer si le logging échoue
+      this.logger.warn(`Failed to log activity: ${error.message}`);
+    }
   }
 
   /**
