@@ -148,3 +148,97 @@ export class UsageStatsDto {
   @ApiPropertyOptional()
   lastUsed?: Date;
 }
+
+/**
+ * DTO pour les métriques du dashboard
+ */
+export class DashboardMetricsDto {
+  @ApiProperty({ description: 'Nombre total de tokens utilisés' })
+  totalTokens: number;
+
+  @ApiProperty({ description: 'Coût total en USD' })
+  totalCost: number;
+
+  @ApiProperty({ description: 'Nombre total de requêtes' })
+  requestCount: number;
+
+  @ApiProperty({ description: 'Coût moyen par requête' })
+  averageCostPerRequest: number;
+
+  @ApiProperty({ description: 'Provider actuellement configuré' })
+  currentProvider: string;
+
+  @ApiProperty({ description: 'Modèle actuellement configuré' })
+  currentModel: string;
+
+  @ApiPropertyOptional({ description: 'Date de dernière utilisation' })
+  lastUsed?: Date;
+
+  @ApiProperty({
+    description: 'Statistiques par jour (7 derniers jours)',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        date: { type: 'string' },
+        requests: { type: 'number' },
+        tokens: { type: 'number' },
+        cost: { type: 'number' },
+      }
+    }
+  })
+  dailyStats: Array<{
+    date: string;
+    requests: number;
+    tokens: number;
+    cost: number;
+  }>;
+
+  @ApiProperty({
+    description: 'Répartition par provider',
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        provider: { type: 'string' },
+        requests: { type: 'number' },
+        percentage: { type: 'number' },
+      }
+    }
+  })
+  providerDistribution: Array<{
+    provider: string;
+    requests: number;
+    percentage: number;
+  }>;
+}
+
+/**
+ * DTO pour la vérification du budget
+ */
+export class BudgetCheckDto {
+  @ApiProperty({ description: 'Budget limite en USD' })
+  budgetLimit: number;
+
+  @ApiProperty({ description: 'Dépenses actuelles en USD' })
+  currentSpend: number;
+
+  @ApiProperty({ description: 'Budget restant en USD' })
+  remaining: number;
+
+  @ApiProperty({ description: 'Pourcentage du budget utilisé (0-100)' })
+  percentageUsed: number;
+
+  @ApiProperty({ description: 'Statut du budget (safe, warning, danger)' })
+  status: 'safe' | 'warning' | 'danger';
+
+  @ApiProperty({ description: 'Message d\'alerte si applicable' })
+  message: string;
+
+  @ApiProperty({ description: 'Budget dépassé ou non' })
+  isOverBudget: boolean;
+
+  @ApiProperty({ description: 'Projection des dépenses pour le mois' })
+  projectedMonthlySpend: number;
+}
+

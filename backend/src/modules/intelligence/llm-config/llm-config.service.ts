@@ -10,7 +10,7 @@ export class LLMConfigService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly llmFactory: LLMProviderFactory,
-  ) {}
+  ) { }
 
   /**
    * Récupérer la configuration LLM d'un utilisateur
@@ -80,8 +80,8 @@ export class LLMConfigService {
       success: isValid,
       provider: config.provider,
       model: config.model,
-      message: isValid 
-        ? 'Configuration valide !' 
+      message: isValid
+        ? 'Configuration valide !'
         : 'Erreur : vérifiez votre clé API',
     };
   }
@@ -171,4 +171,105 @@ export class LLMConfigService {
       lastUsed: null,
     };
   }
+
+  /**
+   * Obtenir les métriques pour le dashboard
+   */
+  async getDashboardMetrics(userId: string) {
+    const config = await this.prisma.llmConfig.findUnique({
+      where: { userId },
+    });
+
+    // TODO: En production, récupérer les vraies données depuis une table de tracking
+    // Pour l'instant, retourner des données de démonstration
+    const mockDailyStats = this.generateMockDailyStats();
+    const totalTokens = mockDailyStats.reduce((sum, day) => sum + day.tokens, 0);
+    const totalCost = mockDailyStats.reduce((sum, day) => sum + day.cost, 0);
+    const requestCount = mockDailyStats.reduce((sum, day) => sum + day.requests, 0);
+
+    return {
+      totalTokens,
+      totalCost,
+      requestCount,
+      averageCostPerRequest: requestCount > 0 ? totalCost / requestCount : 0,
+      currentProvider: config?.provider || 'non configuré',
+      currentModel: config?.model || 'non configuré',
+      lastUsed: new Date(),
+      dailyStats: mockDailyStats,
+      providerDistribution: [
+        { provider: config?.provider || 'anthropic', requests: requestCount, percentage: 100 },
+      ],
+    };
+  }
+
+  /**
+   * Vérifier le budget
+   */
+  async checkBudget(userId: string, budgetLimit: number) {
+    const metrics = await this.getDashboardMetrics(userId);
+    const currentSpend = metrics.totalCost;
+    const remaining = budgetLimit - currentSpend;
+    const percentageUsed = budgetLimit > 0 ? (currentSpend / budgetLimit) * 100 : 0;
+
+    // Projeter les dépenses mensuelles basées sur l'utilisation des 7 derniers jours
+    const dailyAverage = currentSpend / 7;
+    const projectedMonthlySpend = dailyAverage * 30;
+
+    let status: 'safe' | 'warning' | 'danger';
+    let message: string;
+
+    if (percentageUsed >= 100) {
+      status = 'danger';
+      message = '⚠️ Budget dépassé ! Limitez votre utilisation.';
+    } else if (percentageUsed >= 80) {
+      status = 'danger';
+      message = '🚨 Attention : Vous avez utilisé plus de 80% du budget.';
+    } else if (percentageUsed >= 60) {
+      status = 'warning';
+      message = '⚡ Alerte : Vous approchez de votre limite budgétaire.';
+    } else {
+      status = 'safe';
+      message = '✅ Budget sous contrôle.';
+    }
+
+    return {
+      budgetLimit,
+      currentSpend,
+      remaining,
+      percentageUsed: Math.round(percentageUsed * 100) / 100,
+      status,
+      message,
+      isOverBudget: currentSpend > budgetLimit,
+      projectedMonthlySpend,
+    };
+  }
+
+  /**
+   * Générer des statistiques quotidiennes mockées (pour démonstration)
+   * TODO: Remplacer par de vraies données en production
+   */
+  private generateMockDailyStats() {
+    const stats = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+
+      // Générer des valeurs aléatoires pour la démo
+      const requests = Math.floor(Math.random() * 50) + 10;
+      const tokens = requests * (Math.floor(Math.random() * 1000) + 500);
+      const cost = tokens * 0.000003; // ~$3 per 1M tokens
+
+      stats.push({
+        date: date.toISOString().split('T')[0],
+        requests,
+        tokens,
+        cost: Math.round(cost * 100) / 100,
+      });
+    }
+
+    return stats;
+  }
 }
+

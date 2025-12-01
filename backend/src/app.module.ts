@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './shared/database/prisma.module';
@@ -61,7 +62,13 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
       isGlobal: true,
       load: [databaseConfig, jwtConfig, mailConfig],
     }),
-    
+
+    // Rate limiting (60 requêtes par minute par défaut)
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 secondes
+      limit: 60,  // 60 requêtes max
+    }]),
+
     // Database
     PrismaModule,
 
@@ -75,35 +82,35 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
 
     // NOTIFICATIONS - 1 module
     NotificationsModule,
-    
+
     // BUSINESS - 4 modules
     PropertiesModule,
     ProspectsModule,
     AppointmentsModule,
     TasksModule,
-    
+
     // INTELLIGENCE - 5 modules
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
-    
+
     // PROSPECTING - 1 module
     ProspectingModule,
-    
+
     // COMMUNICATIONS - 1 module
     CommunicationsModule,
-    
+
     // DASHBOARD - 1 module
     DashboardModule,
-    
+
     // CONTENT - 3 modules (Documents, SEO-AI, Page-Builder)
     ContentModule,
-    
+
     // MARKETING - 2 modules (Campaigns, Tracking+ML)
     MarketingModule,
-    
+
     // INTEGRATIONS - 2 modules
     IntegrationsModule,
     WordPressModule,
@@ -114,4 +121,4 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
