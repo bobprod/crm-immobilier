@@ -1,10 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import {
+  calculateMatchScore,
+  getPriceRangeForSearch,
+  MATCH_WEIGHTS,
+} from '../../../shared/utils/matching.utils';
 
 @Injectable()
 export class MatchingService {
+  private readonly logger = new Logger(MatchingService.name);
+
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Génère les matches entre prospects et propriétés
+   * Utilise l'algorithme de scoring unifié (partagé avec prospecting)
+   */
   async generateMatches(userId: string) {
     const properties = await this.prisma.properties.findMany({
       where: { userId, status: 'available' },
@@ -14,24 +25,56 @@ export class MatchingService {
       where: { userId, status: 'active' },
     });
 
+    this.logger.log(`Generating matches for ${prospects.length} prospects and ${properties.length} properties`);
+
     const matches = [];
 
-    for (const property of properties) {
-      for (const prospect of prospects) {
-        const score = this.calculateMatchScore(property, prospect);
+    for (const prospect of prospects) {
+      // Extraire les critères du prospect
+      const preferences = (prospect.preferences as any) || {};
+      const budget = (prospect.budget as any) || {};
 
-        if (score >= 50) {
-          const reasons = this.getMatchReasons(property, prospect);
+      // Pré-filtrer par prix si budget défini
+      const priceRange = getPriceRangeForSearch(
+        budget.min || preferences.budgetMin || null,
+        budget.max || preferences.budgetMax || null,
+      );
+
+      const candidateProperties = properties.filter(
+        (p) => !priceRange.max || (p.price >= priceRange.min && p.price <= priceRange.max),
+      );
+
+      for (const property of candidateProperties) {
+        // Utiliser l'algorithme de scoring unifié
+        const result = calculateMatchScore(
+          {
+            budgetMin: budget.min || preferences.budgetMin || null,
+            budgetMax: budget.max || preferences.budgetMax || null,
+            city: prospect.city || preferences.city || null,
+            country: preferences.country || 'Tunisie',
+            propertyTypes: preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
+            urgency: preferences.urgency || null,
+            seriousnessScore: prospect.score || null,
+          },
+          {
+            price: property.price,
+            city: property.city,
+            type: property.type,
+          },
+        );
+
+        if (result.isQualified) {
           matches.push({
             propertyId: property.id,
             prospectId: prospect.id,
-            score,
-            reasons,
+            score: result.score,
+            reasons: result.reasons,
           });
         }
       }
     }
 
+    // Sauvegarder les matches
     for (const match of matches) {
       await this.prisma.matches.upsert({
         where: {
@@ -45,53 +88,41 @@ export class MatchingService {
       });
     }
 
+    this.logger.log(`Generated ${matches.length} qualified matches`);
     return matches;
   }
 
-  private calculateMatchScore(property: any, prospect: any): number {
-    let score = 0;
-    const preferences = prospect.preferences || {};
+  /**
+   * Synchronise les matches de prospecting vers matches après conversion de lead
+   */
+  async syncProspectingMatches(prospectId: string) {
+    const prospectingMatches = await this.prisma.prospecting_matches.findMany({
+      where: { prospectId },
+    });
 
-    if (prospect.budget) {
-      const priceDiff = Math.abs(property.price - prospect.budget);
-      const priceRatio = priceDiff / prospect.budget;
-
-      if (priceRatio <= 0.1) score += 30;
-      else if (priceRatio <= 0.2) score += 20;
-      else if (priceRatio <= 0.3) score += 10;
+    for (const pm of prospectingMatches) {
+      await this.prisma.matches.upsert({
+        where: {
+          propertyId_prospectId: {
+            propertyId: pm.propertyId,
+            prospectId: pm.prospectId!,
+          },
+        },
+        update: {
+          score: pm.score,
+          reasons: pm.reason,
+        },
+        create: {
+          propertyId: pm.propertyId,
+          prospectId: pm.prospectId!,
+          score: pm.score,
+          reasons: pm.reason,
+          status: pm.status,
+        },
+      });
     }
 
-    if (preferences.type && property.type === preferences.type) score += 20;
-    if (preferences.category && property.category === preferences.category) score += 20;
-    if (preferences.city && property.city === preferences.city) score += 15;
-    if (preferences.bedrooms && property.bedrooms === preferences.bedrooms) score += 10;
-
-    if (preferences.minArea && preferences.maxArea) {
-      if (property.area >= preferences.minArea && property.area <= preferences.maxArea) {
-        score += 5;
-      }
-    }
-
-    return Math.min(score, 100);
-  }
-
-  private getMatchReasons(property: any, prospect: any): any {
-    const reasons = [];
-    const preferences = prospect.preferences || {};
-
-    if (prospect.budget && Math.abs(property.price - prospect.budget) / prospect.budget <= 0.2) {
-      reasons.push({ type: 'budget', message: 'Prix dans le budget' });
-    }
-
-    if (preferences.type && property.type === preferences.type) {
-      reasons.push({ type: 'type', message: `Type: ${property.type}` });
-    }
-
-    if (preferences.city && property.city === preferences.city) {
-      reasons.push({ type: 'location', message: `Ville: ${property.city}` });
-    }
-
-    return reasons;
+    this.logger.log(`Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`);
   }
 
   async findAll(userId: string, filters?: any) {

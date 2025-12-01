@@ -18,6 +18,7 @@ import {
   MatchStatus,
   ProspectingCampaign,
   ProspectingLead,
+  ProspectingMatch,
 } from '@/shared/utils/prospecting-api';
 import { GeographicTargeting } from './GeographicTargeting';
 import { DemographicTargeting } from './DemographicTargeting';
@@ -161,7 +162,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   });
   const [selectedLead, setSelectedLead] = useState<ProspectingLead | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
-  const [leadMatches, setLeadMatches] = useState<any[]>([]);
+  const [leadMatches, setLeadMatches] = useState<ProspectingMatch[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
   // Scraping configuration
   const [showScrapingConfig, setShowScrapingConfig] = useState(false);
@@ -1207,15 +1208,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 {/* Match Results */}
                 {leadMatches.length > 0 ? (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {leadMatches.map((match: any) => (
+                    {leadMatches.map((match: ProspectingMatch) => (
                       <div key={match.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">
-                              {match.properties?.title || 'Bien immobilier'}
+                              {match.property?.title || 'Bien immobilier'}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {match.properties?.city} • {match.properties?.type} • {((match.properties?.price || 0) / 1000).toFixed(0)}k TND
+                              {match.property?.city} • {match.property?.type} • {((match.property?.price || 0) / 1000).toFixed(0)}k TND
                             </p>
                           </div>
                           <div className="text-right">
@@ -1250,6 +1251,16 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
                         {/* Actions */}
                         <div className="mt-2 flex gap-2">
+                          {match.property && (
+                            <a
+                              href={`/properties/${match.propertyId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                            >
+                              👁️ Voir le bien
+                            </a>
+                          )}
                           <button
                             onClick={() => handleNotifyMatch(match.id)}
                             className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"

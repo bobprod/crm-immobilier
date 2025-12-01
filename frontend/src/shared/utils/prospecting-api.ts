@@ -1,4 +1,5 @@
 import apiClient from './backend-api';
+import { Property } from './properties-api';
 
 // ============================================
 // TYPES - Types pour la Prospection Intelligente
@@ -106,9 +107,26 @@ export interface ProspectingMatch {
   notifiedAt?: string;
   createdAt: string;
   updatedAt: string;
-  property?: any;
-  prospect?: any;
+  property?: Property;
+  prospect?: Prospect;
   lead?: ProspectingLead;
+}
+
+// Prospect interface for typing
+export interface Prospect {
+  id: string;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  type?: string;
+  status?: string;
+  budget?: BudgetRange;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================
