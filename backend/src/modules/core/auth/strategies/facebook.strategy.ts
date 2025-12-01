@@ -19,8 +19,8 @@ export interface FacebookUser {
 export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
   constructor(private configService: ConfigService) {
     super({
-      clientID: configService.get<string>('FACEBOOK_APP_ID') || '',
-      clientSecret: configService.get<string>('FACEBOOK_APP_SECRET') || '',
+      clientID: configService.get<string>('FACEBOOK_APP_ID') || 'dummy-facebook-app-id',
+      clientSecret: configService.get<string>('FACEBOOK_APP_SECRET') || 'dummy-facebook-app-secret',
       callbackURL: configService.get<string>('FACEBOOK_CALLBACK_URL') || 'http://localhost:3000/api/auth/facebook/callback',
       scope: ['email'],
       profileFields: ['id', 'emails', 'name', 'photos'],

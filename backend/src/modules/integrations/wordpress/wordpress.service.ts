@@ -49,7 +49,7 @@ export class WordPressService {
       this.logger.log(`Syncing property ${propertyId} to WordPress`);
 
       // Récupérer la propriété
-      const property = await this.prisma.property.findUnique({
+      const property = await this.prisma.properties.findUnique({
         where: { id: propertyId },
         include: {
           user: {
@@ -109,7 +109,7 @@ export class WordPressService {
         response = await client.post('/posts', wpData);
 
         // Sauvegarder l'ID WordPress
-        await this.prisma.property.update({
+        await this.prisma.properties.update({
           where: { id: propertyId },
           data: { wordpressId: response.data.id.toString() },
         });
@@ -225,7 +225,7 @@ export class WordPressService {
    */
   async deleteProperty(propertyId: string): Promise<void> {
     try {
-      const property = await this.prisma.property.findUnique({
+      const property = await this.prisma.properties.findUnique({
         where: { id: propertyId },
         include: {
           user: {
@@ -253,7 +253,7 @@ export class WordPressService {
       this.logger.log(`Property ${propertyId} deleted from WordPress`);
 
       // Nettoyer l'ID WordPress
-      await this.prisma.property.update({
+      await this.prisma.properties.update({
         where: { id: propertyId },
         data: { wordpressId: null },
       });
@@ -268,7 +268,7 @@ export class WordPressService {
    */
   async syncAllProperties(userId: string): Promise<void> {
     try {
-      const properties = await this.prisma.property.findMany({
+      const properties = await this.prisma.properties.findMany({
         where: {
           userId,
           status: 'available',

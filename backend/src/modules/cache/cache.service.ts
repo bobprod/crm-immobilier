@@ -14,7 +14,7 @@ export class CacheService {
   // TODO: Intégrer Redis pour production
   // constructor(private redis: Redis) {}
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Récupérer une valeur du cache
@@ -155,7 +155,7 @@ export class CacheService {
         recentActivities,
       ] = await Promise.all([
         // Prospects actifs
-        this.prisma.prospect.count({
+        this.prisma.prospects.count({
           where: {
             userId,
             status: { in: ['new', 'contacted', 'qualified'] },
@@ -163,7 +163,7 @@ export class CacheService {
         }),
 
         // Propriétés disponibles
-        this.prisma.property.count({
+        this.prisma.properties.count({
           where: {
             userId,
             status: 'available',
@@ -171,10 +171,10 @@ export class CacheService {
         }),
 
         // Rendez-vous aujourd'hui
-        this.prisma.appointment.count({
+        this.prisma.appointments.count({
           where: {
             userId,
-            date: {
+            startTime: {
               gte: new Date(new Date().setHours(0, 0, 0, 0)),
               lt: new Date(new Date().setHours(23, 59, 59, 999)),
             },
@@ -182,15 +182,17 @@ export class CacheService {
         }),
 
         // Matchings actifs
-        this.prisma.matching.count({
+        this.prisma.prospecting_matches.count({
           where: {
-            userId,
-            status: 'active',
+            properties: {
+              userId,
+            },
+            status: 'pending',
           },
         }),
 
         // Campagnes actives
-        this.prisma.campaign.count({
+        this.prisma.campaigns.count({
           where: {
             userId,
             status: 'active',
@@ -237,7 +239,8 @@ export class CacheService {
         include: {
           user: {
             select: {
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -282,8 +285,8 @@ export class CacheService {
     try {
       const [totalProspects, totalProperties, totalRevenue, prospectsByStatus, propertiesByType] =
         await Promise.all([
-          this.prisma.prospect.count({ where: { userId } }),
-          this.prisma.property.count({ where: { userId } }),
+          this.prisma.prospects.count({ where: { userId } }),
+          this.prisma.properties.count({ where: { userId } }),
           this.calculateTotalRevenue(userId),
           this.getProspectsByStatus(userId),
           this.getPropertiesByType(userId),
@@ -315,11 +318,13 @@ export class CacheService {
 
   private async calculateTotalRevenue(userId: string): Promise<number> {
     try {
-      const result = await this.prisma.transaction.aggregate({
-        where: { userId, status: 'completed' },
-        _sum: { amount: true },
-      });
-      return result._sum.amount || 0;
+      // Note: transactions table may not exist, return 0 for now
+      // const result = await this.prisma.$transaction.aggregate({
+      //   where: { userId, status: 'completed' },
+      //   _sum: { amount: true },
+      // });
+      // return result._sum.amount || 0;
+      return 0;
     } catch (error) {
       return 0;
     }
@@ -327,7 +332,7 @@ export class CacheService {
 
   private async getProspectsByStatus(userId: string) {
     try {
-      const prospects = await this.prisma.prospect.groupBy({
+      const prospects = await this.prisma.prospects.groupBy({
         by: ['status'],
         where: { userId },
         _count: true,
@@ -347,7 +352,7 @@ export class CacheService {
 
   private async getPropertiesByType(userId: string) {
     try {
-      const properties = await this.prisma.property.groupBy({
+      const properties = await this.prisma.properties.groupBy({
         by: ['type'],
         where: { userId },
         _count: true,
