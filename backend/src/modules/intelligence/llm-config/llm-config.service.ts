@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { LLMProviderFactory } from './providers/llm-provider.factory';
+import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker.service';
 
 /**
  * Service de gestion de la configuration LLM
@@ -10,6 +11,7 @@ export class LLMConfigService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly llmFactory: LLMProviderFactory,
+    private readonly costTracker: ApiCostTrackerService,
   ) {}
 
   /**
@@ -150,12 +152,20 @@ export class LLMConfigService {
    * Obtenir les statistiques d'utilisation
    */
   async getUsageStats(userId: string) {
-    // TODO: Implémenter le tracking des coûts réels
-    return {
-      totalTokens: 0,
-      totalCost: 0,
-      requestCount: 0,
-      lastUsed: null,
-    };
+    return this.costTracker.getUsageStats(userId);
+  }
+
+  /**
+   * Obtenir les métriques pour le dashboard
+   */
+  async getDashboardMetrics(userId: string) {
+    return this.costTracker.getDashboardMetrics(userId);
+  }
+
+  /**
+   * Vérifier le budget
+   */
+  async checkBudget(userId: string, monthlyBudget: number) {
+    return this.costTracker.checkBudgetAlert(userId, monthlyBudget);
   }
 }

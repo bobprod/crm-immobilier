@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import {
   UpdateLLMConfigDto,
@@ -68,5 +68,24 @@ export class LLMConfigController {
   @ApiResponse({ status: 200, type: UsageStatsDto })
   async getUsage(@Request() req) {
     return this.llmConfigService.getUsageStats(req.user.userId);
+  }
+
+  /**
+   * Métriques pour le dashboard
+   */
+  @Get('dashboard-metrics')
+  @ApiOperation({ summary: 'Métriques API pour le dashboard' })
+  async getDashboardMetrics(@Request() req) {
+    return this.llmConfigService.getDashboardMetrics(req.user.userId);
+  }
+
+  /**
+   * Vérifier le budget mensuel
+   */
+  @Get('budget-check')
+  @ApiOperation({ summary: 'Vérifier le budget API mensuel' })
+  async checkBudget(@Request() req, @Query('budget') budget: string) {
+    const monthlyBudget = budget ? parseFloat(budget) : 100; // Default $100/month
+    return this.llmConfigService.checkBudget(req.user.userId, monthlyBudget);
   }
 }

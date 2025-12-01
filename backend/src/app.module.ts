@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './shared/database/prisma.module';
+import { ThrottlerBehindProxyGuard } from './shared/guards/throttler-behind-proxy.guard';
 
 // CORE MODULES
 import { AuthModule } from './modules/core/auth/auth.module';
@@ -52,15 +54,24 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 // PUBLIC MODULES
 import { VitrineModule } from './modules/public/vitrine/vitrine.module';
 
-import { databaseConfig, jwtConfig, mailConfig } from './config';
+import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './config';
 
 @Module({
   imports: [
     // Configuration globale
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, mailConfig],
+      load: [databaseConfig, jwtConfig, mailConfig, integrationsConfig],
     }),
+
+    // Note: Pour activer @nestjs/throttler avec config avancée:
+    // npm install @nestjs/throttler
+    // Puis décommenter et remplacer ThrottlerBehindProxyGuard par ThrottlerGuard
+    // ThrottlerModule.forRoot([
+    //   { name: 'short', ttl: 1000, limit: 3 },
+    //   { name: 'medium', ttl: 10000, limit: 20 },
+    //   { name: 'long', ttl: 60000, limit: 100 },
+    // ]),
 
     // Database
     PrismaModule,
@@ -112,6 +123,14 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
     VitrineModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Rate Limiting global - appliqué à toutes les routes
+    // Note: Utilise ThrottlerBehindProxyGuard (fallback) jusqu'à ce que @nestjs/throttler soit installé
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerBehindProxyGuard,
+    },
+  ],
 })
 export class AppModule {}
