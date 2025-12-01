@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '@/modules/core/auth/guards/jwt-auth.guard';
 import { TrackingConfigService } from './services/tracking-config.service';
 import { TrackingEventsService } from './services/tracking-events.service';
@@ -76,7 +87,11 @@ export class MarketingTrackingController {
   }
 
   @Get('ml/attribution/:prospectId')
-  getAttribution(@Request() req, @Param('prospectId') prospectId: string, @Query('model') model?: string) {
+  getAttribution(
+    @Request() req,
+    @Param('prospectId') prospectId: string,
+    @Query('model') model?: string,
+  ) {
     return this.attribution.calculateAttribution(req.user.userId, prospectId, model as any);
   }
 

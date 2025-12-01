@@ -57,11 +57,7 @@ export class VitrineController {
     @Param('id') propertyId: string,
     @Body() dto: UpdatePublishedPropertyDto,
   ) {
-    return this.vitrineService.publishProperty(
-      req.user.userId,
-      propertyId,
-      dto,
-    );
+    return this.vitrineService.publishProperty(req.user.userId, propertyId, dto);
   }
 
   @UseGuards(JwtAuthGuard)

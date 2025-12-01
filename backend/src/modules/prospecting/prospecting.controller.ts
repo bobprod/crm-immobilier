@@ -48,11 +48,7 @@ export class ProspectingController {
   @ApiOperation({ summary: 'Lister toutes les campagnes' })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'type', required: false })
-  getCampaigns(
-    @Request() req,
-    @Query('status') status?: string,
-    @Query('type') type?: string,
-  ) {
+  getCampaigns(@Request() req, @Query('status') status?: string, @Query('type') type?: string) {
     return this.prospectingService.getCampaigns(req.user.userId, { status, type });
   }
 
@@ -136,11 +132,7 @@ export class ProspectingController {
 
   @Put('leads/:id')
   @ApiOperation({ summary: 'Mettre a jour un lead' })
-  updateLead(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() data: UpdateLeadDto,
-  ) {
+  updateLead(@Request() req, @Param('id') id: string, @Body() data: UpdateLeadDto) {
     return this.prospectingService.updateLead(req.user.userId, id, data);
   }
 
@@ -192,11 +184,7 @@ export class ProspectingController {
 
   @Put('matches/:id/status')
   @ApiOperation({ summary: 'Mettre a jour le statut d un match' })
-  updateMatchStatus(
-    @Request() req,
-    @Param('id') id: string,
-    @Body('status') status: string,
-  ) {
+  updateMatchStatus(@Request() req, @Param('id') id: string, @Body('status') status: string) {
     return this.prospectingService.updateMatchStatus(req.user.userId, id, status);
   }
 
@@ -228,10 +216,7 @@ export class ProspectingController {
 
   @Post('scrape/firecrawl')
   @ApiOperation({ summary: 'Scraper via Firecrawl' })
-  scrapeFirecrawl(
-    @Request() req,
-    @Body() data: { urls: string[]; config?: any },
-  ) {
+  scrapeFirecrawl(@Request() req, @Body() data: { urls: string[]; config?: any }) {
     return this.integrationService.scrapeWithFirecrawl(req.user.userId, data.urls, data.config);
   }
 
@@ -243,19 +228,13 @@ export class ProspectingController {
 
   @Post('scrape/social')
   @ApiOperation({ summary: 'Scraper les reseaux sociaux (Meta, LinkedIn)' })
-  scrapeSocial(
-    @Request() req,
-    @Body() data: { platform: string; query: string; config?: any },
-  ) {
+  scrapeSocial(@Request() req, @Body() data: { platform: string; query: string; config?: any }) {
     return this.integrationService.scrapeFromSocial(req.user.userId, data);
   }
 
   @Post('scrape/websites')
   @ApiOperation({ summary: 'Scraper des sites web specifiques' })
-  scrapeWebsites(
-    @Request() req,
-    @Body() data: { urls: string[]; selectors?: any },
-  ) {
+  scrapeWebsites(@Request() req, @Body() data: { urls: string[]; selectors?: any }) {
     return this.integrationService.scrapeWebsites(req.user.userId, data.urls, data.selectors);
   }
 
@@ -271,11 +250,12 @@ export class ProspectingController {
 
   @Post('ai/analyze-content')
   @ApiOperation({ summary: 'Analyser du contenu pour extraire des leads' })
-  analyzeContent(
-    @Request() req,
-    @Body() data: { content: string; source?: string },
-  ) {
-    return this.integrationService.analyzeContentForLeads(req.user.userId, data.content, data.source);
+  analyzeContent(@Request() req, @Body() data: { content: string; source?: string }) {
+    return this.integrationService.analyzeContentForLeads(
+      req.user.userId,
+      data.content,
+      data.source,
+    );
   }
 
   @Post('ai/classify-lead')
@@ -326,11 +306,7 @@ export class ProspectingController {
     @Param('campaignId') campaignId: string,
     @Body() data: { items: RawScrapedItem[] },
   ) {
-    return this.integrationService.ingestScrapedItems(
-      req.user.userId,
-      campaignId,
-      data.items,
-    );
+    return this.integrationService.ingestScrapedItems(req.user.userId, campaignId, data.items);
   }
 
   @Post('campaigns/:campaignId/scrape-and-ingest')
@@ -421,10 +397,7 @@ export class ProspectingController {
 
   @Post('import')
   @ApiOperation({ summary: 'Importer des leads' })
-  importLeads(
-    @Request() req,
-    @Body() data: { campaignId: string; leads: any[] },
-  ) {
+  importLeads(@Request() req, @Body() data: { campaignId: string; leads: any[] }) {
     return this.prospectingService.importLeads(req.user.userId, data.campaignId, data.leads);
   }
 }

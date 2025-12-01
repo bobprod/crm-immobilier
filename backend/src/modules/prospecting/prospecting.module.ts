@@ -8,10 +8,7 @@ import { LLMProspectingService } from './llm-prospecting.service';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    ConfigModule,
-  ],
+  imports: [ScheduleModule.forRoot(), ConfigModule],
   controllers: [ProspectingController],
   providers: [
     ProspectingService,
@@ -19,10 +16,6 @@ import { PrismaService } from '../../shared/database/prisma.service';
     LLMProspectingService,
     PrismaService,
   ],
-  exports: [
-    ProspectingService,
-    ProspectingIntegrationService,
-    LLMProspectingService,
-  ],
+  exports: [ProspectingService, ProspectingIntegrationService, LLMProspectingService],
 })
 export class ProspectingModule {}

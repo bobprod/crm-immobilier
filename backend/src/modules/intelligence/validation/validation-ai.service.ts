@@ -11,11 +11,7 @@ export class ValidationAIService {
   /**
    * Valider un email avec AI (analyse sémantique)
    */
-  async validateEmailWithAI(
-    userId: string,
-    email: string,
-    context?: string,
-  ): Promise<any> {
+  async validateEmailWithAI(userId: string, email: string, context?: string): Promise<any> {
     this.logger.log(`AI Email validation: ${email}`);
 
     try {
@@ -156,10 +152,7 @@ export class ValidationAIService {
   /**
    * Calculer un score prédictif avec AI
    */
-  async calculatePredictiveScore(
-    userId: string,
-    contactData: any,
-  ): Promise<number> {
+  async calculatePredictiveScore(userId: string, contactData: any): Promise<number> {
     try {
       const aiSettings = await this.prisma.ai_settings.findUnique({
         where: { userId },
@@ -214,11 +207,7 @@ Réponds UNIQUEMENT au format JSON:
 }`;
   }
 
-  private buildSpamDetectionPrompt(
-    email: string,
-    name?: string,
-    message?: string,
-  ): string {
+  private buildSpamDetectionPrompt(email: string, name?: string, message?: string): string {
     return `Tu es un expert en détection de spam. Analyse ce contact et détermine s'il s'agit de spam.
 
 Email: ${email}
@@ -240,11 +229,7 @@ Réponds UNIQUEMENT au format JSON:
 }`;
   }
 
-  private buildEnrichmentPrompt(
-    email: string,
-    phone?: string,
-    name?: string,
-  ): string {
+  private buildEnrichmentPrompt(email: string, phone?: string, name?: string): string {
     return `Tu es un expert en enrichissement de données. À partir de ces informations, déduis des insights pertinents.
 
 Email: ${email}
@@ -295,11 +280,7 @@ Réponds UNIQUEMENT au format JSON:
   // AI CALLER
   // ============================================
 
-  private async callAI(
-    provider: string,
-    apiKey: string,
-    prompt: string,
-  ): Promise<string> {
+  private async callAI(provider: string, apiKey: string, prompt: string): Promise<string> {
     switch (provider) {
       case 'openai':
         return this.callOpenAI(apiKey, prompt);
@@ -486,8 +467,7 @@ Réponds UNIQUEMENT au format JSON:
   private estimateTokens(prompt: string, response: any): number {
     const promptTokens = Math.ceil(prompt.length / 4);
     const responseTokens = Math.ceil(
-      (typeof response === 'string' ? response : JSON.stringify(response))
-        .length / 4,
+      (typeof response === 'string' ? response : JSON.stringify(response)).length / 4,
     );
     return promptTokens + responseTokens;
   }

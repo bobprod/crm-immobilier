@@ -19,7 +19,7 @@ export class MatchingService {
     for (const property of properties) {
       for (const prospect of prospects) {
         const score = this.calculateMatchScore(property, prospect);
-        
+
         if (score >= 50) {
           const reasons = this.getMatchReasons(property, prospect);
           matches.push({
@@ -55,7 +55,7 @@ export class MatchingService {
     if (prospect.budget) {
       const priceDiff = Math.abs(property.price - prospect.budget);
       const priceRatio = priceDiff / prospect.budget;
-      
+
       if (priceRatio <= 0.1) score += 30;
       else if (priceRatio <= 0.2) score += 20;
       else if (priceRatio <= 0.3) score += 10;

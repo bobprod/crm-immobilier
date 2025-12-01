@@ -21,37 +21,107 @@ function calculateBudgetScore(lead: any, property: any): any {
   const leadMax = lead.budgetMax ?? lead.budget?.max ?? null;
 
   if (!propertyPrice || propertyPrice <= 0) {
-    return { compatible: false, relation: 'no_budget', score: 0, leadMin, leadMax, propertyPrice: 0 };
+    return {
+      compatible: false,
+      relation: 'no_budget',
+      score: 0,
+      leadMin,
+      leadMax,
+      propertyPrice: 0,
+    };
   }
 
   if (leadMin === null && leadMax === null) {
-    return { compatible: false, relation: 'no_budget', score: 0, leadMin: null, leadMax: null, propertyPrice };
+    return {
+      compatible: false,
+      relation: 'no_budget',
+      score: 0,
+      leadMin: null,
+      leadMax: null,
+      propertyPrice,
+    };
   }
 
   if (leadMin !== null && leadMax !== null) {
     if (propertyPrice >= leadMin && propertyPrice <= leadMax) {
-      return { compatible: true, relation: 'within_range', score: 40, leadMin, leadMax, propertyPrice };
+      return {
+        compatible: true,
+        relation: 'within_range',
+        score: 40,
+        leadMin,
+        leadMax,
+        propertyPrice,
+      };
     }
     if (propertyPrice >= leadMin * 0.9 && propertyPrice <= leadMax * 1.1) {
-      return { compatible: true, relation: propertyPrice < leadMin ? 'below_range' : 'above_range', score: 30, leadMin, leadMax, propertyPrice };
+      return {
+        compatible: true,
+        relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+        score: 30,
+        leadMin,
+        leadMax,
+        propertyPrice,
+      };
     }
     if (propertyPrice >= leadMin * 0.8 && propertyPrice <= leadMax * 1.2) {
-      return { compatible: true, relation: propertyPrice < leadMin ? 'below_range' : 'above_range', score: 20, leadMin, leadMax, propertyPrice };
+      return {
+        compatible: true,
+        relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+        score: 20,
+        leadMin,
+        leadMax,
+        propertyPrice,
+      };
     }
-    return { compatible: false, relation: propertyPrice < leadMin ? 'below_range' : 'above_range', score: 0, leadMin, leadMax, propertyPrice };
+    return {
+      compatible: false,
+      relation: propertyPrice < leadMin ? 'below_range' : 'above_range',
+      score: 0,
+      leadMin,
+      leadMax,
+      propertyPrice,
+    };
   }
 
   const singleBudget = leadMin ?? leadMax!;
   if (Math.abs(propertyPrice - singleBudget) <= singleBudget * 0.1) {
-    return { compatible: true, relation: 'within_range', score: 40, leadMin, leadMax, propertyPrice };
+    return {
+      compatible: true,
+      relation: 'within_range',
+      score: 40,
+      leadMin,
+      leadMax,
+      propertyPrice,
+    };
   }
   if (Math.abs(propertyPrice - singleBudget) <= singleBudget * 0.2) {
-    return { compatible: true, relation: propertyPrice < singleBudget ? 'below_range' : 'above_range', score: 30, leadMin, leadMax, propertyPrice };
+    return {
+      compatible: true,
+      relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+      score: 30,
+      leadMin,
+      leadMax,
+      propertyPrice,
+    };
   }
   if (Math.abs(propertyPrice - singleBudget) <= singleBudget * 0.3) {
-    return { compatible: true, relation: propertyPrice < singleBudget ? 'below_range' : 'above_range', score: 20, leadMin, leadMax, propertyPrice };
+    return {
+      compatible: true,
+      relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+      score: 20,
+      leadMin,
+      leadMax,
+      propertyPrice,
+    };
   }
-  return { compatible: false, relation: propertyPrice < singleBudget ? 'below_range' : 'above_range', score: 0, leadMin, leadMax, propertyPrice };
+  return {
+    compatible: false,
+    relation: propertyPrice < singleBudget ? 'below_range' : 'above_range',
+    score: 0,
+    leadMin,
+    leadMax,
+    propertyPrice,
+  };
 }
 
 function calculateLocationScore(lead: any, property: any): any {
@@ -60,22 +130,57 @@ function calculateLocationScore(lead: any, property: any): any {
   const propertyCity = property.city?.toLowerCase().trim() ?? null;
 
   if (!leadCity || !propertyCity) {
-    return { compatible: false, relation: 'unknown', score: 0, leadCity, leadCountry, propertyCity };
+    return {
+      compatible: false,
+      relation: 'unknown',
+      score: 0,
+      leadCity,
+      leadCountry,
+      propertyCity,
+    };
   }
 
   if (leadCity === propertyCity) {
-    return { compatible: true, relation: 'same_city', score: 30, leadCity, leadCountry, propertyCity };
+    return {
+      compatible: true,
+      relation: 'same_city',
+      score: 30,
+      leadCity,
+      leadCountry,
+      propertyCity,
+    };
   }
 
   if (leadCity.includes(propertyCity) || propertyCity.includes(leadCity)) {
-    return { compatible: true, relation: 'same_city', score: 25, leadCity, leadCountry, propertyCity };
+    return {
+      compatible: true,
+      relation: 'same_city',
+      score: 25,
+      leadCity,
+      leadCountry,
+      propertyCity,
+    };
   }
 
   if (leadCountry === 'tunisie') {
-    return { compatible: true, relation: 'same_country', score: 15, leadCity, leadCountry, propertyCity };
+    return {
+      compatible: true,
+      relation: 'same_country',
+      score: 15,
+      leadCity,
+      leadCountry,
+      propertyCity,
+    };
   }
 
-  return { compatible: false, relation: 'different', score: 0, leadCity, leadCountry, propertyCity };
+  return {
+    compatible: false,
+    relation: 'different',
+    score: 0,
+    leadCity,
+    leadCountry,
+    propertyCity,
+  };
 }
 
 function calculateTypeScore(lead: any, property: any): any {
@@ -134,7 +239,8 @@ function calculateMatchScore(lead: any, property: any): MatchScoreResult {
   const typeResult = calculateTypeScore(lead, property);
   const metaResult = calculateMetaBonus(lead);
 
-  const totalScore = budgetResult.score + locationResult.score + typeResult.score + metaResult.totalBonus;
+  const totalScore =
+    budgetResult.score + locationResult.score + typeResult.score + metaResult.totalBonus;
   const finalScore = Math.min(100, totalScore);
 
   return {
@@ -200,7 +306,11 @@ console.log('\\n--- Test Budget ---');
   const property = { price: 250000 };
   const result = calculateBudgetScore(lead, property);
   test('Budget dans fourchette exacte = 40 points', result.score === 40, `Score: ${result.score}`);
-  test('Relation = within_range', result.relation === 'within_range', `Relation: ${result.relation}`);
+  test(
+    'Relation = within_range',
+    result.relation === 'within_range',
+    `Relation: ${result.relation}`,
+  );
 }
 
 // Test 2: Budget légèrement au-dessus (+10%)
@@ -266,7 +376,11 @@ console.log('\\n--- Test Type de Bien ---');
   const lead = { propertyTypes: ['appartement'] };
   const property = { type: 'studio' };
   const result = calculateTypeScore(lead, property);
-  test('Type compatible (appartement<->studio) = 15 points', result.score === 15, `Score: ${result.score}`);
+  test(
+    'Type compatible (appartement<->studio) = 15 points',
+    result.score === 15,
+    `Score: ${result.score}`,
+  );
 }
 
 // Test 10: Type inconnu (pas de préférence)
@@ -290,14 +404,22 @@ console.log('\\n--- Test Bonus Meta ---');
 {
   const lead = { urgency: 'haute', seriousnessScore: 85 };
   const result = calculateMetaBonus(lead);
-  test('Urgence haute + Seriousness 85 = 10 points (cap)', result.totalBonus === 10, `Bonus: ${result.totalBonus}`);
+  test(
+    'Urgence haute + Seriousness 85 = 10 points (cap)',
+    result.totalBonus === 10,
+    `Bonus: ${result.totalBonus}`,
+  );
 }
 
 // Test 13: Bonus moyen
 {
   const lead = { urgency: 'moyenne', seriousnessScore: 65 };
   const result = calculateMetaBonus(lead);
-  test('Urgence moyenne + Seriousness 65 = 6 points', result.totalBonus === 6, `Bonus: ${result.totalBonus}`);
+  test(
+    'Urgence moyenne + Seriousness 65 = 6 points',
+    result.totalBonus === 6,
+    `Bonus: ${result.totalBonus}`,
+  );
 }
 
 // Test 14: Score total - Lead qualifié
@@ -318,7 +440,9 @@ console.log('\\n--- Test Score Total ---');
     type: 'appartement',
   };
   const result = calculateMatchScore(lead, property);
-  console.log(`   Score total: ${result.score} (Budget: ${result.reasons.breakdown.budgetPoints}, Location: ${result.reasons.breakdown.locationPoints}, Type: ${result.reasons.breakdown.typePoints}, Bonus: ${result.reasons.breakdown.bonusPoints})`);
+  console.log(
+    `   Score total: ${result.score} (Budget: ${result.reasons.breakdown.budgetPoints}, Location: ${result.reasons.breakdown.locationPoints}, Type: ${result.reasons.breakdown.typePoints}, Bonus: ${result.reasons.breakdown.bonusPoints})`,
+  );
   test('Lead parfait = 100 points', result.score === 100, `Score: ${result.score}`);
   test('Lead qualifié (score >= 50)', result.isQualified === true);
 }
@@ -337,7 +461,9 @@ console.log('\\n--- Test Score Total ---');
     type: 'appartement',
   };
   const result = calculateMatchScore(lead, property);
-  console.log(`   Score total: ${result.score} (Budget: ${result.reasons.breakdown.budgetPoints}, Location: ${result.reasons.breakdown.locationPoints}, Type: ${result.reasons.breakdown.typePoints}, Bonus: ${result.reasons.breakdown.bonusPoints})`);
+  console.log(
+    `   Score total: ${result.score} (Budget: ${result.reasons.breakdown.budgetPoints}, Location: ${result.reasons.breakdown.locationPoints}, Type: ${result.reasons.breakdown.typePoints}, Bonus: ${result.reasons.breakdown.bonusPoints})`,
+  );
   test('Lead incompatible < 50 points', result.score < 50, `Score: ${result.score}`);
   test('Lead non qualifié', result.isQualified === false);
 }
@@ -355,7 +481,10 @@ console.log('\\n--- Test Price Range ---');
 console.log('\\n--- Test Compatible Types ---');
 test('appartement compatible avec studio', arePropertyTypesCompatible('appartement', 'studio'));
 test('villa compatible avec maison', arePropertyTypesCompatible('villa', 'maison'));
-test('appartement NON compatible avec terrain', !arePropertyTypesCompatible('appartement', 'terrain'));
+test(
+  'appartement NON compatible avec terrain',
+  !arePropertyTypesCompatible('appartement', 'terrain'),
+);
 
 // Résumé
 console.log('\\n========================================');

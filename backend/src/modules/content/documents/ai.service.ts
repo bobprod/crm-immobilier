@@ -37,11 +37,7 @@ export class AiService {
           ));
           break;
         case 'gemini':
-          ({ response, tokensUsed } = await this.callGemini(
-            apiKey,
-            options.prompt,
-            maxTokens,
-          ));
+          ({ response, tokensUsed } = await this.callGemini(apiKey, options.prompt, maxTokens));
           break;
         case 'anthropic':
           ({ response, tokensUsed } = await this.callAnthropic(
@@ -121,12 +117,7 @@ export class AiService {
     };
   }
 
-  private async callAnthropic(
-    apiKey: string,
-    prompt: string,
-    model: string,
-    maxTokens: number,
-  ) {
+  private async callAnthropic(apiKey: string, prompt: string, model: string, maxTokens: number) {
     const res = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {

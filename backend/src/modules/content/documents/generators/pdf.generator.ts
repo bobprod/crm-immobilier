@@ -6,10 +6,7 @@ export class PDFGenerator {
   /**
    * Générer un PDF simple
    */
-  static async generatePDF(
-    data: any,
-    options: any = {},
-  ): Promise<Buffer> {
+  static async generatePDF(data: any, options: any = {}): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({
@@ -59,12 +56,9 @@ export class PDFGenerator {
         const pages = doc.bufferedPageRange();
         for (let i = 0; i < pages.count; i++) {
           doc.switchToPage(i);
-          doc.fontSize(8).text(
-            `Page ${i + 1} / ${pages.count}`,
-            50,
-            doc.page.height - 30,
-            { align: 'center' },
-          );
+          doc
+            .fontSize(8)
+            .text(`Page ${i + 1} / ${pages.count}`, 50, doc.page.height - 30, { align: 'center' });
         }
 
         doc.end();
@@ -78,56 +72,64 @@ export class PDFGenerator {
    * Générer un contrat de vente
    */
   static async generateContract(data: any): Promise<Buffer> {
-    return this.generatePDF({
-      title: 'CONTRAT DE VENTE IMMOBILIÈRE',
-      date: data.date || new Date().toLocaleDateString('fr-FR'),
-      sections: [
-        {
-          title: 'ENTRE LES SOUSSIGNÉS',
-          content: `Le vendeur : ${data.sellerName || 'N/A'}\nL'acheteur : ${data.buyerName || 'N/A'}`,
-        },
-        {
-          title: 'OBJET DU CONTRAT',
-          content: `Vente du bien situé : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}`,
-        },
-        {
-          title: 'PRIX',
-          content: `Prix de vente : ${data.price || 'N/A'} ${data.currency || 'TND'}\nModalités de paiement : ${data.paymentTerms || 'À convenir'}`,
-        },
-        {
-          title: 'CONDITIONS GÉNÉRALES',
-          content: data.terms || 'Les conditions générales s\'appliquent conformément à la législation en vigueur.',
-        },
-      ],
-    }, { includeSignature: true });
+    return this.generatePDF(
+      {
+        title: 'CONTRAT DE VENTE IMMOBILIÈRE',
+        date: data.date || new Date().toLocaleDateString('fr-FR'),
+        sections: [
+          {
+            title: 'ENTRE LES SOUSSIGNÉS',
+            content: `Le vendeur : ${data.sellerName || 'N/A'}\nL'acheteur : ${data.buyerName || 'N/A'}`,
+          },
+          {
+            title: 'OBJET DU CONTRAT',
+            content: `Vente du bien situé : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}`,
+          },
+          {
+            title: 'PRIX',
+            content: `Prix de vente : ${data.price || 'N/A'} ${data.currency || 'TND'}\nModalités de paiement : ${data.paymentTerms || 'À convenir'}`,
+          },
+          {
+            title: 'CONDITIONS GÉNÉRALES',
+            content:
+              data.terms ||
+              "Les conditions générales s'appliquent conformément à la législation en vigueur.",
+          },
+        ],
+      },
+      { includeSignature: true },
+    );
   }
 
   /**
    * Générer un mandat
    */
   static async generateMandate(data: any): Promise<Buffer> {
-    return this.generatePDF({
-      title: 'MANDAT DE VENTE EXCLUSIF',
-      date: data.date || new Date().toLocaleDateString('fr-FR'),
-      sections: [
-        {
-          title: 'MANDANT',
-          content: `Nom : ${data.ownerName || 'N/A'}\nAdresse : ${data.ownerAddress || 'N/A'}`,
-        },
-        {
-          title: 'MANDATAIRE',
-          content: `Agence : ${data.agencyName || 'N/A'}\nAdresse : ${data.agencyAddress || 'N/A'}`,
-        },
-        {
-          title: 'BIEN CONCERNÉ',
-          content: `Adresse : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}\nPrix demandé : ${data.price || 'N/A'} TND`,
-        },
-        {
-          title: 'DURÉE DU MANDAT',
-          content: `Début : ${data.startDate || 'N/A'}\nFin : ${data.endDate || 'N/A'}\nCommission : ${data.commission || 'N/A'}%`,
-        },
-      ],
-    }, { includeSignature: true });
+    return this.generatePDF(
+      {
+        title: 'MANDAT DE VENTE EXCLUSIF',
+        date: data.date || new Date().toLocaleDateString('fr-FR'),
+        sections: [
+          {
+            title: 'MANDANT',
+            content: `Nom : ${data.ownerName || 'N/A'}\nAdresse : ${data.ownerAddress || 'N/A'}`,
+          },
+          {
+            title: 'MANDATAIRE',
+            content: `Agence : ${data.agencyName || 'N/A'}\nAdresse : ${data.agencyAddress || 'N/A'}`,
+          },
+          {
+            title: 'BIEN CONCERNÉ',
+            content: `Adresse : ${data.propertyAddress || 'N/A'}\nType : ${data.propertyType || 'N/A'}\nPrix demandé : ${data.price || 'N/A'} TND`,
+          },
+          {
+            title: 'DURÉE DU MANDAT',
+            content: `Début : ${data.startDate || 'N/A'}\nFin : ${data.endDate || 'N/A'}\nCommission : ${data.commission || 'N/A'}%`,
+          },
+        ],
+      },
+      { includeSignature: true },
+    );
   }
 
   /**
@@ -148,7 +150,9 @@ export class PDFGenerator {
         },
         {
           title: 'MÉTHODOLOGIE',
-          content: data.methodology || 'Estimation basée sur l\'analyse du marché local et des biens comparables.',
+          content:
+            data.methodology ||
+            "Estimation basée sur l'analyse du marché local et des biens comparables.",
         },
       ],
     });

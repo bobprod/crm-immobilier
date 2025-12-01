@@ -15,11 +15,7 @@ export class ProspectsConversionTrackerService {
   /**
    * Tracker quand un prospect est qualifié
    */
-  async trackProspectQualified(
-    prospectId: string,
-    userId: string,
-    metadata?: any,
-  ) {
+  async trackProspectQualified(prospectId: string, userId: string, metadata?: any) {
     return this.aiMetricsService.trackConversion({
       userId,
       prospectId,
@@ -160,11 +156,7 @@ export class ProspectsConversionTrackerService {
 
     const conversions: any[] = [];
 
-    if (
-      ['qualified', 'searching', 'visiting', 'negotiating', 'signed'].includes(
-        prospect.status,
-      )
-    ) {
+    if (['qualified', 'searching', 'visiting', 'negotiating', 'signed'].includes(prospect.status)) {
       conversions.push({
         type: 'prospect_qualified',
         detected: true,

@@ -12,15 +12,32 @@ export class ValidationService {
 
   // Liste de domaines jetables (disposable email)
   private disposableDomains = new Set([
-    'tempmail.com', 'guerrillamail.com', '10minutemail.com', 'mailinator.com',
-    'trashmail.com', 'throwaway.email', 'temp-mail.org', 'yopmail.com',
-    'maildrop.cc', 'fakeinbox.com', 'sharklasers.com', 'spam4.me',
+    'tempmail.com',
+    'guerrillamail.com',
+    '10minutemail.com',
+    'mailinator.com',
+    'trashmail.com',
+    'throwaway.email',
+    'temp-mail.org',
+    'yopmail.com',
+    'maildrop.cc',
+    'fakeinbox.com',
+    'sharklasers.com',
+    'spam4.me',
   ]);
 
   // Mots-clés de spam
   private spamKeywords = [
-    'test', 'spam', 'fake', 'no-reply', 'noreply', 'donotreply',
-    'info@', 'admin@', 'webmaster@', 'postmaster@',
+    'test',
+    'spam',
+    'fake',
+    'no-reply',
+    'noreply',
+    'donotreply',
+    'info@',
+    'admin@',
+    'webmaster@',
+    'postmaster@',
   ];
 
   constructor(private prisma: PrismaService) {
@@ -49,11 +66,7 @@ export class ValidationService {
   /**
    * Valider un email (complet)
    */
-  async validateEmail(
-    userId: string,
-    email: string,
-    prospectId?: string,
-  ): Promise<any> {
+  async validateEmail(userId: string, email: string, prospectId?: string): Promise<any> {
     this.logger.log(`Validating email: ${email}`);
 
     const result = {
@@ -162,13 +175,8 @@ export class ValidationService {
   /**
    * Valider plusieurs emails
    */
-  async validateEmails(
-    userId: string,
-    emails: string[],
-  ): Promise<any> {
-    const results = await Promise.all(
-      emails.map((email) => this.validateEmail(userId, email)),
-    );
+  async validateEmails(userId: string, emails: string[]): Promise<any> {
+    const results = await Promise.all(emails.map((email) => this.validateEmail(userId, email)));
 
     const summary = {
       total: results.length,
@@ -229,11 +237,7 @@ export class ValidationService {
   /**
    * Valider un téléphone
    */
-  async validatePhone(
-    userId: string,
-    phone: string,
-    prospectId?: string,
-  ): Promise<any> {
+  async validatePhone(userId: string, phone: string, prospectId?: string): Promise<any> {
     this.logger.log(`Validating phone: ${phone}`);
 
     const result = {
@@ -393,12 +397,7 @@ export class ValidationService {
   /**
    * Ajouter à la blacklist
    */
-  async addToBlacklist(
-    type: string,
-    value: string,
-    reason?: string,
-    addedBy?: string,
-  ) {
+  async addToBlacklist(type: string, value: string, reason?: string, addedBy?: string) {
     return this.prisma.validation_blacklist.create({
       data: {
         type,

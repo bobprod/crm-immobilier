@@ -6,10 +6,7 @@ import { ValidationAIService } from './validation-ai.service';
 import { PrismaModule } from '../../../shared/database/prisma.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    ScheduleModule.forRoot(),
-  ],
+  imports: [PrismaModule, ScheduleModule.forRoot()],
   controllers: [ValidationController],
   providers: [ValidationService, ValidationAIService],
   exports: [ValidationService, ValidationAIService],

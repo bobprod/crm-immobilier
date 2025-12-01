@@ -1,4 +1,18 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Request, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PropertiesService } from './properties.service';
@@ -10,7 +24,7 @@ import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 @UseGuards(JwtAuthGuard)
 @Controller('properties')
 export class PropertiesController {
-  constructor(private propertiesService: PropertiesService) { }
+  constructor(private propertiesService: PropertiesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create property' })
@@ -39,19 +53,19 @@ export class PropertiesController {
 
   @Patch('bulk/priority')
   @ApiOperation({ summary: 'Bulk update priority' })
-  bulkUpdatePriority(@Request() req, @Body() body: { ids: string[], priority: string }) {
+  bulkUpdatePriority(@Request() req, @Body() body: { ids: string[]; priority: string }) {
     return this.propertiesService.bulkUpdatePriority(body.ids, req.user.userId, body.priority);
   }
 
   @Patch('bulk/status')
   @ApiOperation({ summary: 'Bulk update status' })
-  bulkUpdateStatus(@Request() req, @Body() body: { ids: string[], status: string }) {
+  bulkUpdateStatus(@Request() req, @Body() body: { ids: string[]; status: string }) {
     return this.propertiesService.bulkUpdateStatus(body.ids, req.user.userId, body.status);
   }
 
   @Patch('bulk/assign')
   @ApiOperation({ summary: 'Bulk assign properties' })
-  bulkAssign(@Request() req, @Body() body: { ids: string[], assignedTo: string }) {
+  bulkAssign(@Request() req, @Body() body: { ids: string[]; assignedTo: string }) {
     return this.propertiesService.bulkAssign(body.ids, req.user.userId, body.assignedTo);
   }
 
@@ -76,7 +90,11 @@ export class PropertiesController {
   @Post(':id/images')
   @ApiOperation({ summary: 'Upload property images' })
   @UseInterceptors(FilesInterceptor('images', 10))
-  uploadImages(@Request() req, @Param('id') id: string, @UploadedFiles() files: Express.Multer.File[]) {
+  uploadImages(
+    @Request() req,
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
     return this.propertiesService.uploadImages(id, req.user.userId, files);
   }
 
@@ -110,7 +128,7 @@ export class PropertiesController {
     @Request() req,
     @Query('latitude') latitude: number,
     @Query('longitude') longitude: number,
-    @Query('radiusKm') radiusKm?: number
+    @Query('radiusKm') radiusKm?: number,
   ) {
     return this.propertiesService.getNearby(req.user.userId, latitude, longitude, radiusKm || 5);
   }

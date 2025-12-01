@@ -54,37 +54,37 @@ export enum BlockType {
   CONTAINER = 'container',
   SECTION = 'section',
   COLUMNS = 'columns',
-  
+
   // Contenu
   HEADING = 'heading',
   TEXT = 'text',
   IMAGE = 'image',
   VIDEO = 'video',
-  
+
   // Immobilier
   PROPERTY_GRID = 'property_grid',
   PROPERTY_FEATURED = 'property_featured',
   PROPERTY_SEARCH = 'property_search',
-  
+
   // Formulaires
   CONTACT_FORM = 'contact_form',
   SEARCH_FORM = 'search_form',
-  
+
   // Navigation
   HERO = 'hero',
   CTA = 'cta',
   BUTTON = 'button',
-  
+
   // Médias
   GALLERY = 'gallery',
   SLIDER = 'slider',
-  
+
   // Informations
   TESTIMONIALS = 'testimonials',
   STATS = 'stats',
   FEATURES = 'features',
   FAQ = 'faq',
-  
+
   // Social
   SOCIAL_LINKS = 'social_links',
   MAP = 'map',

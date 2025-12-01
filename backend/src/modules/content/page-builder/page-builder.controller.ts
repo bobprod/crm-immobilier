@@ -59,11 +59,7 @@ export class PageBuilderController {
    * PUT /page-builder/pages/:id
    */
   @Put('pages/:id')
-  async updatePage(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() dto: Partial<PageDto>,
-  ) {
+  async updatePage(@Request() req, @Param('id') id: string, @Body() dto: Partial<PageDto>) {
     return this.pageBuilderService.updatePage(req.user.userId, id, dto);
   }
 
@@ -134,10 +130,7 @@ export class PublicPagesController {
    * GET /public-pages/:slug?userId=xxx
    */
   @Get(':slug')
-  async getPublicPage(
-    @Query('userId') userId: string,
-    @Param('slug') slug: string,
-  ) {
+  async getPublicPage(@Query('userId') userId: string, @Param('slug') slug: string) {
     return this.pageBuilderService.getPublicPage(userId, slug);
   }
 }

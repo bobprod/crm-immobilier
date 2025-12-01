@@ -20,7 +20,7 @@ import { CreateTaskDto, UpdateTaskDto } from './dto';
 @UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
-  constructor(private tasksService: TasksService) { }
+  constructor(private tasksService: TasksService) {}
 
   @Post()
   @ApiOperation({ summary: 'Créer une tâche' })
@@ -54,7 +54,7 @@ export class TasksController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Détails d\'une tâche' })
+  @ApiOperation({ summary: "Détails d'une tâche" })
   findOne(@Request() req, @Param('id') id: string) {
     return this.tasksService.findOne(id, req.user.userId);
   }

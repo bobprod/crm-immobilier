@@ -22,7 +22,12 @@ export interface BudgetMatchReason {
 // LOCATION MATCHING
 // ============================================
 
-export type LocationRelation = 'same_city' | 'same_region' | 'same_country' | 'different' | 'unknown';
+export type LocationRelation =
+  | 'same_city'
+  | 'same_region'
+  | 'same_country'
+  | 'different'
+  | 'unknown';
 
 export interface LocationMatchReason {
   compatible: boolean;
@@ -53,10 +58,10 @@ export interface TypeMatchReason {
 
 export interface MetaMatchReason {
   urgency: string | null;
-  urgencyBonus: number;    // 0-5
+  urgencyBonus: number; // 0-5
   seriousnessScore: number | null;
   seriousnessBonus: number; // 0-5
-  totalBonus: number;       // 0-10 (capped)
+  totalBonus: number; // 0-10 (capped)
 }
 
 // ============================================
@@ -81,7 +86,7 @@ export interface MatchReason {
 // ============================================
 
 export interface MatchScoreResult {
-  score: number;       // 0-100
+  score: number; // 0-100
   reasons: MatchReason;
   isQualified: boolean; // score >= 50
 }
@@ -143,7 +148,7 @@ export function arePropertyTypesCompatible(leadType: string, propertyType: strin
   // Check dans les groupes compatibles
   const compatibleTypes = COMPATIBLE_PROPERTY_TYPES[normalizedLead];
   if (compatibleTypes) {
-    return compatibleTypes.some(t => t === normalizedProperty);
+    return compatibleTypes.some((t) => t === normalizedProperty);
   }
 
   return false;

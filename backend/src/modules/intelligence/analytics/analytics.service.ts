@@ -240,51 +240,50 @@ export class AnalyticsService {
    * Activité récente
    */
   async getRecentActivity(userId: string, limit = 10) {
-    const [prospects, properties, communications, appointments] =
-      await Promise.all([
-        this.prisma.prospects.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3,
-        }),
-        this.prisma.properties.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            title: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3,
-        }),
-        this.prisma.communications.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            subject: true,
-            type: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3,
-        }),
-        this.prisma.appointments.findMany({
-          where: { userId },
-          select: {
-            id: true,
-            title: true,
-            startTime: true,
-          },
-          orderBy: { startTime: 'desc' },
-          take: 3,
-        }),
-      ]);
+    const [prospects, properties, communications, appointments] = await Promise.all([
+      this.prisma.prospects.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+      }),
+      this.prisma.properties.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          title: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+      }),
+      this.prisma.communications.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          subject: true,
+          type: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+      }),
+      this.prisma.appointments.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          title: true,
+          startTime: true,
+        },
+        orderBy: { startTime: 'desc' },
+        take: 3,
+      }),
+    ]);
 
     const activity = [
       ...prospects.map((p) => ({
@@ -309,9 +308,7 @@ export class AnalyticsService {
       })),
     ];
 
-    return activity
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
+    return activity.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit);
   }
 
   /**
@@ -404,12 +401,7 @@ export class AnalyticsService {
   /**
    * Logger un événement analytics
    */
-  async logEvent(
-    userId: string,
-    eventType: string,
-    eventName: string,
-    metadata?: any,
-  ) {
+  async logEvent(userId: string, eventType: string, eventName: string, metadata?: any) {
     return this.prisma.analytics_events.create({
       data: {
         userId,

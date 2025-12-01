@@ -14,7 +14,7 @@ export class TrackingConfigService {
       where: { userId },
     });
 
-    return configs.map(config => ({
+    return configs.map((config) => ({
       ...config,
       config: this.maskSensitiveData(config.config),
     }));
@@ -88,7 +88,10 @@ export class TrackingConfigService {
     return { success: true };
   }
 
-  async testConfig(userId: string, platform: TrackingPlatform): Promise<{
+  async testConfig(
+    userId: string,
+    platform: TrackingPlatform,
+  ): Promise<{
     success: boolean;
     message: string;
   }> {
@@ -123,20 +126,23 @@ export class TrackingConfigService {
       },
     });
 
-    return configs.reduce((acc, config) => {
-      acc[config.platform] = {
-        platform: config.platform,
-        config: config.config,
-        useServerSide: config.useServerSide,
-      };
-      return acc;
-    }, {} as Record<string, any>);
+    return configs.reduce(
+      (acc, config) => {
+        acc[config.platform] = {
+          platform: config.platform,
+          config: config.config,
+          useServerSide: config.useServerSide,
+        };
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }
 
   private maskSensitiveData(config: any): any {
     const masked = { ...config };
     const sensitiveKeys = ['accessToken', 'apiSecret', 'secret', 'token'];
-    
+
     for (const key of sensitiveKeys) {
       if (masked[key]) {
         masked[key] = '***' + masked[key].slice(-4);
@@ -160,8 +166,8 @@ export class TrackingConfigService {
 
     return {
       totalPlatforms: configs.length,
-      activePlatforms: configs.filter(c => c.isActive).length,
-      eventsByPlatform: events.map(e => ({
+      activePlatforms: configs.filter((c) => c.isActive).length,
+      eventsByPlatform: events.map((e) => ({
         platform: e.platform,
         count: e._count,
       })),

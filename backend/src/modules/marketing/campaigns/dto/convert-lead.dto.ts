@@ -24,10 +24,10 @@ export class ConvertLeadDto {
   @IsOptional()
   type?: string;
 
-  @ApiProperty({ 
-    description: 'Budget (objet Json avec min, max, currency)', 
+  @ApiProperty({
+    description: 'Budget (objet Json avec min, max, currency)',
     required: false,
-    example: { min: 100000, max: 500000, currency: 'TND' }
+    example: { min: 100000, max: 500000, currency: 'TND' },
   })
   @IsObject()
   @IsOptional()

@@ -78,8 +78,7 @@ export class SettingsService {
     encrypted = false,
     description?: string,
   ) {
-    const valueStr =
-      typeof value === 'string' ? value : JSON.stringify(value);
+    const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
     const finalValue = encrypted ? this.encrypt(valueStr) : valueStr;
     const type = typeof value;
 
@@ -187,11 +186,7 @@ export class SettingsService {
    */
   async testFirecrawlConnection(userId: string) {
     const apiKey = await this.getSetting(userId, 'firecrawl', 'apiKey');
-    const connectionKey = await this.getSetting(
-      userId,
-      'firecrawl',
-      'connectionKey',
-    );
+    const connectionKey = await this.getSetting(userId, 'firecrawl', 'connectionKey');
 
     if (!apiKey?.value) {
       return { success: false, error: 'API Key manquante' };
@@ -218,11 +213,7 @@ export class SettingsService {
    */
   async testSerpApiConnection(userId: string) {
     const apiKey = await this.getSetting(userId, 'serpapi', 'apiKey');
-    const connectionKey = await this.getSetting(
-      userId,
-      'serpapi',
-      'connectionKey',
-    );
+    const connectionKey = await this.getSetting(userId, 'serpapi', 'connectionKey');
 
     if (!apiKey?.value) {
       return { success: false, error: 'API Key manquante' };
@@ -249,11 +240,7 @@ export class SettingsService {
   async testWhatsAppConnection(userId: string) {
     const accountSid = await this.getSetting(userId, 'whatsapp', 'accountSid');
     const authToken = await this.getSetting(userId, 'whatsapp', 'authToken');
-    const phoneNumber = await this.getSetting(
-      userId,
-      'whatsapp',
-      'phoneNumber',
-    );
+    const phoneNumber = await this.getSetting(userId, 'whatsapp', 'phoneNumber');
 
     if (!accountSid?.value || !authToken?.value) {
       return {
@@ -301,12 +288,11 @@ export class SettingsService {
    * Obtenir la configuration complète pour Pica AI
    */
   async getPicaAIConfig(userId: string) {
-    const [firecrawlSettings, serpApiSettings, picaSettings] =
-      await Promise.all([
-        this.getSectionSettings(userId, 'firecrawl'),
-        this.getSectionSettings(userId, 'serpapi'),
-        this.getSectionSettings(userId, 'pica-ai'),
-      ]);
+    const [firecrawlSettings, serpApiSettings, picaSettings] = await Promise.all([
+      this.getSectionSettings(userId, 'firecrawl'),
+      this.getSectionSettings(userId, 'serpapi'),
+      this.getSectionSettings(userId, 'pica-ai'),
+    ]);
 
     return {
       firecrawl: this.settingsArrayToObject(firecrawlSettings),

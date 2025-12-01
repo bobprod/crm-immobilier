@@ -82,11 +82,7 @@ export class VitrineService {
     });
   }
 
-  async publishProperty(
-    userId: string,
-    propertyId: string,
-    dto: UpdatePublishedPropertyDto,
-  ) {
+  async publishProperty(userId: string, propertyId: string, dto: UpdatePublishedPropertyDto) {
     // Vérifier que le bien existe
     const property = await this.prisma.properties.findFirst({
       where: { id: propertyId, userId },

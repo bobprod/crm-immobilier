@@ -3,7 +3,7 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 
 @Injectable()
 export class PropertiesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(userId: string, data: any) {
     return this.prisma.properties.create({
@@ -72,7 +72,7 @@ export class PropertiesService {
     // In production, upload to cloud storage (S3, Cloudinary, etc.)
     // For now, we'll just store file names
     const existingImages = (property.images as string[]) || [];
-    const newImages = files.map(file => `/uploads/properties/${id}/${file.filename}`);
+    const newImages = files.map((file) => `/uploads/properties/${id}/${file.filename}`);
 
     return this.prisma.properties.update({
       where: { id },
@@ -92,7 +92,7 @@ export class PropertiesService {
     }
 
     const images = (property.images as string[]) || [];
-    const updatedImages = images.filter(img => img !== imageUrl);
+    const updatedImages = images.filter((img) => img !== imageUrl);
 
     return this.prisma.properties.update({
       where: { id },
@@ -175,14 +175,14 @@ export class PropertiesService {
       },
     });
 
-    return properties.filter(property => {
+    return properties.filter((property) => {
       if (!property.latitude || !property.longitude) return false;
 
       const distance = this.calculateDistance(
         latitude,
         longitude,
         property.latitude,
-        property.longitude
+        property.longitude,
       );
 
       return distance <= radiusKm;
@@ -210,21 +210,16 @@ export class PropertiesService {
     };
   }
 
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371; // Earth's radius in km
     const dLat = this.deg2rad(lat2 - lat1);
     const dLon = this.deg2rad(lon2 - lon1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.deg2rad(lat1)) *
-      Math.cos(this.deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(this.deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -238,13 +233,24 @@ export class PropertiesService {
 
     // Create CSV header
     const headers = [
-      'ID', 'Titre', 'Type', 'Catégorie', 'Prix', 'Surface',
-      'Chambres', 'Salles de bain', 'Adresse', 'Ville',
-      'Délégation', 'Code Postal', 'Statut', 'Date de création'
+      'ID',
+      'Titre',
+      'Type',
+      'Catégorie',
+      'Prix',
+      'Surface',
+      'Chambres',
+      'Salles de bain',
+      'Adresse',
+      'Ville',
+      'Délégation',
+      'Code Postal',
+      'Statut',
+      'Date de création',
     ];
 
     // Create CSV rows
-    const rows = properties.map(p => [
+    const rows = properties.map((p) => [
       p.id,
       p.title,
       p.type,
@@ -258,19 +264,19 @@ export class PropertiesService {
       p.delegation || '',
       p.zipCode || '',
       p.status,
-      new Date(p.createdAt).toLocaleDateString('fr-FR')
+      new Date(p.createdAt).toLocaleDateString('fr-FR'),
     ]);
 
     // Combine headers and rows
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     return {
       content: csvContent,
       filename: `properties_${new Date().toISOString().split('T')[0]}.csv`,
-      mimeType: 'text/csv'
+      mimeType: 'text/csv',
     };
   }
 
@@ -284,7 +290,7 @@ export class PropertiesService {
     }
 
     // Skip header
-    const dataLines = lines.slice(1).filter(line => line.trim());
+    const dataLines = lines.slice(1).filter((line) => line.trim());
 
     const imported = [];
     const errors = [];
@@ -292,7 +298,7 @@ export class PropertiesService {
     for (let i = 0; i < dataLines.length; i++) {
       try {
         // Simple CSV parsing (in production, use a proper CSV parser library)
-        const values = dataLines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+        const values = dataLines[i].split(',').map((v) => v.replace(/^"|"$/g, '').trim());
 
         const propertyData = {
           title: values[1] || `Propriété importée ${i + 1}`,
@@ -328,7 +334,6 @@ export class PropertiesService {
       errors: errors.length,
       details: errors,
       properties: imported,
-
     };
   }
 

@@ -1,6 +1,12 @@
 import { Controller, Get, Put, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { UpdateLLMConfigDto, LLMConfigResponseDto, ProviderInfoDto, TestLLMConfigResponseDto, UsageStatsDto } from './dto';
+import {
+  UpdateLLMConfigDto,
+  LLMConfigResponseDto,
+  ProviderInfoDto,
+  TestLLMConfigResponseDto,
+  UsageStatsDto,
+} from './dto';
 import { LLMConfigService } from './llm-config.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 
@@ -58,7 +64,7 @@ export class LLMConfigController {
    * Statistiques d'utilisation
    */
   @Get('usage')
-  @ApiOperation({ summary: 'Statistiques d\'utilisation LLM' })
+  @ApiOperation({ summary: "Statistiques d'utilisation LLM" })
   @ApiResponse({ status: 200, type: UsageStatsDto })
   async getUsage(@Request() req) {
     return this.llmConfigService.getUsageStats(req.user.userId);

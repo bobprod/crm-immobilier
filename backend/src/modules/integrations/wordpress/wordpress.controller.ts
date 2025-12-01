@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Post,
-  Delete,
-  Get,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Post, Delete, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { WordPressService } from './wordpress.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 
@@ -53,17 +44,11 @@ export class WordPressController {
    * Tester la connexion WordPress
    */
   @Post('test-connection')
-  async testConnection(@Body() config: {
-    url: string;
-    username: string;
-    password: string;
-  }) {
+  async testConnection(@Body() config: { url: string; username: string; password: string }) {
     const isConnected = await this.wordpressService.testConnection(config);
     return {
       success: isConnected,
-      message: isConnected
-        ? 'Connexion WordPress réussie'
-        : 'Échec de la connexion WordPress',
+      message: isConnected ? 'Connexion WordPress réussie' : 'Échec de la connexion WordPress',
     };
   }
 }

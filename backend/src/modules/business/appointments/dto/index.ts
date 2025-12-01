@@ -1,4 +1,15 @@
-import { IsString, IsOptional, IsDateString, IsBoolean, IsInt, Min, Max, IsEnum, IsArray, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  IsEnum,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // Enums
@@ -204,7 +215,7 @@ export class CompleteAppointmentDto {
 
 // DTO: Annuler un rendez-vous
 export class CancelAppointmentDto {
-  @ApiPropertyOptional({ description: 'Raison de l\'annulation' })
+  @ApiPropertyOptional({ description: "Raison de l'annulation" })
   @IsString()
   @IsOptional()
   reason?: string;

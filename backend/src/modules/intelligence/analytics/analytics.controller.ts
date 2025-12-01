@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
@@ -56,10 +50,7 @@ export class AnalyticsController {
   @Get('activity')
   @ApiOperation({ summary: 'Activité récente' })
   getRecentActivity(@Request() req, @Query() query: QueryPeriodDto) {
-    return this.analyticsService.getRecentActivity(
-      req.user.userId,
-      query.limit || 10,
-    );
+    return this.analyticsService.getRecentActivity(req.user.userId, query.limit || 10);
   }
 
   @Get('trends')

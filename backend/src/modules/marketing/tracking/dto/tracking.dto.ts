@@ -17,10 +17,10 @@ export enum TrackingPlatform {
  * Modes d'automatisation IA
  */
 export enum AutomationMode {
-  SUGGESTION = 'suggestion',      // IA suggère, humain valide
-  SEMI_AUTO = 'semi_auto',        // IA ajuste dans limites
-  FULL_AUTO = 'full_auto',        // IA gère tout
-  DISABLED = 'disabled',          // Pas d'IA
+  SUGGESTION = 'suggestion', // IA suggère, humain valide
+  SEMI_AUTO = 'semi_auto', // IA ajuste dans limites
+  FULL_AUTO = 'full_auto', // IA gère tout
+  DISABLED = 'disabled', // Pas d'IA
 }
 
 /**
@@ -56,13 +56,13 @@ export interface TrackingEvent {
   data: Record<string, any>;
   source: 'web' | 'mobile' | 'api';
   platform: TrackingPlatform[];
-  
+
   // Données contextuelles
   userAgent?: string;
   ipAddress?: string;
   referrer?: string;
   url?: string;
-  
+
   // Données ML
   conversionProbability?: number;
   leadScore?: number;

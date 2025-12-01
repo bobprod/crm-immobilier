@@ -242,9 +242,8 @@ export class ProspectingService {
 
     // Budget défini: +20
     if (lead.budget) {
-      const budgetValue = typeof lead.budget === 'object'
-        ? (lead.budget.max || lead.budget.min || 0)
-        : lead.budget;
+      const budgetValue =
+        typeof lead.budget === 'object' ? lead.budget.max || lead.budget.min || 0 : lead.budget;
       if (budgetValue > 0) {
         score += 20;
       }
@@ -278,7 +277,9 @@ export class ProspectingService {
    */
   async findMatchesForLead(userId: string, leadId: string) {
     const lead = await this.getLeadById(userId, leadId);
-    this.logger.log(`Finding matches for lead ${leadId} - City: ${lead.city}, Budget: ${lead.budgetMin}-${lead.budgetMax}`);
+    this.logger.log(
+      `Finding matches for lead ${leadId} - City: ${lead.city}, Budget: ${lead.budgetMin}-${lead.budgetMax}`,
+    );
 
     // 1. Déterminer l'intervalle de prix pour le filtre SQL (large pour ne pas rater de biens)
     const priceRange = this.getPriceRangeForSearch(lead);
@@ -426,7 +427,8 @@ export class ProspectingService {
     const metaResult = this.calculateMetaBonus(lead);
 
     // Score total
-    const totalScore = budgetResult.score + locationResult.score + typeResult.score + metaResult.totalBonus;
+    const totalScore =
+      budgetResult.score + locationResult.score + typeResult.score + metaResult.totalBonus;
     const finalScore = Math.min(100, totalScore);
 
     const reasons: MatchReason = {
@@ -651,7 +653,7 @@ export class ProspectingService {
     let leadTypes: string[] = [];
 
     if (lead.propertyTypes && Array.isArray(lead.propertyTypes)) {
-      leadTypes = (lead.propertyTypes as string[]).map(t => t.toLowerCase().trim());
+      leadTypes = (lead.propertyTypes as string[]).map((t) => t.toLowerCase().trim());
     } else if (lead.propertyType) {
       leadTypes = [(lead.propertyType as string).toLowerCase().trim()];
     }
@@ -978,13 +980,11 @@ export class ProspectingService {
 
   private isBudgetCompatible(budget: any, price: number): boolean {
     if (!budget || !price) return false;
-    
-    const budgetValue = typeof budget === 'object'
-      ? (budget.max || budget.min || 0)
-      : budget;
-    
+
+    const budgetValue = typeof budget === 'object' ? budget.max || budget.min || 0 : budget;
+
     if (budgetValue <= 0) return false;
-    
+
     const diff = Math.abs((budgetValue - price) / budgetValue);
     return diff < 0.2;
   }
@@ -1161,13 +1161,13 @@ export class ProspectingService {
 
     // Calculer les coûts par source (estimation basée sur les coûts API typiques)
     const apiCosts: Record<string, number> = {
-      pica: 0.05,      // ~0.05 TND par lead
-      serp: 0.02,      // ~0.02 TND par requête
-      meta: 0.03,      // ~0.03 TND par lead (Facebook/Instagram)
-      linkedin: 0.10,  // ~0.10 TND par lead
+      pica: 0.05, // ~0.05 TND par lead
+      serp: 0.02, // ~0.02 TND par requête
+      meta: 0.03, // ~0.03 TND par lead (Facebook/Instagram)
+      linkedin: 0.1, // ~0.10 TND par lead
       firecrawl: 0.01, // ~0.01 TND par page
-      website: 0.005,  // ~0.005 TND par scrape
-      manual: 0,       // Gratuit
+      website: 0.005, // ~0.005 TND par scrape
+      manual: 0, // Gratuit
     };
 
     // Calculer le coût total basé sur les sources des leads
@@ -1184,9 +1184,12 @@ export class ProspectingService {
     const costPerLead = totalLeads > 0 ? Math.round((totalCost / totalLeads) * 100) / 100 : 0;
 
     // Calculer le ROI: (Valeur générée - Coût) / Coût * 100
-    const roi = totalCost > 0
-      ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
-      : (estimatedValue > 0 ? 100 : 0);
+    const roi =
+      totalCost > 0
+        ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
+        : estimatedValue > 0
+          ? 100
+          : 0;
 
     return {
       totalCampaigns: campaigns.length,
@@ -1243,7 +1246,7 @@ export class ProspectingService {
         }
       } else {
         // Ajouter toutes les clés pour ce lead
-        keys.forEach(key => uniqueLeads.set(key, lead));
+        keys.forEach((key) => uniqueLeads.set(key, lead));
       }
     }
 
@@ -1367,7 +1370,9 @@ export class ProspectingService {
   private levenshteinDistance(str1: string, str2: string): number {
     const m = str1.length;
     const n = str2.length;
-    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    const dp: number[][] = Array(m + 1)
+      .fill(null)
+      .map(() => Array(n + 1).fill(0));
 
     for (let i = 0; i <= m; i++) dp[i][0] = i;
     for (let j = 0; j <= n; j++) dp[0][j] = j;
@@ -1399,7 +1404,7 @@ export class ProspectingService {
 
     for (const other of allLeads) {
       let similarity = 0;
-      let reasons: string[] = [];
+      const reasons: string[] = [];
 
       // Comparer les emails
       if (lead.email && other.email) {
@@ -1425,7 +1430,7 @@ export class ProspectingService {
         const name2 = `${this.normalizeText(other.firstName)} ${this.normalizeText(other.lastName)}`;
         const distance = this.levenshteinDistance(name1, name2);
         const maxLen = Math.max(name1.length, name2.length);
-        const nameSimilarity = 1 - (distance / maxLen);
+        const nameSimilarity = 1 - distance / maxLen;
 
         if (nameSimilarity > 0.8) {
           similarity += 30 * nameSimilarity;
@@ -1459,7 +1464,18 @@ export class ProspectingService {
     }
 
     // Format CSV
-    const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Ville', 'Type', 'Budget', 'Score', 'Statut', 'Source'];
+    const headers = [
+      'Prénom',
+      'Nom',
+      'Email',
+      'Téléphone',
+      'Ville',
+      'Type',
+      'Budget',
+      'Score',
+      'Statut',
+      'Source',
+    ];
     const rows = leads.map((lead) => [
       lead.firstName || '',
       lead.lastName || '',

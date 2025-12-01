@@ -39,10 +39,10 @@ export class LLMProviderFactory {
    */
   estimateCost(provider: string, model: string, tokens: number): number {
     const pricing: Record<string, number> = {
-      'anthropic': 3.0,
-      'openai': 10.0,
-      'gemini': 1.25,
-      'deepseek': 0.27,
+      anthropic: 3.0,
+      openai: 10.0,
+      gemini: 1.25,
+      deepseek: 0.27,
     };
 
     const costPer1M = pricing[provider] || 5.0;

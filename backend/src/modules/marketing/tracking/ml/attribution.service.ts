@@ -10,9 +10,9 @@ export class AttributionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async calculateAttribution(
-    userId: string, 
-    prospectId: string, 
-    model: 'last_click' | 'first_click' | 'linear' | 'time_decay' | 'shapley' | 'markov' = 'linear'
+    userId: string,
+    prospectId: string,
+    model: 'last_click' | 'first_click' | 'linear' | 'time_decay' | 'shapley' | 'markov' = 'linear',
   ): Promise<AttributionModel | null> {
     // TODO: Implémenter attribution ML réelle
     return null;

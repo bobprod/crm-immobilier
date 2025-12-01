@@ -245,7 +245,7 @@ export class DocumentsService {
 
     if (count > 0) {
       throw new BadRequestException(
-        'Impossible de supprimer une catégorie contenant des documents'
+        'Impossible de supprimer une catégorie contenant des documents',
       );
     }
 
@@ -305,11 +305,7 @@ export class DocumentsService {
     return { success: true };
   }
 
-  async generateFromTemplate(
-    userId: string,
-    templateId: string,
-    variables: Record<string, any>,
-  ) {
+  async generateFromTemplate(userId: string, templateId: string, variables: Record<string, any>) {
     const template = await this.getTemplateById(userId, templateId);
 
     if (!template) {
@@ -354,21 +350,20 @@ export class DocumentsService {
   // ============================================
 
   async getStats(userId: string) {
-    const [total, byCategory, totalSize, ocrProcessed, aiGenerated] =
-      await Promise.all([
-        this.prisma.documents.count({ where: { userId } }),
-        this.prisma.documents.groupBy({
-          by: ['categoryId'],
-          where: { userId },
-          _count: true,
-        }),
-        this.prisma.documents.aggregate({
-          where: { userId },
-          _sum: { fileSize: true },
-        }),
-        this.prisma.documents.count({ where: { userId, ocrProcessed: true } }),
-        this.prisma.documents.count({ where: { userId, aiGenerated: true } }),
-      ]);
+    const [total, byCategory, totalSize, ocrProcessed, aiGenerated] = await Promise.all([
+      this.prisma.documents.count({ where: { userId } }),
+      this.prisma.documents.groupBy({
+        by: ['categoryId'],
+        where: { userId },
+        _count: true,
+      }),
+      this.prisma.documents.aggregate({
+        where: { userId },
+        _sum: { fileSize: true },
+      }),
+      this.prisma.documents.count({ where: { userId, ocrProcessed: true } }),
+      this.prisma.documents.count({ where: { userId, aiGenerated: true } }),
+    ]);
 
     return {
       total,

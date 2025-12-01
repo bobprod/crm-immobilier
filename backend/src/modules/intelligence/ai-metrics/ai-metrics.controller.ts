@@ -17,7 +17,7 @@ export class AIMetricsController {
   }
 
   @Get('roi')
-  @ApiOperation({ summary: 'Calculer le ROI de l\'IA' })
+  @ApiOperation({ summary: "Calculer le ROI de l'IA" })
   getAIROI(@Request() req) {
     return this.aiMetricsService.getAIROI(req.user.userId);
   }
@@ -29,7 +29,7 @@ export class AIMetricsController {
   }
 
   @Get('history')
-  @ApiOperation({ summary: 'Obtenir l\'historique d\'utilisation' })
+  @ApiOperation({ summary: "Obtenir l'historique d'utilisation" })
   getUsageHistory(@Request() req, @Query('days') days?: string) {
     const daysNumber = days ? parseInt(days) : 30;
     return this.aiMetricsService.getUsageHistory(req.user.userId, daysNumber);

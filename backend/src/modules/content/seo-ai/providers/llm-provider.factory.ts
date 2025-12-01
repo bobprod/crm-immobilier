@@ -24,13 +24,13 @@ export class LLMProviderFactory {
 
     if (!config) {
       throw new BadRequestException(
-        'Configuration LLM manquante. Veuillez configurer vos clés API dans Paramètres > LLM.'
+        'Configuration LLM manquante. Veuillez configurer vos clés API dans Paramètres > LLM.',
       );
     }
 
     if (!config.apiKey) {
       throw new BadRequestException(
-        `Clé API ${config.provider} manquante. Veuillez la configurer dans les paramètres.`
+        `Clé API ${config.provider} manquante. Veuillez la configurer dans les paramètres.`,
       );
     }
 
@@ -62,15 +62,13 @@ export class LLMProviderFactory {
         break;
 
       default:
-        throw new BadRequestException(
-          `Provider LLM non supporté : ${config.provider}`
-        );
+        throw new BadRequestException(`Provider LLM non supporté : ${config.provider}`);
     }
 
     // Vérifier que le provider est configuré
     if (!provider.isConfigured()) {
       throw new BadRequestException(
-        `Clé API ${config.provider} invalide. Veuillez vérifier votre configuration.`
+        `Clé API ${config.provider} invalide. Veuillez vérifier votre configuration.`,
       );
     }
 
@@ -83,7 +81,7 @@ export class LLMProviderFactory {
   async testProvider(config: LLMConfig): Promise<boolean> {
     try {
       const provider = this.createProviderInstance(config);
-      
+
       // Test simple
       const result = await provider.generate('Réponds uniquement "OK"', {
         maxTokens: 10,

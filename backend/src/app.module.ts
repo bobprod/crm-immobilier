@@ -61,7 +61,7 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
       isGlobal: true,
       load: [databaseConfig, jwtConfig, mailConfig],
     }),
-    
+
     // Database
     PrismaModule,
 
@@ -75,35 +75,35 @@ import { databaseConfig, jwtConfig, mailConfig } from './config';
 
     // NOTIFICATIONS - 1 module
     NotificationsModule,
-    
+
     // BUSINESS - 4 modules
     PropertiesModule,
     ProspectsModule,
     AppointmentsModule,
     TasksModule,
-    
+
     // INTELLIGENCE - 5 modules
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
-    
+
     // PROSPECTING - 1 module
     ProspectingModule,
-    
+
     // COMMUNICATIONS - 1 module
     CommunicationsModule,
-    
+
     // DASHBOARD - 1 module
     DashboardModule,
-    
+
     // CONTENT - 3 modules (Documents, SEO-AI, Page-Builder)
     ContentModule,
-    
+
     // MARKETING - 2 modules (Campaigns, Tracking+ML)
     MarketingModule,
-    
+
     // INTEGRATIONS - 2 modules
     IntegrationsModule,
     WordPressModule,

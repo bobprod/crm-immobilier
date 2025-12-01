@@ -98,7 +98,7 @@ export class ProspectsService {
     const currentNotes = prospect.notes || '';
     const timestamp = new Date().toISOString();
     const newNote = `[${timestamp}] ${interactionData.type}: ${interactionData.content}`;
-    
+
     await this.prisma.prospects.update({
       where: { id: prospectId },
       data: {
@@ -119,17 +119,20 @@ export class ProspectsService {
     }
 
     const notes = prospect.notes || '';
-    const interactions = notes.split('\n').filter(n => n.trim()).map(note => {
-      const match = note.match(/\[(.*?)\] (.*?): (.*)/);
-      if (match) {
-        return {
-          timestamp: match[1],
-          type: match[2],
-          content: match[3],
-        };
-      }
-      return { timestamp: '', type: 'note', content: note };
-    });
+    const interactions = notes
+      .split('\n')
+      .filter((n) => n.trim())
+      .map((note) => {
+        const match = note.match(/\[(.*?)\] (.*?): (.*)/);
+        if (match) {
+          return {
+            timestamp: match[1],
+            type: match[2],
+            content: match[3],
+          };
+        }
+        return { timestamp: '', type: 'note', content: note };
+      });
 
     return { interactions };
   }

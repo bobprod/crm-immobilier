@@ -23,7 +23,7 @@ export class AppointmentsService {
 
     if (conflicts.length > 0) {
       throw new BadRequestException(
-        `Conflit détecté: vous avez déjà ${conflicts.length} rendez-vous à cette heure`
+        `Conflit détecté: vous avez déjà ${conflicts.length} rendez-vous à cette heure`,
       );
     }
 
@@ -190,7 +190,7 @@ export class AppointmentsService {
 
       if (conflicts.length > 0) {
         throw new BadRequestException(
-          `Conflit détecté: vous avez déjà ${conflicts.length} rendez-vous à cette heure`
+          `Conflit détecté: vous avez déjà ${conflicts.length} rendez-vous à cette heure`,
         );
       }
     }
@@ -221,12 +221,7 @@ export class AppointmentsService {
   /**
    * Vérifier les conflits de rendez-vous
    */
-  async checkConflicts(
-    userId: string,
-    startTime: Date,
-    endTime: Date,
-    excludeId?: string,
-  ) {
+  async checkConflicts(userId: string, startTime: Date, endTime: Date, excludeId?: string) {
     const where: any = {
       userId,
       status: {
@@ -235,10 +230,7 @@ export class AppointmentsService {
       OR: [
         // Le nouveau RDV commence pendant un RDV existant
         {
-          AND: [
-            { startTime: { lte: startTime } },
-            { endTime: { gte: startTime } },
-          ],
+          AND: [{ startTime: { lte: startTime } }, { endTime: { gte: startTime } }],
         },
         // Le nouveau RDV se termine pendant un RDV existant
         {
@@ -246,10 +238,7 @@ export class AppointmentsService {
         },
         // Le nouveau RDV englobe un RDV existant
         {
-          AND: [
-            { startTime: { gte: startTime } },
-            { endTime: { lte: endTime } },
-          ],
+          AND: [{ startTime: { gte: startTime } }, { endTime: { lte: endTime } }],
         },
       ],
     };
@@ -437,12 +426,7 @@ export class AppointmentsService {
   /**
    * Reprogrammer un rendez-vous
    */
-  async reschedule(
-    id: string,
-    userId: string,
-    newStartTime: string,
-    newEndTime: string,
-  ) {
+  async reschedule(id: string, userId: string, newStartTime: string, newEndTime: string) {
     await this.findOne(id, userId);
 
     // Vérifier les conflits
@@ -506,8 +490,7 @@ export class AppointmentsService {
     const noShow = await this.prisma.appointments.count({
       where: { ...where, status: 'no_show' },
     });
-    const attendanceRate =
-      completed + noShow > 0 ? (completed / (completed + noShow)) * 100 : 0;
+    const attendanceRate = completed + noShow > 0 ? (completed / (completed + noShow)) * 100 : 0;
 
     // Rating moyen
     const ratings = await this.prisma.appointments.aggregate({

@@ -80,9 +80,7 @@ export class LLMConfigService {
       success: isValid,
       provider: config.provider,
       model: config.model,
-      message: isValid 
-        ? 'Configuration valide !' 
-        : 'Erreur : vérifiez votre clé API',
+      message: isValid ? 'Configuration valide !' : 'Erreur : vérifiez votre clé API',
     };
   }
 
@@ -107,11 +105,7 @@ export class LLMConfigService {
       {
         id: 'openai',
         name: 'OpenAI GPT',
-        models: [
-          'gpt-4-turbo-preview',
-          'gpt-4',
-          'gpt-3.5-turbo',
-        ],
+        models: ['gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'],
         description: 'GPT-4 de OpenAI - Polyvalent et efficace',
         pricing: '~$10 / 1M tokens (GPT-4)',
         keyFormat: 'sk-...',
@@ -120,11 +114,7 @@ export class LLMConfigService {
       {
         id: 'gemini',
         name: 'Google Gemini',
-        models: [
-          'gemini-1.5-pro',
-          'gemini-1.5-flash',
-          'gemini-pro',
-        ],
+        models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
         description: 'Gemini de Google - Rapide et économique',
         pricing: '~$1.25 / 1M tokens',
         keyFormat: 'AIza...',
@@ -133,10 +123,7 @@ export class LLMConfigService {
       {
         id: 'deepseek',
         name: 'DeepSeek',
-        models: [
-          'deepseek-chat',
-          'deepseek-coder',
-        ],
+        models: ['deepseek-chat', 'deepseek-coder'],
         description: 'DeepSeek - Ultra économique et performant',
         pricing: '~$0.27 / 1M tokens',
         keyFormat: 'sk-...',

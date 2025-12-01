@@ -53,7 +53,7 @@ export class CacheService {
       // TODO: Utiliser Redis en production
       // await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
 
-      const expiresAt = Date.now() + (ttlSeconds * 1000);
+      const expiresAt = Date.now() + ttlSeconds * 1000;
       this.cache.set(key, {
         data: value,
         expiresAt,
@@ -98,7 +98,7 @@ export class CacheService {
         }
       }
 
-      keysToDelete.forEach(key => this.cache.delete(key));
+      keysToDelete.forEach((key) => this.cache.delete(key));
       this.logger.debug(`Deleted ${keysToDelete.length} cache keys matching pattern: ${pattern}`);
     } catch (error) {
       this.logger.error(`Error deleting cache pattern ${pattern}: ${error.message}`);
@@ -280,23 +280,17 @@ export class CacheService {
    */
   private async calculateAnalytics(userId: string) {
     try {
-      const [
-        totalProspects,
-        totalProperties,
-        totalRevenue,
-        prospectsByStatus,
-        propertiesByType,
-      ] = await Promise.all([
-        this.prisma.prospect.count({ where: { userId } }),
-        this.prisma.property.count({ where: { userId } }),
-        this.calculateTotalRevenue(userId),
-        this.getProspectsByStatus(userId),
-        this.getPropertiesByType(userId),
-      ]);
+      const [totalProspects, totalProperties, totalRevenue, prospectsByStatus, propertiesByType] =
+        await Promise.all([
+          this.prisma.prospect.count({ where: { userId } }),
+          this.prisma.property.count({ where: { userId } }),
+          this.calculateTotalRevenue(userId),
+          this.getProspectsByStatus(userId),
+          this.getPropertiesByType(userId),
+        ]);
 
-      const conversionRate = totalProspects > 0
-        ? (prospectsByStatus.converted || 0) / totalProspects * 100
-        : 0;
+      const conversionRate =
+        totalProspects > 0 ? ((prospectsByStatus.converted || 0) / totalProspects) * 100 : 0;
 
       return {
         totalProspects,
@@ -339,10 +333,13 @@ export class CacheService {
         _count: true,
       });
 
-      return prospects.reduce((acc, item) => {
-        acc[item.status] = item._count;
-        return acc;
-      }, {} as Record<string, number>);
+      return prospects.reduce(
+        (acc, item) => {
+          acc[item.status] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
     } catch (error) {
       return {};
     }
@@ -356,10 +353,13 @@ export class CacheService {
         _count: true,
       });
 
-      return properties.reduce((acc, item) => {
-        acc[item.type] = item._count;
-        return acc;
-      }, {} as Record<string, number>);
+      return properties.reduce(
+        (acc, item) => {
+          acc[item.type] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
     } catch (error) {
       return {};
     }

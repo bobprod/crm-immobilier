@@ -11,9 +11,9 @@ import { PrismaModule } from '@/shared/database/prisma.module';
 
 /**
  * Module Marketing Tracking + IA/ML
- * 
+ *
  * Tracking multi-plateforme avec intelligence artificielle pour optimisation automatique.
- * 
+ *
  * Fonctionnalités :
  * - Tracking multi-plateformes (Facebook, TikTok, GA4, GTM, LinkedIn, Snapchat, Google Ads)
  * - Server-Side Tracking (CAPI, Measurement Protocol)

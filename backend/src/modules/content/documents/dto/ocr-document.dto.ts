@@ -7,9 +7,9 @@ export class OcrDocumentDto {
   @IsString()
   language?: string;
 
-  @ApiPropertyOptional({ 
-    example: 'tesseract', 
-    enum: ['tesseract', 'google-vision', 'aws-textract']
+  @ApiPropertyOptional({
+    example: 'tesseract',
+    enum: ['tesseract', 'google-vision', 'aws-textract'],
   })
   @IsOptional()
   @IsString()

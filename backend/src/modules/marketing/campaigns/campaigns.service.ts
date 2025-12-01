@@ -14,7 +14,7 @@ export class CampaignsService {
         description: dto.description,
         type: dto.type,
         content: dto.config || {}, // ✅ CORRIGÉ: utiliser 'content' au lieu de 'config'
-        recipients: [],             // ✅ AJOUTÉ: recipients est requis
+        recipients: [], // ✅ AJOUTÉ: recipients est requis
         stats: dto.stats || {},
       },
     });
@@ -84,7 +84,7 @@ export class CampaignsService {
         email: dto.email,
         phone: dto.phone,
         type: dto.type || 'buyer',
-        budget: dto.budget,  // ✅ Déjà correct (objet Json)
+        budget: dto.budget, // ✅ Déjà correct (objet Json)
         currency: dto.currency || 'TND',
         preferences: dto.preferences || {},
         source: 'campaign',

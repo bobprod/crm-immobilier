@@ -34,7 +34,7 @@ export class WordPressService {
     return axios.create({
       baseURL: `${config.url}/wp-json/wp/v2`,
       headers: {
-        'Authorization': `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         'Content-Type': 'application/json',
       },
       timeout: 30000,
@@ -134,7 +134,6 @@ export class WordPressService {
 
       this.logger.log(`Property ${propertyId} successfully synced to WordPress`);
       return response.data;
-
     } catch (error) {
       this.logger.error(`Error syncing property to WordPress: ${error.message}`);
 
@@ -179,12 +178,16 @@ export class WordPressService {
           ${property.zipCode} ${property.city}
         </p>
 
-        ${property.features ? `
+        ${
+          property.features
+            ? `
         <h3>Équipements</h3>
         <ul>
           ${property.features.map((f: string) => `<li>${f}</li>`).join('\n')}
         </ul>
-        ` : ''}
+        `
+            : ''
+        }
       </div>
     `;
   }
@@ -195,7 +198,7 @@ export class WordPressService {
   private async syncPropertyImages(
     client: AxiosInstance,
     postId: number,
-    images: string[]
+    images: string[],
   ): Promise<void> {
     try {
       // TODO: Implémenter l'upload d'images vers WordPress Media Library
@@ -254,7 +257,6 @@ export class WordPressService {
         where: { id: propertyId },
         data: { wordpressId: null },
       });
-
     } catch (error) {
       this.logger.error(`Error deleting property from WordPress: ${error.message}`);
       throw error;
@@ -276,11 +278,11 @@ export class WordPressService {
       this.logger.log(`Syncing ${properties.length} properties for user ${userId}`);
 
       const results = await Promise.allSettled(
-        properties.map(property => this.syncProperty(property.id))
+        properties.map((property) => this.syncProperty(property.id)),
       );
 
-      const succeeded = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.filter((r) => r.status === 'rejected').length;
 
       this.logger.log(`Sync completed: ${succeeded} succeeded, ${failed} failed`);
     } catch (error) {

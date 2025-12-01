@@ -4,7 +4,7 @@ import { PageDto, PageBlock, BlockType, PageTemplate } from './dto/page.dto';
 
 /**
  * Service de gestion des pages (Page Builder)
- * 
+ *
  * Permet de créer et gérer des pages personnalisées pour la vitrine
  * avec un éditeur visuel drag & drop.
  */
@@ -150,14 +150,14 @@ export class PageBuilderService {
       {
         id: 'home-modern',
         name: 'Accueil Moderne',
-        description: 'Page d\'accueil moderne avec hero, biens en vedette et CTA',
+        description: "Page d'accueil moderne avec hero, biens en vedette et CTA",
         category: 'home',
         blocks: this.getHomeModernBlocks(),
       },
       {
         id: 'home-classic',
         name: 'Accueil Classique',
-        description: 'Page d\'accueil classique et épurée',
+        description: "Page d'accueil classique et épurée",
         category: 'home',
         blocks: this.getHomeClassicBlocks(),
       },
@@ -171,7 +171,7 @@ export class PageBuilderService {
       {
         id: 'about-agency',
         name: 'À Propos',
-        description: 'Page de présentation de l\'agence',
+        description: "Page de présentation de l'agence",
         category: 'about',
         blocks: this.getAboutBlocks(),
       },
@@ -189,7 +189,7 @@ export class PageBuilderService {
    * Créer une page depuis un template
    */
   async createFromTemplate(userId: string, templateId: string, title?: string) {
-    const template = this.getTemplates().find(t => t.id === templateId);
+    const template = this.getTemplates().find((t) => t.id === templateId);
 
     if (!template) {
       throw new NotFoundException('Template non trouvé');
@@ -262,7 +262,7 @@ export class PageBuilderService {
           items: [
             { value: '500+', label: 'Biens disponibles' },
             { value: '1200+', label: 'Clients satisfaits' },
-            { value: '15', label: 'Années d\'expérience' },
+            { value: '15', label: "Années d'expérience" },
             { value: '98%', label: 'Taux de satisfaction' },
           ],
         },
@@ -273,7 +273,7 @@ export class PageBuilderService {
         order: 4,
         props: {
           title: 'Prêt à trouver votre bien idéal ?',
-          description: 'Contactez-nous dès aujourd\'hui pour une consultation gratuite',
+          description: "Contactez-nous dès aujourd'hui pour une consultation gratuite",
           buttonText: 'Nous contacter',
           buttonLink: '/contact',
           backgroundColor: '#3B82F6',
@@ -374,7 +374,7 @@ export class PageBuilderService {
         order: 2,
         props: {
           items: [
-            { icon: '🏆', title: 'Expérience', description: '15 ans d\'expertise' },
+            { icon: '🏆', title: 'Expérience', description: "15 ans d'expertise" },
             { icon: '🤝', title: 'Confiance', description: 'Des milliers de clients' },
             { icon: '⚡', title: 'Rapidité', description: 'Réponse sous 24h' },
           ],

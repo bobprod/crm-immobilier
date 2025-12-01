@@ -8,7 +8,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   async register(registerDto: any) {
     // Vérifier si l'email existe déjà
