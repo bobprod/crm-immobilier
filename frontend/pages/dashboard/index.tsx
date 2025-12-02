@@ -6,14 +6,22 @@ import { StatsWidget } from '../../src/modules/dashboard/components/StatsWidget'
 import { RecentActivities } from '../../src/modules/dashboard/components/RecentActivities';
 import { QuickActions } from '../../src/modules/dashboard/components/QuickActions';
 import { apiClient } from '../../src/shared/utils/api-client-backend';
+import type { DashboardStats } from '../../src/modules/dashboard/types/dashboard.types';
+
+const defaultStats: DashboardStats = {
+  activeProspects: 0,
+  availableProperties: 0,
+  todayAppointments: 0,
+  totalMatches: 0,
+  activeCampaigns: 0,
+  pendingTasks: 0,
+  totalCommunications: 0,
+  conversionRate: 0,
+  matchSuccessRate: 0,
+};
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    totalProperties: 0,
-    totalProspects: 0,
-    totalAppointments: 0,
-    conversionRate: 0
-  });
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
 
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,24 +50,14 @@ export default function Dashboard() {
 
       console.log('[Dashboard] Response received:', response.data);
       if (response.data) {
-        setStats(response.data.stats || {
-          totalProperties: 0,
-          totalProspects: 0,
-          totalAppointments: 0,
-          conversionRate: 0
-        });
-        setRecentActivities(response.data.recentActivities || []);
+        // Merge with defaults to ensure all fields are present
+        setStats({ ...defaultStats, ...response.data });
       }
     } catch (error: any) {
       console.error('[Dashboard] Error fetching dashboard data:', error);
       console.error('[Dashboard] Error details:', error.response?.status, error.response?.data);
       // Set default values on error
-      setStats({
-        totalProperties: 0,
-        totalProspects: 0,
-        totalAppointments: 0,
-        conversionRate: 0
-      });
+      setStats(defaultStats);
       setRecentActivities([]);
     } finally {
       setLoading(false);

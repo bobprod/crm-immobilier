@@ -19,12 +19,36 @@ export class ProspectsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, data: CreateProspectDto) {
-    return this.prisma.prospects.create({
-      data: {
-        ...data,
+    try {
+      // Convert budget number to JSON format for Prisma
+      const prospectData: any = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || null,
+        type: data.type,
+        source: data.source || null,
+        notes: data.notes || null,
         userId,
-      },
-    });
+      };
+
+      // If budget is a number, wrap it in JSON object for Prisma Json field
+      if (typeof data.budget === 'number') {
+        prospectData.budget = { amount: data.budget, currency: 'TND' };
+      }
+
+      console.log('[ProspectsService] Creating prospect with data:', JSON.stringify(prospectData, null, 2));
+
+      const result = await this.prisma.prospects.create({
+        data: prospectData,
+      });
+
+      console.log('[ProspectsService] Prospect created successfully:', result.id);
+      return result;
+    } catch (error) {
+      console.error('[ProspectsService] Error creating prospect:', error);
+      throw error;
+    }
   }
 
   async findAll(userId: string, filters?: ProspectFilters) {
