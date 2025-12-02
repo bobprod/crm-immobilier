@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Types
 interface DemographicCriteria {
@@ -97,9 +97,13 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
     ...initialCriteria,
   });
 
+  // Use ref to store callback to avoid infinite loop
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
   useEffect(() => {
-    onChange(criteria);
-  }, [criteria, onChange]);
+    onChangeRef.current(criteria);
+  }, [criteria]);
 
   const toggleArrayItem = <K extends keyof DemographicCriteria>(
     key: K,
