@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
-import { apiClient } from '../../src/shared/utils/api-client-backend';
+import { Calendar, Clock, MapPin, User, Plus, Eye } from 'lucide-react';
+import { appointmentsAPI, getAppointmentStatusColor, getAppointmentStatusLabel, getAppointmentTypeLabel } from '@/shared/utils/appointments-api';
 
 interface Appointment {
   id: string;
@@ -18,6 +19,7 @@ interface Appointment {
 }
 
 export default function AppointmentsPage() {
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,24 +29,18 @@ export default function AppointmentsPage() {
 
   const loadAppointments = async () => {
     try {
-      // Vérifier que le token existe avant de faire la requête
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        console.error('[Appointments] No token found, cannot fetch data');
+        console.error('[Appointments] No token found');
         setAppointments([]);
         setLoading(false);
         return;
       }
 
-      console.log('[Appointments] Fetching upcoming appointments...');
-      const response = await apiClient.get('/appointments/upcoming');
-
-      console.log('[Appointments] Response received:', response.data);
-      setAppointments(response.data || []);
+      const data = await appointmentsAPI.getUpcoming(20);
+      setAppointments(data || []);
     } catch (error: any) {
       console.error('[Appointments] Erreur chargement RDV:', error);
-      console.error('[Appointments] Error details:', error.response?.status, error.response?.data);
-      // Définir un tableau vide en cas d'erreur au lieu de crasher
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -55,7 +51,10 @@ export default function AppointmentsPage() {
     <Layout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Rendez-vous</h1>
-        <Button>Nouveau RDV</Button>
+        <Button onClick={() => router.push('/appointments/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouveau RDV
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -71,42 +70,52 @@ export default function AppointmentsPage() {
           </div>
         ) : (
           appointments.map((apt) => (
-            <Card key={apt.id}>
+            <Card
+              key={apt.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => router.push(`/appointments/${apt.id}`)}
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{apt.title}</CardTitle>
-                  <Badge>{apt.type}</Badge>
+                  <Badge variant="outline">{getAppointmentTypeLabel(apt.type)}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(apt.startTime).toLocaleDateString()}</span>
+                  <span>{new Date(apt.startTime).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4" />
                   <span>
-                    {new Date(apt.startTime).toLocaleTimeString()} -{' '}
-                    {new Date(apt.endTime).toLocaleTimeString()}
+                    {new Date(apt.startTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - {new Date(apt.endTime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
 
                 {apt.location && (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="h-4 w-4" />
                     <span>{apt.location}</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4" />
-                  <span>{apt.attendees.length} participant(s)</span>
-                </div>
+                {apt.attendees && apt.attendees.length > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <User className="h-4 w-4" />
+                    <span>{apt.attendees.length} participant(s)</span>
+                  </div>
+                )}
 
-                <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
-                  {apt.status}
-                </Badge>
+                <div className="flex items-center justify-between pt-2">
+                  <Badge className={getAppointmentStatusColor(apt.status)}>
+                    {getAppointmentStatusLabel(apt.status)}
+                  </Badge>
+                  <Button variant="ghost" size="sm">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))
