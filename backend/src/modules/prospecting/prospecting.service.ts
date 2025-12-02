@@ -1103,34 +1103,44 @@ export class ProspectingService {
    * Statistiques globales
    */
   async getGlobalStats(userId: string) {
-    const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
-      this.prisma.prospecting_campaigns.count({ where: { userId } }),
-      this.prisma.prospecting_leads.count({ where: { userId } }),
-      this.prisma.prospecting_matches.count({
-        where: {
-          properties: {
-            userId,
+    try {
+      const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
+        this.prisma.prospecting_campaigns.count({ where: { userId } }).catch(() => 0),
+        this.prisma.prospecting_leads.count({ where: { userId } }).catch(() => 0),
+        this.prisma.prospecting_matches.count({
+          where: {
+            properties: {
+              userId,
+            },
           },
-        },
-      }),
-      this.prisma.prospecting_leads.findMany({
-        where: { userId },
-        orderBy: { score: 'desc' },
-        take: 5,
-        include: {
-          campaigns: {
-            select: { name: true },
+        }).catch(() => 0),
+        this.prisma.prospecting_leads.findMany({
+          where: { userId },
+          orderBy: { score: 'desc' },
+          take: 5,
+          include: {
+            campaigns: {
+              select: { name: true },
+            },
           },
-        },
-      }),
-    ]);
+        }).catch(() => []),
+      ]);
 
-    return {
-      totalCampaigns,
-      totalLeads,
-      totalMatches,
-      topLeads,
-    };
+      return {
+        totalCampaigns,
+        totalLeads,
+        totalMatches,
+        topLeads,
+      };
+    } catch (error) {
+      console.error('[ProspectingService] Error in getGlobalStats:', error);
+      return {
+        totalCampaigns: 0,
+        totalLeads: 0,
+        totalMatches: 0,
+        topLeads: [],
+      };
+    }
   }
 
   // ============================================
@@ -1272,53 +1282,69 @@ export class ProspectingService {
    * Statistiques par source
    */
   async getStatsBySource(userId: string) {
-    const stats = await this.prisma.prospecting_leads.groupBy({
-      by: ['source'],
-      where: { userId },
-      _count: true,
-      _avg: { score: true },
-    });
+    try {
+      const stats = await this.prisma.prospecting_leads.groupBy({
+        by: ['source'],
+        where: { userId },
+        _count: true,
+        _avg: { score: true },
+      });
 
-    return stats.map((s) => ({
-      source: s.source || 'unknown',
-      count: s._count,
-      avgScore: Math.round(s._avg.score || 0),
-    }));
+      return stats.map((s) => ({
+        source: s.source || 'unknown',
+        count: s._count,
+        avgScore: Math.round(s._avg.score || 0),
+      }));
+    } catch (error) {
+      console.error('[ProspectingService] Error in getStatsBySource:', error);
+      return [];
+    }
   }
 
   /**
    * Statistiques de conversion
    */
   async getConversionStats(userId: string) {
-    const [total, converted, byStage] = await Promise.all([
-      this.prisma.prospecting_leads.count({ where: { userId } }),
-      this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
-      this.prisma.prospecting_leads.groupBy({
-        by: ['status'],
-        where: { userId },
-        _count: true,
-      }),
-    ]);
+    try {
+      const [total, converted, byStage] = await Promise.all([
+        this.prisma.prospecting_leads.count({ where: { userId } }),
+        this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
+        this.prisma.prospecting_leads.groupBy({
+          by: ['status'],
+          where: { userId },
+          _count: true,
+        }),
+      ]);
 
-    const conversionRate = total > 0 ? (converted / total) * 100 : 0;
+      const conversionRate = total > 0 ? (converted / total) * 100 : 0;
 
-    return {
-      total,
-      converted,
-      conversionRate: Math.round(conversionRate * 10) / 10,
-      byStage: byStage.map((s) => ({
-        stage: s.status,
-        count: s._count,
-        percentage: Math.round((s._count / total) * 100 * 10) / 10,
-      })),
-      funnel: {
-        new: byStage.find((s) => s.status === 'new')?._count || 0,
-        contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
-        qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
-        converted: byStage.find((s) => s.status === 'converted')?._count || 0,
-        rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
-      },
-    };
+      return {
+        total,
+        converted,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+        byStage: byStage.map((s) => ({
+          stage: s.status,
+          count: s._count,
+          percentage: total > 0 ? Math.round((s._count / total) * 100 * 10) / 10 : 0,
+        })),
+        funnel: {
+          new: byStage.find((s) => s.status === 'new')?._count || 0,
+          contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
+          qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
+          converted: byStage.find((s) => s.status === 'converted')?._count || 0,
+          rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
+        },
+      };
+    } catch (error) {
+      console.error('[ProspectingService] Error in getConversionStats:', error);
+      return {
+        total: 0,
+        converted: 0,
+        conversionRate: 0,
+        byStage: [],
+        funnel: { new: 0, contacted: 0, qualified: 0, converted: 0, rejected: 0 },
+      };
+    }
   }
 
   /**

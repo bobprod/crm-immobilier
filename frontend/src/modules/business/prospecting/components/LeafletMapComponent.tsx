@@ -139,6 +139,32 @@ const SimpleHeatmap: React.FC<{ zones: Zone[] }> = ({ zones }) => {
   return null;
 };
 
+// Error boundary wrapper for the map
+class MapErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('[LeafletMap] Error rendering map:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
   zones,
   selectedZones,
@@ -150,15 +176,41 @@ const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
 }) => {
   // Centre de la Tunisie
   const tunisiaCenter: [number, number] = [36.8, 10.18];
+  const [mapReady, setMapReady] = React.useState(false);
+
+  React.useEffect(() => {
+    // Ensure we're on client side
+    if (typeof window !== 'undefined') {
+      setMapReady(true);
+    }
+  }, []);
+
+  if (!mapReady) {
+    return (
+      <div className="h-[450px] bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-gray-600">Initialisation de la carte...</p>
+      </div>
+    );
+  }
+
+  const fallbackMap = (
+    <div className="h-[450px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-gray-600 mb-2">Carte temporairement indisponible</p>
+        <p className="text-sm text-gray-500">Les zones peuvent être sélectionnées dans la liste</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative">
-      <MapContainer
-        center={tunisiaCenter}
-        zoom={10}
-        style={{ height: '450px', width: '100%', borderRadius: '0.5rem' }}
-        className="z-0"
-      >
+      <MapErrorBoundary fallback={fallbackMap}>
+        <MapContainer
+          center={tunisiaCenter}
+          zoom={10}
+          style={{ height: '450px', width: '100%', borderRadius: '0.5rem' }}
+          className="z-0"
+        >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -272,7 +324,8 @@ const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
               }}
             />
           ))}
-      </MapContainer>
+        </MapContainer>
+      </MapErrorBoundary>
 
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
