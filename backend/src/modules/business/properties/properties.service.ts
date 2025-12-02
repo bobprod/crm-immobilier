@@ -7,12 +7,27 @@ export class PropertiesService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, data: CreatePropertyDto) {
-    return this.prisma.properties.create({
-      data: {
-        ...data,
-        userId,
-      },
-    });
+    try {
+      console.log('[PropertiesService] Creating property for user:', userId);
+      console.log('[PropertiesService] Property data:', JSON.stringify(data, null, 2));
+
+      const property = await this.prisma.properties.create({
+        data: {
+          ...data,
+          userId,
+          status: 'available', // Default status
+          images: data.images || [],
+          features: data.features || [],
+          tags: data.tags || [],
+        },
+      });
+
+      console.log('[PropertiesService] Property created successfully:', property.id);
+      return property;
+    } catch (error) {
+      console.error('[PropertiesService] Error creating property:', error);
+      throw error;
+    }
   }
 
   async findAll(userId: string, filters?: PropertyFiltersDto) {
@@ -42,16 +57,52 @@ export class PropertiesService {
   }
 
   async update(id: string, userId: string, data: UpdatePropertyDto) {
-    return this.prisma.properties.update({
-      where: { id },
-      data,
-    });
+    try {
+      // First verify the property belongs to the user
+      const existing = await this.prisma.properties.findFirst({
+        where: { id, userId },
+      });
+
+      if (!existing) {
+        throw new Error('Property not found or access denied');
+      }
+
+      console.log('[PropertiesService] Updating property:', id);
+      const updated = await this.prisma.properties.update({
+        where: { id },
+        data,
+      });
+
+      console.log('[PropertiesService] Property updated successfully');
+      return updated;
+    } catch (error) {
+      console.error('[PropertiesService] Error updating property:', error);
+      throw error;
+    }
   }
 
   async delete(id: string, userId: string) {
-    return this.prisma.properties.delete({
-      where: { id },
-    });
+    try {
+      // First verify the property belongs to the user
+      const existing = await this.prisma.properties.findFirst({
+        where: { id, userId },
+      });
+
+      if (!existing) {
+        throw new Error('Property not found or access denied');
+      }
+
+      console.log('[PropertiesService] Deleting property:', id);
+      const deleted = await this.prisma.properties.delete({
+        where: { id },
+      });
+
+      console.log('[PropertiesService] Property deleted successfully');
+      return deleted;
+    } catch (error) {
+      console.error('[PropertiesService] Error deleting property:', error);
+      throw error;
+    }
   }
 
   async syncWithWordPress(id: string, userId: string, wpSyncId: string) {

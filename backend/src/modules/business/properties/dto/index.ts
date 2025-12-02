@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsArray, IsBoolean } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsEnum, IsArray, IsBoolean, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProspectSummary, UserSummary } from '../../../../shared/types/relation-summaries';
 
@@ -33,7 +33,7 @@ export class CreatePropertyDto {
   type: string;
 
   @ApiProperty({ enum: ['sale', 'rent'], description: 'Catégorie (vente/location)' })
-  @IsEnum(['sale', 'rent'])
+  @IsIn(['sale', 'rent'])
   category: PropertyCategory;
 
   @ApiProperty({ description: 'Prix du bien' })
@@ -104,7 +104,7 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'], description: 'Priorité' })
   @IsOptional()
-  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  @IsIn(['low', 'medium', 'high', 'urgent'])
   priority?: PropertyPriority;
 
   @ApiPropertyOptional({ type: [String], description: 'Tags' })
@@ -176,7 +176,7 @@ export class UpdatePropertyDto {
 
   @ApiPropertyOptional({ enum: ['sale', 'rent'], description: 'Catégorie' })
   @IsOptional()
-  @IsEnum(['sale', 'rent'])
+  @IsIn(['sale', 'rent'])
   category?: PropertyCategory;
 
   @ApiPropertyOptional({ description: 'Prix du bien' })
@@ -196,7 +196,7 @@ export class UpdatePropertyDto {
 
   @ApiPropertyOptional({ enum: ['available', 'reserved', 'sold', 'rented', 'pending'], description: 'Statut' })
   @IsOptional()
-  @IsEnum(['available', 'reserved', 'sold', 'rented', 'pending'])
+  @IsIn(['available', 'reserved', 'sold', 'rented', 'pending'])
   status?: PropertyStatus;
 
   @ApiPropertyOptional({ type: [String], description: 'Caractéristiques' })
@@ -213,7 +213,7 @@ export class UpdatePropertyDto {
 
   @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'], description: 'Priorité' })
   @IsOptional()
-  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  @IsIn(['low', 'medium', 'high', 'urgent'])
   priority?: PropertyPriority;
 
   @ApiPropertyOptional({ type: [String], description: 'Tags' })
@@ -442,12 +442,12 @@ export class PropertyFiltersDto {
 
   @ApiPropertyOptional({ enum: ['sale', 'rent'] })
   @IsOptional()
-  @IsEnum(['sale', 'rent'])
+  @IsIn(['sale', 'rent'])
   category?: PropertyCategory;
 
   @ApiPropertyOptional({ enum: ['available', 'reserved', 'sold', 'rented', 'pending'] })
   @IsOptional()
-  @IsEnum(['available', 'reserved', 'sold', 'rented', 'pending'])
+  @IsIn(['available', 'reserved', 'sold', 'rented', 'pending'])
   status?: PropertyStatus;
 
   @ApiPropertyOptional()
@@ -497,7 +497,7 @@ export class PropertyFiltersDto {
 
   @ApiPropertyOptional({ enum: ['low', 'medium', 'high', 'urgent'] })
   @IsOptional()
-  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  @IsIn(['low', 'medium', 'high', 'urgent'])
   priority?: PropertyPriority;
 
   @ApiPropertyOptional()
