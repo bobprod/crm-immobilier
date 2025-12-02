@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsEmail, IsObject } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn, IsEmail, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProspectPreferences } from '../../../../shared/types/relation-summaries';
 
@@ -21,7 +21,7 @@ export class CreateProspectDto {
   phone?: string;
 
   @ApiProperty({ enum: ['buyer', 'seller', 'tenant', 'owner'] })
-  @IsEnum(['buyer', 'seller', 'tenant', 'owner'])
+  @IsIn(['buyer', 'seller', 'tenant', 'owner'])
   type: string;
 
   @ApiPropertyOptional()
