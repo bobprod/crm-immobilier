@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -42,6 +42,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     if (path.startsWith('/communications')) return 'communications';
     if (path.startsWith('/notifications')) return 'notifications';
     if (path.startsWith('/analytics') || path.startsWith('/ai-metrics')) return 'analytics';
+    if (path.startsWith('/validation')) return 'validation';
     if (path.startsWith('/settings')) return 'settings';
     return 'dashboard'; // default
   };
@@ -68,6 +69,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     { id: 'tasks', label: 'Tâches', icon: CheckSquare, href: '/tasks' },
     { id: 'communications', label: 'Communications', icon: MessageSquare, href: '/communications' },
     { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
+    { id: 'validation', label: 'Validation', icon: Shield, href: '/validation' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/analytics' },
     { id: 'settings', label: 'Paramètres', icon: Settings, href: '/settings' },
   ];

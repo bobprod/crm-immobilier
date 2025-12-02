@@ -69,6 +69,12 @@ export class PropertiesController {
     return this.propertiesService.bulkAssign(body.ids, req.user.userId, body.assignedTo);
   }
 
+  @Post('bulk/delete')
+  @ApiOperation({ summary: 'Bulk delete properties' })
+  bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
+    return this.propertiesService.bulkDelete(body.ids, req.user.userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get property by ID' })
   findOne(@Request() req, @Param('id') id: string) {
