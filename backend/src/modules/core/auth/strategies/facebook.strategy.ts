@@ -18,13 +18,21 @@ export interface FacebookUser {
 @Injectable()
 export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
   constructor(private configService: ConfigService) {
+    const clientID = configService.get<string>('FACEBOOK_APP_ID');
+    const clientSecret = configService.get<string>('FACEBOOK_APP_SECRET');
+
+    // Utiliser un placeholder si non configuré (OAuth ne fonctionnera pas mais l'app démarrera)
     super({
-      clientID: configService.get<string>('FACEBOOK_APP_ID') || '',
-      clientSecret: configService.get<string>('FACEBOOK_APP_SECRET') || '',
+      clientID: clientID || 'not-configured',
+      clientSecret: clientSecret || 'not-configured',
       callbackURL: configService.get<string>('FACEBOOK_CALLBACK_URL') || 'http://localhost:3000/api/auth/facebook/callback',
       scope: ['email'],
       profileFields: ['id', 'emails', 'name', 'photos'],
     });
+
+    if (!clientID || !clientSecret) {
+      console.warn('[FacebookStrategy] Facebook OAuth not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in .env');
+    }
   }
 
   async validate(
