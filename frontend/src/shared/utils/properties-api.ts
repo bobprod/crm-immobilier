@@ -138,7 +138,7 @@ export const propertiesAPI = {
     id: string,
     updates: Partial<CreatePropertyDTO>
   ): Promise<Property> => {
-    const response = await apiClient.patch(`/properties/${id}`, updates);
+    const response = await apiClient.put(`/properties/${id}`, updates);
     return response.data;
   },
 
@@ -152,8 +152,8 @@ export const propertiesAPI = {
   /**
    * Synchroniser un bien avec WordPress
    */
-  syncWordPress: async (id: string): Promise<any> => {
-    const response = await apiClient.put(`/properties/${id}/sync-wordpress`);
+  syncWordPress: async (id: string, wpSyncId?: string): Promise<any> => {
+    const response = await apiClient.put(`/properties/${id}/sync-wordpress`, { wpSyncId });
     return response.data;
   },
 
@@ -263,6 +263,62 @@ export const propertiesAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+
+  // ============================================
+  // BULK OPERATIONS
+  // ============================================
+
+  /**
+   * Mise à jour en masse de la priorité
+   */
+  bulkUpdatePriority: async (ids: string[], priority: PropertyPriority): Promise<{ updated: number }> => {
+    const response = await apiClient.patch('/properties/bulk/priority', { ids, priority });
+    return response.data;
+  },
+
+  /**
+   * Mise à jour en masse du statut
+   */
+  bulkUpdateStatus: async (ids: string[], status: PropertyStatus): Promise<{ updated: number }> => {
+    const response = await apiClient.patch('/properties/bulk/status', { ids, status });
+    return response.data;
+  },
+
+  /**
+   * Assignation en masse
+   */
+  bulkAssign: async (ids: string[], assignedTo: string): Promise<{ updated: number }> => {
+    const response = await apiClient.patch('/properties/bulk/assign', { ids, assignedTo });
+    return response.data;
+  },
+
+  /**
+   * Suppression en masse
+   */
+  bulkDelete: async (ids: string[]): Promise<{ deleted: number }> => {
+    const response = await apiClient.post('/properties/bulk/delete', { ids });
+    return response.data;
+  },
+
+  // ============================================
+  // FEATURED & ASSIGNED
+  // ============================================
+
+  /**
+   * Obtenir les biens en vedette
+   */
+  getFeatured: async (): Promise<Property[]> => {
+    const response = await apiClient.get('/properties/featured');
+    return response.data;
+  },
+
+  /**
+   * Obtenir les biens assignés à un utilisateur
+   */
+  getAssigned: async (userId: string): Promise<Property[]> => {
+    const response = await apiClient.get(`/properties/assigned/${userId}`);
     return response.data;
   },
 };

@@ -71,12 +71,11 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
         try {
             if (action === 'delete') {
                 if (!confirm('Êtes-vous sûr de vouloir supprimer ces propriétés ?')) return;
-                // Implement bulk delete API call
-                // await propertiesAPI.bulkDelete(selectedIds);
+                await propertiesAPI.bulkDelete(selectedIds);
             } else if (action === 'priority') {
-                // await propertiesAPI.bulkUpdatePriority(selectedIds, value);
+                await propertiesAPI.bulkUpdatePriority(selectedIds, value);
             } else if (action === 'status') {
-                // await propertiesAPI.bulkUpdateStatus(selectedIds, value);
+                await propertiesAPI.bulkUpdateStatus(selectedIds, value);
             }
 
             // Refresh list and clear selection
@@ -188,7 +187,7 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
                                             {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.price)}
                                         </TableCell>
                                         <TableCell>
-                                            {property.surface ? `${property.surface} m²` : '-'}
+                                            {(property.area || property.surface) ? `${property.area || property.surface} m²` : '-'}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={getPriorityColor(property.priority)} variant="secondary">
