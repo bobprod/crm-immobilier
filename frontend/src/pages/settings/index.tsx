@@ -1,10 +1,22 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import { Settings as SettingsIcon, User, Bell, Shield } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  User,
+  Bell,
+  Shield,
+  Sparkles,
+  Key,
+  Search,
+  Brain,
+  Zap,
+  ChevronRight
+} from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -17,7 +29,6 @@ export default function SettingsPage() {
     setMessage('');
 
     try {
-      // TODO: Implémenter la sauvegarde
       await new Promise(resolve => setTimeout(resolve, 1000));
       setMessage('Profil mis à jour avec succès');
     } catch (error) {
@@ -26,6 +37,30 @@ export default function SettingsPage() {
       setLoading(false);
     }
   };
+
+  const apiModules = [
+    {
+      title: 'Configuration LLM / IA',
+      description: 'OpenAI, Claude, Gemini - Configurez vos clés API pour l\'intelligence artificielle',
+      icon: Brain,
+      href: '/settings/llm-config',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'APIs de Scraping',
+      description: 'Pica, SerpAPI - Configuration des APIs de recherche et scraping',
+      icon: Search,
+      href: '/settings/scraping-config',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Intégrations',
+      description: 'WordPress, Google Calendar, Email - Connectez vos services externes',
+      icon: Zap,
+      href: '/settings/integrations',
+      color: 'bg-green-500'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -37,7 +72,7 @@ export default function SettingsPage() {
             Paramètres
           </h1>
           <p className="text-gray-600 mt-1">
-            Gérez vos préférences et votre compte
+            Gérez vos préférences, APIs et intégrations
           </p>
         </div>
 
@@ -49,6 +84,32 @@ export default function SettingsPage() {
             {message}
           </div>
         )}
+
+        {/* Section APIs et Intégrations */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            APIs & Intégrations
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {apiModules.map((module) => (
+              <Link key={module.href} href={module.href}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardContent className="pt-6">
+                    <div className={`w-12 h-12 ${module.color} rounded-lg flex items-center justify-center mb-4`}>
+                      <module.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">{module.title}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{module.description}</p>
+                    <div className="flex items-center text-primary text-sm font-medium">
+                      Configurer <ChevronRight className="h-4 w-4 ml-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* Profil */}
         <Card className="mb-6">
