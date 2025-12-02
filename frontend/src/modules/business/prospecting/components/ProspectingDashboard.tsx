@@ -39,6 +39,47 @@ type TabType = 'dashboard' | 'targeting' | 'funnel' | 'validation' | 'campaigns'
 // SUB-COMPONENTS
 // ============================================
 
+const colorClasses: Record<string, string> = {
+  purple: 'from-purple-100 to-purple-200',
+  green: 'from-green-100 to-green-200',
+  blue: 'from-blue-100 to-blue-200',
+  yellow: 'from-yellow-100 to-yellow-200',
+  red: 'from-red-100 to-red-200',
+  indigo: 'from-indigo-100 to-indigo-200',
+  pink: 'from-pink-100 to-pink-200',
+  teal: 'from-teal-100 to-teal-200',
+  orange: 'from-orange-100 to-orange-200',
+  cyan: 'from-cyan-100 to-cyan-200',
+  gray: 'from-gray-100 to-gray-200',
+};
+
+const sourceBgClasses: Record<string, string> = {
+  purple: 'bg-purple-100',
+  blue: 'bg-blue-100',
+  indigo: 'bg-indigo-100',
+  cyan: 'bg-cyan-100',
+  orange: 'bg-orange-100',
+  gray: 'bg-gray-100',
+};
+
+const sourceTextClasses: Record<string, string> = {
+  purple: 'text-purple-700',
+  blue: 'text-blue-700',
+  indigo: 'text-indigo-700',
+  cyan: 'text-cyan-700',
+  orange: 'text-orange-700',
+  gray: 'text-gray-700',
+};
+
+const sourceButtonClasses: Record<string, string> = {
+  purple: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
+  blue: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+  indigo: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200',
+  cyan: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200',
+  orange: 'bg-orange-100 text-orange-700 hover:bg-orange-200',
+  gray: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+};
+
 const StatCard: React.FC<{
   title: string;
   value: string | number;
@@ -58,7 +99,7 @@ const StatCard: React.FC<{
           </p>
         )}
       </div>
-      <div className={`p-4 rounded-2xl bg-gradient-to-br from-${color}-100 to-${color}-200`}>
+      <div className={`p-4 rounded-2xl bg-gradient-to-br ${colorClasses[color] || colorClasses.purple}`}>
         <span className="text-3xl">{icon}</span>
       </div>
     </div>
@@ -279,6 +320,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     loadCampaigns();
     loadSources();
     loadAllStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load leads when campaign selected
@@ -781,7 +823,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 ].map(source => (
                   <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
+                      <div className={`w-12 h-12 rounded-xl ${sourceBgClasses[source.color] || 'bg-gray-100'} flex items-center justify-center text-2xl`}>
                         {source.icon}
                       </div>
                       <div>
@@ -817,7 +859,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       className={`w-full py-2 rounded-lg font-medium transition ${
                         scrapingInProgress
                           ? 'bg-gray-100 text-gray-400'
-                          : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
+                          : sourceButtonClasses[source.color] || 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
