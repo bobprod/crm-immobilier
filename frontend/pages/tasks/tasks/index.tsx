@@ -1,13 +1,13 @@
 import React from 'react';
 import TaskManager from '@/modules/business/tasks/components/TaskManager';
-import DashboardLayout from '@/shared/components/layout/DashboardLayout';
+import Layout from '@/modules/core/layout/components/Layout';
 
 export default function TasksPage() {
     return (
-        <DashboardLayout>
+        <Layout>
             <div className="p-6">
                 <TaskManager />
             </div>
-        </DashboardLayout>
+        </Layout>
     );
 }

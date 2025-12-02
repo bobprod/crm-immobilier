@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { Button } from '@/shared/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import Layout from '../../src/modules/core/layout/components/Layout';
 import ProspectCard from '@/modules/business/prospects/components/ProspectCard';
 import { useAuth } from '@/modules/core/auth';
 import { useEffect } from 'react';
@@ -18,14 +19,16 @@ export default function ProspectDetailPage() {
 
   if (!id || typeof id !== 'string') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>ID prospect manquant</p>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <p>ID prospect manquant</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <Layout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -42,6 +45,6 @@ export default function ProspectDetailPage() {
         {/* Prospect Card Component */}
         <ProspectCard prospectId={id} />
       </div>
-    </div>
+    </Layout>
   );
 }
