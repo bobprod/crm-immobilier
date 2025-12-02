@@ -19,11 +19,19 @@ export class ProspectsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, data: CreateProspectDto) {
+    // Convert budget number to JSON format for Prisma
+    const prospectData: any = {
+      ...data,
+      userId,
+    };
+
+    // If budget is a number, wrap it in JSON object for Prisma Json field
+    if (typeof data.budget === 'number') {
+      prospectData.budget = { amount: data.budget, currency: 'TND' };
+    }
+
     return this.prisma.prospects.create({
-      data: {
-        ...data,
-        userId,
-      },
+      data: prospectData,
     });
   }
 
