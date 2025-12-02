@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 // Types pour le ciblage geographique
@@ -72,9 +72,13 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   const [radiusMode, setRadiusMode] = useState(false);
   const [customRadius, setCustomRadius] = useState(5);
   const [centerPoint, setCenterPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list'); // Default to list to avoid map errors
   const [priceFilter, setPriceFilter] = useState<{ min: number; max: number }>({ min: 0, max: 1000000 });
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+
+  // Use ref to store callback to avoid infinite loop
+  const onZonesChangeRef = useRef(onZonesChange);
+  onZonesChangeRef.current = onZonesChange;
 
   // Filtrer les zones par recherche
   const filteredZones = useMemo(() => zones.filter(zone =>
@@ -89,12 +93,12 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
     ));
   }, []);
 
-  // Mettre a jour les zones selectionnees
+  // Mettre a jour les zones selectionnees - use ref to avoid infinite loop
   useEffect(() => {
     const selected = zones.filter(z => z.selected);
     setSelectedZones(selected);
-    onZonesChange(selected);
-  }, [zones, onZonesChange]);
+    onZonesChangeRef.current(selected);
+  }, [zones]);
 
   // Ajouter une zone de rayon personnalise
   const addRadiusZone = useCallback((lat: number, lng: number, radius?: number) => {
