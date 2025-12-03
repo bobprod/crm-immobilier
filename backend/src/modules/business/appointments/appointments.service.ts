@@ -427,6 +427,10 @@ export class AppointmentsService {
         outcome,
         rating,
       },
+      include: {
+        prospects: true,
+        properties: true,
+      },
     });
   }
 
@@ -443,6 +447,10 @@ export class AppointmentsService {
         notes: reason
           ? `${appointment.notes || ''}\n\nAnnulé: ${reason}`.trim()
           : appointment.notes,
+      },
+      include: {
+        prospects: true,
+        properties: true,
       },
     });
   }
@@ -471,6 +479,10 @@ export class AppointmentsService {
         startTime: new Date(newStartTime),
         endTime: new Date(newEndTime),
         status: 'rescheduled',
+      },
+      include: {
+        prospects: true,
+        properties: true,
       },
     });
   }
