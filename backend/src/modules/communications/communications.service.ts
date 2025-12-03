@@ -178,6 +178,13 @@ export class CommunicationsService {
     });
   }
 
+  async getCommunicationById(userId: string, id: string) {
+    return this.prisma.communications.findFirst({
+      where: { id, userId },
+      include: { prospects: true, properties: true, template: true },
+    });
+  }
+
   async createTemplate(userId: string, dto: CreateTemplateDto) {
     return this.prisma.communication_templates.create({
       data: {
@@ -195,6 +202,44 @@ export class CommunicationsService {
     return this.prisma.communication_templates.findMany({
       where: { userId, ...(type && { type }), isActive: true },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateTemplate(userId: string, id: string, dto: UpdateTemplateDto) {
+    // Verify ownership
+    const template = await this.prisma.communication_templates.findFirst({
+      where: { id, userId },
+    });
+
+    if (!template) {
+      return null;
+    }
+
+    return this.prisma.communication_templates.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        subject: dto.subject,
+        content: dto.content,
+        variables: dto.variables,
+      },
+    });
+  }
+
+  async deleteTemplate(userId: string, id: string) {
+    // Verify ownership
+    const template = await this.prisma.communication_templates.findFirst({
+      where: { id, userId },
+    });
+
+    if (!template) {
+      return null;
+    }
+
+    // Soft delete by setting isActive to false
+    return this.prisma.communication_templates.update({
+      where: { id },
+      data: { isActive: false },
     });
   }
 

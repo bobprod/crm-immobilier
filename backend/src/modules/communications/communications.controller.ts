@@ -52,6 +52,12 @@ export class CommunicationsController {
     return this.communicationsService.getHistory(req.user.userId, filters);
   }
 
+  @Get('history/:id')
+  @ApiOperation({ summary: 'Recuperer une communication par ID' })
+  getCommunicationById(@Request() req, @Param('id') id: string) {
+    return this.communicationsService.getCommunicationById(req.user.userId, id);
+  }
+
   @Get('templates')
   @ApiOperation({ summary: 'Liste des templates' })
   getTemplates(@Request() req, @Query('type') type?: string) {
@@ -62,6 +68,18 @@ export class CommunicationsController {
   @ApiOperation({ summary: 'Créer un template' })
   createTemplate(@Request() req, @Body() dto: CreateTemplateDto) {
     return this.communicationsService.createTemplate(req.user.userId, dto);
+  }
+
+  @Put('templates/:id')
+  @ApiOperation({ summary: 'Modifier un template' })
+  updateTemplate(@Request() req, @Param('id') id: string, @Body() dto: UpdateTemplateDto) {
+    return this.communicationsService.updateTemplate(req.user.userId, id, dto);
+  }
+
+  @Delete('templates/:id')
+  @ApiOperation({ summary: 'Supprimer un template' })
+  deleteTemplate(@Request() req, @Param('id') id: string) {
+    return this.communicationsService.deleteTemplate(req.user.userId, id);
   }
 
   @Get('stats')
