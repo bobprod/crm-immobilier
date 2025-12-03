@@ -329,11 +329,15 @@ function CreateAppointmentDialog({ open, onOpenChange, onSuccess }: any) {
 
     setLoading(true);
     try {
+      // Convert datetime-local format to ISO string
+      const startTimeISO = new Date(startTime).toISOString();
+      const endTimeISO = new Date(endTime).toISOString();
+
       await appointmentsAPI.create({
         title,
         description,
-        startTime,
-        endTime,
+        startTime: startTimeISO,
+        endTime: endTimeISO,
         location,
         type,
         priority,

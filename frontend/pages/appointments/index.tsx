@@ -112,7 +112,14 @@ export default function AppointmentsPage() {
                   <Badge className={getAppointmentStatusColor(apt.status)}>
                     {getAppointmentStatusLabel(apt.status)}
                   </Badge>
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/appointments/${apt.id}`);
+                    }}
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
                 </div>
