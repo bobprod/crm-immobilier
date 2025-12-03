@@ -1,12 +1,17 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { NotificationsService } from '../../notifications/notifications.service';
+import { NotificationType } from '../../notifications/dto/create-notification.dto';
 
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Créer un rendez-vous
@@ -27,7 +32,7 @@ export class AppointmentsService {
       );
     }
 
-    return this.prisma.appointments.create({
+    const appointment = await this.prisma.appointments.create({
       data: {
         ...data,
         userId,
@@ -47,6 +52,25 @@ export class AppointmentsService {
         },
       },
     });
+
+    // Créer une notification pour le nouveau rendez-vous
+    try {
+      await this.notificationsService.createAppointmentNotification(userId, {
+        id: appointment.id,
+        date: appointment.startTime,
+        title: appointment.title,
+        type: appointment.type,
+        prospectName: appointment.prospects
+          ? `${appointment.prospects.firstName} ${appointment.prospects.lastName}`
+          : null,
+        propertyTitle: appointment.properties?.title || null,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to create notification for appointment: ${error.message}`);
+      // Ne pas bloquer la création du RDV si la notification échoue
+    }
+
+    return appointment;
   }
 
   /**
@@ -533,6 +557,7 @@ export class AppointmentsService {
       },
       include: {
         prospects: true,
+        properties: true,
         users: true,
       },
     });
@@ -541,9 +566,38 @@ export class AppointmentsService {
 
     for (const appointment of appointments) {
       try {
-        // TODO: Intégrer avec le module Communications pour envoyer Email/SMS
-        // await this.communicationsService.sendEmail(...)
-        // await this.communicationsService.sendSms(...)
+        // Créer une notification de rappel dans l'application
+        const startTime = new Date(appointment.startTime);
+        const formattedTime = startTime.toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        const formattedDate = startTime.toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        });
+
+        let reminderMessage = `Rappel: "${appointment.title}" prévu ${formattedDate} à ${formattedTime}`;
+        if (appointment.prospects) {
+          reminderMessage += ` avec ${appointment.prospects.firstName} ${appointment.prospects.lastName}`;
+        }
+        if (appointment.properties) {
+          reminderMessage += ` - ${appointment.properties.title}`;
+        }
+
+        await this.notificationsService.createNotification({
+          userId: appointment.userId,
+          type: NotificationType.APPOINTMENT,
+          title: 'Rappel de rendez-vous',
+          message: reminderMessage,
+          actionUrl: `/appointments/${appointment.id}`,
+          metadata: JSON.stringify({
+            appointmentId: appointment.id,
+            isReminder: true,
+            startTime: appointment.startTime,
+          }),
+        });
 
         // Marquer le rappel comme envoyé
         await this.prisma.appointments.update({
@@ -551,7 +605,7 @@ export class AppointmentsService {
           data: { reminderSent: true },
         });
 
-        this.logger.log(`Reminder sent for appointment ${appointment.id}`);
+        this.logger.log(`Reminder notification sent for appointment ${appointment.id}`);
       } catch (error) {
         this.logger.error(
           `Failed to send reminder for appointment ${appointment.id}: ${error.message}`,
