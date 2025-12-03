@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
@@ -6,13 +6,63 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
-import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, User, Home, Loader2 } from 'lucide-react';
 import { appointmentsAPI } from '@/shared/utils/appointments-api';
+import apiClient from '@/shared/utils/backend-api';
+
+interface Prospect {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+}
+
+interface Property {
+  id: string;
+  title: string;
+  address?: string;
+  city?: string;
+}
 
 export default function NewAppointmentPage() {
   const router = useRouter();
+  const { prospectId: urlProspectId, propertyId: urlPropertyId } = router.query;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [selectedProspectId, setSelectedProspectId] = useState<string>('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (urlProspectId && typeof urlProspectId === 'string') {
+      setSelectedProspectId(urlProspectId);
+    }
+    if (urlPropertyId && typeof urlPropertyId === 'string') {
+      setSelectedPropertyId(urlPropertyId);
+    }
+  }, [urlProspectId, urlPropertyId]);
+
+  const loadData = async () => {
+    try {
+      const [prospectsRes, propertiesRes] = await Promise.all([
+        apiClient.get('/prospects', { params: { limit: 100 } }),
+        apiClient.get('/properties', { params: { limit: 100 } }),
+      ]);
+      setProspects(prospectsRes.data || []);
+      setProperties(propertiesRes.data || []);
+    } catch (err) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +88,8 @@ export default function NewAppointmentPage() {
         priority: formData.get('priority') as string || 'medium',
         notes: formData.get('notes') as string || undefined,
         reminder: true,
+        prospectId: selectedProspectId || undefined,
+        propertyId: selectedPropertyId || undefined,
       });
 
       router.push('/appointments');
@@ -114,6 +166,65 @@ export default function NewAppointmentPage() {
                     <option value="high">Haute</option>
                     <option value="urgent">Urgente</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Prospect et Propriete */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <Label htmlFor="prospectId">Prospect</Label>
+                  </div>
+                  {loadingData ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Chargement...
+                    </div>
+                  ) : (
+                    <select
+                      id="prospectId"
+                      value={selectedProspectId}
+                      onChange={(e) => setSelectedProspectId(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">-- Aucun prospect --</option>
+                      {prospects.map((prospect) => (
+                        <option key={prospect.id} value={prospect.id}>
+                          {prospect.firstName} {prospect.lastName}
+                          {prospect.email ? ` (${prospect.email})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Home className="h-4 w-4 text-gray-500" />
+                    <Label htmlFor="propertyId">Bien immobilier</Label>
+                  </div>
+                  {loadingData ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Chargement...
+                    </div>
+                  ) : (
+                    <select
+                      id="propertyId"
+                      value={selectedPropertyId}
+                      onChange={(e) => setSelectedPropertyId(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">-- Aucun bien --</option>
+                      {properties.map((property) => (
+                        <option key={property.id} value={property.id}>
+                          {property.title}
+                          {property.city ? ` - ${property.city}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 

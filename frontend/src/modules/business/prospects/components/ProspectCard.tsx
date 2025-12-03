@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import { Textarea } from '@/shared/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog';
 import {
   User,
   Phone,
@@ -28,10 +40,21 @@ interface ProspectCardProps {
 }
 
 export default function ProspectCard({ prospectId }: ProspectCardProps) {
+  const router = useRouter();
   const [prospect, setProspect] = useState<any>(null);
   const [nextAction, setNextAction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+
+  // Appointment form state
+  const [appointmentLoading, setAppointmentLoading] = useState(false);
+  const [appointmentTitle, setAppointmentTitle] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentStartTime, setAppointmentStartTime] = useState('09:00');
+  const [appointmentEndTime, setAppointmentEndTime] = useState('10:00');
+  const [appointmentType, setAppointmentType] = useState('visit');
+  const [appointmentLocation, setAppointmentLocation] = useState('');
+  const [appointmentNotes, setAppointmentNotes] = useState('');
 
   useEffect(() => {
     loadProspect();
@@ -43,13 +66,59 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
         prospectsEnhancedAPI.getProspectFull(prospectId),
         prospectsAppointmentsAPI.getNextAction(prospectId),
       ]);
-      
+
       setProspect(prospectData);
       setNextAction(nextActionData);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateAppointment = async () => {
+    if (!appointmentTitle || !appointmentDate) {
+      alert('Veuillez remplir le titre et la date');
+      return;
+    }
+
+    setAppointmentLoading(true);
+    try {
+      const startDateTime = new Date(`${appointmentDate}T${appointmentStartTime}`).toISOString();
+      const endDateTime = new Date(`${appointmentDate}T${appointmentEndTime}`).toISOString();
+
+      await prospectsAppointmentsAPI.createAppointment(prospectId, {
+        title: appointmentTitle,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        type: appointmentType,
+        location: appointmentLocation || undefined,
+        notes: appointmentNotes || undefined,
+      });
+
+      // Reset form
+      setAppointmentTitle('');
+      setAppointmentDate('');
+      setAppointmentStartTime('09:00');
+      setAppointmentEndTime('10:00');
+      setAppointmentType('visit');
+      setAppointmentLocation('');
+      setAppointmentNotes('');
+      setShowAppointmentModal(false);
+
+      // Reload to get updated next action
+      loadProspect();
+    } catch (error: any) {
+      console.error('Error creating appointment:', error);
+      alert(error?.response?.data?.message || 'Erreur lors de la creation du rendez-vous');
+    } finally {
+      setAppointmentLoading(false);
+    }
+  };
+
+  const handleViewAppointment = () => {
+    if (nextAction?.details?.id) {
+      router.push(`/appointments/${nextAction.details.id}`);
     }
   };
 
@@ -208,7 +277,12 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                 </div>
               </div>
               {nextAction.type === 'appointment' && (
-                <Button size="sm" variant="outline" className="border-orange-500 text-orange-700">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-orange-500 text-orange-700"
+                  onClick={handleViewAppointment}
+                >
                   <Eye className="h-4 w-4 mr-1" />
                   Voir
                 </Button>
@@ -396,6 +470,127 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal Nouveau Rendez-vous */}
+      <Dialog open={showAppointmentModal} onOpenChange={setShowAppointmentModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarPlus className="h-5 w-5" />
+              Nouveau Rendez-vous
+            </DialogTitle>
+            <DialogDescription>
+              Creer un rendez-vous avec {prospect?.firstName} {prospect?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="apt-title">Titre *</Label>
+              <Input
+                id="apt-title"
+                placeholder="Ex: Visite appartement"
+                value={appointmentTitle}
+                onChange={(e) => setAppointmentTitle(e.target.value)}
+                disabled={appointmentLoading}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="apt-type">Type</Label>
+                <select
+                  id="apt-type"
+                  value={appointmentType}
+                  onChange={(e) => setAppointmentType(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  disabled={appointmentLoading}
+                >
+                  <option value="visit">Visite</option>
+                  <option value="signature">Signature</option>
+                  <option value="expertise">Expertise</option>
+                  <option value="estimation">Estimation</option>
+                  <option value="meeting">Reunion</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="apt-date">Date *</Label>
+                <Input
+                  id="apt-date"
+                  type="date"
+                  value={appointmentDate}
+                  onChange={(e) => setAppointmentDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  disabled={appointmentLoading}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="apt-start">Heure debut</Label>
+                <Input
+                  id="apt-start"
+                  type="time"
+                  value={appointmentStartTime}
+                  onChange={(e) => setAppointmentStartTime(e.target.value)}
+                  disabled={appointmentLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="apt-end">Heure fin</Label>
+                <Input
+                  id="apt-end"
+                  type="time"
+                  value={appointmentEndTime}
+                  onChange={(e) => setAppointmentEndTime(e.target.value)}
+                  disabled={appointmentLoading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="apt-location">Lieu</Label>
+              <Input
+                id="apt-location"
+                placeholder="Adresse du rendez-vous"
+                value={appointmentLocation}
+                onChange={(e) => setAppointmentLocation(e.target.value)}
+                disabled={appointmentLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="apt-notes">Notes</Label>
+              <Textarea
+                id="apt-notes"
+                placeholder="Notes supplementaires..."
+                value={appointmentNotes}
+                onChange={(e) => setAppointmentNotes(e.target.value)}
+                disabled={appointmentLoading}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAppointmentModal(false)}
+              disabled={appointmentLoading}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleCreateAppointment} disabled={appointmentLoading}>
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              {appointmentLoading ? 'Creation...' : 'Creer le RDV'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

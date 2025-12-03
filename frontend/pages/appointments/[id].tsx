@@ -4,6 +4,16 @@ import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
+import { Input } from '@/shared/components/ui/input';
+import { Label } from '@/shared/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog';
 import {
   ArrowLeft,
   Calendar,
@@ -35,6 +45,10 @@ export default function AppointmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
 
   useEffect(() => {
     if (id && typeof id === 'string') {
@@ -90,6 +104,33 @@ export default function AppointmentDetailPage() {
       router.push('/appointments');
     } catch (err) {
       console.error('Erreur:', err);
+      setActionLoading(false);
+    }
+  };
+
+  const openRescheduleDialog = () => {
+    if (!appointment) return;
+    const startDate = new Date(appointment.startTime);
+    const endDate = new Date(appointment.endTime);
+    setNewDate(startDate.toISOString().split('T')[0]);
+    setNewStartTime(startDate.toTimeString().slice(0, 5));
+    setNewEndTime(endDate.toTimeString().slice(0, 5));
+    setRescheduleOpen(true);
+  };
+
+  const handleReschedule = async () => {
+    if (!appointment || !newDate || !newStartTime || !newEndTime) return;
+    setActionLoading(true);
+    try {
+      const newStartDateTime = new Date(`${newDate}T${newStartTime}`).toISOString();
+      const newEndDateTime = new Date(`${newDate}T${newEndTime}`).toISOString();
+      await appointmentsAPI.reschedule(appointment.id, newStartDateTime, newEndDateTime);
+      setRescheduleOpen(false);
+      loadAppointment(appointment.id);
+    } catch (err: any) {
+      console.error('Erreur:', err);
+      alert(err?.response?.data?.message || 'Erreur lors de la reprogrammation');
+    } finally {
       setActionLoading(false);
     }
   };
@@ -332,6 +373,15 @@ export default function AppointmentDetailPage() {
                   <Button
                     className="w-full"
                     variant="outline"
+                    onClick={openRescheduleDialog}
+                    disabled={actionLoading}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reprogrammer
+                  </Button>
+                  <Button
+                    className="w-full"
+                    variant="outline"
                     onClick={handleCancel}
                     disabled={actionLoading}
                   >
@@ -352,6 +402,67 @@ export default function AppointmentDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reprogrammer le rendez-vous</DialogTitle>
+            <DialogDescription>
+              Choisissez une nouvelle date et heure pour ce rendez-vous.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newDate">Nouvelle date</Label>
+              <Input
+                id="newDate"
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newStartTime">Heure de debut</Label>
+                <Input
+                  id="newStartTime"
+                  type="time"
+                  value={newStartTime}
+                  onChange={(e) => setNewStartTime(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newEndTime">Heure de fin</Label>
+                <Input
+                  id="newEndTime"
+                  type="time"
+                  value={newEndTime}
+                  onChange={(e) => setNewEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRescheduleOpen(false)}
+              disabled={actionLoading}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleReschedule} disabled={actionLoading}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {actionLoading ? 'Reprogrammation...' : 'Reprogrammer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
