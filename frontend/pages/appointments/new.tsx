@@ -84,7 +84,7 @@ export default function NewAppointmentPage() {
         startTime: startDateTime,
         endTime: endDateTime,
         location: formData.get('location') as string || undefined,
-        type: formData.get('type') as string || 'meeting',
+        type: formData.get('type') as string || 'visit',
         priority: formData.get('priority') as string || 'medium',
         notes: formData.get('notes') as string || undefined,
         reminder: true,
