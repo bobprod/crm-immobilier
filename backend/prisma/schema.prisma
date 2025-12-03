@@ -137,13 +137,6 @@ model appointments {
   location       String?
   type           String      @default("visit")
   status         String      @default("scheduled")
-  prospectType   String?
-  subType        String?
-  searchCriteria Json?
-  mandatInfo     Json?
-  profiling      Json?
-  timeline       String?
-  budget         Json?
   priority       String      @default("medium")
   isAllDay       Boolean     @default(false)
   reminder       Boolean     @default(true)
