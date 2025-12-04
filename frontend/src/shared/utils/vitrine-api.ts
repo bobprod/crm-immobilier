@@ -15,15 +15,15 @@ export const vitrineAPI = {
     return response.data;
   },
 
+  // Toggle via config update (no dedicated toggle endpoint)
   toggleVitrine: async (isActive: boolean) => {
-    const response = await apiClient.post('/vitrine/config/toggle', { isActive });
+    const response = await apiClient.put('/vitrine/config', { isActive });
     return response.data;
   },
 
-  // Gestion biens publiés
+  // Gestion biens publiés - Backend uses /vitrine/properties/:id/publish
   publishProperty: async (propertyId: string, isFeatured = false, order = 0) => {
-    const response = await apiClient.post('/vitrine/properties/publish', {
-      propertyId,
+    const response = await apiClient.post(`/vitrine/properties/${propertyId}/publish`, {
       isFeatured,
       order,
     });
@@ -36,7 +36,7 @@ export const vitrineAPI = {
   },
 
   getPublishedProperties: async () => {
-    const response = await apiClient.get('/vitrine/properties');
+    const response = await apiClient.get('/vitrine/published-properties');
     return response.data;
   },
 

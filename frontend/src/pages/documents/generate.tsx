@@ -38,9 +38,14 @@ export default function GenerateDocumentPage() {
         setGenerated(false);
 
         try {
-            // Simulate AI document generation
-            const response = await apiClient.post('/documents/generate', formData);
-            setGeneratedContent(response.data?.content || 'Document généré avec succès');
+            // Build AI generation payload matching backend expectations
+            const aiPayload = {
+                prompt: `Type: ${documentTypes.find(t => t.value === formData.type)?.label}\nTitre: ${formData.title}\nDescription: ${formData.description}\nContexte: ${formData.context}`,
+                documentType: formData.type,
+                saveAsDocument: true,
+            };
+            const response = await apiClient.post('/documents/ai/generate', aiPayload);
+            setGeneratedContent(response.data?.content || response.data?.text || 'Document généré avec succès');
             setGenerated(true);
         } catch (err: any) {
             console.error('Error generating document:', err);

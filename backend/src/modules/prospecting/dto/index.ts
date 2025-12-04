@@ -15,8 +15,8 @@ export class CreateCampaignDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ enum: ['geographic', 'demographic', 'behavioral', 'mixed'] })
-  @IsEnum(['geographic', 'demographic', 'behavioral', 'mixed'])
+  @ApiProperty({ enum: ['geographic', 'demographic', 'behavioral', 'mixed', 'custom', 'requete', 'mandat'] })
+  @IsEnum(['geographic', 'demographic', 'behavioral', 'mixed', 'custom', 'requete', 'mandat'])
   type: string;
 
   @ApiPropertyOptional({ description: 'Configuration de la campagne' })
