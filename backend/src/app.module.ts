@@ -29,6 +29,7 @@ import { TasksModule } from './modules/business/tasks/tasks.module';
 
 // INTELLIGENCE MODULES
 import { AIMetricsModule } from './modules/intelligence/ai-metrics/ai-metrics.module';
+import { AIMetricsProspectingModule } from './modules/intelligence/ai-metrics-prospecting/ai-metrics-prospecting.module';
 import { LLMConfigModule } from './modules/intelligence/llm-config/llm-config.module';
 import { MatchingModule } from './modules/intelligence/matching/matching.module';
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
@@ -91,8 +92,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 5 modules
+    // INTELLIGENCE - 6 modules
     AIMetricsModule,
+    AIMetricsProspectingModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
