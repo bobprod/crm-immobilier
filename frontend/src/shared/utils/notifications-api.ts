@@ -40,6 +40,52 @@ export interface CreateNotificationDto {
 }
 
 // ============================================
+// BACKEND RESPONSE MAPPING
+// ============================================
+
+// Backend response interface (what the API returns)
+interface BackendNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;      // Backend uses 'isRead'
+  actionUrl?: string;   // Backend uses 'actionUrl'
+  metadata?: Record<string, any>;
+  readAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Map backend response to frontend Notification interface
+const mapNotification = (n: BackendNotification): Notification => ({
+  id: n.id,
+  userId: n.userId,
+  title: n.title,
+  message: n.message,
+  type: mapBackendTypeToFrontend(n.type),
+  read: n.isRead,           // Map isRead → read
+  link: n.actionUrl,        // Map actionUrl → link
+  metadata: n.metadata,
+  createdAt: n.createdAt,
+  updatedAt: n.updatedAt,
+});
+
+// Map backend notification types to frontend types
+const mapBackendTypeToFrontend = (backendType: string): NotificationType => {
+  const typeMap: Record<string, NotificationType> = {
+    'appointment': 'appointment_reminder',
+    'task': 'task_due',
+    'lead': 'lead_new',
+    'system': 'system',
+    'property': 'info',
+    'message': 'info',
+  };
+  return typeMap[backendType] || 'system';
+};
+
+// ============================================
 // API CLIENT
 // ============================================
 
@@ -47,13 +93,13 @@ export const notificationsAPI = {
   // Get all notifications
   getNotifications: async (limit?: number): Promise<Notification[]> => {
     const response = await apiClient.get('/notifications', { params: { limit } });
-    return response.data;
+    return (response.data || []).map(mapNotification);
   },
 
   // Get unread notifications
   getUnread: async (): Promise<Notification[]> => {
     const response = await apiClient.get('/notifications/unread');
-    return response.data;
+    return (response.data || []).map(mapNotification);
   },
 
   // Get unread count
@@ -71,13 +117,13 @@ export const notificationsAPI = {
   // Mark as read
   markAsRead: async (id: string): Promise<Notification> => {
     const response = await apiClient.patch(`/notifications/${id}/read`);
-    return response.data;
+    return mapNotification(response.data);
   },
 
   // Mark all as read
-  markAllAsRead: async (): Promise<{ updated: number }> => {
+  markAllAsRead: async (): Promise<{ count: number }> => {
     const response = await apiClient.patch('/notifications/read-all');
-    return response.data;
+    return response.data; // Prisma returns { count: number }
   },
 
   // Delete notification

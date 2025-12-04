@@ -29,7 +29,7 @@ export default function EmailPage() {
         setSuccess(false);
 
         try {
-            await apiClient.post('/communications', formData);
+            await apiClient.post('/communications/email', formData);
             setSuccess(true);
             setFormData({
                 to: '',

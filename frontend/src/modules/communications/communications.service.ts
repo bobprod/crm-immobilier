@@ -23,14 +23,19 @@ export interface SendEmailDto {
 
 export interface SendSmsDto {
     to: string;
-    body: string;
+    message: string;  // Backend expects 'message', not 'body'
     prospectId?: string;
+    propertyId?: string;
+    templateId?: string;
 }
 
 export interface SendWhatsAppDto {
     to: string;
-    body: string;
+    message: string;  // Backend expects 'message', not 'body'
+    mediaUrl?: string;
     prospectId?: string;
+    propertyId?: string;
+    templateId?: string;
 }
 
 export interface CommunicationFilters {
