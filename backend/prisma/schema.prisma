@@ -235,16 +235,6 @@ model properties {
   features            String[]                    // Array of feature strings
   status              PropertyStatus              @default(available)
   viewsCount          Int                         @default(0)
-  // DEPRECATED: These fields couple properties to prospecting domain
-  // Should be moved to prospecting_matches or a separate junction table
-  // TODO: Migrate data and remove in future version
-  prospectType        String?                     // @deprecated - use prospecting_leads.leadType
-  subType             String?                     // @deprecated
-  searchCriteria      Json?                       // @deprecated - use prospecting_leads criteria
-  mandatInfo          Json?                       // @deprecated - use prospecting_leads.metadata
-  profiling           Json?                       // @deprecated
-  timeline            String?                     // @deprecated - use prospecting_leads.urgency
-  budget              Json?                       // @deprecated - use prospecting_leads.budget*
   wpSyncId            String?
   wpSyncedAt          DateTime?
   wordpressId         String?
@@ -815,13 +805,6 @@ model tasks {
   title          String
   description    String?
   status         String        @default("todo")
-  prospectType   String?
-  subType        String?
-  searchCriteria Json?
-  mandatInfo     Json?
-  profiling      Json?
-  timeline       String?
-  budget         Json?
   priority       String        @default("medium")
   dueDate        DateTime?
   completedAt    DateTime?
