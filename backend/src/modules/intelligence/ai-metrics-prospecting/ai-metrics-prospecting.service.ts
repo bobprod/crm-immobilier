@@ -13,6 +13,18 @@ import {
   LocationPerformanceDto,
   BudgetAnalysisDto,
   TopPerformersDto,
+  // Sales / Pipeline
+  SalesFunnelDto,
+  AppointmentsPerformanceDto,
+  ConversionMetricsDto,
+  ProspectsPerformanceDto,
+  // Matching / Properties
+  CRMMatchingPerformanceDto,
+  PropertiesPerformanceDto,
+  TopPropertiesDto,
+  // Unified ROI
+  UnifiedROIDto,
+  UnifiedDashboardDto,
 } from './dto';
 
 // Type aliases for where inputs (using Record for flexibility with Prisma)
@@ -1032,6 +1044,688 @@ export class AIMetricsProspectingService {
       },
       llmQuality,
       matchingPerformance,
+    };
+  }
+
+  // ============================================
+  // SALES / PIPELINE METRICS
+  // ============================================
+
+  /**
+   * Funnel de conversion complet
+   */
+  async getSalesFunnel(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<SalesFunnelDto> {
+    this.logger.log(`Getting sales funnel for user ${userId}`);
+
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const [
+      leadsGenerated,
+      leadsQualified,
+      prospectsCreated,
+      prospectsActive,
+      appointmentsScheduled,
+      appointmentsCompleted,
+      visitsCompleted,
+      offersMade,
+      contractsSigned,
+    ] = await Promise.all([
+      // Leads générés
+      this.prisma.prospecting_leads.count({
+        where: { userId, ...dateFilter },
+      }),
+      // Leads qualifiés (seriousnessScore >= 60)
+      this.prisma.prospecting_leads.count({
+        where: { userId, seriousnessScore: { gte: 60 }, ...dateFilter },
+      }),
+      // Prospects créés depuis leads
+      this.prisma.prospecting_leads.count({
+        where: { userId, convertedProspectId: { not: null }, ...dateFilter },
+      }),
+      // Prospects actifs
+      this.prisma.prospects.count({
+        where: { userId, status: 'active', ...dateFilter },
+      }),
+      // RDVs programmés
+      this.prisma.appointments.count({
+        where: { userId, ...dateFilter },
+      }),
+      // RDVs complétés
+      this.prisma.appointments.count({
+        where: { userId, status: 'completed', ...dateFilter },
+      }),
+      // Visites effectuées
+      this.prisma.appointments.count({
+        where: { userId, type: 'visit', status: 'completed', ...dateFilter },
+      }),
+      // Offres faites
+      this.prisma.conversion_events.count({
+        where: { userId, eventType: 'offer_made', ...dateFilter },
+      }),
+      // Contrats signés
+      this.prisma.conversion_events.count({
+        where: { userId, eventType: 'contract_signed', ...dateFilter },
+      }),
+    ]);
+
+    return {
+      leadsGenerated,
+      leadsQualified,
+      prospectsCreated,
+      prospectsActive,
+      appointmentsScheduled,
+      appointmentsCompleted,
+      visitsCompleted,
+      offersMade,
+      contractsSigned,
+      conversionRates: {
+        leadsToQualified: this.calculatePercentage(leadsQualified, leadsGenerated),
+        qualifiedToProspects: this.calculatePercentage(prospectsCreated, leadsQualified),
+        prospectsToAppointments: this.calculatePercentage(appointmentsScheduled, prospectsCreated || 1),
+        appointmentsToVisits: this.calculatePercentage(visitsCompleted, appointmentsScheduled),
+        visitsToOffers: this.calculatePercentage(offersMade, visitsCompleted || 1),
+        offersToContracts: this.calculatePercentage(contractsSigned, offersMade || 1),
+        overallLeadsToContracts: this.calculatePercentage(contractsSigned, leadsGenerated),
+      },
+      period: { from: query.from || 'all-time', to: query.to || 'now' },
+    };
+  }
+
+  /**
+   * Performance des rendez-vous
+   */
+  async getAppointmentsPerformance(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<AppointmentsPerformanceDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { startTime: dateRange } : {};
+
+    const [totalAppointments, byType, byStatus, appointments, conversionsWithAppointment] =
+      await Promise.all([
+        this.prisma.appointments.count({ where: { userId, ...dateFilter } }),
+        this.prisma.appointments.groupBy({
+          by: ['type'],
+          where: { userId, ...dateFilter },
+          _count: true,
+        }),
+        this.prisma.appointments.groupBy({
+          by: ['status'],
+          where: { userId, ...dateFilter },
+          _count: true,
+        }),
+        this.prisma.appointments.findMany({
+          where: { userId, ...dateFilter },
+          select: { startTime: true, endTime: true, rating: true, status: true },
+        }),
+        this.prisma.conversion_events.count({
+          where: { userId, appointmentId: { not: null }, ...dateFilter },
+        }),
+      ]);
+
+    const completed = byStatus.find((s) => s.status === 'completed')?._count || 0;
+    const noShow = byStatus.find((s) => s.status === 'no_show')?._count || 0;
+
+    // Durée moyenne en minutes
+    const durations = appointments
+      .filter((a) => a.startTime && a.endTime)
+      .map((a) => (new Date(a.endTime).getTime() - new Date(a.startTime).getTime()) / 60000);
+    const avgDuration = durations.length > 0
+      ? durations.reduce((a, b) => a + b, 0) / durations.length
+      : 0;
+
+    // Note moyenne
+    const ratings = appointments.filter((a) => a.rating !== null).map((a) => a.rating as number);
+    const avgRating = ratings.length > 0
+      ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+      : 0;
+
+    return {
+      totalAppointments,
+      byType: byType.map((t) => ({
+        type: t.type,
+        count: t._count,
+        percentage: this.calculatePercentage(t._count, totalAppointments),
+      })),
+      byStatus: byStatus.map((s) => ({
+        status: s.status,
+        count: s._count,
+        percentage: this.calculatePercentage(s._count, totalAppointments),
+      })),
+      attendanceRate: this.calculatePercentage(completed, completed + noShow),
+      noShowRate: this.calculatePercentage(noShow, completed + noShow),
+      avgRating: Math.round(avgRating * 100) / 100,
+      avgDurationMinutes: Math.round(avgDuration),
+      appointmentsWithConversion: conversionsWithAppointment,
+      appointmentToConversionRate: this.calculatePercentage(conversionsWithAppointment, totalAppointments),
+    };
+  }
+
+  /**
+   * Métriques de conversion
+   */
+  async getConversionMetrics(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<ConversionMetricsDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { timestamp: dateRange } : {};
+
+    const [conversions, byEventType, bySource] = await Promise.all([
+      this.prisma.conversion_events.findMany({
+        where: { userId, ...dateFilter },
+        select: { eventType: true, value: true, source: true, timestamp: true },
+      }),
+      this.prisma.conversion_events.groupBy({
+        by: ['eventType'],
+        where: { userId, ...dateFilter },
+        _count: true,
+        _sum: { value: true },
+      }),
+      this.prisma.conversion_events.groupBy({
+        by: ['source'],
+        where: { userId, ...dateFilter },
+        _count: true,
+        _sum: { value: true },
+      }),
+    ]);
+
+    const totalValue = conversions.reduce((sum, c) => sum + (c.value || 0), 0);
+
+    return {
+      totalConversions: conversions.length,
+      totalValue,
+      avgConversionValue: conversions.length > 0 ? totalValue / conversions.length : 0,
+      byEventType: byEventType.map((e) => ({
+        eventType: e.eventType,
+        count: e._count,
+        totalValue: e._sum.value || 0,
+        avgValue: e._count > 0 ? (e._sum.value || 0) / e._count : 0,
+      })),
+      bySource: bySource
+        .filter((s) => s.source)
+        .map((s) => ({
+          source: s.source || 'unknown',
+          count: s._count,
+          totalValue: s._sum.value || 0,
+        })),
+      avgTimeToConversionDays: 0, // Nécessite calcul plus complexe
+    };
+  }
+
+  /**
+   * Performance des prospects
+   */
+  async getProspectsPerformance(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<ProspectsPerformanceDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const [totalProspects, byStatus, byType, scoreStats, withMatches, withAppointments, convertedThisMonth] =
+      await Promise.all([
+        this.prisma.prospects.count({ where: { userId, ...dateFilter } }),
+        this.prisma.prospects.groupBy({
+          by: ['status'],
+          where: { userId, ...dateFilter },
+          _count: true,
+        }),
+        this.prisma.prospects.groupBy({
+          by: ['type'],
+          where: { userId, ...dateFilter },
+          _count: true,
+        }),
+        this.prisma.prospects.aggregate({
+          where: { userId, ...dateFilter },
+          _avg: { score: true },
+        }),
+        this.prisma.prospects.count({
+          where: {
+            userId,
+            matches: { some: {} },
+            ...dateFilter,
+          },
+        }),
+        this.prisma.prospects.count({
+          where: {
+            userId,
+            appointments: { some: {} },
+            ...dateFilter,
+          },
+        }),
+        this.prisma.conversion_events.count({
+          where: {
+            userId,
+            eventType: { in: ['prospect_qualified', 'contract_signed'] },
+            timestamp: {
+              gte: new Date(new Date().setDate(1)), // Premier jour du mois
+            },
+          },
+        }),
+      ]);
+
+    const convertedCount = byStatus.find((s) => s.status === 'converted')?._count || 0;
+
+    return {
+      totalProspects,
+      byStatus: byStatus.map((s) => ({
+        status: s.status,
+        count: s._count,
+        percentage: this.calculatePercentage(s._count, totalProspects),
+      })),
+      byType: byType.map((t) => ({
+        type: t.type,
+        count: t._count,
+        percentage: this.calculatePercentage(t._count, totalProspects),
+      })),
+      avgScore: Math.round((scoreStats._avg.score || 0) * 100) / 100,
+      prospectsWithMatches: withMatches,
+      prospectsWithAppointments: withAppointments,
+      convertedThisMonth,
+      overallConversionRate: this.calculatePercentage(convertedCount, totalProspects),
+    };
+  }
+
+  // ============================================
+  // MATCHING / PROPERTIES METRICS
+  // ============================================
+
+  /**
+   * Performance du matching CRM (table matches)
+   */
+  async getCRMMatchingPerformance(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<CRMMatchingPerformanceDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const matchesWhere = {
+      prospects: { userId },
+      ...dateFilter,
+    };
+
+    const [totalMatches, matches, byStatus, visitsFromMatches] = await Promise.all([
+      this.prisma.matches.count({ where: matchesWhere }),
+      this.prisma.matches.findMany({
+        where: matchesWhere,
+        select: { score: true, status: true },
+      }),
+      this.prisma.matches.groupBy({
+        by: ['status'],
+        where: matchesWhere,
+        _count: true,
+      }),
+      this.prisma.appointments.count({
+        where: {
+          userId,
+          type: 'visit',
+          propertyId: { not: null },
+          prospectId: { not: null },
+          ...dateFilter,
+        },
+      }),
+    ]);
+
+    const excellent = matches.filter((m) => m.score >= 80).length;
+    const good = matches.filter((m) => m.score >= 60 && m.score < 80).length;
+    const average = matches.filter((m) => m.score >= 40 && m.score < 60).length;
+    const poor = matches.filter((m) => m.score < 40).length;
+
+    const avgScore = matches.length > 0
+      ? matches.reduce((sum, m) => sum + m.score, 0) / matches.length
+      : 0;
+
+    // Corrélation score/conversion
+    const scoreRanges = [
+      { range: '0-39', min: 0, max: 39 },
+      { range: '40-59', min: 40, max: 59 },
+      { range: '60-79', min: 60, max: 79 },
+      { range: '80-100', min: 80, max: 100 },
+    ];
+
+    const scoreConversionCorrelation = scoreRanges.map((range) => {
+      const inRange = matches.filter((m) => m.score >= range.min && m.score <= range.max);
+      const converted = inRange.filter((m) => m.status === 'converted').length;
+      return {
+        scoreRange: range.range,
+        matches: inRange.length,
+        conversions: converted,
+        conversionRate: this.calculatePercentage(converted, inRange.length),
+      };
+    });
+
+    return {
+      totalMatches,
+      excellentMatches: excellent,
+      goodMatches: good,
+      averageMatches: average,
+      poorMatches: poor,
+      avgScore: Math.round(avgScore * 100) / 100,
+      byStatus: byStatus.map((s) => ({
+        status: s.status,
+        count: s._count,
+        percentage: this.calculatePercentage(s._count, totalMatches),
+      })),
+      matchToVisitRate: this.calculatePercentage(visitsFromMatches, totalMatches),
+      scoreConversionCorrelation,
+    };
+  }
+
+  /**
+   * Performance des propriétés
+   */
+  async getPropertiesPerformance(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<PropertiesPerformanceDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const [totalProperties, byStatus, byType, byCategory, priceStats, withMatches, featured, soldRented] =
+      await Promise.all([
+        this.prisma.properties.count({ where: { userId, ...dateFilter } }),
+        this.prisma.properties.groupBy({
+          by: ['status'],
+          where: { userId, ...dateFilter },
+          _count: true,
+        }),
+        this.prisma.properties.groupBy({
+          by: ['type'],
+          where: { userId, ...dateFilter },
+          _count: true,
+          _avg: { price: true },
+        }),
+        this.prisma.properties.groupBy({
+          by: ['category'],
+          where: { userId, ...dateFilter },
+          _count: true,
+          _sum: { price: true },
+        }),
+        this.prisma.properties.aggregate({
+          where: { userId, ...dateFilter },
+          _avg: { price: true },
+        }),
+        this.prisma.properties.count({
+          where: {
+            userId,
+            matches: { some: {} },
+            ...dateFilter,
+          },
+        }),
+        this.prisma.properties.count({
+          where: { userId, isFeatured: true, ...dateFilter },
+        }),
+        this.prisma.properties.count({
+          where: { userId, status: { in: ['sold', 'rented'] }, ...dateFilter },
+        }),
+      ]);
+
+    return {
+      totalProperties,
+      byStatus: byStatus.map((s) => ({
+        status: s.status,
+        count: s._count,
+        percentage: this.calculatePercentage(s._count, totalProperties),
+      })),
+      byType: byType.map((t) => ({
+        type: t.type,
+        count: t._count,
+        avgPrice: Math.round((t._avg.price || 0) * 100) / 100,
+      })),
+      byCategory: byCategory.map((c) => ({
+        category: c.category,
+        count: c._count,
+        totalValue: c._sum.price || 0,
+      })),
+      avgPrice: Math.round((priceStats._avg.price || 0) * 100) / 100,
+      propertiesWithMatches: withMatches,
+      featuredProperties: featured,
+      avgDaysOnMarket: 0, // Nécessite calcul plus complexe
+      soldRentedRate: this.calculatePercentage(soldRented, totalProperties),
+    };
+  }
+
+  /**
+   * Top propriétés
+   */
+  async getTopProperties(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+    limit: number = 10,
+  ): Promise<TopPropertiesDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const [propertiesWithMatchCount, recentlySold] = await Promise.all([
+      this.prisma.properties.findMany({
+        where: { userId, ...dateFilter },
+        include: {
+          matches: {
+            select: { score: true },
+          },
+          prospecting_matches: {
+            select: { score: true },
+          },
+        },
+      }),
+      this.prisma.properties.findMany({
+        where: { userId, status: { in: ['sold', 'rented'] } },
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          city: true,
+          price: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    // Top par nombre de matches
+    const byMatchCount = propertiesWithMatchCount
+      .map((p) => {
+        const allMatches = [...p.matches, ...p.prospecting_matches];
+        const avgScore = allMatches.length > 0
+          ? allMatches.reduce((sum, m) => sum + m.score, 0) / allMatches.length
+          : 0;
+        return {
+          id: p.id,
+          title: p.title,
+          type: p.type,
+          city: p.city || '',
+          price: p.price,
+          matchCount: allMatches.length,
+          avgMatchScore: Math.round(avgScore * 100) / 100,
+        };
+      })
+      .sort((a, b) => b.matchCount - a.matchCount)
+      .slice(0, limit);
+
+    // Top par score moyen
+    const byMatchScore = propertiesWithMatchCount
+      .filter((p) => p.matches.length > 0 || p.prospecting_matches.length > 0)
+      .map((p) => {
+        const allMatches = [...p.matches, ...p.prospecting_matches];
+        const avgScore = allMatches.reduce((sum, m) => sum + m.score, 0) / allMatches.length;
+        return {
+          id: p.id,
+          title: p.title,
+          type: p.type,
+          city: p.city || '',
+          price: p.price,
+          avgMatchScore: Math.round(avgScore * 100) / 100,
+          matchCount: allMatches.length,
+        };
+      })
+      .sort((a, b) => b.avgMatchScore - a.avgMatchScore)
+      .slice(0, limit);
+
+    return {
+      byMatchCount,
+      byMatchScore,
+      recentlySold: recentlySold.map((p) => ({
+        id: p.id,
+        title: p.title,
+        type: p.type,
+        city: p.city || '',
+        price: p.price,
+        soldDate: p.updatedAt.toISOString(),
+        daysOnMarket: Math.round(
+          (new Date(p.updatedAt).getTime() - new Date(p.createdAt).getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      })),
+    };
+  }
+
+  // ============================================
+  // UNIFIED ROI
+  // ============================================
+
+  /**
+   * ROI unifié multi-modules
+   */
+  async getUnifiedROI(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<UnifiedROIDto> {
+    const dateRange = this.buildDateRange(query.from, query.to);
+    const dateFilter = Object.keys(dateRange).length > 0 ? { timestamp: dateRange } : {};
+    const createdAtFilter = Object.keys(dateRange).length > 0 ? { createdAt: dateRange } : {};
+
+    const [aiUsage, conversions, leads, prospects] = await Promise.all([
+      this.prisma.ai_usage_metrics.findMany({
+        where: { userId, ...dateFilter },
+        select: { cost: true, requestType: true },
+      }),
+      this.prisma.conversion_events.findMany({
+        where: { userId, ...dateFilter },
+        select: { value: true, source: true },
+      }),
+      this.prisma.prospecting_leads.count({ where: { userId, ...createdAtFilter } }),
+      this.prisma.prospects.count({ where: { userId, ...createdAtFilter } }),
+    ]);
+
+    const totalAICost = aiUsage.reduce((sum, u) => sum + (u.cost || 0), 0);
+    const totalRevenue = conversions.reduce((sum, c) => sum + (c.value || 0), 0);
+
+    // Coûts par module (basé sur requestType)
+    const costByModule = {
+      prospecting: aiUsage
+        .filter((u) => u.requestType?.includes('prospecting') || u.requestType?.includes('lead'))
+        .reduce((sum, u) => sum + (u.cost || 0), 0),
+      matching: aiUsage
+        .filter((u) => u.requestType?.includes('matching'))
+        .reduce((sum, u) => sum + (u.cost || 0), 0),
+      validation: aiUsage
+        .filter((u) => u.requestType?.includes('validation'))
+        .reduce((sum, u) => sum + (u.cost || 0), 0),
+      other: 0,
+    };
+    costByModule.other = totalAICost - costByModule.prospecting - costByModule.matching - costByModule.validation;
+
+    // ROI par source
+    const sourceMap = new Map<string, { cost: number; revenue: number; conversions: number }>();
+    conversions.forEach((c) => {
+      const source = c.source || 'unknown';
+      const existing = sourceMap.get(source) || { cost: 0, revenue: 0, conversions: 0 };
+      existing.revenue += c.value || 0;
+      existing.conversions += 1;
+      sourceMap.set(source, existing);
+    });
+
+    const roiBySource = Array.from(sourceMap.entries()).map(([source, data]) => ({
+      source,
+      cost: 0, // Difficile à attribuer sans tracking détaillé
+      revenue: data.revenue,
+      roi: data.cost > 0 ? ((data.revenue - data.cost) / data.cost) * 100 : 0,
+      conversions: data.conversions,
+    }));
+
+    return {
+      totalAICost,
+      costByModule,
+      totalRevenue,
+      overallROI: totalAICost > 0 ? ((totalRevenue - totalAICost) / totalAICost) * 100 : 0,
+      costPerLead: leads > 0 ? totalAICost / leads : 0,
+      costPerProspect: prospects > 0 ? totalAICost / prospects : 0,
+      costPerConversion: conversions.length > 0 ? totalAICost / conversions.length : 0,
+      avgRevenuePerConversion: conversions.length > 0 ? totalRevenue / conversions.length : 0,
+      roiBySource,
+      roiTrend: [], // Nécessite calcul temporel plus complexe
+      period: { from: query.from || 'all-time', to: query.to || 'now' },
+    };
+  }
+
+  /**
+   * Dashboard unifié complet
+   */
+  async getUnifiedDashboard(
+    userId: string,
+    query: ProspectingMetricsQueryDto,
+  ): Promise<UnifiedDashboardDto> {
+    const [prospecting, salesFunnel, crmMatching, properties, roi] = await Promise.all([
+      this.getOverview(userId, query),
+      this.getSalesFunnel(userId, query),
+      this.getCRMMatchingPerformance(userId, query),
+      this.getPropertiesPerformance(userId, query),
+      this.getUnifiedROI(userId, query),
+    ]);
+
+    // Générer alertes automatiques
+    const alerts: { type: 'warning' | 'info' | 'success'; message: string; metric: string; value: number }[] = [];
+
+    if (prospecting.conversionRate < 5) {
+      alerts.push({
+        type: 'warning',
+        message: 'Taux de conversion leads très bas',
+        metric: 'conversionRate',
+        value: prospecting.conversionRate,
+      });
+    }
+
+    if (crmMatching.avgScore > 70) {
+      alerts.push({
+        type: 'success',
+        message: 'Excellente qualité de matching',
+        metric: 'avgMatchScore',
+        value: crmMatching.avgScore,
+      });
+    }
+
+    if (salesFunnel.conversionRates.appointmentsToVisits < 50) {
+      alerts.push({
+        type: 'warning',
+        message: 'Taux de no-show élevé sur les RDVs',
+        metric: 'appointmentsToVisits',
+        value: salesFunnel.conversionRates.appointmentsToVisits,
+      });
+    }
+
+    if (roi.overallROI > 100) {
+      alerts.push({
+        type: 'success',
+        message: 'ROI IA positif - investissement rentable',
+        metric: 'overallROI',
+        value: roi.overallROI,
+      });
+    }
+
+    return {
+      prospecting,
+      salesFunnel,
+      crmMatching,
+      properties,
+      roi,
+      alerts,
     };
   }
 }

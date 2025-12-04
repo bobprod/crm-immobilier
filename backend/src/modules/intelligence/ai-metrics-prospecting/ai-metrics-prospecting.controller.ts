@@ -29,6 +29,18 @@ import {
   LocationPerformanceDto,
   BudgetAnalysisDto,
   TopPerformersDto,
+  // Sales / Pipeline
+  SalesFunnelDto,
+  AppointmentsPerformanceDto,
+  ConversionMetricsDto,
+  ProspectsPerformanceDto,
+  // Matching / Properties
+  CRMMatchingPerformanceDto,
+  PropertiesPerformanceDto,
+  TopPropertiesDto,
+  // Unified ROI
+  UnifiedROIDto,
+  UnifiedDashboardDto,
 } from './dto';
 
 @ApiTags('AI Metrics - Prospecting')
@@ -318,5 +330,160 @@ export class AIMetricsProspectingController {
     @Query() query: ProspectingMetricsQueryDto,
   ) {
     return this.metricsService.getGlobalSummary(req.user.userId, query);
+  }
+
+  // ============================================
+  // SALES / PIPELINE ENDPOINTS
+  // ============================================
+
+  @Get('sales/funnel')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Funnel de conversion complet',
+    description:
+      'Retourne le funnel complet : Leads → Prospects → RDVs → Visites → Offres → Contrats avec taux de conversion par étape',
+  })
+  @ApiResponse({ status: 200, type: SalesFunnelDto })
+  async getSalesFunnel(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<SalesFunnelDto> {
+    return this.metricsService.getSalesFunnel(req.user.userId, query);
+  }
+
+  @Get('sales/appointments')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Performance des rendez-vous',
+    description:
+      'Retourne les métriques de RDVs : distribution par type/statut, taux de présence, note moyenne, conversions',
+  })
+  @ApiResponse({ status: 200, type: AppointmentsPerformanceDto })
+  async getAppointmentsPerformance(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<AppointmentsPerformanceDto> {
+    return this.metricsService.getAppointmentsPerformance(req.user.userId, query);
+  }
+
+  @Get('sales/conversions')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Métriques de conversion',
+    description:
+      'Retourne les événements de conversion : total, valeur, distribution par type et source',
+  })
+  @ApiResponse({ status: 200, type: ConversionMetricsDto })
+  async getConversionMetrics(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<ConversionMetricsDto> {
+    return this.metricsService.getConversionMetrics(req.user.userId, query);
+  }
+
+  @Get('sales/prospects')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Performance des prospects',
+    description:
+      'Retourne les métriques du pipeline CRM : distribution par statut/type, scores, taux de conversion',
+  })
+  @ApiResponse({ status: 200, type: ProspectsPerformanceDto })
+  async getProspectsPerformance(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<ProspectsPerformanceDto> {
+    return this.metricsService.getProspectsPerformance(req.user.userId, query);
+  }
+
+  // ============================================
+  // MATCHING / PROPERTIES ENDPOINTS
+  // ============================================
+
+  @Get('crm-matching')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Performance du matching CRM',
+    description:
+      'Retourne les métriques de matching prospects ↔ propriétés : scores, distribution, corrélation score/conversion',
+  })
+  @ApiResponse({ status: 200, type: CRMMatchingPerformanceDto })
+  async getCRMMatchingPerformance(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<CRMMatchingPerformanceDto> {
+    return this.metricsService.getCRMMatchingPerformance(req.user.userId, query);
+  }
+
+  @Get('properties')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Performance des propriétés',
+    description:
+      'Retourne les statistiques des propriétés : distribution par statut/type/catégorie, prix moyens, taux de vente',
+  })
+  @ApiResponse({ status: 200, type: PropertiesPerformanceDto })
+  async getPropertiesPerformance(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<PropertiesPerformanceDto> {
+    return this.metricsService.getPropertiesPerformance(req.user.userId, query);
+  }
+
+  @Get('properties/top')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Top propriétés',
+    description:
+      'Retourne les meilleures propriétés par nombre de matches, score moyen, et récemment vendues/louées',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Nombre de résultats par catégorie (défaut: 10)',
+  })
+  @ApiResponse({ status: 200, type: TopPropertiesDto })
+  async getTopProperties(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+    @Query('limit') limit?: string,
+  ): Promise<TopPropertiesDto> {
+    const limitNumber = limit ? parseInt(limit) : 10;
+    return this.metricsService.getTopProperties(req.user.userId, query, limitNumber);
+  }
+
+  // ============================================
+  // UNIFIED ROI / DASHBOARD ENDPOINTS
+  // ============================================
+
+  @Get('roi')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'ROI unifié multi-modules',
+    description:
+      'Retourne le ROI global de l\'IA : coûts par module, revenus générés, coût par lead/prospect/conversion',
+  })
+  @ApiResponse({ status: 200, type: UnifiedROIDto })
+  async getUnifiedROI(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<UnifiedROIDto> {
+    return this.metricsService.getUnifiedROI(req.user.userId, query);
+  }
+
+  @Get('dashboard')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Dashboard unifié AI Metrics',
+    description:
+      'Retourne un dashboard complet combinant : prospecting overview, sales funnel, CRM matching, properties et ROI avec alertes automatiques',
+  })
+  @ApiResponse({ status: 200, type: UnifiedDashboardDto })
+  async getUnifiedDashboard(
+    @Request() req,
+    @Query() query: ProspectingMetricsQueryDto,
+  ): Promise<UnifiedDashboardDto> {
+    return this.metricsService.getUnifiedDashboard(req.user.userId, query);
   }
 }

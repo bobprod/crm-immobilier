@@ -457,3 +457,375 @@ export class TopPerformersDto {
     efficiencyScore: number;
   }[];
 }
+
+// ============================================
+// SALES / PIPELINE DTOs
+// ============================================
+
+/**
+ * Funnel de conversion complet (Leads → Prospects → RDV → Deals)
+ */
+export class SalesFunnelDto {
+  @ApiProperty({ description: 'Leads générés (prospecting_leads)' })
+  leadsGenerated: number;
+
+  @ApiProperty({ description: 'Leads qualifiés (seriousnessScore >= 60)' })
+  leadsQualified: number;
+
+  @ApiProperty({ description: 'Prospects créés (convertedProspectId not null)' })
+  prospectsCreated: number;
+
+  @ApiProperty({ description: 'Prospects actifs' })
+  prospectsActive: number;
+
+  @ApiProperty({ description: 'RDVs programmés' })
+  appointmentsScheduled: number;
+
+  @ApiProperty({ description: 'RDVs complétés' })
+  appointmentsCompleted: number;
+
+  @ApiProperty({ description: 'Visites effectuées' })
+  visitsCompleted: number;
+
+  @ApiProperty({ description: 'Offres faites' })
+  offersMade: number;
+
+  @ApiProperty({ description: 'Contrats signés' })
+  contractsSigned: number;
+
+  @ApiProperty({ description: 'Taux de conversion par étape (%)' })
+  conversionRates: {
+    leadsToQualified: number;
+    qualifiedToProspects: number;
+    prospectsToAppointments: number;
+    appointmentsToVisits: number;
+    visitsToOffers: number;
+    offersToContracts: number;
+    overallLeadsToContracts: number;
+  };
+
+  @ApiProperty({ description: 'Période' })
+  period: { from: string; to: string };
+}
+
+/**
+ * Performance des rendez-vous
+ */
+export class AppointmentsPerformanceDto {
+  @ApiProperty({ description: 'Total RDVs' })
+  totalAppointments: number;
+
+  @ApiProperty({ description: 'Distribution par type' })
+  byType: {
+    type: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Distribution par statut' })
+  byStatus: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Taux de présence (%)' })
+  attendanceRate: number;
+
+  @ApiProperty({ description: 'Taux de no-show (%)' })
+  noShowRate: number;
+
+  @ApiProperty({ description: 'Note moyenne (0-5)' })
+  avgRating: number;
+
+  @ApiProperty({ description: 'Durée moyenne (minutes)' })
+  avgDurationMinutes: number;
+
+  @ApiProperty({ description: 'RDVs avec conversion' })
+  appointmentsWithConversion: number;
+
+  @ApiProperty({ description: 'Taux de conversion RDV → Deal (%)' })
+  appointmentToConversionRate: number;
+}
+
+/**
+ * Métriques de conversion (conversion_events)
+ */
+export class ConversionMetricsDto {
+  @ApiProperty({ description: 'Total conversions' })
+  totalConversions: number;
+
+  @ApiProperty({ description: 'Valeur totale (TND)' })
+  totalValue: number;
+
+  @ApiProperty({ description: 'Valeur moyenne par conversion' })
+  avgConversionValue: number;
+
+  @ApiProperty({ description: 'Par type d\'événement' })
+  byEventType: {
+    eventType: string;
+    count: number;
+    totalValue: number;
+    avgValue: number;
+  }[];
+
+  @ApiProperty({ description: 'Par source' })
+  bySource: {
+    source: string;
+    count: number;
+    totalValue: number;
+  }[];
+
+  @ApiProperty({ description: 'Temps moyen de conversion (jours)' })
+  avgTimeToConversionDays: number;
+}
+
+/**
+ * Performance des prospects (pipeline CRM)
+ */
+export class ProspectsPerformanceDto {
+  @ApiProperty({ description: 'Total prospects' })
+  totalProspects: number;
+
+  @ApiProperty({ description: 'Distribution par statut' })
+  byStatus: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Distribution par type' })
+  byType: {
+    type: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Score moyen des prospects' })
+  avgScore: number;
+
+  @ApiProperty({ description: 'Prospects avec matches' })
+  prospectsWithMatches: number;
+
+  @ApiProperty({ description: 'Prospects avec RDVs' })
+  prospectsWithAppointments: number;
+
+  @ApiProperty({ description: 'Prospects convertis ce mois' })
+  convertedThisMonth: number;
+
+  @ApiProperty({ description: 'Taux de conversion global (%)' })
+  overallConversionRate: number;
+}
+
+// ============================================
+// MATCHING / PROPERTIES DTOs
+// ============================================
+
+/**
+ * Performance du matching (table matches - prospects ↔ properties)
+ */
+export class CRMMatchingPerformanceDto {
+  @ApiProperty({ description: 'Total matches CRM' })
+  totalMatches: number;
+
+  @ApiProperty({ description: 'Matches excellents (score >= 80)' })
+  excellentMatches: number;
+
+  @ApiProperty({ description: 'Bons matches (score 60-79)' })
+  goodMatches: number;
+
+  @ApiProperty({ description: 'Matches moyens (score 40-59)' })
+  averageMatches: number;
+
+  @ApiProperty({ description: 'Matches faibles (score < 40)' })
+  poorMatches: number;
+
+  @ApiProperty({ description: 'Score moyen' })
+  avgScore: number;
+
+  @ApiProperty({ description: 'Distribution par statut' })
+  byStatus: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Taux de conversion matches → visites (%)' })
+  matchToVisitRate: number;
+
+  @ApiProperty({ description: 'Corrélation score/conversion' })
+  scoreConversionCorrelation: {
+    scoreRange: string;
+    matches: number;
+    conversions: number;
+    conversionRate: number;
+  }[];
+}
+
+/**
+ * Performance des propriétés
+ */
+export class PropertiesPerformanceDto {
+  @ApiProperty({ description: 'Total propriétés' })
+  totalProperties: number;
+
+  @ApiProperty({ description: 'Distribution par statut' })
+  byStatus: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+
+  @ApiProperty({ description: 'Distribution par type' })
+  byType: {
+    type: string;
+    count: number;
+    avgPrice: number;
+  }[];
+
+  @ApiProperty({ description: 'Distribution par catégorie (vente/location)' })
+  byCategory: {
+    category: string;
+    count: number;
+    totalValue: number;
+  }[];
+
+  @ApiProperty({ description: 'Prix moyen' })
+  avgPrice: number;
+
+  @ApiProperty({ description: 'Propriétés avec matches' })
+  propertiesWithMatches: number;
+
+  @ApiProperty({ description: 'Propriétés en vedette' })
+  featuredProperties: number;
+
+  @ApiProperty({ description: 'Temps moyen sur marché (jours)' })
+  avgDaysOnMarket: number;
+
+  @ApiProperty({ description: 'Taux de vente/location (%)' })
+  soldRentedRate: number;
+}
+
+/**
+ * Top propriétés performantes
+ */
+export class TopPropertiesDto {
+  @ApiProperty({ description: 'Propriétés avec le plus de matches' })
+  byMatchCount: {
+    id: string;
+    title: string;
+    type: string;
+    city: string;
+    price: number;
+    matchCount: number;
+    avgMatchScore: number;
+  }[];
+
+  @ApiProperty({ description: 'Propriétés avec les meilleurs scores de match' })
+  byMatchScore: {
+    id: string;
+    title: string;
+    type: string;
+    city: string;
+    price: number;
+    avgMatchScore: number;
+    matchCount: number;
+  }[];
+
+  @ApiProperty({ description: 'Propriétés récemment vendues/louées' })
+  recentlySold: {
+    id: string;
+    title: string;
+    type: string;
+    city: string;
+    price: number;
+    soldDate: string;
+    daysOnMarket: number;
+  }[];
+}
+
+// ============================================
+// UNIFIED ROI DTOs
+// ============================================
+
+/**
+ * ROI unifié multi-modules
+ */
+export class UnifiedROIDto {
+  @ApiProperty({ description: 'Coûts IA totaux' })
+  totalAICost: number;
+
+  @ApiProperty({ description: 'Coûts par module' })
+  costByModule: {
+    prospecting: number;
+    matching: number;
+    validation: number;
+    other: number;
+  };
+
+  @ApiProperty({ description: 'Revenus générés' })
+  totalRevenue: number;
+
+  @ApiProperty({ description: 'ROI global (%)' })
+  overallROI: number;
+
+  @ApiProperty({ description: 'Coût par lead' })
+  costPerLead: number;
+
+  @ApiProperty({ description: 'Coût par prospect' })
+  costPerProspect: number;
+
+  @ApiProperty({ description: 'Coût par conversion' })
+  costPerConversion: number;
+
+  @ApiProperty({ description: 'Valeur moyenne par conversion' })
+  avgRevenuePerConversion: number;
+
+  @ApiProperty({ description: 'ROI par source' })
+  roiBySource: {
+    source: string;
+    cost: number;
+    revenue: number;
+    roi: number;
+    conversions: number;
+  }[];
+
+  @ApiProperty({ description: 'Tendance ROI (derniers 30 jours)' })
+  roiTrend: {
+    date: string;
+    cost: number;
+    revenue: number;
+    roi: number;
+  }[];
+
+  @ApiProperty({ description: 'Période' })
+  period: { from: string; to: string };
+}
+
+/**
+ * Dashboard unifié AI Metrics
+ */
+export class UnifiedDashboardDto {
+  @ApiProperty({ description: 'Vue d\'ensemble prospecting' })
+  prospecting: ProspectingOverviewDto;
+
+  @ApiProperty({ description: 'Funnel de vente' })
+  salesFunnel: SalesFunnelDto;
+
+  @ApiProperty({ description: 'Performance matching CRM' })
+  crmMatching: CRMMatchingPerformanceDto;
+
+  @ApiProperty({ description: 'Performance propriétés' })
+  properties: PropertiesPerformanceDto;
+
+  @ApiProperty({ description: 'ROI unifié' })
+  roi: UnifiedROIDto;
+
+  @ApiProperty({ description: 'Alertes et recommandations' })
+  alerts: {
+    type: 'warning' | 'info' | 'success';
+    message: string;
+    metric: string;
+    value: number;
+  }[];
+}
