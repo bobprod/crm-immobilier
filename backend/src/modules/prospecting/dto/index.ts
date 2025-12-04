@@ -32,19 +32,53 @@ export class CreateCampaignDto {
 
 /**
  * DTO pour configuration du funnel
+ * Flexible DTO that accepts both structured funnel config and simple scraping config
  */
 export class FunnelConfigDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Location for search (city, zone, etc.)' })
+  @IsOptional()
   @IsString()
-  location: string;
+  location?: string;
 
-  @ApiProperty({ type: [String] })
+  @ApiPropertyOptional({ description: 'Multiple locations for search' })
+  @IsOptional()
   @IsArray()
-  propertyType: string[];
+  locations?: string[];
 
-  @ApiProperty({ type: [String] })
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
-  targetType: string[];
+  propertyType?: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'Target types: requete, mandat' })
+  @IsOptional()
+  @IsArray()
+  targetType?: string[];
+
+  @ApiPropertyOptional({ description: 'Lead type: requete, mandat, inconnu' })
+  @IsOptional()
+  @IsString()
+  leadType?: string;
+
+  @ApiPropertyOptional({ description: 'Search query text' })
+  @IsOptional()
+  @IsString()
+  query?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Search keywords' })
+  @IsOptional()
+  @IsArray()
+  keywords?: string[];
+
+  @ApiPropertyOptional({ description: 'Maximum number of results' })
+  @IsOptional()
+  @IsNumber()
+  maxResults?: number;
+
+  @ApiPropertyOptional({ description: 'Additional filters' })
+  @IsOptional()
+  @IsObject()
+  filters?: Record<string, any>;
 
   @ApiPropertyOptional()
   @IsOptional()

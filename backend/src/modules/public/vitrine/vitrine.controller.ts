@@ -76,6 +76,14 @@ export class VitrineController {
     return this.vitrineService.getAnalytics(req.user.userId, period);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('leads')
+  @ApiOperation({ summary: 'Get leads captured via vitrine' })
+  async getVitrineLeads(@Request() req) {
+    return this.vitrineService.getVitrineLeads(req.user.userId);
+  }
+
   // ============================================
   // ROUTES PUBLIQUES (Sans authentification)
   // ============================================

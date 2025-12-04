@@ -84,7 +84,7 @@ export interface AISettings {
   defaultProvider: string;
   openaiApiKey?: string;
   geminiApiKey?: string;
-  claudeApiKey?: string;
+  anthropicApiKey?: string; // Backend uses 'anthropicApiKey', not 'claudeApiKey'
   deepseekApiKey?: string;
   openrouterApiKey?: string;
   defaultModel?: string;

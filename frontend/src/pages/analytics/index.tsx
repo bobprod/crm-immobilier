@@ -33,14 +33,33 @@ export default function AnalyticsPage() {
     try {
       setError(null);
       const response = await apiClient.get('/analytics/dashboard');
-      setAnalytics(response.data || {
-        totalProspects: 0,
-        totalProperties: 0,
-        totalRevenue: 0,
-        conversionRate: 0,
-        prospectsByStatus: {},
-        propertiesByType: {}
-      });
+      const data = response.data;
+
+      // Map backend nested structure to frontend flat structure
+      const mappedAnalytics: Analytics = {
+        totalProspects: data?.prospects?.total || 0,
+        totalProperties: data?.properties?.total || 0,
+        totalRevenue: data?.properties?.avgPrice?._avg?.price || 0,
+        conversionRate: data?.prospects?.conversionRate || 0,
+        // Convert byStatus array [{status, count}] to Record<string, number>
+        prospectsByStatus: (data?.prospects?.byStatus || []).reduce(
+          (acc: Record<string, number>, item: { status: string; count: number }) => {
+            acc[item.status] = item.count;
+            return acc;
+          },
+          {}
+        ),
+        // Convert byType array [{type, count}] to Record<string, number>
+        propertiesByType: (data?.properties?.byType || []).reduce(
+          (acc: Record<string, number>, item: { type: string; count: number }) => {
+            acc[item.type] = item.count;
+            return acc;
+          },
+          {}
+        ),
+      };
+
+      setAnalytics(mappedAnalytics);
     } catch (error) {
       console.error('Erreur chargement analytics:', error);
       setError('Impossible de charger les analytics. Les données par défaut sont affichées.');

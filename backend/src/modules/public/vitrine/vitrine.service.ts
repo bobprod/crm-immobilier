@@ -198,6 +198,20 @@ export class VitrineService {
     };
   }
 
+  /**
+   * Leads capturés via la vitrine publique
+   */
+  async getVitrineLeads(userId: string) {
+    return this.prisma.prospects.findMany({
+      where: {
+        userId,
+        source: { in: ['vitrine', 'website', 'public_form'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+  }
+
   private getStartDate(period?: string): Date {
     const now = new Date();
     switch (period) {
