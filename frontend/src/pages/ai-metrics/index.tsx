@@ -1,296 +1,385 @@
 import { useState, useEffect } from 'react';
-import MainLayout from '@/components/layout/MainLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import {
+  Brain,
+  DollarSign,
+  Zap,
   TrendingUp,
-  Assessment,
-  Psychology,
-  Speed,
-  Timeline,
-} from '@mui/icons-material';
+  BarChart3,
+  History,
+  Target,
+  Loader2,
+  RefreshCw
+} from 'lucide-react';
+import { apiClient } from '@/shared/utils/api-client-backend';
 
-interface AiMetrics {
-  totalPredictions: number;
-  accuracyRate: number;
-  averageConfidence: number;
-  totalModelsUsed: number;
-  predictionsByModel: Array<{
-    model: string;
-    count: number;
-    accuracy: number;
-  }>;
-  accuracyTrend: Array<{
-    date: string;
-    accuracy: number;
-  }>;
-  predictionDistribution: Array<{
-    category: string;
-    count: number;
-  }>;
-  performanceMetrics: {
-    avgResponseTime: number;
-    successRate: number;
-    errorRate: number;
-  };
+// Types alignés avec le backend
+interface GlobalStats {
+  totalRequests: number;
+  totalTokens: number;
+  totalCost: number;
+  totalConversions: number;
+  byProvider: ProviderStats[];
+  byModel: ModelStats[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+interface ProviderStats {
+  provider: string;
+  requests: number;
+  tokens: number;
+  cost: number;
+}
+
+interface ModelStats {
+  model: string;
+  requests: number;
+  tokens: number;
+  cost: number;
+}
+
+interface ROIData {
+  totalCost: number;
+  conversions: number;
+  roi: number;
+  avgCostPerConversion: number;
+}
+
+interface HistoryEntry {
+  date: string;
+  requests: number;
+  tokens: number;
+  cost: number;
+}
+
+interface Conversion {
+  id: string;
+  eventType: string;
+  eventName?: string;
+  value?: number;
+  source?: string;
+  timestamp: string;
+}
 
 export default function AiMetricsDashboard() {
-  const [metrics, setMetrics] = useState<AiMetrics | null>(null);
+  const [stats, setStats] = useState<GlobalStats | null>(null);
+  const [roi, setRoi] = useState<ROIData | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [conversions, setConversions] = useState<Conversion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('7d');
+  const [days, setDays] = useState(30);
 
   useEffect(() => {
-    loadMetrics();
-  }, [timeRange]);
+    loadAllData();
+  }, [days]);
 
-  const loadMetrics = async () => {
+  const loadAllData = async () => {
     try {
       setLoading(true);
-      // TODO: Remplacer par l'appel API réel
-      const mockData: AiMetrics = {
-        totalPredictions: 1547,
-        accuracyRate: 87.5,
-        averageConfidence: 0.82,
-        totalModelsUsed: 4,
-        predictionsByModel: [
-          { model: 'Conversion Predictor', count: 654, accuracy: 89.2 },
-          { model: 'Lead Scorer', count: 432, accuracy: 85.1 },
-          { model: 'Churn Predictor', count: 289, accuracy: 88.7 },
-          { model: 'Price Estimator', count: 172, accuracy: 86.3 },
-        ],
-        accuracyTrend: [
-          { date: '2024-01', accuracy: 82 },
-          { date: '2024-02', accuracy: 84 },
-          { date: '2024-03', accuracy: 85 },
-          { date: '2024-04', accuracy: 86 },
-          { date: '2024-05', accuracy: 87 },
-          { date: '2024-06', accuracy: 87.5 },
-        ],
-        predictionDistribution: [
-          { category: 'Haute Confiance', count: 892 },
-          { category: 'Moyenne Confiance', count: 456 },
-          { category: 'Faible Confiance', count: 199 },
-        ],
-        performanceMetrics: {
-          avgResponseTime: 245,
-          successRate: 98.2,
-          errorRate: 1.8,
-        },
-      };
-      setMetrics(mockData);
       setError(null);
-    } catch (err) {
-      setError('Erreur lors du chargement des métriques IA');
-      console.error(err);
+
+      const [statsRes, roiRes, historyRes, conversionsRes] = await Promise.all([
+        apiClient.get('/ai-metrics/stats'),
+        apiClient.get('/ai-metrics/roi'),
+        apiClient.get(`/ai-metrics/history?days=${days}`),
+        apiClient.get('/ai-metrics/conversions?limit=10'),
+      ]);
+
+      setStats(statsRes.data);
+      setRoi(roiRes.data);
+      setHistory(historyRes.data || []);
+      setConversions(conversionsRes.data || []);
+    } catch (err: any) {
+      console.error('Erreur chargement métriques IA:', err);
+      setError('Impossible de charger les métriques IA');
     } finally {
       setLoading(false);
     }
   };
 
+  const formatCost = (cost: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 4,
+    }).format(cost);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('fr-FR').format(num);
+  };
+
   if (loading) {
     return (
-      <MainLayout>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-          <CircularProgress />
-        </Box>
-      </MainLayout>
-    );
-  }
-
-  if (error || !metrics) {
-    return (
-      <MainLayout>
-        <Alert severity="error">{error || 'Données indisponibles'}</Alert>
-      </MainLayout>
+      <div className="container mx-auto py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
-      <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4">
-            <Psychology sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Tableau de Bord IA
-          </Typography>
-          <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Période</InputLabel>
-            <Select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              label="Période"
-            >
-              <MenuItem value="24h">Dernières 24h</MenuItem>
-              <MenuItem value="7d">7 derniers jours</MenuItem>
-              <MenuItem value="30d">30 derniers jours</MenuItem>
-              <MenuItem value="90d">90 derniers jours</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Brain className="h-8 w-8" />
+            Métriques IA
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Suivi des coûts et performances de l'intelligence artificielle
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="border rounded-md px-3 py-2"
+          >
+            <option value={7}>7 derniers jours</option>
+            <option value={30}>30 derniers jours</option>
+            <option value={90}>90 derniers jours</option>
+          </select>
+          <Button onClick={loadAllData} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
+      </div>
 
-        {/* KPI Cards */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" variant="body2">Prédictions Totales</Typography>
-                    <Typography variant="h4">{metrics.totalPredictions}</Typography>
-                  </Box>
-                  <Assessment sx={{ fontSize: 40, color: 'primary.main' }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <Button onClick={loadAllData} className="mt-2" variant="outline" size="sm">
+            Réessayer
+          </Button>
+        </div>
+      )}
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" variant="body2">Taux de Précision</Typography>
-                    <Typography variant="h4" color="success.main">{metrics.accuracyRate}%</Typography>
-                  </Box>
-                  <TrendingUp sx={{ fontSize: 40, color: 'success.main' }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Zap className="h-4 w-4 text-blue-500" />
+              Total Requêtes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatNumber(stats?.totalRequests || 0)}</div>
+            <p className="text-xs text-gray-500 mt-1">Appels API LLM</p>
+          </CardContent>
+        </Card>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" variant="body2">Confiance Moyenne</Typography>
-                    <Typography variant="h4">{(metrics.averageConfidence * 100).toFixed(1)}%</Typography>
-                  </Box>
-                  <Psychology sx={{ fontSize: 40, color: 'info.main' }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-purple-500" />
+              Total Tokens
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatNumber(stats?.totalTokens || 0)}</div>
+            <p className="text-xs text-gray-500 mt-1">Tokens consommés</p>
+          </CardContent>
+        </Card>
 
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Typography color="text.secondary" variant="body2">Temps de Réponse</Typography>
-                    <Typography variant="h4">{metrics.performanceMetrics.avgResponseTime}ms</Typography>
-                  </Box>
-                  <Speed sx={{ fontSize: 40, color: 'warning.main' }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-500" />
+              Coût Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatCost(stats?.totalCost || 0)}</div>
+            <p className="text-xs text-gray-500 mt-1">Dépenses API</p>
+          </CardContent>
+        </Card>
 
-        {/* Charts */}
-        <Grid container spacing={3}>
-          {/* Accuracy Trend */}
-          <Grid item xs={12} md={8}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  <Timeline sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Évolution de la Précision
-                </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={metrics.accuracyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={[75, 95]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="accuracy" stroke="#8884d8" strokeWidth={2} name="Précision (%)" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Grid>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Target className="h-4 w-4 text-orange-500" />
+              Conversions IA
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatNumber(roi?.conversions || 0)}</div>
+            <p className="text-xs text-gray-500 mt-1">Attribuées à l'IA</p>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Prediction Distribution */}
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Distribution des Prédictions</Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={metrics.predictionDistribution}
-                      dataKey="count"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label
-                    >
-                      {metrics.predictionDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Grid>
+      {/* ROI Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Retour sur Investissement (ROI)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Coût Total</p>
+              <p className="text-2xl font-bold text-red-600">{formatCost(roi?.totalCost || 0)}</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Coût par Conversion</p>
+              <p className="text-2xl font-bold text-orange-600">{formatCost(roi?.avgCostPerConversion || 0)}</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">ROI</p>
+              <p className="text-2xl font-bold text-green-600">{(roi?.roi || 0).toFixed(2)}x</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Model Performance */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Performance par Modèle IA</Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={metrics.predictionsByModel}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="model" />
-                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="count" fill="#8884d8" name="Nombre de Prédictions" />
-                    <Bar yAxisId="right" dataKey="accuracy" fill="#82ca9d" name="Précision (%)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
-    </MainLayout>
+      {/* Usage by Provider & Model */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* By Provider */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Usage par Provider</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stats?.byProvider && stats.byProvider.length > 0 ? (
+              <div className="space-y-4">
+                {stats.byProvider.map((provider) => (
+                  <div key={provider.provider} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium capitalize">{provider.provider}</p>
+                      <p className="text-sm text-gray-500">{formatNumber(provider.requests)} requêtes</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{formatCost(provider.cost)}</p>
+                      <p className="text-sm text-gray-500">{formatNumber(provider.tokens)} tokens</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">Aucune donnée disponible</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* By Model */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Usage par Modèle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stats?.byModel && stats.byModel.length > 0 ? (
+              <div className="space-y-4">
+                {stats.byModel.map((model) => (
+                  <div key={model.model} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{model.model}</p>
+                      <p className="text-sm text-gray-500">{formatNumber(model.requests)} requêtes</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{formatCost(model.cost)}</p>
+                      <p className="text-sm text-gray-500">{formatNumber(model.tokens)} tokens</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">Aucune donnée disponible</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Historique d'Utilisation ({days} jours)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {history.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-3">Date</th>
+                    <th className="text-right py-2 px-3">Requêtes</th>
+                    <th className="text-right py-2 px-3">Tokens</th>
+                    <th className="text-right py-2 px-3">Coût</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.slice(-10).reverse().map((entry) => (
+                    <tr key={entry.date} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-3">{new Date(entry.date).toLocaleDateString('fr-FR')}</td>
+                      <td className="text-right py-2 px-3">{formatNumber(entry.requests)}</td>
+                      <td className="text-right py-2 px-3">{formatNumber(entry.tokens)}</td>
+                      <td className="text-right py-2 px-3">{formatCost(entry.cost)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">Aucun historique disponible</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Conversions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Conversions Récentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {conversions.length > 0 ? (
+            <div className="space-y-3">
+              {conversions.map((conversion) => (
+                <div key={conversion.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{conversion.eventName || conversion.eventType}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(conversion.timestamp).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {conversion.value && (
+                      <p className="font-bold text-green-600">
+                        {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'TND' }).format(conversion.value)}
+                      </p>
+                    )}
+                    {conversion.source && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        {conversion.source}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">Aucune conversion enregistrée</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
