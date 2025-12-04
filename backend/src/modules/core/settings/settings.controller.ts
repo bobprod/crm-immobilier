@@ -22,6 +22,13 @@ export class SettingsController {
     return this.settingsService.getAllSettings(req.user.userId);
   }
 
+  // Route spécifique AVANT les routes paramétrées pour éviter les conflits
+  @Get('pica-ai/config')
+  @ApiOperation({ summary: 'Obtenir la configuration Pica AI complète' })
+  getPicaAIConfig(@Request() req) {
+    return this.settingsService.getPicaAIConfig(req.user.userId);
+  }
+
   @Get(':section')
   @ApiOperation({ summary: "Obtenir les paramètres d'une section" })
   getSectionSettings(@Request() req, @Param('section') section: string) {
@@ -81,11 +88,5 @@ export class SettingsController {
   @ApiResponse({ status: 200, type: TestConnectionResponseDto })
   testConnection(@Request() req, @Param('section') section: string) {
     return this.settingsService.testConnection(req.user.userId, section);
-  }
-
-  @Get('pica-ai/config')
-  @ApiOperation({ summary: 'Obtenir la configuration Pica AI complète' })
-  getPicaAIConfig(@Request() req) {
-    return this.settingsService.getPicaAIConfig(req.user.userId);
   }
 }

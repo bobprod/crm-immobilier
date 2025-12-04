@@ -106,12 +106,18 @@ export default function IntegrationsPage() {
   const loadConfig = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/settings/integrations');
-      if (response.data) {
+      const response = await apiClient.get('/integrations');
+      if (response.data && Array.isArray(response.data)) {
+        // Backend returns array of integrations
+        const integrationsMap = response.data.reduce((acc: Record<string, any>, int: any) => {
+          acc[int.type] = int;
+          return acc;
+        }, {});
         setIntegrations(prev => prev.map(int => ({
           ...int,
-          ...(response.data[int.id] || {}),
-          config: { ...int.config, ...(response.data[int.id]?.config || {}) }
+          enabled: integrationsMap[int.id]?.isActive || false,
+          connected: !!integrationsMap[int.id],
+          config: { ...int.config, ...(integrationsMap[int.id]?.config || {}) }
         })));
       }
     } catch (error) {
@@ -124,11 +130,17 @@ export default function IntegrationsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const configData = integrations.reduce((acc, int) => ({
-        ...acc,
-        [int.id]: { enabled: int.enabled, config: int.config }
-      }), {});
-      await apiClient.post('/settings/integrations/bulk', { settings: configData });
+      // Save each integration individually using the correct backend endpoint
+      for (const integration of integrations) {
+        if (integration.enabled || integration.connected) {
+          await apiClient.post('/integrations', {
+            type: integration.id,
+            apiKey: integration.config.apiKey || integration.config.applicationPassword || '',
+            config: integration.config,
+            isActive: integration.enabled
+          });
+        }
+      }
       alert('Configuration sauvegardée !');
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
@@ -142,10 +154,10 @@ export default function IntegrationsPage() {
     try {
       setTestingId(integrationId);
       setTestResults(prev => ({ ...prev, [integrationId]: undefined as any }));
-      const response = await apiClient.post(`/settings/integrations/test`, { integration: integrationId });
+      const response = await apiClient.post(`/integrations/${integrationId}/test`);
       setTestResults(prev => ({
         ...prev,
-        [integrationId]: { success: response.data.success, message: response.data.message }
+        [integrationId]: { success: response.data.success, message: response.data.message || 'Connexion réussie' }
       }));
     } catch (error: any) {
       setTestResults(prev => ({

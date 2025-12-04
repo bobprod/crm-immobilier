@@ -54,10 +54,32 @@ export default function ScrapingConfigPage() {
   const loadConfig = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/settings/scraping');
-      if (response.data) {
-        setConfig(prev => ({ ...prev, ...response.data }));
+      // Load each provider's config from their respective settings sections
+      const providerIds = ['pica', 'serpapi', 'scrapingbee', 'browserless'];
+      const configs: Partial<ScrapingConfig> = {};
+
+      for (const providerId of providerIds) {
+        try {
+          const response = await apiClient.get(`/settings/${providerId}`);
+          if (response.data && Array.isArray(response.data)) {
+            // Convert settings array to config object
+            const providerConfig: Partial<ApiConfig> = { enabled: false, apiKey: '' };
+            response.data.forEach((setting: { key: string; value: string }) => {
+              if (setting.key === 'enabled') providerConfig.enabled = setting.value === 'true';
+              else if (setting.key === 'apiKey') providerConfig.apiKey = setting.value || '';
+              else if (setting.key === 'endpoint') providerConfig.endpoint = setting.value || '';
+              else if (setting.key === 'rateLimit') providerConfig.rateLimit = parseInt(setting.value) || 100;
+            });
+            const configKey = providerId === 'serpapi' ? 'serpApi' :
+                             providerId === 'scrapingbee' ? 'scrapingBee' : providerId;
+            configs[configKey as keyof ScrapingConfig] = providerConfig as ApiConfig;
+          }
+        } catch {
+          // Provider not configured yet, use defaults
+        }
       }
+
+      setConfig(prev => ({ ...prev, ...configs }));
     } catch (error) {
       console.error('Erreur chargement config scraping:', error);
     } finally {
@@ -68,7 +90,28 @@ export default function ScrapingConfigPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await apiClient.post('/settings/scraping/bulk', { settings: config });
+      // Save each provider's config to their respective settings section
+      const providerMap: Record<string, string> = {
+        pica: 'pica',
+        serpApi: 'serpapi',
+        scrapingBee: 'scrapingbee',
+        browserless: 'browserless'
+      };
+
+      for (const [configKey, sectionName] of Object.entries(providerMap)) {
+        const providerConfig = config[configKey as keyof ScrapingConfig];
+        if (providerConfig) {
+          // Use bulk update for each section
+          await apiClient.post(`/settings/${sectionName}/bulk`, {
+            settings: [
+              { key: 'enabled', value: String(providerConfig.enabled) },
+              { key: 'apiKey', value: providerConfig.apiKey, encrypted: true },
+              { key: 'rateLimit', value: String(providerConfig.rateLimit || 100) },
+              ...(providerConfig.endpoint ? [{ key: 'endpoint', value: providerConfig.endpoint }] : [])
+            ]
+          });
+        }
+      }
       alert('Configuration sauvegardée !');
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
@@ -82,10 +125,18 @@ export default function ScrapingConfigPage() {
     try {
       setTestingProvider(provider);
       setTestResults(prev => ({ ...prev, [provider]: undefined as any }));
-      const response = await apiClient.post(`/settings/scraping/test`, { provider });
+      // Map frontend provider id to backend section name
+      const sectionMap: Record<string, string> = {
+        pica: 'pica',
+        serpApi: 'serpapi',
+        scrapingBee: 'scrapingbee',
+        browserless: 'browserless'
+      };
+      const sectionName = sectionMap[provider] || provider.toLowerCase();
+      const response = await apiClient.post(`/settings/${sectionName}/test`);
       setTestResults(prev => ({
         ...prev,
-        [provider]: { success: response.data.success, message: response.data.message }
+        [provider]: { success: response.data.success, message: response.data.message || 'Connexion réussie' }
       }));
     } catch (error: any) {
       setTestResults(prev => ({
