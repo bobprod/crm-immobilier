@@ -98,7 +98,7 @@ export interface TopPerformers {
 }
 
 export interface Alert {
-    type: 'warning' | 'info' | 'error';
+    type: 'warning' | 'info' | 'error' | 'success';
     message: string;
     action: string;
 }

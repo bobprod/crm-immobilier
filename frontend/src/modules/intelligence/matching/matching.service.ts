@@ -37,7 +37,8 @@ const matchingService = {
     },
 
     performAction: async (id: string, action: string) => {
-        const response = await apiClient.post(`/matching/${id}/action`, { action });
+        // Backend expects 'type' field, not 'action'
+        const response = await apiClient.post(`/matching/${id}/action`, { type: action });
         return response.data;
     },
 

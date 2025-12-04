@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
-import { AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/router';
 import type { DashboardAlerts } from '../types/dashboard.types';
 
@@ -16,6 +16,8 @@ export function AlertsWidget({ alerts: alertsData }: AlertsWidgetProps) {
                 return <AlertTriangle className="h-5 w-5" />;
             case 'error':
                 return <AlertCircle className="h-5 w-5" />;
+            case 'success':
+                return <CheckCircle className="h-5 w-5" />;
             case 'info':
             default:
                 return <Info className="h-5 w-5" />;
@@ -28,6 +30,8 @@ export function AlertsWidget({ alerts: alertsData }: AlertsWidgetProps) {
                 return 'bg-yellow-50 border-yellow-200 text-yellow-800';
             case 'error':
                 return 'bg-red-50 border-red-200 text-red-800';
+            case 'success':
+                return 'bg-green-50 border-green-200 text-green-800';
             case 'info':
             default:
                 return 'bg-blue-50 border-blue-200 text-blue-800';

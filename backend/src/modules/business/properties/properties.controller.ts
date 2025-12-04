@@ -26,6 +26,10 @@ import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 export class PropertiesController {
   constructor(private propertiesService: PropertiesService) {}
 
+  // ============================================
+  // ROUTES SANS PARAMETRES
+  // ============================================
+
   @Post()
   @ApiOperation({ summary: 'Create property' })
   @ApiBody({ type: CreatePropertyDto })
@@ -39,10 +43,53 @@ export class PropertiesController {
     return this.propertiesService.findAll(req.user.userId, filters);
   }
 
+  // ============================================
+  // ROUTES SPECIFIQUES (AVANT les routes parametrees :id)
+  // ============================================
+
   @Get('featured')
   @ApiOperation({ summary: 'Get featured properties' })
   getFeatured(@Request() req) {
     return this.propertiesService.getFeatured(req.user.userId);
+  }
+
+  @Get('nearby')
+  @ApiOperation({ summary: 'Get nearby properties' })
+  getNearby(
+    @Request() req,
+    @Query('latitude') latitude: number,
+    @Query('longitude') longitude: number,
+    @Query('radiusKm') radiusKm?: number,
+  ) {
+    return this.propertiesService.getNearby(req.user.userId, latitude, longitude, radiusKm || 5);
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get properties statistics' })
+  getStats(@Request() req) {
+    return this.propertiesService.getStats(req.user.userId);
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: 'Export properties to CSV' })
+  async exportCSV(@Request() req, @Query() filters: any) {
+    return this.propertiesService.exportCSV(req.user.userId, filters);
+  }
+
+  @Post('search')
+  @ApiOperation({ summary: 'Advanced property search' })
+  search(@Request() req, @Body() criteria: any) {
+    return this.propertiesService.search(req.user.userId, criteria);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import properties from CSV' })
+  @UseInterceptors(FilesInterceptor('file', 1))
+  async importCSV(@Request() req, @UploadedFiles() files: Express.Multer.File[]) {
+    if (!files || files.length === 0) {
+      throw new Error('No file uploaded');
+    }
+    return this.propertiesService.importCSV(req.user.userId, files[0]);
   }
 
   @Get('assigned/:userId')
@@ -74,6 +121,10 @@ export class PropertiesController {
   bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
     return this.propertiesService.bulkDelete(body.ids, req.user.userId);
   }
+
+  // ============================================
+  // ROUTES PARAMETREES (APRES les routes specifiques)
+  // ============================================
 
   @Get(':id')
   @ApiOperation({ summary: 'Get property by ID' })
@@ -123,48 +174,9 @@ export class PropertiesController {
     return this.propertiesService.updateStatus(id, req.user.userId, body.status);
   }
 
-  @Post('search')
-  @ApiOperation({ summary: 'Advanced property search' })
-  search(@Request() req, @Body() criteria: any) {
-    return this.propertiesService.search(req.user.userId, criteria);
-  }
-
   @Get(':id/similar')
   @ApiOperation({ summary: 'Get similar properties' })
   getSimilar(@Request() req, @Param('id') id: string, @Query('limit') limit?: number) {
     return this.propertiesService.getSimilar(id, req.user.userId, limit || 5);
-  }
-
-  @Get('nearby')
-  @ApiOperation({ summary: 'Get nearby properties' })
-  getNearby(
-    @Request() req,
-    @Query('latitude') latitude: number,
-    @Query('longitude') longitude: number,
-    @Query('radiusKm') radiusKm?: number,
-  ) {
-    return this.propertiesService.getNearby(req.user.userId, latitude, longitude, radiusKm || 5);
-  }
-
-  @Get('stats')
-  @ApiOperation({ summary: 'Get properties statistics' })
-  getStats(@Request() req) {
-    return this.propertiesService.getStats(req.user.userId);
-  }
-
-  @Get('export')
-  @ApiOperation({ summary: 'Export properties to CSV' })
-  async exportCSV(@Request() req, @Query() filters: any) {
-    return this.propertiesService.exportCSV(req.user.userId, filters);
-  }
-
-  @Post('import')
-  @ApiOperation({ summary: 'Import properties from CSV' })
-  @UseInterceptors(FilesInterceptor('file', 1))
-  async importCSV(@Request() req, @UploadedFiles() files: Express.Multer.File[]) {
-    if (!files || files.length === 0) {
-      throw new Error('No file uploaded');
-    }
-    return this.propertiesService.importCSV(req.user.userId, files[0]);
   }
 }

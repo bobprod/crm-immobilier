@@ -27,7 +27,14 @@ export function MatchingList() {
     };
 
     const handleAction = async (id: string, action: string) => {
-        await matchingService.performAction(id, action);
+        // Backend performAction only supports: 'call', 'email', 'appointment'
+        // 'accept' and 'reject' are status updates, not actions
+        if (action === 'accept' || action === 'reject') {
+            const status = action === 'accept' ? 'accepted' : 'rejected';
+            await matchingService.updateStatus(id, status);
+        } else {
+            await matchingService.performAction(id, action);
+        }
         loadMatches();
     };
 
