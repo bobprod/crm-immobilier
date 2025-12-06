@@ -81,7 +81,7 @@ export function MandateList({ initialLoading, initialError, initialMandates }: M
     const getTypeColor = (type: string) => {
         switch (type) {
             case 'exclusive': return 'bg-purple-100 text-purple-800';
-            case 'semi-exclusive': return 'bg-blue-100 text-blue-800';
+            case 'semi_exclusive': return 'bg-blue-100 text-blue-800';
             case 'simple': return 'bg-gray-100 text-gray-800';
             default: return 'bg-gray-100 text-gray-800';
         }
@@ -90,7 +90,7 @@ export function MandateList({ initialLoading, initialError, initialMandates }: M
     const getCategoryColor = (category: string) => {
         switch (category) {
             case 'sale': return 'bg-green-100 text-green-800';
-            case 'rent': return 'bg-orange-100 text-orange-800';
+            case 'rental': return 'bg-orange-100 text-orange-800';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -186,7 +186,7 @@ export function MandateList({ initialLoading, initialError, initialMandates }: M
                                         <TableCell>
                                             <Badge className={getTypeColor(mandate.type)} variant="secondary">
                                                 {mandate.type === 'exclusive' ? 'Exclusif' :
-                                                 mandate.type === 'semi-exclusive' ? 'Semi-exclusif' : 'Simple'}
+                                                 mandate.type === 'semi_exclusive' ? 'Semi-exclusif' : 'Simple'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>

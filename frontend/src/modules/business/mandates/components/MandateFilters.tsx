@@ -71,7 +71,7 @@ export function MandateFilters({ onFilterChange }: MandateFiltersProps) {
                         <SelectContent>
                             <SelectItem value="all">Tous les types</SelectItem>
                             <SelectItem value="exclusive">Exclusif</SelectItem>
-                            <SelectItem value="semi-exclusive">Semi-exclusif</SelectItem>
+                            <SelectItem value="semi_exclusive">Semi-exclusif</SelectItem>
                             <SelectItem value="simple">Simple</SelectItem>
                         </SelectContent>
                     </Select>
@@ -87,7 +87,7 @@ export function MandateFilters({ onFilterChange }: MandateFiltersProps) {
                         <SelectContent>
                             <SelectItem value="all">Toutes catégories</SelectItem>
                             <SelectItem value="sale">Vente</SelectItem>
-                            <SelectItem value="rent">Location</SelectItem>
+                            <SelectItem value="rental">Location</SelectItem>
                         </SelectContent>
                     </Select>
 

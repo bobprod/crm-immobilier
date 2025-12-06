@@ -12,8 +12,8 @@ export interface Mandate {
   id: string;
   userId: string;
   reference: string;
-  type: 'exclusive' | 'simple' | 'semi-exclusive';
-  category: 'sale' | 'rent';
+  type: 'exclusive' | 'simple' | 'semi_exclusive';
+  category: 'sale' | 'rental';
   ownerId: string;
   propertyId?: string;
   startDate: string;
@@ -51,8 +51,8 @@ export interface Mandate {
 
 export interface CreateMandateData {
   reference: string;
-  type: 'exclusive' | 'simple' | 'semi-exclusive';
-  category: 'sale' | 'rent';
+  type: 'exclusive' | 'simple' | 'semi_exclusive';
+  category: 'sale' | 'rental';
   ownerId: string;
   propertyId?: string;
   startDate: string;
