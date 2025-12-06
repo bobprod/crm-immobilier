@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, FileText, TrendingUp, Wallet } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -36,6 +36,9 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     if (path.startsWith('/prospecting')) return 'prospecting';
     if (path.startsWith('/properties')) return 'properties';
     if (path.startsWith('/prospects')) return 'prospects';
+    if (path.startsWith('/mandates')) return 'mandates';
+    if (path.startsWith('/transactions')) return 'transactions';
+    if (path.startsWith('/finance')) return 'finance';
     if (path.startsWith('/matching')) return 'matching';
     if (path.startsWith('/appointments')) return 'appointments';
     if (path.startsWith('/tasks')) return 'tasks';
@@ -64,6 +67,9 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
     { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
     { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
+    { id: 'mandates', label: 'Mandats', icon: FileText, href: '/mandates' },
+    { id: 'transactions', label: 'Transactions', icon: TrendingUp, href: '/transactions' },
+    { id: 'finance', label: 'Finance', icon: Wallet, href: '/finance' },
     { id: 'matching', label: 'Matching', icon: Target, href: '/matching' },
     { id: 'appointments', label: 'Rendez-vous', icon: Calendar, href: '/appointments' },
     { id: 'tasks', label: 'Tâches', icon: CheckSquare, href: '/tasks' },
