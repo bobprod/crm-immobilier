@@ -26,7 +26,47 @@ export class MandatesService {
       throw new NotFoundException('Owner not found');
     }
 
-    return this.db.mandate.create({
+    // 🆕 VALIDATION: Check dates coherence
+    const startDate = new Date(createMandateDto.startDate);
+    const endDate = new Date(createMandateDto.endDate);
+
+    if (endDate <= startDate) {
+      throw new ConflictException('End date must be after start date');
+    }
+
+    // 🆕 VALIDATION: If property specified, validate it
+    if (createMandateDto.propertyId) {
+      const property = await this.db.properties.findFirst({
+        where: { id: createMandateDto.propertyId, userId },
+      });
+
+      if (!property) {
+        throw new NotFoundException('Property not found');
+      }
+
+      // 🆕 VALIDATION: Cannot create mandate on sold/rented property
+      if (property.status === 'sold' || property.status === 'rented') {
+        throw new ConflictException(
+          `Cannot create mandate on a ${property.status} property`,
+        );
+      }
+
+      // 🆕 VALIDATION: Check for active mandate on same property
+      const activeMandate = await this.db.mandate.findFirst({
+        where: {
+          propertyId: createMandateDto.propertyId,
+          status: 'active',
+        },
+      });
+
+      if (activeMandate) {
+        throw new ConflictException(
+          `Property already has an active mandate (${activeMandate.reference})`,
+        );
+      }
+    }
+
+    const mandate = await this.db.mandate.create({
       data: {
         ...createMandateDto,
         userId,
@@ -52,6 +92,20 @@ export class MandatesService {
         },
       },
     });
+
+    // 🆕 AUTO-LINK: Link owner to property if not already linked
+    if (createMandateDto.propertyId && createMandateDto.ownerId) {
+      await this.db.properties.update({
+        where: { id: createMandateDto.propertyId },
+        data: {
+          ownerNewId: createMandateDto.ownerId,
+          status: 'available', // Set to available when active mandate created
+        },
+      });
+      console.log(`✅ Property ${createMandateDto.propertyId} linked to owner ${createMandateDto.ownerId}`);
+    }
+
+    return mandate;
   }
 
   async findAll(userId: string, filters?: {
