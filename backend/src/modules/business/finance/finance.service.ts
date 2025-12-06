@@ -8,10 +8,16 @@ import {
   CreatePaymentDto,
   UpdatePaymentDto,
 } from './dto/finance.dto';
+import { BusinessNotificationHelper } from '../shared/notification.helper';
+import { BusinessActivityLogger } from '../shared/activity-logger.helper';
 
 @Injectable()
 export class FinanceService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationHelper: BusinessNotificationHelper,
+    private readonly activityLogger: BusinessActivityLogger,
+  ) {}
 
   // ========== COMMISSIONS ==========
 
@@ -25,7 +31,7 @@ export class FinanceService {
       throw new NotFoundException('Transaction not found');
     }
 
-    return this.db.commission.create({
+    const commission = await this.db.commission.create({
       data: {
         ...createDto,
         userId,
@@ -48,6 +54,14 @@ export class FinanceService {
         },
       },
     });
+
+    // 🆕 NOTIFICATION: Notify manual commission created
+    await this.notificationHelper.notifyCommissionCreated(userId, commission);
+
+    // 🆕 ACTIVITY LOG: Log manual commission creation
+    await this.activityLogger.logCommissionCreated(userId, commission, false);
+
+    return commission;
   }
 
   async findAllCommissions(userId: string, filters?: {
@@ -162,7 +176,7 @@ export class FinanceService {
       throw new ConflictException('Invoice number already exists');
     }
 
-    return this.db.invoice.create({
+    const invoice = await this.db.invoice.create({
       data: {
         ...createDto,
         userId,
@@ -183,6 +197,11 @@ export class FinanceService {
         },
       },
     });
+
+    // 🆕 ACTIVITY LOG: Log invoice creation
+    await this.activityLogger.logInvoiceCreated(userId, invoice);
+
+    return invoice;
   }
 
   async findAllInvoices(userId: string, filters?: {
@@ -301,13 +320,16 @@ export class FinanceService {
       },
     });
 
+    // 🆕 ACTIVITY LOG: Log payment creation
+    await this.activityLogger.logPaymentCreated(userId, payment);
+
     // Auto-update invoice/commission status if fully paid
     if (payment.invoiceId) {
-      await this.updateInvoicePaymentStatus(payment.invoiceId);
+      await this.updateInvoicePaymentStatus(payment.invoiceId, userId);
     }
 
     if (payment.commissionId) {
-      await this.updateCommissionPaymentStatus(payment.commissionId);
+      await this.updateCommissionPaymentStatus(payment.commissionId, userId);
     }
 
     return payment;
@@ -386,11 +408,11 @@ export class FinanceService {
 
     // Update invoice/commission status after payment deletion
     if (payment.invoiceId) {
-      await this.updateInvoicePaymentStatus(payment.invoiceId);
+      await this.updateInvoicePaymentStatus(payment.invoiceId, userId);
     }
 
     if (payment.commissionId) {
-      await this.updateCommissionPaymentStatus(payment.commissionId);
+      await this.updateCommissionPaymentStatus(payment.commissionId, userId);
     }
 
     return deleted;
@@ -398,7 +420,7 @@ export class FinanceService {
 
   // ========== HELPER METHODS ==========
 
-  private async updateInvoicePaymentStatus(invoiceId: string) {
+  private async updateInvoicePaymentStatus(invoiceId: string, userId: string) {
     const invoice = await this.db.invoice.findUnique({
       where: { id: invoiceId },
       include: {
@@ -410,20 +432,26 @@ export class FinanceService {
 
     const totalPaid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
 
-    let status = invoice.status;
+    const oldStatus = invoice.status;
+    let newStatus = invoice.status;
     if (totalPaid >= invoice.totalAmount) {
-      status = 'paid';
+      newStatus = 'paid';
     } else if (totalPaid > 0) {
-      status = 'partially_paid';
+      newStatus = 'partially_paid';
     }
 
-    await this.db.invoice.update({
-      where: { id: invoiceId },
-      data: { status, paidAt: totalPaid >= invoice.totalAmount ? new Date() : null },
-    });
+    if (oldStatus !== newStatus) {
+      const updated = await this.db.invoice.update({
+        where: { id: invoiceId },
+        data: { status: newStatus, paidAt: totalPaid >= invoice.totalAmount ? new Date() : null },
+      });
+
+      // 🆕 ACTIVITY LOG: Log invoice status change
+      await this.activityLogger.logInvoiceStatusChanged(userId, updated, oldStatus, newStatus);
+    }
   }
 
-  private async updateCommissionPaymentStatus(commissionId: string) {
+  private async updateCommissionPaymentStatus(commissionId: string, userId: string) {
     const commission = await this.db.commission.findUnique({
       where: { id: commissionId },
       include: {
@@ -435,17 +463,23 @@ export class FinanceService {
 
     const totalPaid = commission.payments.reduce((sum, p) => sum + p.amount, 0);
 
-    let status = commission.status;
+    const oldStatus = commission.status;
+    let newStatus = commission.status;
     if (totalPaid >= commission.amount) {
-      status = 'paid';
+      newStatus = 'paid';
     } else if (totalPaid > 0) {
-      status = 'partially_paid';
+      newStatus = 'partially_paid';
     }
 
-    await this.db.commission.update({
-      where: { id: commissionId },
-      data: { status, paidAt: totalPaid >= commission.amount ? new Date() : null },
-    });
+    if (oldStatus !== newStatus) {
+      const updated = await this.db.commission.update({
+        where: { id: commissionId },
+        data: { status: newStatus, paidAt: totalPaid >= commission.amount ? new Date() : null },
+      });
+
+      // 🆕 ACTIVITY LOG: Log commission status change
+      await this.activityLogger.logCommissionStatusChanged(userId, updated, oldStatus, newStatus);
+    }
   }
 
   // ========== STATS ==========

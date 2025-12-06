@@ -2,10 +2,16 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { DatabaseService } from '../../../shared/services/database/database.service';
 import { CreateMandateDto } from './dto/create-mandate.dto';
 import { UpdateMandateDto } from './dto/update-mandate.dto';
+import { BusinessNotificationHelper } from '../shared/notification.helper';
+import { BusinessActivityLogger } from '../shared/activity-logger.helper';
 
 @Injectable()
 export class MandatesService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationHelper: BusinessNotificationHelper,
+    private readonly activityLogger: BusinessActivityLogger,
+  ) {}
 
   async create(userId: string, createMandateDto: CreateMandateDto) {
     // Check if reference already exists
@@ -104,6 +110,12 @@ export class MandatesService {
       });
       console.log(`✅ Property ${createMandateDto.propertyId} linked to owner ${createMandateDto.ownerId}`);
     }
+
+    // 🆕 NOTIFICATION: Notify mandate created
+    await this.notificationHelper.notifyMandateCreated(userId, mandate);
+
+    // 🆕 ACTIVITY LOG: Log mandate creation
+    await this.activityLogger.logMandateCreated(userId, mandate);
 
     return mandate;
   }
@@ -209,9 +221,9 @@ export class MandatesService {
 
   async update(id: string, userId: string, updateMandateDto: UpdateMandateDto) {
     // Check if mandate exists
-    await this.findOne(id, userId);
+    const oldMandate = await this.findOne(id, userId);
 
-    return this.db.mandate.update({
+    const updated = await this.db.mandate.update({
       where: { id },
       data: updateMandateDto,
       include: {
@@ -233,6 +245,18 @@ export class MandatesService {
         },
       },
     });
+
+    // 🆕 ACTIVITY LOG: Log status change if applicable
+    if (updateMandateDto.status && updateMandateDto.status !== oldMandate.status) {
+      await this.activityLogger.logMandateStatusChanged(
+        userId,
+        updated,
+        oldMandate.status,
+        updateMandateDto.status,
+      );
+    }
+
+    return updated;
   }
 
   async remove(id: string, userId: string) {
@@ -254,9 +278,9 @@ export class MandatesService {
   }
 
   async cancel(id: string, userId: string, reason: string) {
-    await this.findOne(id, userId);
+    const mandate = await this.findOne(id, userId);
 
-    return this.db.mandate.update({
+    const updated = await this.db.mandate.update({
       where: { id },
       data: {
         status: 'cancelled',
@@ -264,6 +288,11 @@ export class MandatesService {
         cancellationReason: reason,
       },
     });
+
+    // 🆕 ACTIVITY LOG: Log mandate cancellation
+    await this.activityLogger.logMandateCancelled(userId, updated, reason);
+
+    return updated;
   }
 
   async getStats(userId: string) {
@@ -326,5 +355,44 @@ export class MandatesService {
     }
 
     return expiredMandates;
+  }
+
+  /**
+   * 🆕 Check and notify mandates expiring soon
+   */
+  async checkExpiringMandates(userId: string, daysThreshold: number = 30) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysThreshold);
+
+    const expiringMandates = await this.db.mandate.findMany({
+      where: {
+        userId,
+        status: 'active',
+        endDate: {
+          gte: new Date(),
+          lte: futureDate,
+        },
+      },
+      include: {
+        owner: true,
+        property: true,
+      },
+    });
+
+    // Send notification for each expiring mandate
+    for (const mandate of expiringMandates) {
+      const daysRemaining = Math.ceil(
+        (new Date(mandate.endDate).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      await this.notificationHelper.notifyMandateExpiring(
+        userId,
+        mandate,
+        daysRemaining,
+      );
+    }
+
+    return expiringMandates;
   }
 }

@@ -5,10 +5,16 @@ import {
   UpdateTransactionDto,
   CreateTransactionStepDto,
 } from './dto/transaction.dto';
+import { BusinessNotificationHelper } from '../shared/notification.helper';
+import { BusinessActivityLogger } from '../shared/activity-logger.helper';
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly notificationHelper: BusinessNotificationHelper,
+    private readonly activityLogger: BusinessActivityLogger,
+  ) {}
 
   async create(userId: string, createDto: CreateTransactionDto) {
     // Check if reference already exists
@@ -52,7 +58,7 @@ export class TransactionsService {
       );
     }
 
-    return this.db.transaction.create({
+    const transaction = await this.db.transaction.create({
       data: {
         ...createDto,
         userId,
@@ -85,6 +91,14 @@ export class TransactionsService {
         },
       },
     });
+
+    // 🆕 NOTIFICATION: Notify transaction created
+    await this.notificationHelper.notifyTransactionCreated(userId, transaction);
+
+    // 🆕 ACTIVITY LOG: Log transaction creation
+    await this.activityLogger.logTransactionCreated(userId, transaction);
+
+    return transaction;
   }
 
   async findAll(userId: string, filters?: {
@@ -194,11 +208,33 @@ export class TransactionsService {
     // 🆕 AUTO-SYNC: Update property status based on transaction status
     if (updateDto.status && updateDto.status !== oldTransaction.status) {
       await this.syncPropertyStatus(updated);
+
+      // 🆕 NOTIFICATION: Notify status change
+      await this.notificationHelper.notifyTransactionStatusChanged(
+        userId,
+        updated,
+        oldTransaction.status,
+        updateDto.status,
+      );
+
+      // 🆕 ACTIVITY LOG: Log status change
+      await this.activityLogger.logTransactionStatusChanged(
+        userId,
+        updated,
+        oldTransaction.status,
+        updateDto.status,
+      );
     }
 
     // 🆕 AUTO-CREATE: Create commissions when transaction is finalized
     if (updateDto.status === 'final_deed_signed' && updated.finalPrice) {
       await this.createCommissionsForTransaction(updated);
+
+      // 🆕 NOTIFICATION: Notify transaction completed
+      await this.notificationHelper.notifyTransactionCompleted(userId, updated);
+
+      // 🆕 ACTIVITY LOG: Log transaction completion
+      await this.activityLogger.logTransactionCompleted(userId, updated);
     }
 
     // 🆕 AUTO-UPDATE: Update mandate status
@@ -248,12 +284,17 @@ export class TransactionsService {
   async addStep(transactionId: string, userId: string, stepDto: CreateTransactionStepDto) {
     const transaction = await this.findOne(transactionId, userId);
 
-    return this.db.transactionStep.create({
+    const step = await this.db.transactionStep.create({
       data: {
         ...stepDto,
         transactionId: transaction.id,
       },
     });
+
+    // 🆕 ACTIVITY LOG: Log step added
+    await this.activityLogger.logTransactionStepAdded(userId, transaction, step);
+
+    return step;
   }
 
   async getStats(userId: string) {
@@ -430,9 +471,15 @@ export class TransactionsService {
 
     console.log(`✅ Commission created: ${commissionAmount} ${transaction.currency}`);
 
+    // 🆕 NOTIFICATION: Notify commission created
+    await this.notificationHelper.notifyCommissionCreated(transaction.userId, commission);
+
+    // 🆕 ACTIVITY LOG: Log commission creation (automatic)
+    await this.activityLogger.logCommissionCreated(transaction.userId, commission, true);
+
     // Create exclusivity bonus if applicable
     if (mandate.type === 'exclusive' && mandate.exclusivityBonus) {
-      await this.db.commission.create({
+      const bonusCommission = await this.db.commission.create({
         data: {
           userId: transaction.userId,
           transactionId: transaction.id,
@@ -446,6 +493,12 @@ export class TransactionsService {
       });
 
       console.log(`✅ Exclusivity bonus created: ${mandate.exclusivityBonus} ${transaction.currency}`);
+
+      // 🆕 NOTIFICATION: Notify bonus commission created
+      await this.notificationHelper.notifyCommissionCreated(transaction.userId, bonusCommission);
+
+      // 🆕 ACTIVITY LOG: Log bonus commission creation (automatic)
+      await this.activityLogger.logCommissionCreated(transaction.userId, bonusCommission, true);
     }
 
     return commission;
