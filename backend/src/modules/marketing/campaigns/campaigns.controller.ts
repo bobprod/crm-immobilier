@@ -58,6 +58,12 @@ export class CampaignsController {
     return this.campaignsService.updateStats(id, stats);
   }
 
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Obtenir les statistiques' })
+  getStats(@Param('id') id: string, @Request() req) {
+    return this.campaignsService.getStats(id, req.user.userId);
+  }
+
   @Get(':id/leads')
   @ApiOperation({ summary: "Obtenir les leads d'une campagne" })
   getCampaignLeads(@Param('id') id: string, @Request() req) {
@@ -68,5 +74,49 @@ export class CampaignsController {
   @ApiOperation({ summary: 'Convertir un lead en prospect' })
   convertLeadToProspect(@Request() req, @Body() dto: ConvertLeadDto) {
     return this.campaignsService.convertLeadToProspect(req.user.userId, dto);
+  }
+
+  @Post(':id/start')
+  @ApiOperation({ summary: 'Démarrer une campagne' })
+  startCampaign(@Param('id') id: string, @Request() req) {
+    return this.campaignsService.start(id, req.user.userId);
+  }
+
+  @Post(':id/pause')
+  @ApiOperation({ summary: 'Mettre en pause une campagne' })
+  pauseCampaign(@Param('id') id: string, @Request() req) {
+    return this.campaignsService.pause(id, req.user.userId);
+  }
+
+  @Post(':id/resume')
+  @ApiOperation({ summary: 'Reprendre une campagne' })
+  resumeCampaign(@Param('id') id: string, @Request() req) {
+    return this.campaignsService.resume(id, req.user.userId);
+  }
+
+  @Post(':id/complete')
+  @ApiOperation({ summary: 'Terminer une campagne' })
+  completeCampaign(@Param('id') id: string, @Request() req) {
+    return this.campaignsService.complete(id, req.user.userId);
+  }
+
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Dupliquer une campagne' })
+  duplicateCampaign(
+    @Param('id') id: string,
+    @Body() body: { name: string },
+    @Request() req,
+  ) {
+    return this.campaignsService.duplicate(id, body.name, req.user.userId);
+  }
+
+  @Post(':id/test')
+  @ApiOperation({ summary: 'Tester avec échantillon' })
+  testCampaign(
+    @Param('id') id: string,
+    @Body() body: { testEmails: string[] },
+    @Request() req,
+  ) {
+    return this.campaignsService.test(id, body.testEmails, req.user.userId);
   }
 }

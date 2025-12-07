@@ -79,7 +79,7 @@ export const campaignsAPI = {
     id: string,
     updates: Partial<CreateCampaignDTO>
   ): Promise<Campaign> => {
-    const response = await apiClient.patch(`/campaigns/${id}`, updates);
+    const response = await apiClient.put(`/campaigns/${id}`, updates);
     return response.data;
   },
 
@@ -111,7 +111,8 @@ export const campaignsAPI = {
    */
   convertLead: async (campaignId: string, leadId: string): Promise<any> => {
     const response = await apiClient.post(
-      `/campaigns/${campaignId}/leads/${leadId}/convert`
+      `/campaigns/leads/convert`,
+      { campaignId, leadId }
     );
     return response.data;
   },
