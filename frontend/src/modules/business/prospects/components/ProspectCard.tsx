@@ -19,15 +19,19 @@ import {
   MessageCircle,
   Video,
   CheckCircle,
+  Trash2,
 } from 'lucide-react';
 import { prospectsEnhancedAPI } from '@/shared/utils/prospects-enhanced-api';
 import { prospectsAppointmentsAPI } from '@/shared/utils/prospects-appointments-api';
+import { prospectsAPI } from '@/shared/utils/prospects-api';
+import { useRouter } from 'next/router';
 
 interface ProspectCardProps {
   prospectId: string;
 }
 
 export default function ProspectCard({ prospectId }: ProspectCardProps) {
+  const router = useRouter();
   const [prospect, setProspect] = useState<any>(null);
   const [nextAction, setNextAction] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -43,13 +47,27 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
         prospectsEnhancedAPI.getProspectFull(prospectId),
         prospectsAppointmentsAPI.getNextAction(prospectId),
       ]);
-      
+
       setProspect(prospectData);
       setNextAction(nextActionData);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce prospect ? Cette action est irréversible.')) {
+      return;
+    }
+
+    try {
+      await prospectsAPI.deleteProspect(prospectId);
+      router.push('/prospects');
+    } catch (error) {
+      console.error('Error deleting prospect:', error);
+      alert('Erreur lors de la suppression du prospect');
     }
   };
 
@@ -149,13 +167,22 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
               </div>
             </div>
             
-            <Button
-              onClick={() => setShowAppointmentModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-            >
-              <CalendarPlus className="h-4 w-4 mr-2" />
-              Nouveau Rendez-vous
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowAppointmentModal(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              >
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                Nouveau Rendez-vous
+              </Button>
+              <Button
+                onClick={handleDelete}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
+            </div>
           </div>
         </CardHeader>
 
