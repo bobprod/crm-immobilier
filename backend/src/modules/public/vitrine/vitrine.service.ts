@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { UpdateVitrineConfigDto, UpdatePublishedPropertyDto } from './dto';
+import { SeoAiService } from '../../content/seo-ai/seo-ai.service';
 
 @Injectable()
 export class VitrineService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private seoAiService: SeoAiService,
+  ) {}
 
   /**
    * Configuration de la vitrine
@@ -92,6 +96,21 @@ export class VitrineService {
       throw new NotFoundException('Property not found');
     }
 
+    // Auto-optimisation SEO si non existante
+    const seo = await this.prisma.propertySEO.findUnique({
+      where: { propertyId },
+    });
+
+    if (!seo) {
+      try {
+        // Appeler le service SEO AI pour optimiser automatiquement
+        await this.seoAiService.optimizeProperty(propertyId, userId);
+      } catch (error) {
+        console.error('SEO auto-optimization failed:', error);
+        // Continue même si SEO échoue
+      }
+    }
+
     // Publier ou mettre à jour
     return this.prisma.publishedProperty.upsert({
       where: {
@@ -106,6 +125,13 @@ export class VitrineService {
         ...dto,
       },
       update: dto,
+      include: {
+        property: {
+          include: {
+            seo: true,
+          },
+        },
+      },
     });
   }
 
@@ -186,6 +212,14 @@ export class VitrineService {
             images: true,
             features: true,
             createdAt: true,
+            seo: {
+              select: {
+                metaTitle: true,
+                metaDescription: true,
+                keywords: true,
+                slug: true,
+              },
+            },
           },
         },
       },
@@ -194,7 +228,11 @@ export class VitrineService {
 
     return {
       config,
-      properties: properties.map((p) => p.property),
+      properties: properties.map((p) => ({
+        ...p.property,
+        isFeatured: p.isFeatured,
+        publishedOrder: p.order,
+      })),
     };
   }
 
