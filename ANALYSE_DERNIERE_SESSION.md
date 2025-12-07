@@ -243,7 +243,7 @@ Création de `/pages/vitrine/public/[agencyId]/index.tsx`:
 
 **Flux Complet:**
 ```
-Publication bien → Vérif SEO existe?
+Publication des biens → Vérif SEO existe?
                          ↓ Non
             SeoAiService.optimizeProperty()
                          ↓
@@ -253,7 +253,7 @@ Publication bien → Vérif SEO existe?
                          ↓
         Enregistrement PropertySEO
                          ↓
-    Bien publié avec SEO optimisé
+    Biens publiés avec SEO optimisé
                          ↓
 GET /vitrine/public/:userId retourne SEO
                          ↓

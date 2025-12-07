@@ -148,7 +148,7 @@
 ## 🌐 Intégration SEO-Vitrine
 
 ### Backend
-- ✅ Auto-optimisation SEO lors publication bien
+- ✅ Auto-optimisation SEO lors publication des biens
 - ✅ Appel automatique LLM API si SEO manquant
 - ✅ Données SEO incluses dans endpoint public
 
@@ -161,7 +161,7 @@
 
 ### Flux:
 ```
-Publication bien 
+Publication des biens 
     → Vérif SEO existe?
         → Non: SeoAiService.optimizeProperty()
             → LLM API génère meta tags

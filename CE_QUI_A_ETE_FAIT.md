@@ -99,14 +99,14 @@ Global:     100% ✅
 **Problème:** Vitrine publique sans SEO automatique
 
 **Solution:**
-1. ✅ Auto-optimisation SEO lors publication bien
+1. ✅ Auto-optimisation SEO lors publication des biens
 2. ✅ Appel automatique LLM API si SEO manquant
 3. ✅ Page publique avec balises meta complètes
 4. ✅ Référencement moteurs de recherche actif
 
 **Flux:**
 ```
-Publication bien
+Publication des biens
     ↓
 Vérif SEO existe?
     ↓ Non

@@ -254,11 +254,11 @@
 ### AVANT ⚠️
 ```
 ┌──────────────────────────────────────┐
-│  Publication Bien                    │
+│  Publication des Biens               │
 │         ↓                            │
 │  ❌ Pas de SEO automatique           │
 │         ↓                            │
-│  Bien publié SANS SEO                │
+│  Biens publiés SANS SEO              │
 │         ↓                            │
 │  ❌ Pas de référencement             │
 └──────────────────────────────────────┘
@@ -267,7 +267,7 @@
 ### APRÈS ✅
 ```
 ┌──────────────────────────────────────┐
-│  Publication Bien                    │
+│  Publication des Biens               │
 │         ↓                            │
 │  Vérif SEO existe?                   │
 │         ↓ NON                        │
@@ -283,7 +283,7 @@
 │         ↓                            │
 │  Enregistrement PropertySEO          │
 │         ↓                            │
-│  Bien publié AVEC SEO ✅             │
+│  Biens publiés AVEC SEO ✅           │
 │         ↓                            │
 │  Endpoint public retourne SEO        │
 │         ↓                            │
