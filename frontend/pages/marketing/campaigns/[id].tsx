@@ -52,12 +52,27 @@ export default function CampaignDetailPage() {
   const loadCampaignData = async () => {
     try {
       setLoading(true);
-      const [campaignData, statsData] = await Promise.all([
-        campaignsAPI.getById(id as string),
-        campaignsAPI.getStats(id as string),
-      ]);
+      // Charger la campagne d'abord
+      const campaignData = await campaignsAPI.getById(id as string);
       setCampaign(campaignData);
-      setStats(statsData);
+      
+      // Essayer de charger les stats, mais ne pas échouer si elles n'existent pas
+      try {
+        const statsData = await campaignsAPI.getStats(id as string);
+        setStats(statsData);
+      } catch (statsError: any) {
+        // Les stats peuvent ne pas exister pour les campagnes draft
+        console.log('No stats available yet for this campaign');
+        setStats({
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          converted: 0,
+          bounced: 0,
+          unsubscribed: 0,
+        });
+      }
     } catch (error) {
       console.error('Error loading campaign:', error);
       toast({
