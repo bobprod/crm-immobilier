@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { ArrowLeft, Save } from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 import Link from 'next/link';
 
 export default function NewCampaignPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',

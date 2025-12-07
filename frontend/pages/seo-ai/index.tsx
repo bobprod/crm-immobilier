@@ -9,7 +9,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { Search, Sparkles, Eye, TrendingUp, FileText, Image as ImageIcon } from 'lucide-react';
 import { api } from '../../lib/api-client';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Property {
   id: string;
@@ -26,6 +26,7 @@ interface Property {
 export default function SeoAiPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [optimizing, setOptimizing] = useState<string | null>(null);

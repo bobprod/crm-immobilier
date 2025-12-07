@@ -8,7 +8,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { ArrowLeft, Mail, Users, Eye, MousePointer, TrendingUp, AlertCircle } from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Campaign {
   id: string;
@@ -36,6 +36,7 @@ export default function CampaignDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { id } = router.query;
+  const { toast } = useToast();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [stats, setStats] = useState<CampaignStats | null>(null);
   const [loading, setLoading] = useState(true);

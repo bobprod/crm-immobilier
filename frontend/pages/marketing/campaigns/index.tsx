@@ -9,7 +9,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { Search, Plus, Mail, MessageSquare, Phone, Play, Pause, Copy, Trash2, BarChart3 } from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Campaign {
   id: string;
@@ -26,6 +26,7 @@ interface Campaign {
 export default function CampaignsListPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

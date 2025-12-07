@@ -9,7 +9,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { Search, Plus, FileText, Download, Trash2, Eye, Upload, Folder, Tag } from 'lucide-react';
 import { api } from '../../lib/api-client';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Document {
   id: string;
@@ -26,6 +26,7 @@ interface Document {
 export default function DocumentsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
