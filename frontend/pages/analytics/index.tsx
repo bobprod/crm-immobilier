@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { TrendingUp, Users, Home, DollarSign } from 'lucide-react';
 import { apiClient } from '@/src/shared/utils/api-client-backend';
+import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface Analytics {
   totalProspects: number;
@@ -15,6 +17,8 @@ interface Analytics {
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [analytics, setAnalytics] = useState<Analytics>({
     totalProspects: 0,
     totalProperties: 0,
@@ -27,8 +31,12 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     loadAnalytics();
-  }, []);
+  }, [user, router]);
 
   const loadAnalytics = async () => {
     try {

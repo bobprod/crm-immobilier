@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -6,14 +8,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import apiClient from '@/shared/utils/backend-api';
 import { Plus, Edit, Copy, Trash2, Globe } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 export default function PageBuilderListPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [pages, setPages] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     loadData();
-  }, []);
+  }, [user, router]);
 
   const loadData = async () => {
     const [pagesData, templatesData] = await Promise.all([
@@ -25,48 +34,50 @@ export default function PageBuilderListPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">🎨 Page Builder</h1>
-      
-      <Tabs defaultValue="pages">
-        <TabsList>
-          <TabsTrigger value="pages">Mes Pages</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-        </TabsList>
+    <Layout>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">🎨 Page Builder</h1>
+        
+        <Tabs defaultValue="pages">
+          <TabsList>
+            <TabsTrigger value="pages">Mes Pages</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="pages">
-          <div className="grid grid-cols-3 gap-4">
-            {pages.map((page) => (
-              <Card key={page.id}>
-                <CardHeader>
-                  <CardTitle>{page.title}</CardTitle>
-                  {page.isPublished && <Badge>Publié</Badge>}
-                </CardHeader>
-                <CardContent>
-                  <Link href={`/page-builder/edit/${page.id}`}>
-                    <Button>Éditer</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
+          <TabsContent value="pages">
+            <div className="grid grid-cols-3 gap-4">
+              {pages.map((page) => (
+                <Card key={page.id}>
+                  <CardHeader>
+                    <CardTitle>{page.title}</CardTitle>
+                    {page.isPublished && <Badge>Publié</Badge>}
+                  </CardHeader>
+                  <CardContent>
+                    <Link href={`/page-builder/edit/${page.id}`}>
+                      <Button>Éditer</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="templates">
-          <div className="grid grid-cols-3 gap-4">
-            {templates.map((template) => (
-              <Card key={template.id}>
-                <CardHeader>
-                  <CardTitle>{template.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button>Utiliser</Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="templates">
+            <div className="grid grid-cols-3 gap-4">
+              {templates.map((template) => (
+                <Card key={template.id}>
+                  <CardHeader>
+                    <CardTitle>{template.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button>Utiliser</Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
   );
 }
