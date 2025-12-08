@@ -2,12 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/properties": "pages/properties.js",
-  "/dashboard": "pages/dashboard.js",
   "/login": "pages/login.js",
-  "/": "pages/index.js",
-  "/prospects": "pages/prospects.js",
-  "/appointments": "pages/appointments.js",
-  "/analytics": "pages/analytics.js",
-  "/settings": "pages/settings.js"
+  "/dashboard": "pages/dashboard.js"
 }

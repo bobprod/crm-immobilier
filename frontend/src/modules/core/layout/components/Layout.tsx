@@ -88,6 +88,15 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     router.push('/login');
   };
 
+  const getRoleLabel = (role: string) => {
+    const roleLabels: Record<string, string> = {
+      'admin': 'Administrateur',
+      'manager': 'Manager',
+      'agent': 'Agent'
+    };
+    return roleLabels[role] || role;
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Mobile overlay */}
@@ -148,9 +157,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                 <span className="text-xs font-medium text-gray-600 uppercase">
-                  {user.role === 'admin' && 'Administrateur'}
-                  {user.role === 'manager' && 'Manager'}
-                  {user.role === 'agent' && 'Agent'}
+                  {getRoleLabel(user.role)}
                 </span>
               </div>
             </div>
