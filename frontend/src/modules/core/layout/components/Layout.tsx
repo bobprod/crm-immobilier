@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, User, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -126,10 +126,39 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
           ))}
         </nav>
 
-        <div className="border-t border-gray-200 p-6 mt-auto">
+        <div className="border-t border-gray-200 p-6 mt-auto space-y-4">
+          {/* User Profile Section */}
+          {user && (
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <p className="text-xs text-gray-500">Connecté</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                <span className="text-xs font-medium text-gray-600 uppercase">
+                  {user.role === 'admin' && 'Administrateur'}
+                  {user.role === 'manager' && 'Manager'}
+                  {user.role === 'agent' && 'Agent'}
+                </span>
+              </div>
+            </div>
+          )}
+          
           <button
             onClick={handleLogout}
-            className="flex items-center text-gray-700 hover:text-gray-900"
+            className="flex items-center text-gray-700 hover:text-gray-900 w-full"
           >
             <LogOut className="w-5 h-5 mr-2" />
             Déconnexion
@@ -137,16 +166,34 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
         </div>
       </div>
 
-      {/* Mobile menu button */}
-      <button
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
-
       {/* Main content */}
       <div className="flex-1 overflow-auto">
+        {/* Header bar with connection status */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+              <h2 className="text-lg font-semibold text-gray-800">
+                {menuItems.find(item => item.id === activeTab)?.label || 'Tableau de bord'}
+              </h2>
+            </div>
+            {user && (
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <span className="text-gray-700 hidden sm:inline">
+                  Compte connecté: <span className="font-medium">{user.email}</span>
+                </span>
+                <span className="text-gray-700 sm:hidden font-medium">Connecté</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
         <div className="p-6">
           {children}
         </div>
