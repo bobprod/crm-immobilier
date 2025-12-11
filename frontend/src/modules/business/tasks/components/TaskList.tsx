@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Plus, Loader2, Filter } from 'lucide-react';
 import { Input } from '@/shared/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export function TaskList() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -13,6 +14,7 @@ export function TaskList() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>('all');
+    const { toast } = useToast();
 
     useEffect(() => {
         loadTasks();
@@ -31,13 +33,35 @@ export function TaskList() {
     };
 
     const handleCreate = async (data: CreateTaskDto) => {
-        if (selectedTask) {
-            await tasksService.update(selectedTask.id, data);
-        } else {
-            await tasksService.create(data);
+        try {
+            console.log('[TaskList] Creating/updating task with data:', data);
+            if (selectedTask) {
+                console.log('[TaskList] Updating task:', selectedTask.id);
+                await tasksService.update(selectedTask.id, data);
+                toast({
+                    title: 'Succès',
+                    description: '✅ Tâche mise à jour avec succès',
+                });
+            } else {
+                console.log('[TaskList] Creating new task');
+                await tasksService.create(data);
+                toast({
+                    title: 'Succès',
+                    description: '✅ Tâche créée avec succès',
+                });
+            }
+            loadTasks();
+            setSelectedTask(null);
+        } catch (error: any) {
+            console.error('[TaskList] Error creating/updating task:', error);
+            console.error('[TaskList] Error details:', error.response?.data);
+            toast({
+                title: 'Erreur',
+                description: error.response?.data?.message || error.message || 'Erreur lors de la sauvegarde de la tâche',
+                variant: 'destructive',
+            });
+            throw error; // Re-throw pour que TaskDialog puisse aussi gérer l'erreur
         }
-        loadTasks();
-        setSelectedTask(null);
     };
 
     const handleEdit = (task: Task) => {

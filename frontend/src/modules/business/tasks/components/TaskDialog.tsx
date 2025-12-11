@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Task, CreateTaskDto } from '../tasks.service';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 const taskSchema = z.object({
     title: z.string().min(3, 'Le titre doit contenir au moins 3 caractères'),
@@ -30,6 +31,7 @@ interface TaskDialogProps {
 
 export function TaskDialog({ open, onOpenChange, task, onSubmit }: TaskDialogProps) {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const { toast } = useToast();
 
     const form = useForm<TaskFormValues>({
         resolver: zodResolver(taskSchema),
@@ -65,10 +67,21 @@ export function TaskDialog({ open, onOpenChange, task, onSubmit }: TaskDialogPro
     const handleSubmit = async (values: TaskFormValues) => {
         try {
             setIsSubmitting(true);
+            console.log('[TaskDialog] Submitting task with values:', values);
             await onSubmit(values);
+            console.log('[TaskDialog] Task submitted successfully');
             onOpenChange(false);
-        } catch (error) {
-            console.error('Erreur soumission:', error);
+            form.reset();
+        } catch (error: any) {
+            console.error('[TaskDialog] Erreur soumission:', error);
+            // L'erreur est déjà affichée par TaskList, mais on peut ajouter un fallback
+            if (!error.response) {
+                toast({
+                    title: 'Erreur',
+                    description: 'Impossible de communiquer avec le serveur',
+                    variant: 'destructive',
+                });
+            }
         } finally {
             setIsSubmitting(false);
         }

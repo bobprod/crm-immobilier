@@ -14,9 +14,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   [key: string]: any; // Index signature pour accès dynamique
 
   constructor() {
+    // Désactiver SSL pour le développement local
+    const isLocalDev = process.env.NODE_ENV === 'development' &&
+                      process.env.DATABASE_URL?.includes('localhost');
+
     this.pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: isLocalDev ? false : { rejectUnauthorized: false },
     });
 
     // Créer les proxies pour toutes les tables
