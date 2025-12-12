@@ -60,7 +60,7 @@ const initialFormData: CreatePropertyDTO = {
     category: 'sale',
     price: 0,
     area: 0,
-    rooms: 0,
+    // rooms: 0, // Removed - not supported by backend
     bedrooms: 0,
     bathrooms: 0,
     address: '',
@@ -86,13 +86,13 @@ export function PropertyFormModal({
         if (isOpen) {
             if (property) {
                 // Edit mode - populate with existing data
+                // Note: Don't include 'rooms' as it's not supported by the backend
                 setFormData({
                     title: property.title || '',
                     description: property.description || '',
                     type: property.type || 'apartment',
                     price: property.price || 0,
                     area: property.area || property.surface || 0,
-                    rooms: property.rooms || 0,
                     bedrooms: property.bedrooms || 0,
                     bathrooms: property.bathrooms || 0,
                     address: property.address || '',
@@ -139,7 +139,9 @@ export function PropertyFormModal({
 
         setSubmitting(true);
         try {
-            await onSubmit(formData);
+            // Filter out rooms field before submitting (backend doesn't support it)
+            const { rooms, ...dataToSubmit } = formData;
+            await onSubmit(dataToSubmit as CreatePropertyDTO);
             // Don't call onClose() here - let the parent handle it
         } catch (error) {
             console.error('Error submitting property:', error);
@@ -265,20 +267,8 @@ export function PropertyFormModal({
                             </div>
                         </div>
 
-                        {/* Rooms */}
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="rooms">Pièces</Label>
-                                <Input
-                                    id="rooms"
-                                    type="number"
-                                    data-testid="property-rooms-input"
-                                    value={formData.rooms || ''}
-                                    onChange={(e) => handleChange('rooms', parseInt(e.target.value) || 0)}
-                                    placeholder="0"
-                                />
-                            </div>
-
+                        {/* Bedrooms and Bathrooms (rooms field removed - not supported by backend) */}
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="bedrooms">Chambres</Label>
                                 <Input
