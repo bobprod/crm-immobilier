@@ -21,11 +21,11 @@
         },
         "frontend": {
             "status": "running",
-            "port": 3004,
+            "port": 3000,
             "framework": "Next.js 14.2.5",
             "startCommand": "npm run dev",
-            "url": "http://localhost:3004",
-            "loginUrl": "http://localhost:3004/auth/login",
+            "url": "http://localhost:3000",
+            "loginUrl": "http://localhost:3000/auth/login",
             "startedBy": "Kilocode"
         }
     },
@@ -34,13 +34,13 @@
             "env": {
                 "NODE_ENV": "development",
                 "PORT": 3001,
-                "FRONTEND_URL": "http://localhost:3004",
+                "FRONTEND_URL": "http://localhost:3000",
                 "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/crm_immobilier"
             },
             "cors": {
                 "allowedOrigins": [
                     "http://localhost:3003",
-                    "http://localhost:3004",
+                    "http://localhost:3000",
                     "http://localhost:3005"
                 ]
             }
@@ -48,7 +48,7 @@
         "frontend": {
             "env": {
                 "NEXT_PUBLIC_API_URL": "http://localhost:3001/api",
-                "NEXT_PUBLIC_APP_URL": "http://localhost:3004",
+                "NEXT_PUBLIC_APP_URL": "http://localhost:3000",
                 "NODE_ENV": "development"
             }
         }
@@ -81,7 +81,7 @@
         {
             "timestamp": "2025-12-08T17:30:00Z",
             "agent": "GitHub Copilot",
-            "action": "Port synchronization (3003 → 3004)",
+            "action": "Port synchronization (3003 → 3000)",
             "files": [
                 "backend/.env",
                 "frontend/.env.local",

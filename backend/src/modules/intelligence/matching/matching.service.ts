@@ -10,7 +10,7 @@ import {
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Génère les matches entre prospects et propriétés
@@ -126,14 +126,32 @@ export class MatchingService {
   }
 
   async findAll(userId: string, filters?: any) {
-    const where: any = { properties: { userId } };
+    // First get all properties for this user
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
+    const propertyIds = userProperties.map((p) => p.id);
+
+    // If user has no properties, return empty array
+    if (propertyIds.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      propertyId: { in: propertyIds },
+    };
 
     if (filters?.minScore) where.score = { gte: parseFloat(filters.minScore) };
     if (filters?.status) where.status = filters.status;
 
     return this.prisma.matches.findMany({
       where,
-      include: { properties: true, prospects: true },
+      include: {
+        properties: true,
+        prospects: true,
+      },
       orderBy: { score: 'desc' },
     });
   }
@@ -146,12 +164,15 @@ export class MatchingService {
   }
 
   async performAction(matchId: string, userId: string, action: any) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id: matchId, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id: matchId },
       include: { properties: true, prospects: true },
     });
 
-    if (!match) throw new Error('Match not found');
+    // Verify the property belongs to the user
+    if (!match || match.properties.userId !== userId) {
+      throw new Error('Match not found');
+    }
 
     let result;
     if (action.type === 'appointment') {
@@ -182,8 +203,21 @@ export class MatchingService {
   }
 
   async getInteractions(userId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return { interactions: [] };
+    }
+
     const matches = await this.prisma.matches.findMany({
-      where: { properties: { userId }, status: 'contacted' },
+      where: {
+        propertyId: { in: propertyIds },
+        status: 'contacted',
+      },
       include: { properties: true, prospects: true },
       orderBy: { updatedAt: 'desc' },
       take: 50,
@@ -193,21 +227,38 @@ export class MatchingService {
   }
 
   async getStats(userId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return {
+        total: 0,
+        excellent: 0,
+        good: 0,
+        average: 0,
+        avgScore: 0,
+        byStatus: [],
+      };
+    }
+
     const [total, byScore, avgScore] = await Promise.all([
-      this.prisma.matches.count({ where: { properties: { userId } } }),
+      this.prisma.matches.count({ where: { propertyId: { in: propertyIds } } }),
       this.prisma.matches.groupBy({
         by: ['status'],
-        where: { properties: { userId } },
+        where: { propertyId: { in: propertyIds } },
         _count: true,
       }),
       this.prisma.matches.aggregate({
-        where: { properties: { userId } },
+        where: { propertyId: { in: propertyIds } },
         _avg: { score: true },
       }),
     ]);
 
     const matches = await this.prisma.matches.findMany({
-      where: { properties: { userId } },
+      where: { propertyId: { in: propertyIds } },
       select: { score: true },
     });
 
@@ -226,16 +277,40 @@ export class MatchingService {
   }
 
   async getProspectMatches(userId: string, prospectId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return [];
+    }
+
     return this.prisma.matches.findMany({
-      where: { prospectId, properties: { userId } },
+      where: {
+        prospectId,
+        propertyId: { in: propertyIds },
+      },
       include: { properties: true },
       orderBy: { score: 'desc' },
     });
   }
 
   async getPropertyMatches(userId: string, propertyId: string) {
+    // Verify the property belongs to the user
+    const property = await this.prisma.properties.findFirst({
+      where: { id: propertyId, userId },
+    });
+
+    if (!property) {
+      throw new Error('Property not found');
+    }
+
     return this.prisma.matches.findMany({
-      where: { propertyId, properties: { userId } },
+      where: {
+        propertyId,
+      },
       include: { prospects: true },
       orderBy: { score: 'desc' },
     });
@@ -405,12 +480,12 @@ export class MatchingService {
   }
 
   async findOne(userId: string, id: string) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id },
       include: { properties: true, prospects: true },
     });
 
-    if (!match) {
+    if (!match || match.properties.userId !== userId) {
       throw new Error('Match not found');
     }
 
@@ -418,11 +493,12 @@ export class MatchingService {
   }
 
   async deleteMatch(userId: string, id: string) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id },
+      include: { properties: true },
     });
 
-    if (!match) {
+    if (!match || match.properties.userId !== userId) {
       throw new Error('Match not found');
     }
 

@@ -8,6 +8,11 @@ import { ProspectSummary, UserSummary } from '../../../../shared/types/relation-
 
 export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending';
 export type PropertyCategory = 'sale' | 'rent';
+
+export enum PropertyCategoryEnum {
+  SALE = 'sale',
+  RENT = 'rent'
+}
 export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type PropertyType = 'apartment' | 'house' | 'villa' | 'studio' | 'office' | 'land' | 'commercial' | 'appartement' | 'maison' | 'terrain';
 
@@ -32,8 +37,8 @@ export class CreatePropertyDto {
   @IsString()
   type: string;
 
-  @ApiProperty({ enum: ['sale', 'rent'], description: 'Catégorie (vente/location)' })
-  @IsEnum(['sale', 'rent'])
+  @ApiProperty({ enum: PropertyCategoryEnum, description: 'Catégorie (vente/location)' })
+  @IsEnum(PropertyCategoryEnum)
   category: PropertyCategory;
 
   @ApiProperty({ description: 'Prix du bien' })
@@ -174,9 +179,9 @@ export class UpdatePropertyDto {
   @IsString()
   type?: string;
 
-  @ApiPropertyOptional({ enum: ['sale', 'rent'], description: 'Catégorie' })
+  @ApiPropertyOptional({ enum: PropertyCategoryEnum, description: 'Catégorie' })
   @IsOptional()
-  @IsEnum(['sale', 'rent'])
+  @IsEnum(PropertyCategoryEnum)
   category?: PropertyCategory;
 
   @ApiPropertyOptional({ description: 'Prix du bien' })

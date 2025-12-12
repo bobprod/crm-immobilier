@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
+import Layout from '../../src/modules/core/layout/components/Layout';
 import { ProspectingDashboard } from '@/modules/business/prospecting';
 
 export default function ProspectingPage() {
@@ -25,5 +26,9 @@ export default function ProspectingPage() {
     return null;
   }
 
-  return <ProspectingDashboard language="fr" />;
+  return (
+    <Layout>
+      <ProspectingDashboard language="fr" />
+    </Layout>
+  );
 }
