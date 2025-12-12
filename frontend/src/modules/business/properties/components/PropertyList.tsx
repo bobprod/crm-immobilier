@@ -3,12 +3,13 @@ import { Button } from '@/shared/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { propertiesAPI, Property, CreatePropertyDTO } from '@/shared/utils/properties-api';
 import { PropertyFilters } from './PropertyFilters';
 import { PropertyBulkActions } from './PropertyBulkActions';
 import { PropertyFormModal } from './PropertyFormModal';
+import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog';
 import { Plus, Eye, Edit, Trash } from 'lucide-react';
 
 interface PropertyListProps {
@@ -28,6 +29,19 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+
+    // Confirmation dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void | Promise<void>;
+    }>({
+        open: false,
+        title: '',
+        description: '',
+        onConfirm: async () => { }
+    });
 
     const fetchProperties = async (currentFilters = filters) => {
         setLoading(true);
@@ -75,8 +89,22 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
     const handleBulkAction = async (action: string, value?: any) => {
         try {
             if (action === 'delete') {
-                if (!confirm('Êtes-vous sûr de vouloir supprimer ces propriétés ?')) return;
-                await propertiesAPI.bulkDelete(selectedIds);
+                // Show beautiful confirmation dialog
+                setConfirmDialog({
+                    open: true,
+                    title: 'Supprimer les propriétés',
+                    description: `Êtes-vous sûr de vouloir supprimer ${selectedIds.length} propriété(s) ? Cette action est irréversible.`,
+                    onConfirm: async () => {
+                        try {
+                            await propertiesAPI.bulkDelete(selectedIds);
+                            await fetchProperties();
+                            setSelectedIds([]);
+                        } catch (err) {
+                            console.error('Delete failed:', err);
+                        }
+                    }
+                });
+                return;
             } else if (action === 'priority') {
                 await propertiesAPI.bulkUpdatePriority(selectedIds, value);
             } else if (action === 'status') {
@@ -88,7 +116,6 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
             setSelectedIds([]);
         } catch (err) {
             console.error('Bulk action failed:', err);
-            alert('Une erreur est survenue lors de l\'action groupée');
         }
     };
 
@@ -147,6 +174,22 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
             throw error;
         }
     };
+
+    const handleDeleteProperty = useCallback((property: Property) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer la propriété',
+            description: `Êtes-vous sûr de vouloir supprimer "${property.title}" ? Cette action est irréversible.`,
+            onConfirm: async () => {
+                try {
+                    await propertiesAPI.delete(property.id);
+                    await fetchProperties();
+                } catch (err) {
+                    console.error('Delete failed:', err);
+                }
+            }
+        });
+    }, []);
 
     if (loading && properties.length === 0) {
         return (
@@ -266,6 +309,15 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
                                                 >
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDeleteProperty(property)}
+                                                    data-testid={`delete-property-${property.id}`}
+                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                >
+                                                    <Trash className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -275,6 +327,18 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                description={confirmDialog.description}
+                confirmText="Supprimer"
+                cancelText="Annuler"
+                variant="destructive"
+            />
         </div>
     );
 }
