@@ -1087,6 +1087,7 @@ model LlmConfig {
 
   @@index([userId])
   @@index([provider])
+  @@map("llm_configs")
 }
 
 model Page {

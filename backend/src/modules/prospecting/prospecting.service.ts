@@ -29,7 +29,7 @@ interface LeadFilters {
 export class ProspectingService {
   private readonly logger = new Logger(ProspectingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ============================================
   // CAMPAIGNS
@@ -1103,34 +1103,54 @@ export class ProspectingService {
    * Statistiques globales
    */
   async getGlobalStats(userId: string) {
-    const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
-      this.prisma.prospecting_campaigns.count({ where: { userId } }),
-      this.prisma.prospecting_leads.count({ where: { userId } }),
-      this.prisma.prospecting_matches.count({
-        where: {
-          properties: {
-            userId,
-          },
-        },
-      }),
-      this.prisma.prospecting_leads.findMany({
+    try {
+      // First get all lead IDs for this user
+      const userLeads = await this.prisma.prospecting_leads.findMany({
         where: { userId },
-        orderBy: { score: 'desc' },
-        take: 5,
-        include: {
-          campaigns: {
-            select: { name: true },
-          },
-        },
-      }),
-    ]);
+        select: { id: true },
+      });
+      const leadIds = userLeads.map(l => l.id);
 
-    return {
-      totalCampaigns,
-      totalLeads,
-      totalMatches,
-      topLeads,
-    };
+      const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
+        this.prisma.prospecting_campaigns.count({ where: { userId } }),
+        this.prisma.prospecting_leads.count({ where: { userId } }),
+        // Use leadId IN array instead of relation filtering
+        leadIds.length > 0
+          ? this.prisma.prospecting_matches.count({
+            where: {
+              leadId: { in: leadIds },
+            },
+          })
+          : Promise.resolve(0),
+        this.prisma.prospecting_leads.findMany({
+          where: { userId },
+          orderBy: { score: 'desc' },
+          take: 5,
+          include: {
+            campaigns: {
+              select: { name: true },
+            },
+          },
+        }),
+      ]);
+
+      return {
+        totalCampaigns,
+        totalLeads,
+        totalMatches,
+        topLeads,
+      };
+    } catch (error) {
+      this.logger.error(`Error in getGlobalStats: ${error.message}`);
+      this.logger.error(error.stack);
+      // Return default values instead of crashing
+      return {
+        totalCampaigns: 0,
+        totalLeads: 0,
+        totalMatches: 0,
+        topLeads: [],
+      };
+    }
   }
 
   // ============================================
@@ -1272,17 +1292,30 @@ export class ProspectingService {
    * Statistiques par source
    */
   async getStatsBySource(userId: string) {
-    const stats = await this.prisma.prospecting_leads.groupBy({
-      by: ['source'],
+    const leads = await this.prisma.prospecting_leads.findMany({
       where: { userId },
-      _count: true,
-      _avg: { score: true },
+      select: { source: true, score: true },
     });
 
-    return stats.map((s) => ({
-      source: s.source || 'unknown',
-      count: s._count,
-      avgScore: Math.round(s._avg.score || 0),
+    interface GroupedData {
+      count: number;
+      totalScore: number;
+    }
+    const grouped: Record<string, GroupedData> = {};
+
+    for (const lead of leads) {
+      const source = lead.source || 'unknown';
+      if (!grouped[source]) {
+        grouped[source] = { count: 0, totalScore: 0 };
+      }
+      grouped[source].count++;
+      grouped[source].totalScore += lead.score || 0;
+    }
+
+    return Object.entries(grouped).map(([source, data]) => ({
+      source,
+      count: data.count,
+      avgScore: Math.round(data.totalScore / data.count),
     }));
   }
 
@@ -1290,15 +1323,25 @@ export class ProspectingService {
    * Statistiques de conversion
    */
   async getConversionStats(userId: string) {
-    const [total, converted, byStage] = await Promise.all([
+    const [total, converted, leads] = await Promise.all([
       this.prisma.prospecting_leads.count({ where: { userId } }),
       this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
-      this.prisma.prospecting_leads.groupBy({
-        by: ['status'],
+      this.prisma.prospecting_leads.findMany({
         where: { userId },
-        _count: true,
+        select: { status: true },
       }),
     ]);
+
+    const grouped: Record<string, number> = {};
+    for (const lead of leads) {
+      const status = lead.status;
+      grouped[status] = (grouped[status] || 0) + 1;
+    }
+
+    const byStage = Object.entries(grouped).map(([status, count]) => ({
+      status,
+      count,
+    }));
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;
 
@@ -1308,15 +1351,15 @@ export class ProspectingService {
       conversionRate: Math.round(conversionRate * 10) / 10,
       byStage: byStage.map((s) => ({
         stage: s.status,
-        count: s._count,
-        percentage: Math.round((s._count / total) * 100 * 10) / 10,
+        count: s.count,
+        percentage: Math.round((s.count / total) * 100 * 10) / 10,
       })),
       funnel: {
-        new: byStage.find((s) => s.status === 'new')?._count || 0,
-        contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
-        qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
-        converted: byStage.find((s) => s.status === 'converted')?._count || 0,
-        rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
+        new: byStage.find((s) => s.status === 'new')?.count || 0,
+        contacted: byStage.find((s) => s.status === 'contacted')?.count || 0,
+        qualified: byStage.find((s) => s.status === 'qualified')?.count || 0,
+        converted: byStage.find((s) => s.status === 'converted')?.count || 0,
+        rejected: byStage.find((s) => s.status === 'rejected')?.count || 0,
       },
     };
   }

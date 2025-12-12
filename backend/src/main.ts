@@ -3,14 +3,27 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { swaggerConfig } from './config';
+import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Global exception filter for detailed error logging
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:3003', 'http://localhost:3004', 'http://localhost:3005'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3003',
+      'http://localhost:3004',
+      'http://localhost:3005'
+    ],
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Content-Disposition'],
+    maxAge: 86400,
   });
 
   // Global validation pipe

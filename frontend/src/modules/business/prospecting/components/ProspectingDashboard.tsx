@@ -33,7 +33,7 @@ interface ProspectingDashboardProps {
   language?: 'fr' | 'en';
 }
 
-type TabType = 'dashboard' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping' | 'settings';
+type TabType = 'dashboard' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping';
 
 // ============================================
 // SUB-COMPONENTS
@@ -480,7 +480,6 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     { id: 'validation', label: 'Validation', icon: '🛡️' },
     { id: 'campaigns', label: 'Campagnes', icon: '📋' },
     { id: 'scraping', label: 'Scraping', icon: '🔍' },
-    { id: 'settings', label: 'Config', icon: '⚙️' },
   ];
 
   return (
@@ -516,11 +515,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${
-                  activeTab === tab.id
+                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
@@ -769,7 +767,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Sources de Donnees</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Sources de Donnees</h2>
+                <a
+                  href="/settings/prospecting-config"
+                  className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+                >
+                  ⚙️ Configurer les API
+                </a>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple', needsQuery: true },
@@ -797,9 +803,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                         if (source.needsQuery) {
                           setScrapingConfig({
                             query: source.id === 'pica' ? 'immobilier tunis' :
-                                   source.id === 'serp' ? 'appartement vendre tunis' :
-                                   source.id === 'meta' ? 'immobilier tunisie' :
-                                   'agent immobilier tunis',
+                              source.id === 'serp' ? 'appartement vendre tunis' :
+                                source.id === 'meta' ? 'immobilier tunisie' :
+                                  'agent immobilier tunis',
                             urls: [''],
                             maxResults: 50,
                           });
@@ -814,11 +820,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                         }
                       }}
                       disabled={scrapingInProgress}
-                      className={`w-full py-2 rounded-lg font-medium transition ${
-                        scrapingInProgress
+                      className={`w-full py-2 rounded-lg font-medium transition ${scrapingInProgress
                           ? 'bg-gray-100 text-gray-400'
                           : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
-                      }`}
+                        }`}
                     >
                       {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
                     </button>
@@ -830,30 +835,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         )}
 
         {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Configuration des APIs</h2>
-            <div className="space-y-4">
-              {sources.map(source => (
-                <div key={source.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${source.configured ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="font-medium">{source.name}</span>
-                  </div>
-                  <span className={source.configured ? 'text-green-600' : 'text-gray-500'}>
-                    {source.configured ? '✓ Configure' : 'Non configure'}
-                  </span>
-                </div>
-              ))}
-              <a
-                href="/settings/integrations"
-                className="block text-center py-3 text-purple-600 hover:text-purple-700 font-medium"
-              >
-                → Gerer les integrations dans Parametres
-              </a>
-            </div>
-          </div>
-        )}
+
       </main>
 
       {/* Campaign Creation Modal */}
@@ -879,9 +861,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 {[1, 2, 3].map(step => (
                   <div
                     key={step}
-                    className={`flex-1 h-1 rounded-full ${
-                      step <= campaignStep ? 'bg-white' : 'bg-white/30'
-                    }`}
+                    className={`flex-1 h-1 rounded-full ${step <= campaignStep ? 'bg-white' : 'bg-white/30'
+                      }`}
                   />
                 ))}
               </div>
@@ -1030,8 +1011,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
           <div>
             <p className="font-medium text-gray-900">
               {aiProcessingInProgress ? 'Analyse IA en cours...' :
-               scrapingInProgress ? 'Scraping en cours...' :
-               'Chargement...'}
+                scrapingInProgress ? 'Scraping en cours...' :
+                  'Chargement...'}
             </p>
             <p className="text-sm text-gray-500">Veuillez patienter</p>
           </div>
@@ -1220,12 +1201,11 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${
-                              match.score >= 80 ? 'bg-green-100 text-green-700' :
-                              match.score >= 60 ? 'bg-blue-100 text-blue-700' :
-                              match.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${match.score >= 80 ? 'bg-green-100 text-green-700' :
+                                match.score >= 60 ? 'bg-blue-100 text-blue-700' :
+                                  match.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                              }`}>
                               {match.score}%
                             </div>
                           </div>

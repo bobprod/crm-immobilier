@@ -5,9 +5,10 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { propertiesAPI, Property } from '@/shared/utils/properties-api';
+import { propertiesAPI, Property, CreatePropertyDTO } from '@/shared/utils/properties-api';
 import { PropertyFilters } from './PropertyFilters';
 import { PropertyBulkActions } from './PropertyBulkActions';
+import { PropertyFormModal } from './PropertyFormModal';
 import { Plus, Eye, Edit, Trash } from 'lucide-react';
 
 interface PropertyListProps {
@@ -23,6 +24,10 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [filters, setFilters] = useState<any>({});
     const router = useRouter();
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProperty, setEditingProperty] = useState<Property | null>(null);
 
     const fetchProperties = async (currentFilters = filters) => {
         setLoading(true);
@@ -107,6 +112,42 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
         }
     };
 
+    // Modal handlers
+    const handleOpenCreateModal = () => {
+        setEditingProperty(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (property: Property) => {
+        setEditingProperty(property);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingProperty(null);
+    };
+
+    const handleSubmitProperty = async (data: CreatePropertyDTO) => {
+        try {
+            if (editingProperty) {
+                // Update existing property
+                await propertiesAPI.update(editingProperty.id, data);
+            } else {
+                // Create new property
+                await propertiesAPI.create(data);
+            }
+            // Close the modal
+            handleCloseModal();
+            // Refresh the list
+            await fetchProperties();
+        } catch (error) {
+            console.error('Error submitting property:', error);
+            // Don't close modal on error so user can fix issues
+            throw error;
+        }
+    };
+
     if (loading && properties.length === 0) {
         return (
             <div className="flex items-center justify-center p-8">
@@ -127,7 +168,7 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">Propriétés</h2>
-                <Button onClick={() => router.push('/properties/new')}>
+                <Button onClick={handleOpenCreateModal} data-testid="create-property-button">
                     <Plus className="mr-2 h-4 w-4" />
                     Nouvelle Propriété
                 </Button>
@@ -138,6 +179,14 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
             <PropertyBulkActions
                 selectedCount={selectedIds.length}
                 onAction={handleBulkAction}
+            />
+
+            {/* Property Form Modal */}
+            <PropertyFormModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                onSubmit={handleSubmitProperty}
+                property={editingProperty}
             />
 
             <Card>
@@ -205,13 +254,15 @@ export function PropertyList({ initialLoading, initialError, initialProperties }
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => router.push(`/properties/${property.id}`)}
+                                                    data-testid={`view-property-${property.id}`}
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => router.push(`/properties/${property.id}/edit`)}
+                                                    onClick={() => handleOpenEditModal(property)}
+                                                    data-testid={`edit-property-${property.id}`}
                                                 >
                                                     <Edit className="h-4 w-4" />
                                                 </Button>

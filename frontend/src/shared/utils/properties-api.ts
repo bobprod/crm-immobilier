@@ -109,7 +109,10 @@ export const propertiesAPI = {
    * Créer un nouveau bien immobilier
    */
   create: async (propertyData: CreatePropertyDTO): Promise<Property> => {
-    const response = await apiClient.post('/properties', propertyData);
+    // Filter out unsupported fields (rooms is not supported by backend)
+    const { rooms, ...backendCompatibleData } = propertyData;
+    console.log('[Properties API] Creating property with data:', JSON.stringify(backendCompatibleData, null, 2));
+    const response = await apiClient.post('/properties', backendCompatibleData);
     return response.data;
   },
 
@@ -138,7 +141,10 @@ export const propertiesAPI = {
     id: string,
     updates: Partial<CreatePropertyDTO>
   ): Promise<Property> => {
-    const response = await apiClient.put(`/properties/${id}`, updates);
+    // Filtrer le champ 'rooms' non supporté par le backend
+    const { rooms, ...backendCompatibleData } = updates;
+    console.log('[Properties API] Updating property with data:', JSON.stringify(backendCompatibleData, null, 2));
+    const response = await apiClient.put(`/properties/${id}`, backendCompatibleData);
     return response.data;
   },
 

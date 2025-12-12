@@ -19,7 +19,7 @@ export class NotificationsService {
       this.logger.log(`Creating notification for user ${data.userId}: ${data.title}`);
 
       // Créer la notification dans la base de données
-      const notification = await this.prisma.notification.create({
+      const notification = await this.prisma.notifications.create({
         data: {
           userId: data.userId,
           type: data.type,
@@ -50,7 +50,7 @@ export class NotificationsService {
    * Récupérer les notifications d'un utilisateur
    */
   async getUserNotifications(userId: string, limit: number = 20) {
-    return this.prisma.notification.findMany({
+    return this.prisma.notifications.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -61,7 +61,7 @@ export class NotificationsService {
    * Récupérer les notifications non lues
    */
   async getUnreadNotifications(userId: string) {
-    return this.prisma.notification.findMany({
+    return this.prisma.notifications.findMany({
       where: {
         userId,
         isRead: false,
@@ -74,7 +74,7 @@ export class NotificationsService {
    * Compter les notifications non lues
    */
   async countUnreadNotifications(userId: string): Promise<number> {
-    return this.prisma.notification.count({
+    return this.prisma.notifications.count({
       where: {
         userId,
         isRead: false,
@@ -86,7 +86,7 @@ export class NotificationsService {
    * Marquer une notification comme lue
    */
   async markAsRead(notificationId: string) {
-    return this.prisma.notification.update({
+    return this.prisma.notifications.update({
       where: { id: notificationId },
       data: { isRead: true },
     });
@@ -96,7 +96,7 @@ export class NotificationsService {
    * Marquer toutes les notifications comme lues
    */
   async markAllAsRead(userId: string) {
-    return this.prisma.notification.updateMany({
+    return this.prisma.notifications.updateMany({
       where: {
         userId,
         isRead: false,
@@ -109,7 +109,7 @@ export class NotificationsService {
    * Supprimer une notification
    */
   async deleteNotification(notificationId: string) {
-    return this.prisma.notification.delete({
+    return this.prisma.notifications.delete({
       where: { id: notificationId },
     });
   }
@@ -121,7 +121,7 @@ export class NotificationsService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const result = await this.prisma.notification.deleteMany({
+    const result = await this.prisma.notifications.deleteMany({
       where: {
         createdAt: {
           lt: thirtyDaysAgo,
