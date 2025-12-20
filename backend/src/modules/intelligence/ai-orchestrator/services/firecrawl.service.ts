@@ -142,8 +142,8 @@ export class FirecrawlService {
     url: string;
   }): Promise<string | null> {
     const result = await this.scrape({
-      tenantId,
-      url,
+      tenantId: params.tenantId,
+      url: params.url,
       formats: ['markdown'],
       onlyMainContent: true,
     });
