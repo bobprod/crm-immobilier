@@ -34,6 +34,7 @@ import { MatchingModule } from './modules/intelligence/matching/matching.module'
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
 import { AiOrchestratorModule } from './modules/intelligence/ai-orchestrator/ai-orchestrator.module';
+import { ProspectingAiModule } from './modules/prospecting-ai/prospecting-ai.module';
 
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
@@ -100,8 +101,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AnalyticsModule,
     AiOrchestratorModule,
 
-    // PROSPECTING - 1 module
+    // PROSPECTING - 2 modules
     ProspectingModule,
+    ProspectingAiModule,
 
     // COMMUNICATIONS - 1 module
     CommunicationsModule,
