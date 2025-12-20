@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from '../../../../shared/database/prisma.service';
+import { IntegrationKeysService } from './integrations/integration-keys.service';
 
 /**
  * Interface pour les résultats SerpAPI
@@ -27,19 +27,13 @@ export class SerpApiService {
   private readonly logger = new Logger(SerpApiService.name);
   private readonly baseUrl = 'https://serpapi.com/search.json';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly integrationKeys: IntegrationKeysService) {}
 
   /**
    * Récupérer la clé API SerpAPI du tenant
    */
   private async getApiKey(tenantId: string): Promise<string> {
-    // TODO: adapter selon ton modèle Prisma
-    // Pour l'instant, on suppose que la clé est dans Settings ou une table IntegrationKey
-    const settings = await this.prisma.settings.findFirst({
-      where: { tenantId },
-    });
-
-    const apiKey = settings?.['serpApiKey'] || process.env.SERPAPI_KEY;
+    const apiKey = await this.integrationKeys.getKey(tenantId, 'serpApiKey');
 
     if (!apiKey) {
       throw new Error('SerpAPI key not configured for tenant');

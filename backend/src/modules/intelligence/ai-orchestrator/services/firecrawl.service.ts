@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from '../../../../shared/database/prisma.service';
+import { IntegrationKeysService } from './integrations/integration-keys.service';
 
 /**
  * Interface pour les résultats Firecrawl
@@ -29,18 +29,13 @@ export class FirecrawlService {
   private readonly logger = new Logger(FirecrawlService.name);
   private readonly baseUrl = 'https://api.firecrawl.dev/v1';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly integrationKeys: IntegrationKeysService) {}
 
   /**
    * Récupérer la clé API Firecrawl du tenant
    */
   private async getApiKey(tenantId: string): Promise<string> {
-    // TODO: adapter selon ton modèle Prisma
-    const settings = await this.prisma.settings.findFirst({
-      where: { tenantId },
-    });
-
-    const apiKey = settings?.['firecrawlApiKey'] || process.env.FIRECRAWL_API_KEY;
+    const apiKey = await this.integrationKeys.getKey(tenantId, 'firecrawlKey');
 
     if (!apiKey) {
       throw new Error('Firecrawl API key not configured for tenant');

@@ -401,6 +401,8 @@ model users {
   settings                 settings[]                @relation("UserSettings")
   tasks                    tasks[]                   @relation("UserTasks")
   user_integrations        user_integrations[]
+  aiOrchestrations         AiOrchestration[]
+  toolCallLogs             ToolCallLog[]
   agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
@@ -1330,4 +1332,77 @@ model Activity {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@map("activities")
+}
+
+// ============================================
+// AI ORCHESTRATOR MODULE
+// ============================================
+
+// Orchestrations IA (tracking des demandes d'orchestration)
+model AiOrchestration {
+  id            String    @id @default(cuid())
+  userId        String
+  tenantId      String
+  objective     String    // prospection, investment_benchmark, property_analysis, etc.
+  context       Json      // Contexte métier de la demande
+  status        String    // pending, planning, executing, completed, failed, partial
+  plan          Json?     // ExecutionPlan généré
+  results       Json?     // Résultats des ToolCalls
+  finalResult   Json?     // Résultat final synthétisé
+  metrics       Json?     // { totalDurationMs, totalTokensUsed, totalCost, ... }
+  errors        String[]  // Messages d'erreur
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([objective])
+  @@index([createdAt])
+  @@map("ai_orchestrations")
+}
+
+// Logs des appels d'outils individuels
+model ToolCallLog {
+  id                String    @id @default(cuid())
+  orchestrationId   String?   // Lien vers AiOrchestration (optionnel)
+  userId            String
+  tenantId          String
+  tool              String    // serpapi, firecrawl, llm
+  action            String    // search, scrape, generate, etc.
+  params            Json      // Paramètres de l'appel
+  result            Json?     // Résultat de l'appel
+  success           Boolean
+  error             String?
+  durationMs        Int?
+  tokensUsed        Int?
+  cost              Float?
+  createdAt         DateTime  @default(now())
+  
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([orchestrationId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([tool])
+  @@index([createdAt])
+  @@map("tool_call_logs")
+}
+
+// Clés d'intégration pour les outils externes (SerpAPI, Firecrawl, etc.)
+model IntegrationKeys {
+  id            String    @id @default(cuid())
+  tenantId      String    @unique
+  serpApiKey    String?   @db.Text // Encrypted
+  firecrawlKey  String?   @db.Text // Encrypted
+  picaAiKey     String?   @db.Text
+  googleApiKey  String?   @db.Text
+  customKeys    Json?     // Pour d'autres intégrations futures
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([tenantId])
+  @@map("integration_keys")
 }

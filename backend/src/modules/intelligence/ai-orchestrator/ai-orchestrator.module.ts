@@ -6,6 +6,7 @@ import { LLMConfigModule } from '../llm-config/llm-config.module';
 import { LlmService } from './services/llm.service';
 import { SerpApiService } from './services/serpapi.service';
 import { FirecrawlService } from './services/firecrawl.service';
+import { IntegrationKeysService } from './services/integrations/integration-keys.service';
 
 // Services orchestrateur
 import { IntentAnalyzerService } from './services/intent-analyzer.service';
@@ -22,6 +23,9 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     LLMConfigModule, // Pour utiliser LLMProviderFactory
   ],
   providers: [
+    // Services d'intégration
+    IntegrationKeysService,
+
     // Services d'outils externes
     LlmService,
     SerpApiService,
@@ -35,6 +39,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
   ],
   controllers: [AiOrchestratorController],
   exports: [
+    IntegrationKeysService,
     LlmService,
     SerpApiService,
     FirecrawlService,
