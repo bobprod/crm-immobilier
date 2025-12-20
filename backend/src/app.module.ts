@@ -33,6 +33,7 @@ import { LLMConfigModule } from './modules/intelligence/llm-config/llm-config.mo
 import { MatchingModule } from './modules/intelligence/matching/matching.module';
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
+import { AiOrchestratorModule } from './modules/intelligence/ai-orchestrator/ai-orchestrator.module';
 
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
@@ -91,12 +92,13 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 5 modules
+    // INTELLIGENCE - 6 modules
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
+    AiOrchestratorModule,
 
     // PROSPECTING - 1 module
     ProspectingModule,
