@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { IntegrationKeysService } from './integrations/integration-keys.service';
+import { withRetry } from '../utils/retry.util';
 
 /**
  * Interface pour les résultats SerpAPI
@@ -59,17 +60,26 @@ export class SerpApiService {
 
       const apiKey = await this.getApiKey(tenantId);
 
-      const response = await axios.get<SerpApiResponse>(this.baseUrl, {
-        params: {
-          q: query,
-          api_key: apiKey,
-          num: numResults,
-          hl: language,
-          gl: location || 'fr',
-          engine: 'google',
+      // Appel avec retry automatique
+      const response = await withRetry(
+        () =>
+          axios.get<SerpApiResponse>(this.baseUrl, {
+            params: {
+              q: query,
+              api_key: apiKey,
+              num: numResults,
+              hl: language,
+              gl: location || 'fr',
+              engine: 'google',
+            },
+            timeout: 30000,
+          }),
+        {
+          maxRetries: 2,
+          initialDelay: 1000,
+          onRetry: (attempt) => this.logger.warn(`SerpAPI retry attempt ${attempt}`),
         },
-        timeout: 30000,
-      });
+      );
 
       const results = response.data.organic_results || [];
 

@@ -1,4 +1,5 @@
-import { IsString, IsObject, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsObject, IsOptional, IsEnum, IsNumber, Min, Max, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 /**
  * Objectifs d'orchestration supportés
@@ -9,6 +10,45 @@ export enum OrchestrationObjective {
   PROPERTY_ANALYSIS = 'property_analysis',
   LEAD_ENRICHMENT = 'lead_enrichment',
   CUSTOM = 'custom',
+}
+
+/**
+ * Options d'exécution de l'orchestration
+ */
+export class OrchestrationOptionsDto {
+  /**
+   * Mode d'exécution : 'auto' (défaut) ou 'manual' (retourne le plan sans l'exécuter)
+   */
+  @IsOptional()
+  @IsEnum(['auto', 'manual'])
+  executionMode?: 'auto' | 'manual';
+
+  /**
+   * Budget max en USD (défaut: 5$)
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  @Max(100)
+  maxCost?: number;
+
+  /**
+   * Timeout en ms (défaut: 120000ms = 2min, max: 600000ms = 10min)
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(5000) // Min 5 secondes
+  @Max(600000) // Max 10 minutes
+  timeout?: number;
+
+  /**
+   * Nombre max de résultats (pour recherches)
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  maxResults?: number;
 }
 
 /**
@@ -46,22 +86,8 @@ export class OrchestrationRequestDto {
   /**
    * Options d'exécution
    */
-  @IsObject()
   @IsOptional()
-  options?: {
-    /**
-     * Mode d'exécution : 'auto' (défaut) ou 'manual' (retourne le plan sans l'exécuter)
-     */
-    executionMode?: 'auto' | 'manual';
-
-    /**
-     * Budget max en tokens/coût
-     */
-    maxCost?: number;
-
-    /**
-     * Timeout en ms
-     */
-    timeout?: number;
-  };
+  @ValidateNested()
+  @Type(() => OrchestrationOptionsDto)
+  options?: OrchestrationOptionsDto;
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { IntegrationKeysService } from './integrations/integration-keys.service';
+import { withRetry } from '../utils/retry.util';
 
 /**
  * Interface pour les résultats Firecrawl
@@ -60,19 +61,28 @@ export class FirecrawlService {
 
       const apiKey = await this.getApiKey(tenantId);
 
-      const response = await axios.post(
-        `${this.baseUrl}/scrape`,
+      // Appel avec retry automatique
+      const response = await withRetry(
+        () =>
+          axios.post(
+            `${this.baseUrl}/scrape`,
+            {
+              url,
+              formats,
+              onlyMainContent,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              timeout: 60000, // 60s timeout
+            },
+          ),
         {
-          url,
-          formats,
-          onlyMainContent,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 60000, // 60s timeout
+          maxRetries: 2,
+          initialDelay: 2000,
+          onRetry: (attempt) => this.logger.warn(`Firecrawl retry attempt ${attempt} for ${url}`),
         },
       );
 

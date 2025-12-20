@@ -12,7 +12,11 @@ import { IntegrationKeysService } from './services/integrations/integration-keys
 import { IntentAnalyzerService } from './services/intent-analyzer.service';
 import { ExecutionPlannerService } from './services/execution-planner.service';
 import { ToolExecutorService } from './services/tool-executor.service';
+import { BudgetTrackerService } from './services/budget-tracker.service';
 import { AiOrchestratorService } from './services/ai-orchestrator.service';
+
+// Guards
+import { OrchestratorRateLimitGuard } from './guards/orchestrator-rate-limit.guard';
 
 // Controller
 import { AiOrchestratorController } from './ai-orchestrator.controller';
@@ -23,6 +27,9 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     LLMConfigModule, // Pour utiliser LLMProviderFactory
   ],
   providers: [
+    // Guards
+    OrchestratorRateLimitGuard,
+
     // Services d'intégration
     IntegrationKeysService,
 
@@ -35,6 +42,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     IntentAnalyzerService,
     ExecutionPlannerService,
     ToolExecutorService,
+    BudgetTrackerService,
     AiOrchestratorService,
   ],
   controllers: [AiOrchestratorController],

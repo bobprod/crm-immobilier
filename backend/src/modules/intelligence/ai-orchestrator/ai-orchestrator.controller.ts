@@ -1,6 +1,7 @@
 import { Controller, Post, Body, UseGuards, Logger, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+import { OrchestratorRateLimitGuard } from './guards/orchestrator-rate-limit.guard';
 import { AiOrchestratorService } from './services/ai-orchestrator.service';
 import { OrchestrationRequestDto, OrchestrationResponseDto } from './dto';
 
@@ -10,7 +11,7 @@ import { OrchestrationRequestDto, OrchestrationResponseDto } from './dto';
 @ApiTags('ai-orchestrator')
 @ApiBearerAuth()
 @Controller('ai/orchestrate')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, OrchestratorRateLimitGuard)
 export class AiOrchestratorController {
   private readonly logger = new Logger(AiOrchestratorController.name);
 
@@ -23,6 +24,9 @@ export class AiOrchestratorController {
    */
   @Post()
   @ApiOperation({ summary: 'Orchestrate an AI task' })
+  @ApiHeader({ name: 'X-RateLimit-Limit', description: 'Nombre max de requêtes par fenêtre' })
+  @ApiHeader({ name: 'X-RateLimit-Remaining', description: 'Nombre de requêtes restantes' })
+  @ApiHeader({ name: 'X-RateLimit-Reset', description: 'Date de reset du compteur' })
   async orchestrate(
     @Request() req,
     @Body() request: OrchestrationRequestDto,

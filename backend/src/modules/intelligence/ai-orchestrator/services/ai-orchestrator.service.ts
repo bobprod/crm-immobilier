@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { OrchestrationRequestDto, OrchestrationResponseDto, OrchestrationStatus } from '../dto';
 import { IntentAnalyzerService } from './intent-analyzer.service';
 import { ExecutionPlannerService } from './execution-planner.service';
 import { ToolExecutorService } from './tool-executor.service';
+import { BudgetTrackerService } from './budget-tracker.service';
 
 /**
  * Service principal de l'orchestrateur IA
@@ -21,6 +22,7 @@ export class AiOrchestratorService {
     private readonly intentAnalyzer: IntentAnalyzerService,
     private readonly executionPlanner: ExecutionPlannerService,
     private readonly toolExecutor: ToolExecutorService,
+    private readonly budgetTracker: BudgetTrackerService,
   ) {}
 
   /**
@@ -33,6 +35,18 @@ export class AiOrchestratorService {
     this.logger.log(`Tenant: ${request.tenantId}, User: ${request.userId || 'N/A'}`);
 
     try {
+      // 0. Vérifier le budget avant d'exécuter
+      const budgetCheck = await this.budgetTracker.checkBudget(
+        request.tenantId,
+        request.options?.maxCost || 0.5,
+      );
+
+      if (!budgetCheck.allowed) {
+        throw new BadRequestException(budgetCheck.reason);
+      }
+
+      this.logger.log(`Budget OK. Remaining: ${budgetCheck.remaining?.toFixed(2)}$`);
+
       // 1. Analyse de l'intention
       this.logger.log('Step 1: Analyzing intent...');
       const intentAnalysis = await this.intentAnalyzer.analyze({
@@ -96,6 +110,26 @@ export class AiOrchestratorService {
       }
 
       const errors = results.filter((r) => !r.success).map((r) => r.error!);
+
+      // Enregistrer les dépenses (async, ne pas bloquer la réponse)
+      if (totalCost > 0) {
+        this.budgetTracker
+          .recordSpending({
+            tenantId: request.tenantId,
+            userId: request.userId || request.tenantId,
+            orchestrationId: `orch-${Date.now()}`,
+            provider: 'orchestrator',
+            cost: totalCost,
+            tokensUsed: totalTokensUsed,
+            details: {
+              objective: request.objective,
+              toolCalls: executionPlan.toolCalls.length,
+              successfulCalls,
+              failedCalls,
+            },
+          })
+          .catch((err) => this.logger.error('Failed to record spending:', err));
+      }
 
       return {
         status,
