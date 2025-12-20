@@ -24,6 +24,7 @@ import { GeographicTargeting } from './GeographicTargeting';
 import { DemographicTargeting } from './DemographicTargeting';
 import { SalesFunnel } from './SalesFunnel';
 import { LeadValidator } from './LeadValidator';
+import { AiProspectionPanel } from './AiProspectionPanel';
 
 // ============================================
 // TYPES
@@ -33,7 +34,7 @@ interface ProspectingDashboardProps {
   language?: 'fr' | 'en';
 }
 
-type TabType = 'dashboard' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping';
+type TabType = 'dashboard' | 'ai-prospection' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping';
 
 // ============================================
 // SUB-COMPONENTS
@@ -475,6 +476,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'ai-prospection', label: '🤖 Prospection IA', icon: '🚀' },
     { id: 'targeting', label: 'Ciblage', icon: '🎯' },
     { id: 'funnel', label: 'Tunnel', icon: '🔄' },
     { id: 'validation', label: 'Validation', icon: '🛡️' },
@@ -576,7 +578,57 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Featured: AI Prospection */}
+            <button
+              onClick={() => setActiveTab('ai-prospection')}
+              className="p-8 bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 rounded-2xl text-white text-left hover:from-purple-700 hover:via-purple-800 hover:to-pink-700 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-[1.02] group relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/10 transform -skew-y-3"></div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="text-5xl">🤖</div>
+                  <div>
+                    <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-semibold mb-2">
+                      ⭐ RECOMMANDÉ
+                    </div>
+                    <h3 className="font-bold text-2xl">Prospection IA Automatisée</h3>
+                  </div>
+                </div>
+                <p className="text-purple-100 text-base mb-4">
+                  Trouvez des leads qualifiés en quelques minutes avec l'intelligence artificielle.
+                  Configuration simple, résultats rapides, export CRM direct.
+                </p>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Rapide
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Qualifié par IA
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Export CRM
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-2 mt-4 text-base font-semibold opacity-90 group-hover:opacity-100 transition-opacity">
+                  Lancer une prospection
+                  <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </span>
+              </div>
+            </button>
+
+            {/* Other Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <button
                 onClick={() => setActiveTab('targeting')}
                 className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white text-left hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg group"
@@ -654,6 +706,11 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               )}
             </div>
           </div>
+        )}
+
+        {/* AI Prospection Tab */}
+        {activeTab === 'ai-prospection' && (
+          <AiProspectionPanel language={language} />
         )}
 
         {/* Targeting Tab */}
