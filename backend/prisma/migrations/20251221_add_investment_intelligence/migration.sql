@@ -5,17 +5,66 @@
 -- ENUM: Investment Project Source
 -- ============================================
 CREATE TYPE "InvestmentProjectSource" AS ENUM (
+  -- FRANCE
   'bricks',         -- Bricks.co
   'homunity',       -- Homunity.com
   'anaxago',        -- Anaxago.com
-  'fundimmo',       -- Fundimmo.com (future)
-  'lymo',           -- Lymo.fr (future)
-  'raizers',        -- Raizers.com (future)
-  'wiseed',         -- Wiseed.com (future)
-  'estateguru',     -- Estateguru.co (future)
-  'reinvest24',     -- Reinvest24.com (future)
-  'crowdestate',    -- Crowdestate.eu (future)
-  'tunisia_local',  -- Plateformes locales Tunisie (future)
+  'fundimmo',       -- Fundimmo.com
+  'lymo',           -- Lymo.fr
+  'raizers',        -- Raizers.com
+  'wiseed',         -- Wiseed.com
+
+  -- EUROPE (hors France)
+  'estateguru',     -- Estateguru.co (Europe)
+  'reinvest24',     -- Reinvest24.com (Estonie/Europe)
+  'crowdestate',    -- Crowdestate.eu (Estonie/Europe)
+  'propertypartner', -- PropertyPartner.co (UK)
+  'crowdproperty',  -- CrowdProperty.com (UK)
+  'brickowner',     -- BrickOwner.com (Allemagne)
+  'exporo',         -- Exporo.de (Allemagne)
+  'rendity',        -- Rendity.com (Autriche)
+
+  -- USA
+  'fundrise',       -- Fundrise.com
+  'realtymogul',    -- RealtyMogul.com
+  'crowdstreet',    -- CrowdStreet.com
+  'peerstreet',     -- PeerStreet.com
+  'roofstock',      -- Roofstock.com
+  'arrived',        -- Arrived.com
+
+  -- CANADA
+  'addy',           -- Addy.co
+  'triovest',       -- Triovest.com
+  'realtypro',      -- RealtyPRO.ca
+
+  -- AMÉRIQUE LATINE
+  'brla_urba',      -- Urba.com.br (Brésil)
+  'brla_credihome', -- CrediHome.com.br (Brésil)
+  'brla_housers',   -- Housers (Brésil)
+  'colombia_la_haus', -- LaHaus.com (Colombie)
+  'venezuela_local', -- Plateformes locales Venezuela
+
+  -- MENA (Middle East & North Africa)
+  'tunisia_bricks_tn', -- Plateformes Tunisie
+  'tunisia_local',     -- Autres plateformes Tunisie
+  'morocco_reit',      -- REITs Maroc
+  'morocco_local',     -- Plateformes locales Maroc
+  'algeria_local',     -- Plateformes locales Algérie
+  'egypt_nawy',        -- Nawy.com (Egypte)
+  'egypt_aqarmap',     -- Aqarmap.com (Egypte)
+  'uae_smartcrowd',    -- SmartCrowd.ae (UAE)
+  'uae_stake',         -- Stake.ae (UAE)
+  'saudi_redf',        -- REDF.gov.sa (Arabie Saoudite)
+  'saudi_local',       -- Plateformes locales Arabie
+  'qatar_local',       -- Plateformes locales Qatar
+
+  -- AFRIQUE SUBSAHARIENNE
+  'cameroon_local',    -- Plateformes locales Cameroun
+  'ivorycoast_local',  -- Plateformes locales Côte d'Ivoire
+  'nigeria_proptech',  -- PropTech Nigeria
+  'nigeria_local',     -- Autres plateformes Nigeria
+
+  -- AUTRES
   'manual',         -- Ajout manuel
   'other'           -- Autre plateforme (scraping générique)
 );

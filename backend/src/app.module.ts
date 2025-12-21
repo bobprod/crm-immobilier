@@ -35,6 +35,7 @@ import { ValidationModule } from './modules/intelligence/validation/validation.m
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
 import { AiOrchestratorModule } from './modules/intelligence/ai-orchestrator/ai-orchestrator.module';
 import { ProspectingAiModule } from './modules/prospecting-ai/prospecting-ai.module';
+import { InvestmentIntelligenceModule } from './modules/investment-intelligence/investment-intelligence.module';
 
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
@@ -93,13 +94,14 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 6 modules
+    // INTELLIGENCE - 7 modules
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
     AiOrchestratorModule,
+    InvestmentIntelligenceModule,
 
     // PROSPECTING - 2 modules
     ProspectingModule,
