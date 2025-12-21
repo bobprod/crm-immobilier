@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Popup, useMapEvents, useMap } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Circle,
+  Popup,
+  useMapEvents,
+  useMap,
+} from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -11,25 +19,27 @@ const DefaultIcon = L.icon({
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
 const SelectedIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
 const UnselectedIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -115,10 +125,10 @@ const SimpleHeatmap: React.FC<{ zones: Zone[] }> = ({ zones }) => {
   useEffect(() => {
     const heatCircles: L.Circle[] = [];
 
-    zones.forEach(zone => {
+    zones.forEach((zone) => {
       if (zone.coordinates && zone.population) {
         const intensity = Math.min(zone.population / 500000, 1);
-        const radius = 5000 + (intensity * 15000);
+        const radius = 5000 + intensity * 15000;
 
         const circle = L.circle([zone.coordinates.lat, zone.coordinates.lng], {
           radius,
@@ -132,7 +142,7 @@ const SimpleHeatmap: React.FC<{ zones: Zone[] }> = ({ zones }) => {
     });
 
     return () => {
-      heatCircles.forEach(circle => map.removeLayer(circle));
+      heatCircles.forEach((circle) => map.removeLayer(circle));
     };
   }, [map, zones]);
 
@@ -175,8 +185,8 @@ const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
 
         {/* Marqueurs des villes */}
         {zones
-          .filter(zone => zone.coordinates && zone.type !== 'radius')
-          .map(zone => (
+          .filter((zone) => zone.coordinates && zone.type !== 'radius')
+          .map((zone) => (
             <Marker
               key={zone.id}
               position={[zone.coordinates!.lat, zone.coordinates!.lng]}
@@ -215,8 +225,8 @@ const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
 
         {/* Cercles pour les zones de rayon */}
         {zones
-          .filter(zone => zone.type === 'radius' && zone.coordinates && zone.radius)
-          .map(zone => (
+          .filter((zone) => zone.type === 'radius' && zone.coordinates && zone.radius)
+          .map((zone) => (
             <Circle
               key={zone.id}
               center={[zone.coordinates!.lat, zone.coordinates!.lng]}
@@ -257,8 +267,8 @@ const LeafletMapComponent: React.FC<LeafletMapComponentProps> = ({
 
         {/* Cercles de selection pour les villes selectionnees */}
         {selectedZones
-          .filter(zone => zone.type !== 'radius' && zone.coordinates)
-          .map(zone => (
+          .filter((zone) => zone.type !== 'radius' && zone.coordinates)
+          .map((zone) => (
             <Circle
               key={`selection-${zone.id}`}
               center={[zone.coordinates!.lat, zone.coordinates!.lng]}

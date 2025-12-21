@@ -6,7 +6,13 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { ArrowLeft, Save } from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
@@ -34,7 +40,7 @@ export default function NewCampaignPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.message) {
       toast({
         title: 'Erreur',
@@ -53,12 +59,12 @@ export default function NewCampaignPage() {
         targetAudience: formData.targetAudience,
         scheduledAt: formData.scheduledAt || undefined,
       });
-      
+
       toast({
         title: 'Succès',
         description: 'Campagne créée avec succès',
       });
-      
+
       router.push('/marketing/campaigns');
     } catch (error) {
       console.error('Error creating campaign:', error);
@@ -142,9 +148,7 @@ export default function NewCampaignPage() {
                   rows={8}
                   required
                 />
-                <p className="text-sm text-gray-500">
-                  {formData.message.length} caractères
-                </p>
+                <p className="text-sm text-gray-500">{formData.message.length} caractères</p>
               </div>
 
               {/* Scheduled At */}
@@ -156,27 +160,21 @@ export default function NewCampaignPage() {
                   value={formData.scheduledAt}
                   onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                 />
-                <p className="text-sm text-gray-500">
-                  Laissez vide pour envoyer immédiatement
-                </p>
+                <p className="text-sm text-gray-500">Laissez vide pour envoyer immédiatement</p>
               </div>
 
               {/* Target Audience Info */}
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-blue-900 mb-2">Audience cible</h3>
                 <p className="text-sm text-blue-800">
-                  L'audience sera définie automatiquement selon les critères de segmentation.
-                  Vous pourrez affiner la sélection après la création de la campagne.
+                  L'audience sera définie automatiquement selon les critères de segmentation. Vous
+                  pourrez affiner la sélection après la création de la campagne.
                 </p>
               </div>
 
               {/* Actions */}
               <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1"
-                >
+                <Button type="submit" disabled={loading} className="flex-1">
                   {loading ? (
                     <>Création en cours...</>
                   ) : (

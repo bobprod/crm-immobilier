@@ -7,7 +7,14 @@ import { Button } from '@/shared/components/ui/button';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import { ArrowLeft, Sparkles, Save, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Sparkles,
+  Save,
+  Image as ImageIcon,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { api } from '../../../lib/api-client';
 import { toast } from '@/shared/components/ui/use-toast';
 
@@ -87,7 +94,7 @@ export default function PropertySeoDetailPage() {
       console.error('Error optimizing:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'optimiser',
+        description: "Impossible d'optimiser",
         variant: 'destructive',
       });
     } finally {
@@ -170,7 +177,9 @@ export default function PropertySeoDetailPage() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
-              <p className="text-gray-600 mt-1">{property.city} - {property.address}</p>
+              <p className="text-gray-600 mt-1">
+                {property.city} - {property.address}
+              </p>
             </div>
             <Button onClick={handleOptimize} disabled={optimizing}>
               {optimizing ? (
@@ -192,14 +201,10 @@ export default function PropertySeoDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold mb-1">Score SEO</h3>
-                  <p className="text-sm text-gray-600">
-                    Évaluation globale du référencement
-                  </p>
+                  <p className="text-sm text-gray-600">Évaluation globale du référencement</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-5xl font-bold text-purple-600">
-                    {seoData.score}
-                  </div>
+                  <div className="text-5xl font-bold text-purple-600">{seoData.score}</div>
                   <div className="text-sm text-gray-500">/ 100</div>
                 </div>
               </div>
@@ -215,7 +220,8 @@ export default function PropertySeoDetailPage() {
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Meta Title {seoData?.metaTitle && <CheckCircle className="inline h-4 w-4 text-green-600" />}
+                Meta Title{' '}
+                {seoData?.metaTitle && <CheckCircle className="inline h-4 w-4 text-green-600" />}
               </label>
               <Textarea
                 value={seoData?.metaTitle || property.title}
@@ -232,7 +238,10 @@ export default function PropertySeoDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Meta Description {seoData?.metaDescription && <CheckCircle className="inline h-4 w-4 text-green-600" />}
+                Meta Description{' '}
+                {seoData?.metaDescription && (
+                  <CheckCircle className="inline h-4 w-4 text-green-600" />
+                )}
               </label>
               <Textarea
                 value={seoData?.metaDescription || property.description}
@@ -249,9 +258,7 @@ export default function PropertySeoDetailPage() {
 
             {seoData?.keywords && seoData.keywords.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mots-clés
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mots-clés</label>
                 <div className="flex flex-wrap gap-2">
                   {seoData.keywords.map((keyword, index) => (
                     <Badge key={index} variant="outline">
@@ -292,9 +299,7 @@ export default function PropertySeoDetailPage() {
                       <ImageIcon className="h-8 w-8 text-gray-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        Image {index + 1}
-                      </p>
+                      <p className="text-sm font-medium text-gray-900">Image {index + 1}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {seoData?.altTexts?.[image] || 'Aucun texte alternatif'}
                       </p>

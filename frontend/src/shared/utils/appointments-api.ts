@@ -165,10 +165,7 @@ export const appointmentsAPI = {
     return response.data;
   },
 
-  getAvailability: async (
-    date: string,
-    duration?: number
-  ): Promise<AvailabilitySlot[]> => {
+  getAvailability: async (date: string, duration?: number): Promise<AvailabilitySlot[]> => {
     const response = await apiClient.get('/appointments/availability', {
       params: { date, duration },
     });
@@ -243,7 +240,7 @@ export const getAppointmentPriorityColor = (priority: string): string => {
 export const formatAppointmentTime = (startTime: string, endTime: string): string => {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('fr-FR', {
       hour: '2-digit',

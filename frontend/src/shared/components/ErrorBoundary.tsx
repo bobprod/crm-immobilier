@@ -93,7 +93,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       // Sinon, afficher l'UI par défaut
-      return <DefaultErrorUI error={error} errorInfo={errorInfo} onReset={this.resetError} showDetails={showDetails} />;
+      return (
+        <DefaultErrorUI
+          error={error}
+          errorInfo={errorInfo}
+          onReset={this.resetError}
+          showDetails={showDetails}
+        />
+      );
     }
 
     return children;
@@ -125,9 +132,7 @@ function DefaultErrorUI({ error, errorInfo, onReset, showDetails }: DefaultError
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Oups ! Une erreur est survenue
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Oups ! Une erreur est survenue</h1>
             <p className="text-gray-600 mt-1">
               Quelque chose s'est mal passé lors du chargement de cette page.
             </p>
@@ -137,7 +142,7 @@ function DefaultErrorUI({ error, errorInfo, onReset, showDetails }: DefaultError
         {/* Message d'erreur */}
         <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
           <p className="text-sm font-mono text-red-800">
-            {error.message || 'Une erreur inattendue s\'est produite'}
+            {error.message || "Une erreur inattendue s'est produite"}
           </p>
         </div>
 
@@ -175,28 +180,17 @@ function DefaultErrorUI({ error, errorInfo, onReset, showDetails }: DefaultError
 
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={onReset}
-            className="flex items-center gap-2"
-            variant="default"
-          >
+          <Button onClick={onReset} className="flex items-center gap-2" variant="default">
             <RefreshCw className="w-4 h-4" />
             Réessayer
           </Button>
 
-          <Button
-            onClick={handleGoHome}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
+          <Button onClick={handleGoHome} variant="outline" className="flex items-center gap-2">
             <Home className="w-4 h-4" />
             Retour à l'accueil
           </Button>
 
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-          >
+          <Button onClick={() => window.location.reload()} variant="outline">
             Recharger la page
           </Button>
         </div>
@@ -255,7 +249,7 @@ export function PageErrorBoundary({ children }: { children: ReactNode }) {
  */
 export function SectionErrorBoundary({
   children,
-  fallbackMessage = "Une erreur est survenue dans cette section"
+  fallbackMessage = 'Une erreur est survenue dans cette section',
 }: {
   children: ReactNode;
   fallbackMessage?: string;
@@ -267,12 +261,8 @@ export function SectionErrorBoundary({
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-semibold text-red-900 mb-1">
-                {fallbackMessage}
-              </h3>
-              <p className="text-sm text-red-700 mb-3">
-                {error.message}
-              </p>
+              <h3 className="font-semibold text-red-900 mb-1">{fallbackMessage}</h3>
+              <p className="text-sm text-red-700 mb-3">{error.message}</p>
               <Button onClick={reset} size="sm" variant="outline">
                 Réessayer
               </Button>

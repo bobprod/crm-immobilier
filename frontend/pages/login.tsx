@@ -20,7 +20,7 @@ export default function Login() {
       await login(email, password);
 
       // Wait a bit to ensure token is fully saved in localStorage
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Verify token is actually saved before redirecting
       const savedToken = localStorage.getItem('auth_token');

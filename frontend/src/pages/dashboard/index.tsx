@@ -73,14 +73,15 @@ export default function DashboardPage() {
       setError(null);
 
       // Fetch all dashboard data in parallel
-      const [statsData, chartsData, activitiesData, performersData, alertsData] =
-        await Promise.all([
+      const [statsData, chartsData, activitiesData, performersData, alertsData] = await Promise.all(
+        [
           dashboardService.getStats(),
           dashboardService.getCharts(),
           dashboardService.getRecentActivities(),
           dashboardService.getTopPerformers(),
           dashboardService.getAlerts(),
-        ]);
+        ]
+      );
 
       setStats(statsData);
       setCharts(chartsData);
@@ -139,9 +140,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Alerts */}
-        {alerts.alerts.length > 0 && (
-          <AlertsWidget alerts={alerts} />
-        )}
+        {alerts.alerts.length > 0 && <AlertsWidget alerts={alerts} />}
 
         {/* Stats Grid */}
         <StatsWidget stats={stats} />

@@ -38,10 +38,12 @@ backendApiClient.interceptors.response.use(
       // console.log('[API Client] 401 Unauthorized - clearing token');
 
       // Only redirect if not already on login page, not on home page, and not a login request
-      if (typeof window !== 'undefined' &&
+      if (
+        typeof window !== 'undefined' &&
         !window.location.pathname.includes('/login') &&
         window.location.pathname !== '/' &&
-        !error.config.url?.includes('/auth/login')) {
+        !error.config.url?.includes('/auth/login')
+      ) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
@@ -67,62 +69,41 @@ export const authAPI = {
 };
 
 export const propertiesAPI = {
-  getAll: (filters?: any) =>
-    backendApiClient.get('/properties', { params: filters }),
-  getById: (id: string) =>
-    backendApiClient.get(`/properties/${id}`),
-  create: (data: any) =>
-    backendApiClient.post('/properties', data),
-  update: (id: string, data: any) =>
-    backendApiClient.put(`/properties/${id}`, data),
-  delete: (id: string) =>
-    backendApiClient.delete(`/properties/${id}`),
-  syncWordPress: (id: string) =>
-    backendApiClient.put(`/properties/${id}/sync-wordpress`),
+  getAll: (filters?: any) => backendApiClient.get('/properties', { params: filters }),
+  getById: (id: string) => backendApiClient.get(`/properties/${id}`),
+  create: (data: any) => backendApiClient.post('/properties', data),
+  update: (id: string, data: any) => backendApiClient.put(`/properties/${id}`, data),
+  delete: (id: string) => backendApiClient.delete(`/properties/${id}`),
+  syncWordPress: (id: string) => backendApiClient.put(`/properties/${id}/sync-wordpress`),
 };
 
 export const prospectsAPI = {
-  getAll: (filters?: any) =>
-    backendApiClient.get('/prospects', { params: filters }),
-  getById: (id: string) =>
-    backendApiClient.get(`/prospects/${id}`),
-  create: (data: any) =>
-    backendApiClient.post('/prospects', data),
-  update: (id: string, data: any) =>
-    backendApiClient.put(`/prospects/${id}`, data),
-  delete: (id: string) =>
-    backendApiClient.delete(`/prospects/${id}`),
+  getAll: (filters?: any) => backendApiClient.get('/prospects', { params: filters }),
+  getById: (id: string) => backendApiClient.get(`/prospects/${id}`),
+  create: (data: any) => backendApiClient.post('/prospects', data),
+  update: (id: string, data: any) => backendApiClient.put(`/prospects/${id}`, data),
+  delete: (id: string) => backendApiClient.delete(`/prospects/${id}`),
   addInteraction: (id: string, data: any) =>
     backendApiClient.post(`/prospects/${id}/interactions`, data),
-  getInteractions: (id: string) =>
-    backendApiClient.get(`/prospects/${id}/interactions`),
+  getInteractions: (id: string) => backendApiClient.get(`/prospects/${id}/interactions`),
 };
 
 export const dashboardAPI = {
-  getStats: () =>
-    backendApiClient.get('/dashboard/stats'),
-  getRecentActivities: () =>
-    backendApiClient.get('/dashboard/activities'),
+  getStats: () => backendApiClient.get('/dashboard/stats'),
+  getRecentActivities: () => backendApiClient.get('/dashboard/activities'),
 };
 
 export const matchingAPI = {
-  getMatches: (filters?: any) =>
-    backendApiClient.get('/matching', { params: filters }),
-  getMatchById: (id: string) =>
-    backendApiClient.get(`/matching/${id}`),
+  getMatches: (filters?: any) => backendApiClient.get('/matching', { params: filters }),
+  getMatchById: (id: string) => backendApiClient.get(`/matching/${id}`),
 };
 
 export const campaignsAPI = {
-  getAll: () =>
-    backendApiClient.get('/campaigns'),
-  getById: (id: string) =>
-    backendApiClient.get(`/campaigns/${id}`),
-  create: (data: any) =>
-    backendApiClient.post('/campaigns', data),
-  update: (id: string, data: any) =>
-    backendApiClient.put(`/campaigns/${id}`, data),
-  delete: (id: string) =>
-    backendApiClient.delete(`/campaigns/${id}`),
+  getAll: () => backendApiClient.get('/campaigns'),
+  getById: (id: string) => backendApiClient.get(`/campaigns/${id}`),
+  create: (data: any) => backendApiClient.post('/campaigns', data),
+  update: (id: string, data: any) => backendApiClient.put(`/campaigns/${id}`, data),
+  delete: (id: string) => backendApiClient.delete(`/campaigns/${id}`),
 };
 
 // Helper methods for components

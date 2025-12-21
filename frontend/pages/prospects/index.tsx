@@ -22,19 +22,20 @@ export default function ProspectsListPage() {
     }
   }, [user, router]);
 
-  const filteredProspects = prospects.filter(p =>
-    p.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-    p.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-    p.email?.toLowerCase().includes(search.toLowerCase())
+  const filteredProspects = prospects.filter(
+    (p) =>
+      p.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+      p.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+      p.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'new': 'bg-blue-100 text-blue-800',
-      'contacted': 'bg-yellow-100 text-yellow-800',
-      'qualified': 'bg-green-100 text-green-800',
-      'meeting': 'bg-purple-100 text-purple-800',
-      'closed': 'bg-gray-100 text-gray-800',
+      new: 'bg-blue-100 text-blue-800',
+      contacted: 'bg-yellow-100 text-yellow-800',
+      qualified: 'bg-green-100 text-green-800',
+      meeting: 'bg-purple-100 text-purple-800',
+      closed: 'bg-gray-100 text-gray-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -85,9 +86,7 @@ export default function ProspectsListPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Aucun prospect trouvé
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucun prospect trouvé</h3>
                 <p className="text-gray-600">
                   {search ? 'Essayez une autre recherche' : 'Commencez par ajouter un prospect'}
                 </p>
@@ -95,11 +94,7 @@ export default function ProspectsListPage() {
             </Card>
           ) : (
             filteredProspects.map((prospect) => (
-              <Link
-                key={prospect.id}
-                href={`/prospects/${prospect.id}`}
-                className="block"
-              >
+              <Link key={prospect.id} href={`/prospects/${prospect.id}`} className="block">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -116,9 +111,7 @@ export default function ProspectsListPage() {
                       </div>
 
                       <div className="flex items-center space-x-3">
-                        <Badge className={getStatusColor(prospect.status)}>
-                          {prospect.status}
-                        </Badge>
+                        <Badge className={getStatusColor(prospect.status)}>{prospect.status}</Badge>
                         {prospect.phone && (
                           <span className="text-sm text-gray-600">{prospect.phone}</span>
                         )}

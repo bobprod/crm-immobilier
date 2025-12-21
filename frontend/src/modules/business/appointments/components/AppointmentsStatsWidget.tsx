@@ -20,7 +20,7 @@ export default function AppointmentsStatsWidget() {
 
       const data = await appointmentsAPI.getStats(
         startOfMonth.toISOString(),
-        endOfMonth.toISOString(),
+        endOfMonth.toISOString()
       );
       setStats(data);
     } catch (error) {

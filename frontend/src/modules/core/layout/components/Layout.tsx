@@ -3,7 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import {
+  Home,
+  Users,
+  Building2,
+  Calendar,
+  BarChart3,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  Target,
+  MessageSquare,
+  Sparkles,
+  CheckSquare,
+  Zap,
+  Shield,
+} from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -12,7 +29,11 @@ interface LayoutProps {
   disableAuthRedirect?: boolean;
 }
 
-export default function Layout({ children, initialTab = 'dashboard', disableAuthRedirect = false }: LayoutProps) {
+export default function Layout({
+  children,
+  initialTab = 'dashboard',
+  disableAuthRedirect = false,
+}: LayoutProps) {
   const router = useRouter();
   const { user, loading, logout } = useAuth(); // Destructure loading from useAuth
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,7 +45,14 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     // For testing purposes, also check for auth_token in localStorage
     const hasAuthToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
     if (disableAuthRedirect === false && !user && !loading && !hasAuthToken) {
-      console.log('Layout: Redirecting to login - user:', user, 'loading:', loading, 'hasAuthToken:', hasAuthToken);
+      console.log(
+        'Layout: Redirecting to login - user:',
+        user,
+        'loading:',
+        loading,
+        'hasAuthToken:',
+        hasAuthToken
+      );
       router.push('/login');
     }
   }, [user, loading, mounted, disableAuthRedirect, router]);
@@ -61,7 +89,13 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
 
   const menuItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
-    { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
+    {
+      id: 'prospecting',
+      label: 'Prospection IA',
+      icon: Sparkles,
+      href: '/prospecting',
+      highlight: true,
+    },
     { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
     { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
     { id: 'matching', label: 'Matching', icon: Target, href: '/matching' },
@@ -99,7 +133,9 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
       )}
 
       {/* Sidebar */}
-      <div className={`fixed lg:static inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:z-auto w-64 bg-white shadow-lg flex flex-col`}>
+      <div
+        className={`fixed lg:static inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:z-auto w-64 bg-white shadow-lg flex flex-col`}
+      >
         <div className="p-6">
           <h1 className="text-2xl font-bold text-gray-800">CRM Immobilier</h1>
         </div>
@@ -117,10 +153,14 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
                     : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <item.icon className={`w-5 h-5 mr-3 ${(item as any).highlight && activeTab !== item.id ? 'text-purple-600' : ''}`} />
+              <item.icon
+                className={`w-5 h-5 mr-3 ${(item as any).highlight && activeTab !== item.id ? 'text-purple-600' : ''}`}
+              />
               {item.label}
               {(item as any).highlight && activeTab !== item.id && (
-                <span className="ml-auto text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">IA</span>
+                <span className="ml-auto text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
+                  IA
+                </span>
               )}
             </button>
           ))}
@@ -147,9 +187,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
 
       {/* Main content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );

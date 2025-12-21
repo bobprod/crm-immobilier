@@ -18,13 +18,7 @@ export const propertyTypeEnum = z.enum([
   'office',
 ]);
 
-export const propertyStatusEnum = z.enum([
-  'available',
-  'reserved',
-  'sold',
-  'rented',
-  'pending',
-]);
+export const propertyStatusEnum = z.enum(['available', 'reserved', 'sold', 'rented', 'pending']);
 
 export const propertyPriorityEnum = z.enum(['low', 'medium', 'high']);
 
@@ -47,10 +41,7 @@ export const propertySchema = z.object({
 
   category: propertyCategoryEnum,
 
-  price: z
-    .number()
-    .positive('Le prix doit être positif')
-    .min(1, 'Le prix doit être supérieur à 0'),
+  price: z.number().positive('Le prix doit être positif').min(1, 'Le prix doit être supérieur à 0'),
 
   area: z
     .number()
@@ -73,8 +64,8 @@ export const propertySchema = z.object({
 
   address: z
     .string()
-    .min(5, 'L\'adresse doit contenir au moins 5 caractères')
-    .max(500, 'L\'adresse ne peut pas dépasser 500 caractères'),
+    .min(5, "L'adresse doit contenir au moins 5 caractères")
+    .max(500, "L'adresse ne peut pas dépasser 500 caractères"),
 
   city: z
     .string()
@@ -103,7 +94,7 @@ export const propertySchema = z.object({
 
   longitude: z.number().min(-180).max(180).optional(),
 
-  images: z.array(z.string().url('URL d\'image invalide')).optional(),
+  images: z.array(z.string().url("URL d'image invalide")).optional(),
 
   features: z.array(z.string()).optional(),
 
@@ -131,10 +122,7 @@ export const contactSchema = z.object({
     .min(2, 'Le nom doit contenir au moins 2 caractères')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
 
-  email: z
-    .string()
-    .email('Email invalide')
-    .max(255, 'L\'email ne peut pas dépasser 255 caractères'),
+  email: z.string().email('Email invalide').max(255, "L'email ne peut pas dépasser 255 caractères"),
 
   phone: z
     .string()
@@ -147,7 +135,7 @@ export const contactSchema = z.object({
 
   address: z
     .string()
-    .max(500, 'L\'adresse ne peut pas dépasser 500 caractères')
+    .max(500, "L'adresse ne peut pas dépasser 500 caractères")
     .optional()
     .or(z.literal('')),
 
@@ -173,7 +161,7 @@ export const contactSchema = z.object({
 
   company: z
     .string()
-    .max(200, 'Le nom de l\'entreprise ne peut pas dépasser 200 caractères')
+    .max(200, "Le nom de l'entreprise ne peut pas dépasser 200 caractères")
     .optional()
     .or(z.literal('')),
 
@@ -206,10 +194,7 @@ export const taskSchema = z.object({
 
   status: taskStatusEnum.default('pending'),
 
-  dueDate: z
-    .date()
-    .min(new Date(), 'La date d\'échéance ne peut pas être dans le passé')
-    .optional(),
+  dueDate: z.date().min(new Date(), "La date d'échéance ne peut pas être dans le passé").optional(),
 
   assignedTo: z.string().optional(),
 
@@ -228,13 +213,7 @@ export type TaskFormData = z.infer<typeof taskSchema>;
 // APPOINTMENT SCHEMAS
 // ============================================================================
 
-export const appointmentTypeEnum = z.enum([
-  'viewing',
-  'meeting',
-  'signing',
-  'phone_call',
-  'other',
-]);
+export const appointmentTypeEnum = z.enum(['viewing', 'meeting', 'signing', 'phone_call', 'other']);
 
 export const appointmentStatusEnum = z.enum([
   'scheduled',
@@ -267,7 +246,7 @@ export const appointmentSchema = z
 
     location: z
       .string()
-      .max(500, 'L\'adresse ne peut pas dépasser 500 caractères')
+      .max(500, "L'adresse ne peut pas dépasser 500 caractères")
       .optional()
       .or(z.literal('')),
 
@@ -307,10 +286,7 @@ export const clientSchema = z.object({
     .min(2, 'Le nom doit contenir au moins 2 caractères')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
 
-  email: z
-    .string()
-    .email('Email invalide')
-    .max(255, 'L\'email ne peut pas dépasser 255 caractères'),
+  email: z.string().email('Email invalide').max(255, "L'email ne peut pas dépasser 255 caractères"),
 
   phone: z
     .string()
@@ -323,7 +299,7 @@ export const clientSchema = z.object({
 
   address: z
     .string()
-    .max(500, 'L\'adresse ne peut pas dépasser 500 caractères')
+    .max(500, "L'adresse ne peut pas dépasser 500 caractères")
     .optional()
     .or(z.literal('')),
 
@@ -339,10 +315,7 @@ export const clientSchema = z.object({
     .optional()
     .or(z.literal('')),
 
-  budget: z
-    .number()
-    .positive('Le budget doit être positif')
-    .optional(),
+  budget: z.number().positive('Le budget doit être positif').optional(),
 
   preferences: z
     .string()
@@ -387,7 +360,13 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const campaignTypeEnum = z.enum(['email', 'sms', 'social_media', 'newsletter']);
 
-export const campaignStatusEnum = z.enum(['draft', 'scheduled', 'active', 'completed', 'cancelled']);
+export const campaignStatusEnum = z.enum([
+  'draft',
+  'scheduled',
+  'active',
+  'completed',
+  'cancelled',
+]);
 
 export const campaignSchema = z.object({
   name: z
@@ -413,7 +392,7 @@ export const campaignSchema = z.object({
 
   targetAudience: z
     .string()
-    .max(500, 'L\'audience cible ne peut pas dépasser 500 caractères')
+    .max(500, "L'audience cible ne peut pas dépasser 500 caractères")
     .optional()
     .or(z.literal('')),
 

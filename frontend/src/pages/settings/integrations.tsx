@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -18,7 +24,7 @@ import {
   Calendar,
   MessageSquare,
   ArrowLeft,
-  Database
+  Database,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,9 +51,14 @@ export default function IntegrationsPage() {
       config: { siteUrl: '', username: '', applicationPassword: '' },
       fields: [
         { key: 'siteUrl', label: 'URL du site', type: 'url', placeholder: 'https://votresite.com' },
-        { key: 'username', label: 'Nom d\'utilisateur', type: 'text', placeholder: 'admin' },
-        { key: 'applicationPassword', label: 'Mot de passe application', type: 'password', placeholder: 'xxxx xxxx xxxx xxxx' }
-      ]
+        { key: 'username', label: "Nom d'utilisateur", type: 'text', placeholder: 'admin' },
+        {
+          key: 'applicationPassword',
+          label: 'Mot de passe application',
+          type: 'password',
+          placeholder: 'xxxx xxxx xxxx xxxx',
+        },
+      ],
     },
     {
       id: 'google_calendar',
@@ -58,14 +69,24 @@ export default function IntegrationsPage() {
       connected: false,
       config: { clientId: '', clientSecret: '' },
       fields: [
-        { key: 'clientId', label: 'Client ID', type: 'text', placeholder: 'xxxxx.apps.googleusercontent.com' },
-        { key: 'clientSecret', label: 'Client Secret', type: 'password', placeholder: 'GOCSPX-xxxxxxxx' }
-      ]
+        {
+          key: 'clientId',
+          label: 'Client ID',
+          type: 'text',
+          placeholder: 'xxxxx.apps.googleusercontent.com',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Client Secret',
+          type: 'password',
+          placeholder: 'GOCSPX-xxxxxxxx',
+        },
+      ],
     },
     {
       id: 'smtp',
       name: 'Email SMTP',
-      description: 'Configuration SMTP pour l\'envoi d\'emails',
+      description: "Configuration SMTP pour l'envoi d'emails",
       icon: Mail,
       enabled: false,
       connected: false,
@@ -73,10 +94,20 @@ export default function IntegrationsPage() {
       fields: [
         { key: 'host', label: 'Serveur SMTP', type: 'text', placeholder: 'smtp.gmail.com' },
         { key: 'port', label: 'Port', type: 'text', placeholder: '587' },
-        { key: 'username', label: 'Nom d\'utilisateur', type: 'text', placeholder: 'email@exemple.com' },
+        {
+          key: 'username',
+          label: "Nom d'utilisateur",
+          type: 'text',
+          placeholder: 'email@exemple.com',
+        },
         { key: 'password', label: 'Mot de passe', type: 'password', placeholder: '••••••••' },
-        { key: 'from', label: 'Email expéditeur', type: 'email', placeholder: 'noreply@votreagence.com' }
-      ]
+        {
+          key: 'from',
+          label: 'Email expéditeur',
+          type: 'email',
+          placeholder: 'noreply@votreagence.com',
+        },
+      ],
     },
     {
       id: 'twilio',
@@ -87,17 +118,29 @@ export default function IntegrationsPage() {
       connected: false,
       config: { accountSid: '', authToken: '', phoneNumber: '' },
       fields: [
-        { key: 'accountSid', label: 'Account SID', type: 'text', placeholder: 'ACxxxxxxxxxxxxxxxxxxxxxxxx' },
-        { key: 'authToken', label: 'Auth Token', type: 'password', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx' },
-        { key: 'phoneNumber', label: 'Numéro Twilio', type: 'text', placeholder: '+33xxxxxxxxx' }
-      ]
-    }
+        {
+          key: 'accountSid',
+          label: 'Account SID',
+          type: 'text',
+          placeholder: 'ACxxxxxxxxxxxxxxxxxxxxxxxx',
+        },
+        {
+          key: 'authToken',
+          label: 'Auth Token',
+          type: 'password',
+          placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+        },
+        { key: 'phoneNumber', label: 'Numéro Twilio', type: 'text', placeholder: '+33xxxxxxxxx' },
+      ],
+    },
   ]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
+  const [testResults, setTestResults] = useState<
+    Record<string, { success: boolean; message: string }>
+  >({});
 
   useEffect(() => {
     loadConfig();
@@ -108,11 +151,13 @@ export default function IntegrationsPage() {
       setLoading(true);
       const response = await apiClient.get('/settings/integrations');
       if (response.data) {
-        setIntegrations(prev => prev.map(int => ({
-          ...int,
-          ...(response.data[int.id] || {}),
-          config: { ...int.config, ...(response.data[int.id]?.config || {}) }
-        })));
+        setIntegrations((prev) =>
+          prev.map((int) => ({
+            ...int,
+            ...(response.data[int.id] || {}),
+            config: { ...int.config, ...(response.data[int.id]?.config || {}) },
+          }))
+        );
       }
     } catch (error) {
       console.error('Erreur chargement config:', error);
@@ -124,10 +169,13 @@ export default function IntegrationsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const configData = integrations.reduce((acc, int) => ({
-        ...acc,
-        [int.id]: { enabled: int.enabled, config: int.config }
-      }), {});
+      const configData = integrations.reduce(
+        (acc, int) => ({
+          ...acc,
+          [int.id]: { enabled: int.enabled, config: int.config },
+        }),
+        {}
+      );
       await apiClient.post('/settings/integrations/bulk', { settings: configData });
       alert('Configuration sauvegardée !');
     } catch (error) {
@@ -141,16 +189,21 @@ export default function IntegrationsPage() {
   const handleTest = async (integrationId: string) => {
     try {
       setTestingId(integrationId);
-      setTestResults(prev => ({ ...prev, [integrationId]: undefined as any }));
-      const response = await apiClient.post(`/settings/integrations/test`, { integration: integrationId });
-      setTestResults(prev => ({
+      setTestResults((prev) => ({ ...prev, [integrationId]: undefined as any }));
+      const response = await apiClient.post(`/settings/integrations/test`, {
+        integration: integrationId,
+      });
+      setTestResults((prev) => ({
         ...prev,
-        [integrationId]: { success: response.data.success, message: response.data.message }
+        [integrationId]: { success: response.data.success, message: response.data.message },
       }));
     } catch (error: any) {
-      setTestResults(prev => ({
+      setTestResults((prev) => ({
         ...prev,
-        [integrationId]: { success: false, message: error.response?.data?.message || 'Erreur de connexion' }
+        [integrationId]: {
+          success: false,
+          message: error.response?.data?.message || 'Erreur de connexion',
+        },
       }));
     } finally {
       setTestingId(null);
@@ -158,15 +211,15 @@ export default function IntegrationsPage() {
   };
 
   const updateIntegration = (id: string, field: string, value: any) => {
-    setIntegrations(prev => prev.map(int =>
-      int.id === id ? { ...int, [field]: value } : int
-    ));
+    setIntegrations((prev) =>
+      prev.map((int) => (int.id === id ? { ...int, [field]: value } : int))
+    );
   };
 
   const updateConfig = (id: string, key: string, value: string) => {
-    setIntegrations(prev => prev.map(int =>
-      int.id === id ? { ...int, config: { ...int.config, [key]: value } } : int
-    ));
+    setIntegrations((prev) =>
+      prev.map((int) => (int.id === id ? { ...int, config: { ...int.config, [key]: value } } : int))
+    );
   };
 
   if (loading) {
@@ -181,7 +234,10 @@ export default function IntegrationsPage() {
     <div className="container mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 mb-4">
+        <Link
+          href="/settings"
+          className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 mb-4"
+        >
           <ArrowLeft className="h-4 w-4" />
           Retour aux paramètres
         </Link>
@@ -209,12 +265,12 @@ export default function IntegrationsPage() {
                     {integration.name}
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    {integration.connected && (
-                      <Badge className="bg-green-500">Connecté</Badge>
-                    )}
+                    {integration.connected && <Badge className="bg-green-500">Connecté</Badge>}
                     <Switch
                       checked={integration.enabled}
-                      onCheckedChange={(checked) => updateIntegration(integration.id, 'enabled', checked)}
+                      onCheckedChange={(checked) =>
+                        updateIntegration(integration.id, 'enabled', checked)
+                      }
                     />
                   </div>
                 </div>
@@ -255,7 +311,13 @@ export default function IntegrationsPage() {
 
                 {/* Test Result */}
                 {testResult && (
-                  <Alert className={testResult.success ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}>
+                  <Alert
+                    className={
+                      testResult.success
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-red-500 bg-red-50'
+                    }
+                  >
                     <AlertDescription className="flex items-center gap-2">
                       {testResult.success ? (
                         <>
