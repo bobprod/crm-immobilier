@@ -52,3 +52,12 @@ interface CardDescriptionProps {
 export function CardDescription({ children, className = '' }: CardDescriptionProps) {
   return <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>;
 }
+
+interface CardFooterProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardFooter({ children, className = '' }: CardFooterProps) {
+  return <div className={`flex items-center p-6 pt-0 ${className}`}>{children}</div>;
+}

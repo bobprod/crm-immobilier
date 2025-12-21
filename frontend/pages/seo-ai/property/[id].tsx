@@ -16,7 +16,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api-client';
-import { toast } from '@/shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Property {
   id: string;
@@ -44,6 +44,7 @@ interface SeoOptimization {
 
 export default function PropertySeoDetailPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const router = useRouter();
   const { id } = router.query;
   const [property, setProperty] = useState<Property | null>(null);
