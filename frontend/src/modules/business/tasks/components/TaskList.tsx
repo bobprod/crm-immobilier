@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import tasksService, { Task, CreateTaskDto, UpdateTaskDto } from '../tasks.service';
 import { TaskItem } from './TaskItem';
 import { TaskDialog } from './TaskDialog';
@@ -7,6 +7,7 @@ import { Plus, Loader2, Filter } from 'lucide-react';
 import { Input } from '@/shared/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog';
 
 export function TaskList() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -15,6 +16,19 @@ export function TaskList() {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const { toast } = useToast();
+
+    // Confirmation dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void | Promise<void>;
+    }>({
+        open: false,
+        title: '',
+        description: '',
+        onConfirm: async () => { }
+    });
 
     useEffect(() => {
         loadTasks();
@@ -69,12 +83,29 @@ export function TaskList() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
-            await tasksService.remove(id);
-            loadTasks();
-        }
-    };
+    const handleDelete = useCallback((task: Task) => {
+        setConfirmDialog({
+            open: true,
+            title: 'Supprimer la tâche',
+            description: `Êtes-vous sûr de vouloir supprimer "${task.title}" ? Cette action est irréversible.`,
+            onConfirm: async () => {
+                try {
+                    await tasksService.remove(task.id);
+                    await loadTasks();
+                    toast({
+                        title: 'Succès',
+                        description: '✅ Tâche supprimée avec succès',
+                    });
+                } catch (error: any) {
+                    toast({
+                        title: 'Erreur',
+                        description: error.message || 'Erreur lors de la suppression de la tâche',
+                        variant: 'destructive',
+                    });
+                }
+            }
+        });
+    }, [toast]);
 
     const handleComplete = async (id: string) => {
         await tasksService.complete(id);
@@ -142,6 +173,15 @@ export function TaskList() {
                 }}
                 task={selectedTask}
                 onSubmit={handleCreate}
+            />
+
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+                onConfirm={confirmDialog.onConfirm}
+                title={confirmDialog.title}
+                description={confirmDialog.description}
+                variant="destructive"
             />
         </div>
     );

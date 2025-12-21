@@ -10,7 +10,7 @@ import { cn } from '@/shared/utils/utils';
 interface TaskItemProps {
     task: Task;
     onEdit: (task: Task) => void;
-    onDelete: (id: string) => void;
+    onDelete: (task: Task) => void;
     onComplete: (id: string) => void;
 }
 
@@ -88,7 +88,7 @@ export function TaskItem({ task, onEdit, onDelete, onComplete }: TaskItemProps) 
                         <DropdownMenuItem onClick={() => onEdit(task)}>
                             <Pencil className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(task.id)} className="text-red-600">
+                        <DropdownMenuItem onClick={() => onDelete(task)} className="text-red-600">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
