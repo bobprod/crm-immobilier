@@ -1,11 +1,15 @@
 import { test, expect } from '@playwright/test';
 
+const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'amine@example.com';
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'amine123';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
+
 test.describe('Notifications Module E2E', () => {
   test.beforeEach(async ({ page }) => {
     // Login
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'amine@example.com');
-    await page.fill('input[type="password"]', 'amine123');
+    await page.fill('input[type="email"]', TEST_USER_EMAIL);
+    await page.fill('input[type="password"]', TEST_USER_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForTimeout(3000);
 
@@ -144,7 +148,7 @@ test.describe('Notifications Module E2E', () => {
 
     try {
       // Create a notification via API
-      await context.request.post('http://localhost:3001/api/notifications', {
+      await context.request.post(`${API_BASE_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

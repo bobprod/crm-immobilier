@@ -8,10 +8,13 @@ export class AudioNotificationService {
 
   private static audioContext: AudioContext | null = null;
   private static enabled = true;
+  private static initialized = false;
 
   static init() {
+    if (this.initialized) return;
     if (typeof window !== 'undefined' && 'AudioContext' in window) {
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.initialized = true;
     }
   }
 
@@ -31,6 +34,11 @@ export class AudioNotificationService {
   static async play(type: 'default' | 'success' | 'warning' | 'error' = 'default') {
     if (!this.enabled || !this.isEnabled()) return;
 
+    // Initialize on first play if needed
+    if (!this.initialized) {
+      this.init();
+    }
+
     const audio = new Audio(this.sounds[type]);
     audio.volume = 0.5;
     
@@ -40,9 +48,4 @@ export class AudioNotificationService {
       console.warn('Failed to play notification sound:', error);
     }
   }
-}
-
-// Initialiser au chargement
-if (typeof window !== 'undefined') {
-  AudioNotificationService.init();
 }

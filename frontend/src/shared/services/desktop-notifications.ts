@@ -34,7 +34,16 @@ export class DesktopNotificationService {
     notification.onclick = () => {
       window.focus();
       if (options?.data?.url) {
-        window.location.href = options.data.url;
+        // Validate URL to prevent potential security issues
+        try {
+          const url = new URL(options.data.url, window.location.origin);
+          // Only allow same-origin URLs or relative paths
+          if (url.origin === window.location.origin) {
+            window.location.href = url.href;
+          }
+        } catch (e) {
+          console.warn('Invalid notification URL:', options.data.url);
+        }
       }
       notification.close();
     };

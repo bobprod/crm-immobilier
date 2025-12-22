@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
+const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:3001';
+
 export function useNotificationsSocket() {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
@@ -9,7 +11,7 @@ export function useNotificationsSocket() {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    const socket = io('http://localhost:3001/notifications', {
+    const socket = io(`${WEBSOCKET_URL}/notifications`, {
       auth: { token },
     });
 
