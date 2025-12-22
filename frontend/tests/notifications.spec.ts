@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+// Test credentials should be configured via environment variables
+// These defaults are for development/testing only and should not be used in production
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'amine@example.com';
 const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'amine123';
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';

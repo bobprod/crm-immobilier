@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { notificationsAPI } from '@/shared/utils/notifications-api';
 
 export function useInfiniteNotifications() {
@@ -22,10 +22,6 @@ export function useInfiniteNotifications() {
       setLoading(false);
     }
   }, [cursor, hasMore, loading]);
-
-  useEffect(() => {
-    loadMore();
-  }, []);
 
   return { notifications, loadMore, hasMore, loading, setNotifications };
 }
