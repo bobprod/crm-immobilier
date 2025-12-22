@@ -13,6 +13,7 @@ import {
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 
 @Controller('notifications')
@@ -36,6 +37,15 @@ export class NotificationsController {
     const userId = req.user.userId;
     const limitNum = limit ? parseInt(limit, 10) : 20;
     return this.notificationsService.getUserNotifications(userId, limitNum);
+  }
+
+  /**
+   * Récupérer les notifications paginées
+   */
+  @Get('paginated')
+  async findPaginated(@Request() req, @Query() query: PaginationQueryDto) {
+    const userId = req.user.userId;
+    return this.notificationsService.getUserNotificationsPaginated(userId, query);
   }
 
   /**
@@ -88,5 +98,22 @@ export class NotificationsController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.notificationsService.deleteNotification(id);
+  }
+
+  /**
+   * Restaurer une notification supprimée
+   */
+  @Patch(':id/restore')
+  async restore(@Param('id') id: string) {
+    return this.notificationsService.restoreNotification(id);
+  }
+
+  /**
+   * Obtenir les statistiques de lecture
+   */
+  @Get('stats/reading')
+  async getReadingStats(@Request() req) {
+    const userId = req.user.userId;
+    return this.notificationsService.getReadingStats(userId);
   }
 }
