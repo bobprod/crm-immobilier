@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -119,7 +119,7 @@ export class NotificationsService {
       });
 
       if (!existingNotification) {
-        throw new Error(`Notification with id ${notificationId} not found`);
+        throw new NotFoundException(`Notification with id ${notificationId} not found`);
       }
 
       const updateData: any = {};
@@ -133,7 +133,7 @@ export class NotificationsService {
           updateData.metadata = JSON.parse(data.metadata);
         } catch (parseError) {
           this.logger.error(`Invalid JSON in metadata: ${parseError.message}`);
-          throw new Error('Invalid JSON format in metadata field');
+          throw new BadRequestException(`Invalid JSON format in metadata field: ${parseError.message}`);
         }
       }
 
