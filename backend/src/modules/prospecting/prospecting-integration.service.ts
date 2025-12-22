@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { LLMProspectingService } from './llm-prospecting.service';
+import { LLMProviderFactory } from '../content/seo-ai/providers/llm-provider.factory';
 import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
 import axios from 'axios';
 
@@ -43,6 +44,7 @@ export class ProspectingIntegrationService {
     private configService: ConfigService,
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
+    private llmProviderFactory: LLMProviderFactory,
   ) {}
 
   // ============================================
@@ -189,7 +191,7 @@ export class ProspectingIntegrationService {
 
     // 1) Appeler le LLM pour structurer les items
     const leadsToCreate: ProspectingLeadCreateInput[] =
-      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items);
+      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items, userId);
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
@@ -699,8 +701,6 @@ export class ProspectingIntegrationService {
   async analyzeContentForLeads(userId: string, content: string, source?: string): Promise<any> {
     this.logger.log(`Analyzing content for leads`);
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     // Utiliser l'IA pour extraire les informations
     const prompt = `Analyse ce texte et extrait les informations de contact et immobilieres:
 
@@ -713,7 +713,13 @@ export class ProspectingIntegrationService {
     - score: 0-100 (qualite du lead)`;
 
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // Utiliser LLMProviderFactory au lieu de callLLM
+      const provider = await this.llmProviderFactory.createProvider(userId);
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+      const result = JSON.parse(response);
       return { success: true, analysis: result, method: 'llm' };
     } catch (error) {
       // Log l'erreur pour le debugging
@@ -743,8 +749,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Classifie ce lead immobilier:
 
     Nom: ${lead.firstName} ${lead.lastName}
@@ -764,7 +768,13 @@ export class ProspectingIntegrationService {
     5. reason: explication`;
 
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // Utiliser LLMProviderFactory
+      const provider = await this.llmProviderFactory.createProvider(userId);
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+      const result = JSON.parse(response);
 
       // Mettre a jour le lead
       await this.prisma.prospecting_leads.update({
@@ -807,8 +817,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Qualifie ce lead immobilier sur 100:
 
     ${JSON.stringify(lead)}
@@ -823,7 +831,13 @@ export class ProspectingIntegrationService {
     Retourne: { score: number, reasons: string[], recommendations: string[] }`;
 
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // Utiliser LLMProviderFactory
+      const provider = await this.llmProviderFactory.createProvider(userId);
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+      const result = JSON.parse(response);
 
       await this.prisma.prospecting_leads.update({
         where: { id: leadId },
@@ -1026,27 +1040,6 @@ export class ProspectingIntegrationService {
     }));
   }
 
-  private async callLLM(config: any, prompt: string): Promise<any> {
-    if (!config?.apiKey) {
-      throw new Error('LLM non configure');
-    }
-
-    // Implementation simplifiee - en production utiliser OpenAI/Anthropic
-    const response = await axios.post(
-      config.endpoint || 'https://api.openai.com/v1/chat/completions',
-      {
-        model: config.model || 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      },
-      {
-        headers: { Authorization: `Bearer ${config.apiKey}` },
-        timeout: 30000,
-      },
-    );
-
-    return JSON.parse(response.data.choices[0].message.content);
-  }
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
