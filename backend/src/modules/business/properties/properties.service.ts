@@ -717,8 +717,13 @@ export class PropertiesService {
    * Invalidate all property-related caches
    */
   async invalidateCache() {
-    // In a production app, you would use a pattern-based invalidation
-    // For now, we'll rely on TTL expiration
-    this.logger.debug('Cache invalidation triggered');
+    try {
+      // Clear specific cache patterns for properties
+      await this.cacheManager.del('featured:*');
+      await this.cacheManager.del('stats:*');
+      this.logger.debug('Property caches invalidated');
+    } catch (error) {
+      this.logger.warn(`Failed to invalidate cache: ${error.message}`);
+    }
   }
 }

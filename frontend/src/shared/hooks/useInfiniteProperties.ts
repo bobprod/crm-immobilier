@@ -69,11 +69,13 @@ export function useInfiniteProperties(
   }, [loadMore]);
 
   // Reload when filters change
+  const filtersString = JSON.stringify(filters);
   useEffect(() => {
     if (!isInitialMount.current) {
       refresh();
     }
-  }, [JSON.stringify(filters)]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersString, refresh]);
 
   return {
     properties,

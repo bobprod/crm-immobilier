@@ -45,8 +45,8 @@ export class PropertyHistoryService {
           propertyId,
           userId,
           action,
-          changes: changes || null,
-          metadata: metadata || null,
+          changes: changes || undefined,
+          metadata: metadata || undefined,
         },
       });
       

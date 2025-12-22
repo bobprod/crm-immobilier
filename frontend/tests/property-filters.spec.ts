@@ -88,8 +88,8 @@ test.describe('Property Filters', () => {
     await page.waitForSelector('[data-testid="filter-type"]', { timeout: 5000 });
     await page.selectOption('[data-testid="filter-type"]', 'apartment');
     
-    // Wait for results
-    await page.waitForTimeout(1000);
+    // Wait for results to load
+    await page.waitForLoadState('networkidle');
     
     // Check that only apartments are shown
     const propertyCards = await page.$$('[data-testid="property-card"]');
@@ -109,7 +109,7 @@ test.describe('Property Filters', () => {
     await page.fill('[data-testid="filter-max-price"]', '500000');
     await page.click('[data-testid="apply-filters"]');
     
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     // Check that results are within price range
     const propertyCards = await page.$$('[data-testid="property-card"]');
@@ -123,7 +123,7 @@ test.describe('Property Filters', () => {
     await page.fill('[data-testid="filter-city"]', 'Tunis');
     await page.click('[data-testid="apply-filters"]');
     
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const propertyCards = await page.$$('[data-testid="property-card"]');
     expect(propertyCards.length).toBeGreaterThan(0);
@@ -140,7 +140,7 @@ test.describe('Property Filters', () => {
     // Filter by status
     await page.selectOption('[data-testid="filter-status"]', 'available');
     
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const propertyCards = await page.$$('[data-testid="property-card"]');
     expect(propertyCards.length).toBeGreaterThan(0);
@@ -155,7 +155,7 @@ test.describe('Property Filters', () => {
     await page.selectOption('[data-testid="filter-status"]', 'available');
     await page.click('[data-testid="apply-filters"]');
     
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const propertyCards = await page.$$('[data-testid="property-card"]');
     // Should have at least one match (our test property)
@@ -170,12 +170,12 @@ test.describe('Property Filters', () => {
     await page.fill('[data-testid="filter-city"]', 'Tunis');
     await page.click('[data-testid="apply-filters"]');
     
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     const filteredCount = (await page.$$('[data-testid="property-card"]')).length;
     
     // Clear filters
     await page.click('[data-testid="clear-filters"]');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
     
     const allCount = (await page.$$('[data-testid="property-card"]')).length;
     
