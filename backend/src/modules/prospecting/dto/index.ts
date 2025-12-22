@@ -1,4 +1,12 @@
-import { IsString, IsArray, IsNumber, IsBoolean, IsOptional, IsEnum, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsNumber,
+  IsBoolean,
+  IsOptional,
+  IsEnum,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProspectingCampaignConfig, LeadMetadata } from '../../../shared/types/relation-summaries';
 

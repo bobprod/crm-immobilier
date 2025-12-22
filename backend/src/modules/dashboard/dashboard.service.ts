@@ -3,7 +3,7 @@ import { PrismaService } from '../../shared/database/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Statistiques globales
@@ -26,8 +26,16 @@ export class DashboardService {
             where: {
               userId,
               startTime: {
-                gte: (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })(),
-                lt: (() => { const d = new Date(); d.setHours(23, 59, 59, 999); return d; })(),
+                gte: (() => {
+                  const d = new Date();
+                  d.setHours(0, 0, 0, 0);
+                  return d;
+                })(),
+                lt: (() => {
+                  const d = new Date();
+                  d.setHours(23, 59, 59, 999);
+                  return d;
+                })(),
               },
             },
           })

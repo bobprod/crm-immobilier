@@ -10,7 +10,7 @@ import {
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Génère les matches entre prospects et propriétés
@@ -25,7 +25,9 @@ export class MatchingService {
       where: { userId, status: 'active' },
     });
 
-    this.logger.log(`Generating matches for ${prospects.length} prospects and ${properties.length} properties`);
+    this.logger.log(
+      `Generating matches for ${prospects.length} prospects and ${properties.length} properties`,
+    );
 
     const matches = [];
 
@@ -52,7 +54,8 @@ export class MatchingService {
             budgetMax: budget.max || preferences.budgetMax || null,
             city: prospect.city || preferences.city || null,
             country: preferences.country || 'Tunisie',
-            propertyTypes: preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
+            propertyTypes:
+              preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
             urgency: preferences.urgency || null,
             seriousnessScore: prospect.score || null,
           },
@@ -122,7 +125,9 @@ export class MatchingService {
       });
     }
 
-    this.logger.log(`Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`);
+    this.logger.log(
+      `Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`,
+    );
   }
 
   async findAll(userId: string, filters?: any) {
@@ -339,7 +344,9 @@ export class MatchingService {
         budgetMax: budget.max || (preferences.budgetMax as number) || null,
         city: prospect.city || (preferences.city as string) || null,
         country: (preferences.country as string) || 'Tunisie',
-        propertyTypes: (preferences.propertyTypes as string[]) || (preferences.type ? [preferences.type as string] : []),
+        propertyTypes:
+          (preferences.propertyTypes as string[]) ||
+          (preferences.type ? [preferences.type as string] : []),
         urgency: (preferences.urgency as string) || null,
         seriousnessScore: prospect.score || null,
       },

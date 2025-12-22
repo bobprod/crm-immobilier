@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { MatchingService } from './matching.service';
@@ -51,7 +62,11 @@ export class MatchingController {
   @Post()
   @ApiOperation({ summary: 'Créer un match manuel' })
   createMatch(@Request() req, @Body() body: { prospectId: string; propertyId: string }) {
-    return this.matchingService.createManualMatch(req.user.userId, body.prospectId, body.propertyId);
+    return this.matchingService.createManualMatch(
+      req.user.userId,
+      body.prospectId,
+      body.propertyId,
+    );
   }
 
   @Post('find/:prospectId')

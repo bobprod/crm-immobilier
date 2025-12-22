@@ -113,14 +113,28 @@ export class NotificationsService {
     try {
       this.logger.log(`Updating notification ${notificationId}`);
 
+      // Check if notification exists
+      const existingNotification = await this.prisma.notifications.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!existingNotification) {
+        throw new Error(`Notification with id ${notificationId} not found`);
+      }
+
       const updateData: any = {};
-      
+
       if (data.type !== undefined) updateData.type = data.type;
       if (data.title !== undefined) updateData.title = data.title;
       if (data.message !== undefined) updateData.message = data.message;
       if (data.actionUrl !== undefined) updateData.actionUrl = data.actionUrl;
       if (data.metadata !== undefined) {
-        updateData.metadata = JSON.parse(data.metadata);
+        try {
+          updateData.metadata = JSON.parse(data.metadata);
+        } catch (parseError) {
+          this.logger.error(`Invalid JSON in metadata: ${parseError.message}`);
+          throw new Error('Invalid JSON format in metadata field');
+        }
       }
 
       const notification = await this.prisma.notifications.update({

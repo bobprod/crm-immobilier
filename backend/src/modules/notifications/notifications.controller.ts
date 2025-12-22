@@ -78,10 +78,7 @@ export class NotificationsController {
    * Mettre à jour une notification
    */
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateNotificationDto: UpdateNotificationDto,
-  ) {
+  async update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
     return this.notificationsService.updateNotification(id, updateNotificationDto);
   }
 

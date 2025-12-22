@@ -37,7 +37,10 @@ export class ProspectsService {
         prospectData.budget = { amount: data.budget, currency: 'TND' };
       }
 
-      console.log('[ProspectsService] Creating prospect with data:', JSON.stringify(prospectData, null, 2));
+      console.log(
+        '[ProspectsService] Creating prospect with data:',
+        JSON.stringify(prospectData, null, 2),
+      );
 
       const result = await this.prisma.prospects.create({
         data: prospectData,
