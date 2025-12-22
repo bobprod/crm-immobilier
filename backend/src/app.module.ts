@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './shared/database/prisma.module';
@@ -64,6 +65,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
       isGlobal: true,
       load: [databaseConfig, jwtConfig, mailConfig, integrationsConfig],
     }),
+
+    // Scheduler for cron jobs
+    ScheduleModule.forRoot(),
 
     // Rate limiting (60 requêtes par minute par défaut)
     ThrottlerModule.forRoot([
