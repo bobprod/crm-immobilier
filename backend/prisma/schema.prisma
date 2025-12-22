@@ -324,6 +324,7 @@ model prospects {
   timeline             String?
   budget               Json?
   notes                String?
+  deletedAt            DateTime?
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt
   appointments         appointments[]
@@ -341,6 +342,28 @@ model prospects {
   users                users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
+  history              ProspectHistory[]           @relation("ProspectHistory")
+
+  @@index([deletedAt])
+}
+
+model ProspectHistory {
+  id         String    @id @default(cuid())
+  prospectId String
+  userId     String
+  action     String    // created, updated, deleted, restored, status_changed, score_updated, etc.
+  changes    Json      // Avant/après
+  metadata   Json?     // Info additionnelle
+  createdAt  DateTime  @default(now())
+
+  prospect prospects @relation("ProspectHistory", fields: [prospectId], references: [id], onDelete: Cascade)
+  user     users     @relation("UserProspectHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("prospect_history")
 }
 
 model user_integrations {
@@ -398,6 +421,7 @@ model users {
   prospecting_campaigns    prospecting_campaigns[]   @relation("UserProspectingCampaigns")
   prospecting_leads        prospecting_leads[]       @relation("UserProspectingLeads")
   prospects                prospects[]
+  prospectHistory          ProspectHistory[]         @relation("UserProspectHistory")
   settings                 settings[]                @relation("UserSettings")
   tasks                    tasks[]                   @relation("UserTasks")
   user_integrations        user_integrations[]
