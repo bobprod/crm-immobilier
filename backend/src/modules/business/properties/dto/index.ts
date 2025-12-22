@@ -11,10 +11,20 @@ export type PropertyCategory = 'sale' | 'rent';
 
 export enum PropertyCategoryEnum {
   SALE = 'sale',
-  RENT = 'rent'
+  RENT = 'rent',
 }
 export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type PropertyType = 'apartment' | 'house' | 'villa' | 'studio' | 'office' | 'land' | 'commercial' | 'appartement' | 'maison' | 'terrain';
+export type PropertyType =
+  | 'apartment'
+  | 'house'
+  | 'villa'
+  | 'studio'
+  | 'office'
+  | 'land'
+  | 'commercial'
+  | 'appartement'
+  | 'maison'
+  | 'terrain';
 
 // ============================================
 // CREATE DTO
@@ -31,8 +41,19 @@ export class CreatePropertyDto {
   description?: string;
 
   @ApiProperty({
-    enum: ['apartment', 'house', 'villa', 'studio', 'office', 'land', 'commercial', 'appartement', 'maison', 'terrain'],
-    description: 'Type de bien'
+    enum: [
+      'apartment',
+      'house',
+      'villa',
+      'studio',
+      'office',
+      'land',
+      'commercial',
+      'appartement',
+      'maison',
+      'terrain',
+    ],
+    description: 'Type de bien',
   })
   @IsString()
   type: string;
@@ -199,7 +220,10 @@ export class UpdatePropertyDto {
   @IsNumber()
   area?: number;
 
-  @ApiPropertyOptional({ enum: ['available', 'reserved', 'sold', 'rented', 'pending'], description: 'Statut' })
+  @ApiPropertyOptional({
+    enum: ['available', 'reserved', 'sold', 'rented', 'pending'],
+    description: 'Statut',
+  })
   @IsOptional()
   @IsEnum(['available', 'reserved', 'sold', 'rented', 'pending'])
   status?: PropertyStatus;

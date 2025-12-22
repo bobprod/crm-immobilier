@@ -160,7 +160,11 @@ export function arePropertyTypesCompatible(leadType: string, propertyType: strin
 
 import { IsString, IsNumber, IsOptional, IsBoolean, IsEnum, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LeadSummary, PropertySummary, ProspectSummary } from '../../../shared/types/relation-summaries';
+import {
+  LeadSummary,
+  PropertySummary,
+  ProspectSummary,
+} from '../../../shared/types/relation-summaries';
 
 export type MatchStatus = 'pending' | 'notified' | 'contacted' | 'converted' | 'ignored';
 

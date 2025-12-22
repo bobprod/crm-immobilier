@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 
 @Controller('notifications')
@@ -71,6 +72,14 @@ export class NotificationsController {
   async markAllAsRead(@Request() req) {
     const userId = req.user.userId;
     return this.notificationsService.markAllAsRead(userId);
+  }
+
+  /**
+   * Mettre à jour une notification
+   */
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+    return this.notificationsService.updateNotification(id, updateNotificationDto);
   }
 
   /**

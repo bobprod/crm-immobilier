@@ -6,7 +6,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Créer un rendez-vous

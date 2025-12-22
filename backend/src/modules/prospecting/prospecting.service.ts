@@ -29,7 +29,7 @@ interface LeadFilters {
 export class ProspectingService {
   private readonly logger = new Logger(ProspectingService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // ============================================
   // CAMPAIGNS
@@ -211,7 +211,9 @@ export class ProspectingService {
         where: { id: lead.convertedProspectId },
       });
       if (existingProspect) {
-        this.logger.warn(`Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`);
+        this.logger.warn(
+          `Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`,
+        );
         return existingProspect;
       }
     }
@@ -272,7 +274,9 @@ export class ProspectingService {
         city: lead.city,
         zipCode: lead.zipCode,
         type: this.mapLeadTypeToProspectType(lead.leadType, lead.intention),
-        budget: lead.budget || (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
+        budget:
+          lead.budget ||
+          (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
         preferences: lead.metadata,
         source: `Prospection: ${lead.source}`,
         status: 'active',
@@ -398,9 +402,10 @@ export class ProspectingService {
           type,
           entityType: 'prospecting_lead',
           entityId: leadId,
-          description: type === 'lead_converted'
-            ? `Lead converti en prospect ${prospectId}`
-            : `Lead fusionné avec prospect existant ${prospectId}`,
+          description:
+            type === 'lead_converted'
+              ? `Lead converti en prospect ${prospectId}`
+              : `Lead fusionné avec prospect existant ${prospectId}`,
           metadata: { leadId, prospectId },
         },
       });
@@ -1109,7 +1114,7 @@ export class ProspectingService {
         where: { userId },
         select: { id: true },
       });
-      const leadIds = userLeads.map(l => l.id);
+      const leadIds = userLeads.map((l) => l.id);
 
       const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
         this.prisma.prospecting_campaigns.count({ where: { userId } }),
@@ -1117,10 +1122,10 @@ export class ProspectingService {
         // Use leadId IN array instead of relation filtering
         leadIds.length > 0
           ? this.prisma.prospecting_matches.count({
-            where: {
-              leadId: { in: leadIds },
-            },
-          })
+              where: {
+                leadId: { in: leadIds },
+              },
+            })
           : Promise.resolve(0),
         this.prisma.prospecting_leads.findMany({
           where: { userId },

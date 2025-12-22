@@ -32,6 +32,7 @@ LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
   -d '{"email":"admin@crm.com","password":"Admin123!"}')
 
 TOKEN=$(echo $LOGIN_RESPONSE | grep -o '"accessToken":"[^"]*' | cut -d'"' -f4)
+LOGGED_USER_ID=$(echo $LOGIN_RESPONSE | grep -o '"userId":"[^"]*' | cut -d'"' -f4)
 
 if [ -z "$TOKEN" ]; then
     echo -e "${RED}❌ Login failed${NC}"
@@ -297,17 +298,28 @@ print_result "GET" "/notifications" "$STATUS"
 CREATE_NOTIFICATION=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/notifications" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title":"Test Notification",
-    "message":"This is a test notification",
-    "type":"info"
-  }')
+  -d "{
+    \"userId\":\"$LOGGED_USER_ID\",
+    \"title\":\"Test Notification\",
+    \"message\":\"This is a test notification\",
+    \"type\":\"system\"
+  }")
 STATUS=$(echo "$CREATE_NOTIFICATION" | tail -1)
 NOTIFICATION_ID=$(echo "$CREATE_NOTIFICATION" | head -n -1 | grep -o '"id":"[^"]*' | cut -d'"' -f4 | head -1)
 print_result "POST" "/notifications" "$STATUS"
 
-# GET Notification (mark as read)
+# UPDATE Notification (modify)
 if [ ! -z "$NOTIFICATION_ID" ]; then
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$BASE_URL/notifications/$NOTIFICATION_ID" \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "title":"Updated Notification Title",
+        "message":"This notification has been updated"
+      }')
+    print_result "PATCH" "/notifications/:id" "$STATUS"
+
+    # GET Notification (mark as read)
     STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$BASE_URL/notifications/$NOTIFICATION_ID/read" \
       -H "Authorization: Bearer $TOKEN")
     print_result "PATCH" "/notifications/:id/read" "$STATUS"

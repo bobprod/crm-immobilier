@@ -80,6 +80,12 @@ export const notificationsAPI = {
     return response.data;
   },
 
+  // Update notification
+  update: async (id: string, data: Partial<CreateNotificationDto>): Promise<Notification> => {
+    const response = await apiClient.patch(`/notifications/${id}`, data);
+    return response.data;
+  },
+
   // Delete notification
   delete: async (id: string): Promise<{ success: boolean }> => {
     const response = await apiClient.delete(`/notifications/${id}`);

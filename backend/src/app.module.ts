@@ -66,10 +66,12 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     }),
 
     // Rate limiting (60 requêtes par minute par défaut)
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 60 secondes
-      limit: 60,  // 60 requêtes max
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 secondes
+        limit: 60, // 60 requêtes max
+      },
+    ]),
 
     // Database
     PrismaModule,
@@ -131,4 +133,4 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

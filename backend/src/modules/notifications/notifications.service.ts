@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -103,6 +104,49 @@ export class NotificationsService {
       },
       data: { isRead: true },
     });
+  }
+
+  /**
+   * Mettre à jour une notification
+   */
+  async updateNotification(notificationId: string, data: UpdateNotificationDto) {
+    try {
+      this.logger.log(`Updating notification ${notificationId}`);
+
+      // Check if notification exists
+      const existingNotification = await this.prisma.notifications.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!existingNotification) {
+        throw new NotFoundException(`Notification with id ${notificationId} not found`);
+      }
+
+      const updateData: any = {};
+
+      if (data.type !== undefined) updateData.type = data.type;
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.message !== undefined) updateData.message = data.message;
+      if (data.actionUrl !== undefined) updateData.actionUrl = data.actionUrl;
+      if (data.metadata !== undefined) {
+        try {
+          updateData.metadata = JSON.parse(data.metadata);
+        } catch (parseError) {
+          this.logger.error(`Invalid JSON in metadata: ${parseError.message}`);
+          throw new BadRequestException(`Invalid JSON format in metadata field: ${parseError.message}`);
+        }
+      }
+
+      const notification = await this.prisma.notifications.update({
+        where: { id: notificationId },
+        data: updateData,
+      });
+
+      return notification;
+    } catch (error) {
+      this.logger.error(`Error updating notification: ${error.message}`);
+      throw error;
+    }
   }
 
   /**

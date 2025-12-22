@@ -12,7 +12,7 @@ export class LLMConfigService {
     private readonly prisma: PrismaService,
     private readonly llmFactory: LLMProviderFactory,
     private readonly costTracker: ApiCostTrackerService,
-  ) { }
+  ) {}
 
   /**
    * Récupérer la configuration LLM d'un utilisateur
