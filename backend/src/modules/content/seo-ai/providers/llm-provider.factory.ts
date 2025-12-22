@@ -5,6 +5,7 @@ import { AnthropicProvider } from './anthropic.provider';
 import { OpenAIProvider } from './openai.provider';
 import { GeminiProvider } from './gemini.provider';
 import { OpenRouterProvider } from './openrouter.provider';
+import { DeepSeekProvider } from './deepseek.provider';
 
 /**
  * Factory pour créer le bon provider LLM selon la configuration
@@ -59,6 +60,10 @@ export class LLMProviderFactory {
 
       case 'openrouter':
         provider = new OpenRouterProvider(config.apiKey, config.model);
+        break;
+
+      case 'deepseek':
+        provider = new DeepSeekProvider(config.apiKey, config.model);
         break;
 
       default:

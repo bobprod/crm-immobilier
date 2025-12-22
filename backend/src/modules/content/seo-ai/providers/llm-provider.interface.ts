@@ -33,7 +33,7 @@ export interface GenerateOptions {
 }
 
 export interface LLMConfig {
-  provider: 'anthropic' | 'openai' | 'gemini' | 'openrouter';
+  provider: 'anthropic' | 'openai' | 'gemini' | 'openrouter' | 'deepseek';
   apiKey: string;
   model?: string;
   defaultMaxTokens?: number;
@@ -45,6 +45,7 @@ export const DEFAULT_MODELS = {
   openai: 'gpt-4-turbo-preview',
   gemini: 'gemini-1.5-pro',
   openrouter: 'anthropic/claude-3.5-sonnet',
+  deepseek: 'deepseek-chat',
 };
 
 export const MAX_TOKENS_DEFAULTS = {
