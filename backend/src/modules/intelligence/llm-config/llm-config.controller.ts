@@ -1,18 +1,22 @@
-import { Controller, Get, Put, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Put, Post, Delete, Body, UseGuards, Request, Query, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UpdateLLMConfigDto, LLMConfigResponseDto, ProviderInfoDto, TestLLMConfigResponseDto, UsageStatsDto, DashboardMetricsDto, BudgetCheckDto } from './dto';
 import { LLMConfigService } from './llm-config.service';
+import { LLMRouterService, OperationType } from './llm-router.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 
 /**
- * Controller pour la configuration LLM
+ * Controller pour la configuration LLM et le router intelligent
  */
 @ApiTags('LLM Config')
 @ApiBearerAuth()
 @Controller('llm-config')
 @UseGuards(JwtAuthGuard)
 export class LLMConfigController {
-  constructor(private readonly llmConfigService: LLMConfigService) { }
+  constructor(
+    private readonly llmConfigService: LLMConfigService,
+    private readonly llmRouterService: LLMRouterService,
+  ) {}
 
   /**
    * Récupérer la configuration actuelle
@@ -93,5 +97,122 @@ export class LLMConfigController {
   ) {
     const budgetLimit = budget ? parseFloat(budget.toString()) : 100;
     return this.llmConfigService.checkBudget(req.user.userId, budgetLimit);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // ENDPOINTS LLM ROUTER - Multi-providers
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Liste des providers configurés par l'utilisateur
+   */
+  @Get('user-providers')
+  @ApiOperation({ summary: 'Liste des providers configurés avec stats' })
+  async getUserProviders(@Request() req) {
+    return this.llmRouterService.getUserProviders(req.user.userId);
+  }
+
+  /**
+   * Ajouter un nouveau provider
+   */
+  @Post('user-providers')
+  @ApiOperation({ summary: 'Ajouter un nouveau provider' })
+  async addUserProvider(@Request() req, @Body() data: any) {
+    // Migration automatique si nécessaire
+    await this.llmRouterService.migrateOldConfig(req.user.userId);
+
+    return this.llmRouterService['prisma'].userLlmProvider.create({
+      data: {
+        userId: req.user.userId,
+        provider: data.provider,
+        apiKey: data.apiKey,
+        model: data.model,
+        isActive: data.isActive ?? true,
+        priority: data.priority ?? 0,
+        monthlyBudget: data.monthlyBudget,
+      },
+    });
+  }
+
+  /**
+   * Mettre à jour un provider
+   */
+  @Put('user-providers/:provider')
+  @ApiOperation({ summary: 'Mettre à jour un provider configuré' })
+  async updateUserProvider(
+    @Request() req,
+    @Param('provider') provider: string,
+    @Body() data: any,
+  ) {
+    return this.llmRouterService['prisma'].userLlmProvider.update({
+      where: {
+        userId_provider: {
+          userId: req.user.userId,
+          provider,
+        },
+      },
+      data,
+    });
+  }
+
+  /**
+   * Supprimer un provider
+   */
+  @Delete('user-providers/:provider')
+  @ApiOperation({ summary: 'Supprimer un provider configuré' })
+  async deleteUserProvider(@Request() req, @Param('provider') provider: string) {
+    return this.llmRouterService['prisma'].userLlmProvider.delete({
+      where: {
+        userId_provider: {
+          userId: req.user.userId,
+          provider,
+        },
+      },
+    });
+  }
+
+  /**
+   * Suggérer le meilleur provider pour une opération
+   */
+  @Get('suggest/:operationType')
+  @ApiOperation({ summary: 'Suggérer le meilleur provider pour une opération' })
+  async suggestProvider(
+    @Request() req,
+    @Param('operationType') operationType: OperationType,
+  ) {
+    return this.llmRouterService.suggestProvider(req.user.userId, operationType);
+  }
+
+  /**
+   * Analytics d'utilisation
+   */
+  @Get('analytics')
+  @ApiOperation({ summary: "Analytics d'utilisation par provider et opération" })
+  async getAnalytics(@Request() req) {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const logs = await this.llmRouterService['prisma'].llmUsageLog.groupBy({
+      by: ['provider', 'operationType'],
+      where: {
+        userId: req.user.userId,
+        createdAt: { gte: startOfMonth },
+      },
+      _sum: { cost: true, tokensInput: true, tokensOutput: true },
+      _count: true,
+      _avg: { latency: true },
+    });
+
+    return logs;
+  }
+
+  /**
+   * Migrer l'ancienne config
+   */
+  @Post('migrate')
+  @ApiOperation({ summary: "Migrer l'ancienne configuration vers le nouveau système" })
+  async migrateConfig(@Request() req) {
+    return this.llmRouterService.migrateOldConfig(req.user.userId);
   }
 }

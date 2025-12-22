@@ -1090,6 +1090,64 @@ model LlmConfig {
   @@map("llm_configs")
 }
 
+// ═══════════════════════════════════════════════════════
+// LLM ROUTER - Multi-providers support
+// ═══════════════════════════════════════════════════════
+
+model UserLlmProvider {
+  id            String   @id @default(cuid())
+  userId        String
+  provider      String   // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
+  apiKey        String   // Clé API (cryptée)
+  model         String?  // Modèle par défaut pour ce provider
+  isActive      Boolean  @default(true)
+  priority      Int      @default(0)  // 0 = plus haute priorité
+  monthlyBudget Float?   // Budget mensuel pour ce provider (en $)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("user_llm_providers")
+}
+
+model LlmUsageLog {
+  id            String   @id @default(cuid())
+  userId        String
+  provider      String   // Provider utilisé
+  operationType String   // 'seo', 'prospecting_mass', 'analysis_quick', etc.
+  tokensInput   Int      @default(0)
+  tokensOutput  Int      @default(0)
+  cost          Float    @default(0) // Coût en $
+  latency       Int      @default(0) // Latence en ms
+  success       Boolean  @default(true)
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([provider, createdAt])
+  @@index([operationType])
+  @@map("llm_usage_logs")
+}
+
+model ProviderPerformance {
+  id          String    @id @default(cuid())
+  userId      String
+  provider    String
+  avgLatency  Int       @default(0) // Latence moyenne (ms)
+  successRate Float     @default(100) // Taux de succès (0-100%)
+  totalCalls  Int       @default(0)
+  totalTokens Int       @default(0)
+  totalCost   Float     @default(0)
+  lastUsed    DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@map("provider_performance")
+}
+
 model Page {
   id          String   @id @default(cuid())
   userId      String
