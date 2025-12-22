@@ -29,7 +29,7 @@ export class PropertiesService {
     await this.historyService.logCreate(property.id, userId, data);
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return property;
   }
@@ -79,7 +79,7 @@ export class PropertiesService {
     await this.historyService.logUpdate(id, userId, oldProperty, data);
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return updated;
   }
@@ -95,7 +95,7 @@ export class PropertiesService {
     await this.historyService.logDelete(id, userId);
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return property;
   }
@@ -113,7 +113,7 @@ export class PropertiesService {
     await this.historyService.logRestore(id, userId);
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return property;
   }
@@ -301,7 +301,7 @@ export class PropertiesService {
     await this.historyService.logStatusChange(id, userId, oldProperty.status, status);
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return updated;
   }
@@ -600,7 +600,7 @@ export class PropertiesService {
     }
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return result;
   }
@@ -619,7 +619,7 @@ export class PropertiesService {
     }
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return result;
   }
@@ -651,7 +651,7 @@ export class PropertiesService {
     }
 
     // Invalidate cache
-    await this.invalidateCache();
+    await this.invalidateCacheForUser(userId);
 
     return result;
   }
@@ -662,7 +662,7 @@ export class PropertiesService {
     const cached = await this.cacheManager.get(cacheKey);
     
     if (cached) {
-      this.logger.debug(`Cache hit for featured:${userId}`);
+      this.logger.debug(`Cache hit for ${cacheKey}`);
       return cached;
     }
 
@@ -714,24 +714,28 @@ export class PropertiesService {
   }
 
   /**
-   * Invalidate all property-related caches
+   * Invalidate all property-related caches for a user
    */
-  async invalidateCache() {
+  async invalidateCacheForUser(userId: string) {
     try {
-      // Clear specific cache keys
-      // Note: cache-manager doesn't support wildcard deletion
-      // In production, consider using ioredis directly for pattern-based deletion
-      // or maintain a Set of cache keys to iterate through
-      
-      // For now, we clear known cache keys and rely on TTL for others
-      const cacheKeys = ['featured', 'stats'];
+      // Clear user-specific cache keys
+      const cacheKeys = [`featured:${userId}`, `stats:${userId}`];
       for (const key of cacheKeys) {
         await this.cacheManager.del(key);
       }
       
-      this.logger.debug('Property caches invalidated');
+      this.logger.debug(`Property caches invalidated for user ${userId}`);
     } catch (error) {
       this.logger.warn(`Failed to invalidate cache: ${error.message}`);
     }
+  }
+
+  /**
+   * Invalidate all property-related caches
+   */
+  async invalidateCache() {
+    // This is a simplified version that relies on TTL
+    // In production with many users, consider using Redis SCAN with pattern
+    this.logger.debug('Cache invalidation triggered (TTL-based)');
   }
 }

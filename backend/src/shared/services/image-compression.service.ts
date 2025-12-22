@@ -58,6 +58,10 @@ export class ImageCompressionService {
         });
       } else if (metadata.format === 'webp') {
         processedImage = processedImage.webp({ quality: this.QUALITY });
+      } else {
+        // Default to JPEG for unsupported formats
+        this.logger.warn(`Unsupported format ${metadata.format}, converting to JPEG`);
+        processedImage = processedImage.jpeg({ quality: this.QUALITY });
       }
       
       await processedImage.toFile(output);
