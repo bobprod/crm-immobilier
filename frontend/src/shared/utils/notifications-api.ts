@@ -50,6 +50,14 @@ export const notificationsAPI = {
     return response.data;
   },
 
+  // Get paginated notifications
+  getPaginated: async (cursor?: string | null, limit = 20) => {
+    const response = await apiClient.get('/notifications/paginated', {
+      params: { cursor, limit },
+    });
+    return response.data;
+  },
+
   // Get unread notifications
   getUnread: async (): Promise<Notification[]> => {
     const response = await apiClient.get('/notifications/unread');
