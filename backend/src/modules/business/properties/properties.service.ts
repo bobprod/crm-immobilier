@@ -718,9 +718,17 @@ export class PropertiesService {
    */
   async invalidateCache() {
     try {
-      // Clear specific cache patterns for properties
-      await this.cacheManager.del('featured:*');
-      await this.cacheManager.del('stats:*');
+      // Clear specific cache keys
+      // Note: cache-manager doesn't support wildcard deletion
+      // In production, consider using ioredis directly for pattern-based deletion
+      // or maintain a Set of cache keys to iterate through
+      
+      // For now, we clear known cache keys and rely on TTL for others
+      const cacheKeys = ['featured', 'stats'];
+      for (const key of cacheKeys) {
+        await this.cacheManager.del(key);
+      }
+      
       this.logger.debug('Property caches invalidated');
     } catch (error) {
       this.logger.warn(`Failed to invalidate cache: ${error.message}`);

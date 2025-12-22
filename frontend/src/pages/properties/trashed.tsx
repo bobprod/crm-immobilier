@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { propertiesAPI, Property } from '../../src/shared/utils/properties-api';
-import { Button } from '../../src/shared/components/ui/button';
+import { propertiesAPI, Property } from '../../shared/utils/properties-api';
+import { Button } from '../../shared/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../src/shared/components/ui/card';
+} from '../../shared/components/ui/card';
 import {
   Table,
   TableBody,
@@ -16,9 +16,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../src/shared/components/ui/table';
+} from '../../shared/components/ui/table';
 import { Trash2, RefreshCw, XCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '../../src/shared/components/ui/use-toast';
+import { useToast } from '../../shared/components/ui/use-toast';
 
 export default function TrashedPropertiesPage() {
   const router = useRouter();
