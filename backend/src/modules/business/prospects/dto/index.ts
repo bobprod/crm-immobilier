@@ -88,4 +88,3 @@ export class UpdateProspectDto {
 }
 
 export { PaginationQueryDto } from './pagination-query.dto';
-

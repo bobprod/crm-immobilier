@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto';
 import { ProspectHistoryService } from './prospect-history.service';
@@ -121,8 +121,7 @@ export class ProspectsService {
     } else {
       if (includes.includes('matches')) include.matches = { include: { properties: true } };
       if (includes.includes('appointments')) include.appointments = true;
-      if (includes.includes('interactions'))
-        include.interactions = { orderBy: { date: 'desc' } };
+      if (includes.includes('interactions')) include.interactions = { orderBy: { date: 'desc' } };
       if (includes.includes('timeline'))
         include.timelineStages = { orderBy: { enteredAt: 'desc' } };
       if (includes.includes('preferences')) include.preferences_details = true;
@@ -326,36 +325,28 @@ export class ProspectsService {
    * Advanced statistics
    */
   async getStats(userId: string) {
-    const [
-      total,
-      active,
-      converted,
-      qualified,
-      rejected,
-      avgScore,
-      byType,
-      bySource,
-    ] = await Promise.all([
-      this.prisma.prospects.count({ where: { userId, deletedAt: null } }),
-      this.prisma.prospects.count({ where: { userId, status: 'active', deletedAt: null } }),
-      this.prisma.prospects.count({ where: { userId, status: 'converted', deletedAt: null } }),
-      this.prisma.prospects.count({ where: { userId, status: 'qualified', deletedAt: null } }),
-      this.prisma.prospects.count({ where: { userId, status: 'rejected', deletedAt: null } }),
-      this.prisma.prospects.aggregate({
-        where: { userId, deletedAt: null },
-        _avg: { score: true },
-      }),
-      this.prisma.prospects.groupBy({
-        by: ['type'],
-        where: { userId, deletedAt: null },
-        _count: true,
-      }),
-      this.prisma.prospects.groupBy({
-        by: ['source'],
-        where: { userId, deletedAt: null, source: { not: null } },
-        _count: true,
-      }),
-    ]);
+    const [total, active, converted, qualified, rejected, avgScore, byType, bySource] =
+      await Promise.all([
+        this.prisma.prospects.count({ where: { userId, deletedAt: null } }),
+        this.prisma.prospects.count({ where: { userId, status: 'active', deletedAt: null } }),
+        this.prisma.prospects.count({ where: { userId, status: 'converted', deletedAt: null } }),
+        this.prisma.prospects.count({ where: { userId, status: 'qualified', deletedAt: null } }),
+        this.prisma.prospects.count({ where: { userId, status: 'rejected', deletedAt: null } }),
+        this.prisma.prospects.aggregate({
+          where: { userId, deletedAt: null },
+          _avg: { score: true },
+        }),
+        this.prisma.prospects.groupBy({
+          by: ['type'],
+          where: { userId, deletedAt: null },
+          _count: true,
+        }),
+        this.prisma.prospects.groupBy({
+          by: ['source'],
+          where: { userId, deletedAt: null, source: { not: null } },
+          _count: true,
+        }),
+      ]);
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;
 
@@ -471,4 +462,3 @@ export class ProspectsService {
     return { interactions };
   }
 }
-

@@ -92,7 +92,7 @@ export class NotificationsService {
    */
   async getUserNotificationsPaginated(userId: string, query: PaginationQueryDto) {
     const limit = query.limit || 20;
-    
+
     const notifications = await this.prisma.notifications.findMany({
       where: { userId, deletedAt: null },
       take: limit + 1, // +1 pour savoir s'il y a une page suivante
@@ -120,7 +120,7 @@ export class NotificationsService {
   async markAsRead(notificationId: string) {
     return this.prisma.notifications.update({
       where: { id: notificationId },
-      data: { 
+      data: {
         isRead: true,
         readAt: new Date(),
       },
@@ -137,7 +137,7 @@ export class NotificationsService {
         isRead: false,
         deletedAt: null,
       },
-      data: { 
+      data: {
         isRead: true,
         readAt: new Date(),
       },
@@ -171,7 +171,9 @@ export class NotificationsService {
           updateData.metadata = JSON.parse(data.metadata);
         } catch (parseError) {
           this.logger.error(`Invalid JSON in metadata: ${parseError.message}`);
-          throw new BadRequestException(`Invalid JSON format in metadata field: ${parseError.message}`);
+          throw new BadRequestException(
+            `Invalid JSON format in metadata field: ${parseError.message}`,
+          );
         }
       }
 
@@ -332,7 +334,7 @@ export class NotificationsService {
       };
     }
 
-    const readingTimes = notifications.map(n => {
+    const readingTimes = notifications.map((n) => {
       const created = new Date(n.createdAt).getTime();
       const read = new Date(n.readAt!).getTime();
       return (read - created) / 1000 / 60; // minutes

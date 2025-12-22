@@ -11,7 +11,7 @@ export class NotificationsCron {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanOldNotifications() {
     this.logger.log('Starting automatic cleanup of old notifications...');
-    
+
     try {
       const result = await this.notificationsService.cleanOldNotifications();
       this.logger.log(`Cleanup completed: ${result.count} notifications removed`);
@@ -23,7 +23,7 @@ export class NotificationsCron {
   @Cron(CronExpression.EVERY_WEEK)
   async cleanDeletedNotifications() {
     this.logger.log('Starting cleanup of soft-deleted notifications...');
-    
+
     try {
       // Hard delete notifications soft-deleted > 30 days ago
       const thirtyDaysAgo = new Date();

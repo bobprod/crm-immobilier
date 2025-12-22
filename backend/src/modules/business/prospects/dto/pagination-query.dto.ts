@@ -8,7 +8,12 @@ export class PaginationQueryDto {
   @IsString()
   cursor?: string;
 
-  @ApiPropertyOptional({ description: 'Limit of items per page', default: 20, minimum: 1, maximum: 100 })
+  @ApiPropertyOptional({
+    description: 'Limit of items per page',
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
