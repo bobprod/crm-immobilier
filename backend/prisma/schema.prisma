@@ -255,10 +255,12 @@ model properties {
   wpSyncId            String?
   wpSyncedAt          DateTime?
   wordpressId         String?
+  deletedAt           DateTime?                   // Soft delete timestamp
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
   // Relations
+  history             PropertyHistory[]
   propertySeo         PropertySeo?
   publishedProperty   PublishedProperty[]
   vitrineAnalytics    VitrineAnalytics[]
@@ -299,6 +301,7 @@ model properties {
   @@index([city])
   @@index([type])
   @@index([status])
+  @@index([deletedAt])
   @@index([userId, status, price])  // Composite for matching queries
 }
 
@@ -1332,4 +1335,26 @@ model Activity {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@map("activities")
+}
+
+// ============================================
+// 🆕 PROPERTY HISTORY MODULE
+// ============================================
+
+model PropertyHistory {
+  id         String     @id @default(cuid())
+  propertyId String
+  userId     String
+  action     String     // create, update, delete, restore, status_changed
+  changes    Json?      // Changed fields with before/after values
+  metadata   Json?      // Additional metadata
+  createdAt  DateTime   @default(now())
+  
+  property   properties @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  @@index([propertyId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("property_history")
 }

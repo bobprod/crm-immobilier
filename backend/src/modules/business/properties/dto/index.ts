@@ -544,3 +544,6 @@ export class PropertyFiltersDto {
   @IsNumber()
   limit?: number;
 }
+
+// Export pagination DTO
+export * from './pagination.dto';
