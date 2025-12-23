@@ -89,7 +89,7 @@ export class ProspectingController {
   @Post('campaigns/:id/resume')
   @ApiOperation({ summary: 'Reprendre une campagne en pause' })
   resumeCampaign(@Request() req, @Param('id') id: string) {
-    return this.prospectingService.startCampaign(req.user.userId, id);
+    return this.prospectingService.resumeCampaign(req.user.userId, id);
   }
 
   @Get('campaigns/:id/stats')

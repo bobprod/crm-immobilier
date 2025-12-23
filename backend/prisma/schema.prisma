@@ -268,9 +268,10 @@ model properties {
   matches             matches[]
   agencies            agencies?                   @relation(fields: [agencyId], references: [id])
   users               users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prospectShown       prospect_properties_shown[] @relation("PropertyProspectShown")
-  prospecting_matches prospecting_matches[]       @relation("PropertyMatches")
-  tasks               tasks[]                     @relation("PropertyTasks")
+  prospectShown              prospect_properties_shown[]     @relation("PropertyProspectShown")
+  prospecting_matches        prospecting_matches[]           @relation("PropertyMatches")
+  matchedLeads               prospecting_lead_properties[]   @relation("PropertyLeadMatches")
+  tasks                      tasks[]                         @relation("PropertyTasks")
 
   // Priority & Organization
   priority            PropertyPriority            @default(medium)
@@ -650,6 +651,9 @@ model prospecting_campaigns {
   @@index([userId])
   @@index([status])
   @@index([type])
+  @@index([userId, status, createdAt])
+  @@index([startedAt])
+  @@index([foundCount, matchedCount])
 }
 
 model prospecting_leads {
@@ -697,9 +701,10 @@ model prospecting_leads {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   campaigns           prospecting_campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  convertedProspect   prospects?            @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
-  users               users                 @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
-  prospecting_matches prospecting_matches[] @relation("LeadMatches")
+  convertedProspect   prospects?                        @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
+  users               users                             @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
+  prospecting_matches prospecting_matches[]             @relation("LeadMatches")
+  matchedProperties   prospecting_lead_properties[]     @relation("LeadPropertyMatches")
 
   @@index([campaignId])
   @@index([userId])
@@ -709,6 +714,10 @@ model prospecting_leads {
   @@index([leadType])
   @@index([validationStatus])
   @@index([city])
+  @@index([campaignId, status, leadType])
+  @@index([userId, createdAt, status])
+  @@index([validationStatus, createdAt])
+  @@index([intention, urgency, city])
 }
 
 model prospecting_matches {
@@ -745,6 +754,30 @@ model prospecting_matches {
   @@index([score])
   @@index([status])
   @@index([isQualified])
+  @@index([status, isQualified, createdAt])
+  @@index([score, status])
+  @@index([propertyId, status])
+}
+
+// Table de junction pour remplacer matchedPropertyIds[] dans prospecting_leads
+// Permet de créer une vraie relation many-to-many avec indexes efficaces
+model prospecting_lead_properties {
+  id          String            @id @default(cuid())
+  leadId      String
+  propertyId  String
+  matchScore  Int               @default(0) // Score spécifique de ce match (0-100)
+  matchedAt   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+
+  // Relations
+  lead        prospecting_leads @relation("LeadPropertyMatches", fields: [leadId], references: [id], onDelete: Cascade)
+  property    properties        @relation("PropertyLeadMatches", fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, propertyId])
+  @@index([leadId, matchScore])
+  @@index([propertyId, matchScore])
+  @@index([matchedAt])
+  @@map("prospecting_lead_properties")
 }
 
 model contact_validations {
@@ -1105,7 +1138,11 @@ model UserLlmProvider {
   monthlyBudget Float?   // Budget mensuel pour ce provider (en $)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  user                  users                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs             LlmUsageLog[]           @relation("ProviderUsageLogs")
+  performanceMetrics    ProviderPerformance[]   @relation("ProviderMetrics")
 
   @@unique([userId, provider])
   @@index([userId])
@@ -1114,37 +1151,54 @@ model UserLlmProvider {
 }
 
 model LlmUsageLog {
-  id            String   @id @default(cuid())
-  userId        String
-  provider      String   // Provider utilisé
-  operationType String   // 'seo', 'prospecting_mass', 'analysis_quick', etc.
-  tokensInput   Int      @default(0)
-  tokensOutput  Int      @default(0)
-  cost          Float    @default(0) // Coût en $
-  latency       Int      @default(0) // Latence en ms
-  success       Boolean  @default(true)
-  errorMessage  String?
-  createdAt     DateTime @default(now())
+  id                String            @id @default(cuid())
+  userId            String
+  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel car peut être un provider non configuré)
+  provider          String            // Provider utilisé
+  operationType     String            // 'seo', 'prospecting_mass', 'analysis_quick', etc.
+  tokensInput       Int               @default(0)
+  tokensOutput      Int               @default(0)
+  cost              Float             @default(0) // Coût en $
+  latency           Int               @default(0) // Latence en ms
+  success           Boolean           @default(true)
+  errorMessage      String?
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  user              users?            @relation("UserLlmUsageLogs", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider   UserLlmProvider?  @relation("ProviderUsageLogs", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
+  @@index([userLlmProviderId, createdAt])
   @@index([provider, createdAt])
   @@index([operationType])
+  @@index([userId, operationType, createdAt])
+  @@index([success, createdAt])
+  @@index([operationType, success])
   @@map("llm_usage_logs")
 }
 
 model ProviderPerformance {
-  id          String    @id @default(cuid())
-  userId      String
-  provider    String
-  avgLatency  Int       @default(0) // Latence moyenne (ms)
-  successRate Float     @default(100) // Taux de succès (0-100%)
-  totalCalls  Int       @default(0)
-  totalTokens Int       @default(0)
-  totalCost   Float     @default(0)
-  lastUsed    DateTime?
-  updatedAt   DateTime  @updatedAt
+  id                String            @id @default(cuid())
+  userId            String
+  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel)
+  provider          String
+  avgLatency        Int               @default(0) // Latence moyenne (ms)
+  successRate       Float             @default(100) // Taux de succès (0-100%)
+  totalCalls        Int               @default(0)
+  totalTokens       Int               @default(0)
+  totalCost         Float             @default(0)
+  lastUsed          DateTime?
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  user              users             @relation("UserProviderPerformance", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider   UserLlmProvider?  @relation("ProviderMetrics", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
 
   @@unique([userId, provider])
+  @@index([avgLatency])
+  @@index([successRate])
+  @@index([userId, updatedAt])
   @@map("provider_performance")
 }
 

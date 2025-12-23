@@ -138,6 +138,24 @@ export class ProspectingService {
   }
 
   /**
+   * Reprendre une campagne en pause
+   */
+  async resumeCampaign(userId: string, campaignId: string) {
+    const campaign = await this.getCampaignById(userId, campaignId);
+
+    if (campaign.status !== 'paused') {
+      throw new BadRequestException(
+        'Cette campagne n\'est pas en pause. Status actuel: ' + campaign.status,
+      );
+    }
+
+    return this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data: { status: 'active' }, // Important: ne pas modifier startedAt
+    });
+  }
+
+  /**
    * Supprimer une campagne
    */
   async deleteCampaign(userId: string, campaignId: string) {
