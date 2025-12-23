@@ -75,8 +75,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   handleDisconnect(client: Socket) {
-    const userId = Array.from(this.userSockets.entries())
-      .find(([_, socketId]) => socketId === client.id)?.[0];
+    const userId = Array.from(this.userSockets.entries()).find(
+      ([_, socketId]) => socketId === client.id,
+    )?.[0];
 
     if (userId) {
       this.userSockets.delete(userId);
@@ -92,9 +93,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @SubscribeMessage('markAsRead')
   handleMarkAsRead(client: Socket, notificationId: string) {
     // Broadcast à tous les clients de cet utilisateur
-    const userId = Array.from(this.userSockets.entries())
-      .find(([_, socketId]) => socketId === client.id)?.[0];
-    
+    const userId = Array.from(this.userSockets.entries()).find(
+      ([_, socketId]) => socketId === client.id,
+    )?.[0];
+
     if (userId) {
       this.server.to(userId).emit('notificationRead', notificationId);
     }
