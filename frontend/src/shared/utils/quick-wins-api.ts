@@ -180,3 +180,110 @@ export const autoReportsApi = {
     return response.data;
   },
 };
+
+// ============================================
+// EMAIL AI AUTO-RESPONSE
+// ============================================
+
+export interface EmailAnalysisResult {
+  analysisId: string;
+  intent: 'information' | 'appointment' | 'negotiation' | 'complaint' | 'other';
+  confidence: number;
+  keywords: string[];
+  suggestedActions: string[];
+  context?: {
+    prospectName?: string;
+    prospectEmail?: string;
+    prospectBudget?: number;
+    propertyTitle?: string;
+    propertyPrice?: number;
+  };
+  property?: {
+    id: string;
+    title: string;
+    price: number;
+  };
+}
+
+export interface AnalyzeEmailDto {
+  from: string;
+  subject: string;
+  body: string;
+  prospectId?: string;
+  propertyId?: string;
+}
+
+export interface EmailDraft {
+  draftId: string;
+  analysisId: string;
+  to: string;
+  subject: string;
+  body: string;
+  attachmentSuggestions: string[];
+  status: 'pending' | 'approved' | 'rejected' | 'sent';
+  createdAt: string;
+}
+
+export interface GenerateDraftDto {
+  analysisId: string;
+  additionalInstructions?: string;
+  tone?: 'professional' | 'friendly' | 'formal';
+}
+
+export interface ApproveAndSendDto {
+  draftId: string;
+  subject?: string;
+  body?: string;
+  attachments?: Array<{
+    filename: string;
+    path: string;
+  }>;
+}
+
+export interface EmailAIStats {
+  totalAnalyzed: number;
+  totalDraftsGenerated: number;
+  totalSent: number;
+  avgResponseTime: number;
+  intentDistribution: {
+    information: number;
+    appointment: number;
+    negotiation: number;
+    complaint: number;
+    other: number;
+  };
+}
+
+export const emailAIResponseApi = {
+  analyzeEmail: async (dto: AnalyzeEmailDto): Promise<EmailAnalysisResult> => {
+    const response = await backendApiClient.post('/email-ai-response/analyze', dto);
+    return response.data;
+  },
+
+  generateDraft: async (dto: GenerateDraftDto): Promise<EmailDraft> => {
+    const response = await backendApiClient.post('/email-ai-response/generate-draft', dto);
+    return response.data;
+  },
+
+  approveAndSend: async (dto: ApproveAndSendDto): Promise<{ success: boolean; messageId: string }> => {
+    const response = await backendApiClient.post('/email-ai-response/approve-and-send', dto);
+    return response.data;
+  },
+
+  getDrafts: async (status?: string): Promise<EmailDraft[]> => {
+    const params = status ? `?status=${status}` : '';
+    const response = await backendApiClient.get(`/email-ai-response/drafts${params}`);
+    return response.data;
+  },
+
+  getHistory: async (limit?: number): Promise<EmailAnalysisResult[]> => {
+    const params = limit ? `?limit=${limit}` : '';
+    const response = await backendApiClient.get(`/email-ai-response/history${params}`);
+    return response.data;
+  },
+
+  getStats: async (): Promise<EmailAIStats> => {
+    const response = await backendApiClient.get('/email-ai-response/stats');
+    return response.data;
+  },
+};
