@@ -183,7 +183,7 @@ Data:
 - Total properties: ${summary.totalProperties}
 - New properties: ${summary.newProperties}
 - Total appointments: ${summary.totalAppointments}
-- Completed appointments: ${completedAppointments}
+- Completed appointments: ${summary.completedAppointments}
 
 Provide concise, actionable insights. Return as JSON array of strings.`;
 
