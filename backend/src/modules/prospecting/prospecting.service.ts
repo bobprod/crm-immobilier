@@ -1005,14 +1005,16 @@ export class ProspectingService {
 
     try {
       const config = campaign.config as any;
-      const sources = config?.sources || ['pica']; // Sources configurées (pica, serp, firecrawl, meta, linkedin)
-      const autoMatch = config?.autoMatch !== false; // Auto-matching activé par défaut
+      const sources = config?.sources || ['pica'];
+      const autoMatch = config?.autoMatch !== false;
+      const llmProviderOverride = config?.llmProvider || 'auto'; // ✅ NOUVEAU: Provider override
 
-      // 1. SCRAPING MULTI-SOURCES
-      this.logger.log(`Scraping from sources: ${sources.join(', ')}`);
+      // 1. SCRAPING MULTI-SOURCES EN PARALLÈLE ⚡
+      this.logger.log(`⚡ Parallel scraping from sources: ${sources.join(', ')}`);
       const allRawItems: RawScrapedItem[] = [];
 
-      for (const source of sources) {
+      // ✅ OPTIMISATION: Scraper toutes les sources en parallèle
+      const scrapingPromises = sources.map(async (source) => {
         try {
           let result;
 
@@ -1058,34 +1060,43 @@ export class ProspectingService {
 
             default:
               this.logger.warn(`Unknown scraping source: ${source}`);
-              continue;
+              return { source, leads: [], error: 'Unknown source' };
           }
 
           // Convertir les résultats en RawScrapedItem
           if (result?.leads) {
             const rawItems = this.integrationService.convertToRawScrapedItems(result.leads, source);
-            allRawItems.push(...rawItems);
-            this.logger.log(`Source ${source}: ${rawItems.length} raw items scraped`);
+            this.logger.log(`✅ Source ${source}: ${rawItems.length} raw items scraped`);
+            return { source, leads: rawItems, error: null };
           }
+
+          return { source, leads: [], error: null };
         } catch (error) {
-          this.logger.warn(`Source ${source} failed: ${error.message}`);
-          // Continue avec les autres sources
+          this.logger.warn(`❌ Source ${source} failed: ${error.message}`);
+          return { source, leads: [], error: error.message };
+        }
+      });
+
+      // Attendre que toutes les sources finissent (en parallèle)
+      const scrapingResults = await Promise.all(scrapingPromises);
+
+      // Agréger tous les résultats
+      for (const result of scrapingResults) {
+        if (result.leads.length > 0) {
+          allRawItems.push(...result.leads);
         }
       }
 
-      this.logger.log(`Total raw items scraped: ${allRawItems.length}`);
+      this.logger.log(`✅ Total raw items scraped: ${allRawItems.length}`);
 
       // 2. LLM ANALYSIS + VALIDATION + INGESTION
-      // Le service IntegrationService va :
-      // - Analyser chaque item avec le LLM (extraction NER, classification, scoring)
-      // - Valider les leads (anti-spam, vérification email/tel)
-      // - Insérer uniquement les leads valides dans la DB
       let ingestResult;
       if (allRawItems.length > 0) {
         ingestResult = await this.integrationService.ingestScrapedItems(
           userId,
           campaign.id,
           allRawItems,
+          llmProviderOverride, // ✅ NOUVEAU: Passer le provider au service
         );
 
         this.logger.log(
@@ -1116,22 +1127,37 @@ export class ProspectingService {
         };
       }
 
-      // 3. AUTO-MATCHING (Lead ↔ Properties)
-      // Pour chaque lead créé, trouver automatiquement les biens correspondants
+      // 3. AUTO-MATCHING EN PARALLÈLE PAR BATCH ⚡
       if (autoMatch && ingestResult.leads && ingestResult.leads.length > 0) {
-        this.logger.log(`Starting auto-matching for ${ingestResult.leads.length} leads`);
+        this.logger.log(`⚡ Starting parallel auto-matching for ${ingestResult.leads.length} leads`);
         let totalMatches = 0;
 
-        for (const leadId of ingestResult.leads) {
-          try {
-            const matchResult = await this.findMatchesForLead(userId, leadId);
-            totalMatches += matchResult.matchesCreated || 0;
-          } catch (error) {
-            this.logger.warn(`Auto-matching failed for lead ${leadId}: ${error.message}`);
-          }
+        // ✅ OPTIMISATION: Matching en parallèle par batches de 20
+        const MATCH_BATCH_SIZE = 20;
+        for (let i = 0; i < ingestResult.leads.length; i += MATCH_BATCH_SIZE) {
+          const batch = ingestResult.leads.slice(i, i + MATCH_BATCH_SIZE);
+
+          const matchPromises = batch.map(async (leadId) => {
+            try {
+              const matchResult = await this.findMatchesForLead(userId, leadId);
+              return matchResult.matchesCreated || 0;
+            } catch (error) {
+              this.logger.warn(`Auto-matching failed for lead ${leadId}: ${error.message}`);
+              return 0;
+            }
+          });
+
+          // Attendre ce batch
+          const batchMatches = await Promise.all(matchPromises);
+          const batchTotal = batchMatches.reduce((sum, count) => sum + count, 0);
+          totalMatches += batchTotal;
+
+          this.logger.log(
+            `Batch ${Math.floor(i / MATCH_BATCH_SIZE) + 1}: ${batchTotal} matches created`,
+          );
         }
 
-        this.logger.log(`Auto-matching: ${totalMatches} matches created`);
+        this.logger.log(`✅ Auto-matching completed: ${totalMatches} total matches created`);
 
         // Mettre à jour le compteur de matches de la campagne
         await this.prisma.prospecting_campaigns.update({
@@ -1153,7 +1179,7 @@ export class ProspectingService {
       this.logger.log(
         `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${
           autoMatch ? 'auto-matching enabled' : 'manual matching'
-        }`,
+        } (Provider: ${llmProviderOverride})`,
       );
     } catch (error) {
       this.logger.error(`❌ Scraping failed for campaign ${campaign.id}: ${error.message}`);

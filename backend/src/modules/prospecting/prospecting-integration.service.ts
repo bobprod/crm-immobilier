@@ -186,12 +186,18 @@ export class ProspectingIntegrationService {
     userId: string,
     campaignId: string,
     items: RawScrapedItem[],
+    providerOverride?: string, // ✅ NOUVEAU: Support pour forcer un provider spécifique
   ): Promise<IngestResult> {
     this.logger.log(`Ingesting ${items.length} scraped items for campaign ${campaignId}`);
 
     // 1) Appeler le LLM pour structurer les items
     const leadsToCreate: ProspectingLeadCreateInput[] =
-      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items, userId);
+      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(
+        items,
+        userId,
+        undefined, // config
+        providerOverride, // ✅ Passer le provider override au LLM service
+      );
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
