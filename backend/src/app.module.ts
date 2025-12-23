@@ -36,6 +36,12 @@ import { MatchingModule } from './modules/intelligence/matching/matching.module'
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
 
+// QUICK WINS MODULES
+import { SmartFormsModule } from './modules/intelligence/smart-forms/smart-forms.module';
+import { SemanticSearchModule } from './modules/intelligence/semantic-search/semantic-search.module';
+import { PriorityInboxModule } from './modules/intelligence/priority-inbox/priority-inbox.module';
+import { AutoReportsModule } from './modules/intelligence/auto-reports/auto-reports.module';
+
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
@@ -99,12 +105,16 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 5 modules
+    // INTELLIGENCE - 9 modules (5 existing + 4 Quick Wins)
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
+    SmartFormsModule,
+    SemanticSearchModule,
+    PriorityInboxModule,
+    AutoReportsModule,
 
     // PROSPECTING - 1 module
     ProspectingModule,
