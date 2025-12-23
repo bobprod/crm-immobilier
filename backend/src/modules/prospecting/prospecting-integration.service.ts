@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { LLMProspectingService } from './llm-prospecting.service';
-import { LLMProviderFactory } from '../content/seo-ai/providers/llm-provider.factory';
+import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
 import axios from 'axios';
 
@@ -44,7 +44,7 @@ export class ProspectingIntegrationService {
     private configService: ConfigService,
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
-    private llmProviderFactory: LLMProviderFactory,
+    private llmRouter: LLMRouterService,
   ) {}
 
   // ============================================
@@ -698,10 +698,14 @@ export class ProspectingIntegrationService {
     };
   }
 
-  async analyzeContentForLeads(userId: string, content: string, source?: string): Promise<any> {
+  async analyzeContentForLeads(
+    userId: string,
+    content: string,
+    source?: string,
+    providerOverride?: string,
+  ): Promise<any> {
     this.logger.log(`Analyzing content for leads`);
 
-    // Utiliser l'IA pour extraire les informations
     const prompt = `Analyse ce texte et extrait les informations de contact et immobilieres:
 
     Texte: ${content}
@@ -712,18 +716,54 @@ export class ProspectingIntegrationService {
     - leadType: "requete" (cherche un bien) ou "mandat" (propose un bien)
     - score: 0-100 (qualite du lead)`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      // Utiliser LLMProviderFactory au lieu de callLLM
-      const provider = await this.llmProviderFactory.createProvider(userId);
+      // ✅ Routing intelligent: qualification = équilibre qualité/coût
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify', // Gemini, Mistral, Qwen prioritaires
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
+
       const response = await provider.generate(prompt, {
         maxTokens: 1000,
         temperature: 0.3,
       });
+
+      const latency = Date.now() - startTime;
       const result = JSON.parse(response);
-      return { success: true, analysis: result, method: 'llm' };
+
+      // ✅ Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
+
+      return { success: true, analysis: result, method: 'llm', provider: providerName };
     } catch (error) {
-      // Log l'erreur pour le debugging
       this.logger.warn(`LLM analysis failed, falling back to regex: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
 
       // Fallback sur extraction regex
       const contact = this.extractContactFromText(content);

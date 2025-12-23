@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/database/prisma.service';
-import { LLMProviderFactory } from '../content/seo-ai/providers/llm-provider.factory';
+import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import {
   RawScrapedItem,
   LLMAnalyzedLead,
@@ -57,7 +57,7 @@ TYPES DE BIENS:
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
-    private llmProviderFactory: LLMProviderFactory,
+    private llmRouter: LLMRouterService,
   ) {}
 
   // ============================================
@@ -68,28 +68,74 @@ TYPES DE BIENS:
    * Analyse un element brut scrappe et retourne les infos extraites par le LLM
    * @param raw - Element brut à analyser
    * @param userId - ID utilisateur pour récupérer la config LLM personnalisée
+   * @param providerOverride - Provider manuel (optionnel, 'auto' par défaut)
    */
-  async analyzeRawItem(raw: RawScrapedItem, userId: string): Promise<LLMAnalyzedLead> {
+  async analyzeRawItem(
+    raw: RawScrapedItem,
+    userId: string,
+    providerOverride?: string,
+  ): Promise<LLMAnalyzedLead> {
     this.logger.log(`Analyzing raw item from source: ${raw.source} for user ${userId}`);
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      // Utiliser LLMProviderFactory au lieu de getLLMConfig()
-      const provider = await this.llmProviderFactory.createProvider(userId);
+      // ✅ Sélection intelligente : prospecting en masse = coût minimal
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_mass', // DeepSeek, Qwen prioritaires
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
 
       const userPrompt = this.buildAnalysisPrompt(raw);
 
-      // Utiliser provider.generate() au lieu de callLLM()
+      // Utiliser provider.generate()
       const response = await provider.generate(userPrompt, {
         systemPrompt: this.ANALYSIS_SYSTEM_PROMPT,
         maxTokens: 1000,
         temperature: 0.3,
       });
 
+      const latency = Date.now() - startTime;
+
       // Parser la réponse JSON
       const parsed = JSON.parse(response);
-      return this.parseAnalysisResponse(parsed, raw);
+      const result = this.parseAnalysisResponse(parsed, raw);
+
+      // ✅ Tracking automatique des métriques
+      const tokensInput = Math.ceil(userPrompt.length / 4);
+      const tokensOutput = Math.ceil(response.length / 4);
+
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_mass',
+        tokensInput,
+        tokensOutput,
+        latency,
+        true,
+      );
+
+      return result;
     } catch (error) {
       this.logger.error(`LLM analysis failed: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_mass',
+          Math.ceil(raw.text.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Fallback sur l'extraction par regles
       return this.analyzeWithRules(raw);
     }
@@ -103,13 +149,15 @@ TYPES DE BIENS:
    * Transforme un RawScrapedItem directement en ProspectingLead pret a etre insere en BDD
    * @param raw - Element brut à transformer
    * @param userId - ID utilisateur pour l'analyse LLM
+   * @param providerOverride - Provider manuel (optionnel)
    */
   async buildProspectingLeadFromRaw(
     raw: RawScrapedItem,
     userId: string,
+    providerOverride?: string,
   ): Promise<ProspectingLeadCreateInput> {
-    // 1. Analyser avec le LLM
-    const analyzed = await this.analyzeRawItem(raw, userId);
+    // 1. Analyser avec le LLM (avec routing intelligent)
+    const analyzed = await this.analyzeRawItem(raw, userId, providerOverride);
 
     // 2. Valider les donnees
     const validation = this.validateLead(analyzed);
@@ -177,6 +225,7 @@ TYPES DE BIENS:
     raws: RawScrapedItem[],
     userId: string,
     config?: AnalysisConfig,
+    providerOverride?: string,
   ): Promise<ProspectingLeadCreateInput[]> {
     const batchSize = config?.batchSize || 5;
     const results: ProspectingLeadCreateInput[] = [];
@@ -191,7 +240,7 @@ TYPES DE BIENS:
 
       const batchPromises = batch.map(async (raw) => {
         try {
-          return await this.buildProspectingLeadFromRaw(raw, userId);
+          return await this.buildProspectingLeadFromRaw(raw, userId, providerOverride);
         } catch (error) {
           this.logger.error(`Failed to process item: ${error.message}`);
           // Retourner un lead minimal en cas d'erreur
@@ -218,6 +267,7 @@ TYPES DE BIENS:
     raws: RawScrapedItem[],
     userId: string,
     config?: AnalysisConfig,
+    providerOverride?: string,
   ): Promise<BatchAnalysisResult> {
     const items: BatchAnalysisResult['items'] = [];
     let leads = 0;
@@ -226,7 +276,7 @@ TYPES DE BIENS:
 
     for (const raw of raws) {
       try {
-        const analyzed = await this.analyzeRawItem(raw, userId);
+        const analyzed = await this.analyzeRawItem(raw, userId, providerOverride);
         items.push({ raw, analyzed });
 
         if (analyzed.isLead) {
