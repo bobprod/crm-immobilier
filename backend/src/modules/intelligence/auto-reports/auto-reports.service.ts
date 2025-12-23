@@ -195,9 +195,13 @@ Provide concise, actionable insights. Return as JSON array of strings.`;
       });
 
       const content = response.choices[0]?.message?.content || '[]';
-      const insights = JSON.parse(content);
-
-      return Array.isArray(insights) ? insights : this.generateStaticInsights(summary);
+      try {
+        const insights = JSON.parse(content);
+        return Array.isArray(insights) ? insights : this.generateStaticInsights(summary);
+      } catch (parseError) {
+        this.logger.error(`Failed to parse insights JSON: ${parseError.message}`);
+        return this.generateStaticInsights(summary);
+      }
     } catch (error) {
       this.logger.error(`Error generating insights: ${error.message}`);
       return this.generateStaticInsights(summary);
@@ -276,11 +280,15 @@ Provide specific, actionable recommendations. Return as JSON array of strings.`;
       });
 
       const content = response.choices[0]?.message?.content || '[]';
-      const recommendations = JSON.parse(content);
-
-      return Array.isArray(recommendations)
-        ? recommendations
-        : this.generateStaticRecommendations(summary);
+      try {
+        const recommendations = JSON.parse(content);
+        return Array.isArray(recommendations)
+          ? recommendations
+          : this.generateStaticRecommendations(summary);
+      } catch (parseError) {
+        this.logger.error(`Failed to parse recommendations JSON: ${parseError.message}`);
+        return this.generateStaticRecommendations(summary);
+      }
     } catch (error) {
       this.logger.error(`Error generating recommendations: ${error.message}`);
       return this.generateStaticRecommendations(summary);

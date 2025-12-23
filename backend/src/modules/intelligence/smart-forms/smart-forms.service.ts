@@ -71,6 +71,22 @@ export class SmartFormsService {
     partialValue?: string,
   ): Promise<FormSuggestion[]> {
     try {
+      // Whitelist des champs autorisés pour éviter les injections
+      const allowedFields = [
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
+        'city',
+        'address',
+        'notes',
+      ];
+
+      if (!allowedFields.includes(fieldName)) {
+        this.logger.warn(`Attempted to query unauthorized field: ${fieldName}`);
+        return [];
+      }
+
       let where: any = { userId };
 
       if (partialValue) {
@@ -137,6 +153,21 @@ export class SmartFormsService {
     partialValue?: string,
   ): Promise<FormSuggestion[]> {
     try {
+      // Whitelist des champs autorisés
+      const allowedFields = [
+        'title',
+        'description',
+        'address',
+        'city',
+        'zipCode',
+        'type',
+      ];
+
+      if (!allowedFields.includes(fieldName)) {
+        this.logger.warn(`Attempted to query unauthorized field: ${fieldName}`);
+        return [];
+      }
+
       let where: any = { userId };
 
       if (partialValue) {

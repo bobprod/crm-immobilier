@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import {
+  NOTIFICATION_FATIGUE_THRESHOLD,
+  NOTIFICATION_FATIGUE_WINDOW_MS,
+} from '../../intelligence/priority-inbox/constants';
 
 /**
  * Service pour les fonctionnalités de notification intelligente
@@ -127,18 +131,18 @@ export class SmartNotificationsService {
   async checkNotificationFatigue(userId: string): Promise<boolean> {
     try {
       const now = new Date();
-      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const windowAgo = new Date(now.getTime() - NOTIFICATION_FATIGUE_WINDOW_MS);
 
-      // Compter les notifications des dernières 60 minutes
+      // Compter les notifications des dernières X minutes
       const recentCount = await this.prisma.notifications.count({
         where: {
           userId,
-          createdAt: { gte: oneHourAgo },
+          createdAt: { gte: windowAgo },
         },
       });
 
-      // Limiter à 5 notifications par heure max
-      return recentCount >= 5;
+      // Limiter selon le seuil configuré
+      return recentCount >= NOTIFICATION_FATIGUE_THRESHOLD;
     } catch (error) {
       this.logger.error(`Error checking notification fatigue: ${error.message}`);
       return false;

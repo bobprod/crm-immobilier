@@ -5,22 +5,11 @@ import {
   PriorityItem,
   PriorityScoreFactors,
 } from './dto/priority-inbox.dto';
+import { URGENT_KEYWORDS, PRIORITY_SCORE_THRESHOLDS } from './constants';
 
 @Injectable()
 export class PriorityInboxService {
   private readonly logger = new Logger(PriorityInboxService.name);
-
-  // Mots-clés d'urgence
-  private urgentKeywords = [
-    'urgent',
-    'immédiat',
-    'aujourd\'hui',
-    'maintenant',
-    'rapidement',
-    'vite',
-    'pressé',
-    'asap',
-  ];
 
   constructor(private prisma: PrismaService) {}
 
@@ -169,7 +158,7 @@ export class PriorityInboxService {
     // Mots-clés d'urgence dans les notes
     if (prospect.notes) {
       const notesLower = prospect.notes.toLowerCase();
-      this.urgentKeywords.forEach((keyword) => {
+      URGENT_KEYWORDS.forEach((keyword) => {
         if (notesLower.includes(keyword)) {
           factors.urgencyKeywords += 20;
         }
@@ -231,7 +220,7 @@ export class PriorityInboxService {
     // Mots-clés d'urgence dans le titre/notes
     if (appointment.title || appointment.notes) {
       const text = `${appointment.title || ''} ${appointment.notes || ''}`.toLowerCase();
-      this.urgentKeywords.forEach((keyword) => {
+      URGENT_KEYWORDS.forEach((keyword) => {
         if (text.includes(keyword)) {
           factors.urgencyKeywords += 10;
         }
@@ -261,9 +250,9 @@ export class PriorityInboxService {
   private getUrgencyLevel(
     score: number,
   ): 'critical' | 'high' | 'medium' | 'low' {
-    if (score >= 80) return 'critical';
-    if (score >= 60) return 'high';
-    if (score >= 40) return 'medium';
+    if (score >= PRIORITY_SCORE_THRESHOLDS.CRITICAL) return 'critical';
+    if (score >= PRIORITY_SCORE_THRESHOLDS.HIGH) return 'high';
+    if (score >= PRIORITY_SCORE_THRESHOLDS.MEDIUM) return 'medium';
     return 'low';
   }
 

@@ -108,7 +108,12 @@ Return as JSON object.`;
       });
 
       const content = response.choices[0]?.message?.content || '{}';
-      return JSON.parse(content);
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        this.logger.error(`Failed to parse AI response: ${parseError.message}`);
+        return this.fallbackIntent(query);
+      }
     } catch (error) {
       this.logger.error(`Error analyzing search intent: ${error.message}`);
       return this.fallbackIntent(query);
