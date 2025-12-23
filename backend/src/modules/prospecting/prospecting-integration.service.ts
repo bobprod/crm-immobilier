@@ -807,14 +807,35 @@ export class ProspectingIntegrationService {
     4. quality: 0-100
     5. reason: explication`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      // Utiliser LLMProviderFactory
-      const provider = await this.llmProviderFactory.createProvider(userId);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
       const response = await provider.generate(prompt, {
         maxTokens: 1000,
         temperature: 0.3,
       });
+
+      const latency = Date.now() - startTime;
       const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       // Mettre a jour le lead
       await this.prisma.prospecting_leads.update({
@@ -830,8 +851,22 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, classification: result, method: 'llm' };
+      return { success: true, classification: result, method: 'llm', provider: providerName };
     } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Log l'erreur pour le debugging
       this.logger.warn(
         `LLM classification failed for lead ${leadId}, using basic rules: ${error.message}`,
@@ -870,14 +905,35 @@ export class ProspectingIntegrationService {
 
     Retourne: { score: number, reasons: string[], recommendations: string[] }`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      // Utiliser LLMProviderFactory
-      const provider = await this.llmProviderFactory.createProvider(userId);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
       const response = await provider.generate(prompt, {
         maxTokens: 1000,
         temperature: 0.3,
       });
+
+      const latency = Date.now() - startTime;
       const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       await this.prisma.prospecting_leads.update({
         where: { id: leadId },
@@ -890,11 +946,25 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, qualification: result };
-    } catch {
+      return { success: true, qualification: result, provider: providerName };
+    } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Scoring basique
       const score = this.calculateBasicScore(lead);
-      return { success: true, qualification: { score, reasons: ['Scoring automatique'] } };
+      return { success: true, qualification: { score, reasons: ['Scoring automatique'] }, method: 'fallback' };
     }
   }
 
