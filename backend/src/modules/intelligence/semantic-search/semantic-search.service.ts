@@ -1,23 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
 import { SemanticSearchQueryDto, SemanticSearchResult } from './dto/semantic-search.dto';
 
 @Injectable()
 export class SemanticSearchService {
   private readonly logger = new Logger(SemanticSearchService.name);
-  private openai: OpenAI;
 
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
-  ) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-    }
-  }
+    private llmService: QuickWinsLLMService,
+  ) {}
 
   /**
    * Recherche sémantique dans le CRM
@@ -78,14 +71,29 @@ export class SemanticSearchService {
   }
 
   /**
-   * Analyser l'intention de recherche avec l'IA
+   * Analyser l'intention de recherche avec l'IA (via LLM Router centralisé)
    */
   private async analyzeSearchIntent(query: string): Promise<any> {
     try {
-      if (!this.openai) {
-        return this.fallbackIntent(query);
-      }
+      // Utiliser le service LLM centralisé au lieu d'OpenAI direct
+      const intent = await this.llmService.analyzeSearchIntent('system', query);
+      return {
+        keywords: intent.keywords,
+        filters: intent.filters,
+        intent: intent.intent,
+      };
+    } catch (error) {
+      this.logger.warn('LLM analysis failed, using fallback', error);
+      return this.fallbackIntent(query);
+    }
+  }
 
+  /**
+   * Analyser l'intention de recherche - version ancienne (deprecated)
+   * Conservé pour compatibilité
+   */
+  private async analyzeSearchIntentOld(query: string): Promise<any> {
+    try {
       const prompt = `Analyze this real estate CRM search query and extract structured information:
 Query: "${query}"
 

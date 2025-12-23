@@ -1,23 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
 import { GenerateReportDto, ReportData } from './dto/generate-report.dto';
 
 @Injectable()
 export class AutoReportsService {
   private readonly logger = new Logger(AutoReportsService.name);
-  private openai: OpenAI;
 
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService,
-  ) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-    }
-  }
+    private llmService: QuickWinsLLMService,
+  ) {}
 
   /**
    * Générer un rapport automatique
@@ -166,44 +159,25 @@ export class AutoReportsService {
   }
 
   /**
-   * Générer des insights avec l'IA
+   * Générer des insights avec l'IA (via LLM Router centralisé)
    */
   private async generateInsights(summary: any): Promise<string[]> {
     try {
-      if (!this.openai) {
-        return this.generateStaticInsights(summary);
-      }
-
-      const prompt = `Analyze this real estate CRM data and provide 3-5 key insights in French:
-
-Data:
-- Total prospects: ${summary.totalProspects}
-- New prospects this period: ${summary.newProspects}
-- Qualified prospects: ${summary.qualifiedProspects}
-- Total properties: ${summary.totalProperties}
-- New properties: ${summary.newProperties}
-- Total appointments: ${summary.totalAppointments}
-- Completed appointments: ${summary.completedAppointments}
-
-Provide concise, actionable insights. Return as JSON array of strings.`;
-
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 300,
-      });
-
-      const content = response.choices[0]?.message?.content || '[]';
-      try {
-        const insights = JSON.parse(content);
-        return Array.isArray(insights) ? insights : this.generateStaticInsights(summary);
-      } catch (parseError) {
-        this.logger.error(`Failed to parse insights JSON: ${parseError.message}`);
-        return this.generateStaticInsights(summary);
-      }
+      // Utiliser le service LLM centralisé
+      return await this.llmService.generateReportInsights(
+        'system',
+        {
+          newProspects: summary.newProspects,
+          qualifiedProspects: summary.qualifiedProspects,
+          newProperties: summary.newProperties,
+          completedAppointments: summary.completedAppointments,
+          totalAppointments: summary.totalAppointments,
+          qualificationRate: summary.qualificationRate,
+        },
+        'de la période',
+      );
     } catch (error) {
-      this.logger.error(`Error generating insights: ${error.message}`);
+      this.logger.warn('LLM insights generation failed, using fallback', error);
       return this.generateStaticInsights(summary);
     }
   }
