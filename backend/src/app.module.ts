@@ -16,8 +16,9 @@ import { SettingsModule } from './modules/core/settings/settings.module';
 // NOTIFICATIONS MODULE
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
-// CACHE MODULE
-import { CacheModule } from './modules/cache/cache.module';
+// CACHE MODULES
+import { CacheModule } from './modules/cache/cache.module'; // Existing cache service
+import { CacheModule as SharedCacheModule } from './shared/cache/cache.module'; // New @nestjs/cache-manager
 
 // WORDPRESS MODULE
 import { WordPressModule } from './modules/integrations/wordpress/wordpress.module';
@@ -80,8 +81,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // Database
     PrismaModule,
 
-    // CACHE - Global module
-    CacheModule,
+    // CACHE - Global modules
+    SharedCacheModule, // New @nestjs/cache-manager for properties
+    CacheModule, // Existing cache service
 
     // CORE - 3 modules
     AuthModule,

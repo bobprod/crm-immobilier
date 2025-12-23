@@ -1,22 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto } from './dto';
+import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto, PaginationQueryDto, PaginatedResponse } from './dto';
+import { PropertyHistoryService } from './property-history.service';
+import { ImageCompressionService } from '../../../shared/services/image-compression.service';
 
 @Injectable()
 export class PropertiesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(PropertiesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private historyService: PropertyHistoryService,
+    private imageCompression: ImageCompressionService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async create(userId: string, data: CreatePropertyDto) {
-    return this.prisma.properties.create({
+    const property = await this.prisma.properties.create({
       data: {
         ...data,
         userId,
       },
     });
+
+    // Log creation to history
+    await this.historyService.logCreate(property.id, userId, data);
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return property;
   }
 
   async findAll(userId: string, filters?: PropertyFiltersDto) {
-    const where: any = { userId };
+    const where: any = { userId, deletedAt: null }; // Filter out soft-deleted
 
     if (filters?.type) where.type = filters.type;
     if (filters?.category) where.category = filters.category;
@@ -37,21 +56,138 @@ export class PropertiesService {
 
   async findOne(id: string, userId: string) {
     return this.prisma.properties.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null }, // Filter out soft-deleted
     });
   }
 
   async update(id: string, userId: string, data: UpdatePropertyDto) {
-    return this.prisma.properties.update({
+    // Get old data for history
+    const oldProperty = await this.prisma.properties.findFirst({
+      where: { id, userId },
+    });
+
+    if (!oldProperty) {
+      throw new Error('Property not found');
+    }
+
+    const updated = await this.prisma.properties.update({
       where: { id },
       data,
     });
+
+    // Log update to history
+    await this.historyService.logUpdate(id, userId, oldProperty, data);
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return updated;
   }
 
   async delete(id: string, userId: string) {
+    // Soft delete: Set deletedAt timestamp
+    const property = await this.prisma.properties.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    // Log deletion to history
+    await this.historyService.logDelete(id, userId);
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return property;
+  }
+
+  /**
+   * Restore a soft-deleted property
+   */
+  async restore(id: string, userId: string) {
+    const property = await this.prisma.properties.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+
+    // Log restoration to history
+    await this.historyService.logRestore(id, userId);
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return property;
+  }
+
+  /**
+   * Get all trashed (soft-deleted) properties
+   */
+  async getTrashed(userId: string) {
+    return this.prisma.properties.findMany({
+      where: { 
+        userId,
+        deletedAt: { not: null },
+      },
+      orderBy: { deletedAt: 'desc' },
+    });
+  }
+
+  /**
+   * Permanently delete a property (cannot be undone)
+   */
+  async permanentDelete(id: string, userId: string) {
     return this.prisma.properties.delete({
       where: { id },
     });
+  }
+
+  /**
+   * Cursor-based pagination for infinite scroll
+   */
+  async findAllPaginated(
+    userId: string,
+    pagination: PaginationQueryDto,
+    filters?: PropertyFiltersDto,
+  ): Promise<PaginatedResponse<any>> {
+    const limit = pagination.limit || 20;
+    const where: any = { userId, deletedAt: null };
+
+    // Apply filters
+    if (filters?.type) where.type = filters.type;
+    if (filters?.category) where.category = filters.category;
+    if (filters?.status) where.status = filters.status;
+    if (filters?.city) where.city = filters.city;
+    if (filters?.minPrice || filters?.maxPrice) {
+      where.price = {};
+      if (filters.minPrice) where.price.gte = parseFloat(String(filters.minPrice));
+      if (filters.maxPrice) where.price.lte = parseFloat(String(filters.maxPrice));
+    }
+
+    // Get total count
+    const total = await this.prisma.properties.count({ where });
+
+    // Build cursor query
+    const cursorQuery: any = pagination.cursor
+      ? { cursor: { id: pagination.cursor }, skip: 1 }
+      : {};
+
+    // Fetch items
+    const items = await this.prisma.properties.findMany({
+      where,
+      take: limit + 1, // Fetch one extra to check if there's a next page
+      orderBy: { createdAt: 'desc' },
+      ...cursorQuery,
+    });
+
+    const hasNextPage = items.length > limit;
+    const resultItems = hasNextPage ? items.slice(0, limit) : items;
+    const nextCursor = hasNextPage ? resultItems[resultItems.length - 1].id : null;
+
+    return {
+      items: resultItems,
+      nextCursor,
+      hasNextPage,
+      total,
+    };
   }
 
   async syncWithWordPress(id: string, userId: string, wpSyncId: string) {
@@ -65,31 +201,63 @@ export class PropertiesService {
   }
 
   async uploadImages(id: string, userId: string, files: Express.Multer.File[]) {
-    // Get existing images
+    // Get existing property
     const property = await this.prisma.properties.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
 
     if (!property) {
       throw new Error('Property not found');
     }
 
-    // In production, upload to cloud storage (S3, Cloudinary, etc.)
-    // For now, we'll just store file names
     const existingImages = (property.images as string[]) || [];
-    const newImages = files.map((file) => `/uploads/properties/${id}/${file.filename}`);
+    const newImages: string[] = [];
 
-    return this.prisma.properties.update({
+    // Process each uploaded file with compression
+    for (const file of files) {
+      try {
+        const originalPath = file.path;
+        const compressedPath = originalPath.replace(/(\.[^.]+)$/, '_compressed$1');
+        const thumbnailPath = originalPath.replace(/(\.[^.]+)$/, '_thumb$1');
+
+        // Compress and generate thumbnail
+        await this.imageCompression.processUploadedImage(
+          originalPath,
+          compressedPath,
+          thumbnailPath,
+          true, // Delete original after compression
+        );
+
+        // Store the compressed image path
+        newImages.push(`/uploads/properties/${id}/${file.filename.replace(/(\.[^.]+)$/, '_compressed$1')}`);
+        
+        this.logger.log(`Compressed image for property ${id}: ${file.filename}`);
+      } catch (error) {
+        this.logger.error(`Failed to compress image: ${error.message}`);
+        // Still add the original if compression fails
+        newImages.push(`/uploads/properties/${id}/${file.filename}`);
+      }
+    }
+
+    // Update property with new images
+    const updated = await this.prisma.properties.update({
       where: { id },
       data: {
         images: [...existingImages, ...newImages],
       },
     });
+
+    // Log image upload to history
+    await this.historyService.logChange(id, userId, 'image_uploaded', undefined, {
+      count: newImages.length,
+    });
+
+    return updated;
   }
 
   async deleteImage(id: string, userId: string, imageUrl: string) {
     const property = await this.prisma.properties.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
 
     if (!property) {
@@ -99,23 +267,47 @@ export class PropertiesService {
     const images = (property.images as string[]) || [];
     const updatedImages = images.filter((img) => img !== imageUrl);
 
-    return this.prisma.properties.update({
+    const updated = await this.prisma.properties.update({
       where: { id },
       data: {
         images: updatedImages,
       },
     });
+
+    // Log image deletion to history
+    await this.historyService.logChange(id, userId, 'image_deleted', undefined, {
+      imageUrl,
+    });
+
+    return updated;
   }
 
   async updateStatus(id: string, userId: string, status: string) {
-    return this.prisma.properties.update({
+    // Get old status for history
+    const oldProperty = await this.prisma.properties.findFirst({
+      where: { id, userId, deletedAt: null },
+    });
+
+    if (!oldProperty) {
+      throw new Error('Property not found');
+    }
+
+    const updated = await this.prisma.properties.update({
       where: { id },
       data: { status },
     });
+
+    // Log status change
+    await this.historyService.logStatusChange(id, userId, oldProperty.status, status);
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return updated;
   }
 
   async search(userId: string, criteria: PropertyFiltersDto & { limit?: number }) {
-    const where: any = { userId };
+    const where: any = { userId, deletedAt: null };
 
     if (criteria.type) where.type = criteria.type;
     if (criteria.category) where.category = criteria.category;
@@ -143,7 +335,7 @@ export class PropertiesService {
 
   async getSimilar(id: string, userId: string, limit: number) {
     const property = await this.prisma.properties.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
     });
 
     if (!property) {
@@ -156,6 +348,7 @@ export class PropertiesService {
     return this.prisma.properties.findMany({
       where: {
         userId,
+        deletedAt: null,
         id: { not: id },
         type: property.type,
         category: property.category,
@@ -169,50 +362,77 @@ export class PropertiesService {
     });
   }
 
-  async getNearby(userId: string, latitude: number, longitude: number, radiusKm: number) {
-    // Simple distance calculation using Haversine formula
-    // In production, use PostGIS or similar for better performance
+  /**
+   * Find nearby properties using Haversine formula
+   */
+  async findNearby(userId: string, latitude: number, longitude: number, radiusKm: number) {
+    // Fetch all properties with coordinates
     const properties = await this.prisma.properties.findMany({
       where: {
         userId,
+        deletedAt: null,
         latitude: { not: null },
         longitude: { not: null },
       },
     });
 
-    return properties.filter((property) => {
-      if (!property.latitude || !property.longitude) return false;
+    // Calculate distances and filter
+    const propertiesWithDistance = properties
+      .map((property) => {
+        if (!property.latitude || !property.longitude) return null;
 
-      const distance = this.calculateDistance(
-        latitude,
-        longitude,
-        property.latitude,
-        property.longitude,
-      );
+        const distance = this.calculateDistance(
+          latitude,
+          longitude,
+          property.latitude,
+          property.longitude,
+        );
 
-      return distance <= radiusKm;
-    });
+        return {
+          ...property,
+          distance, // Distance in km
+        };
+      })
+      .filter((p) => p !== null && p.distance <= radiusKm)
+      .sort((a, b) => a.distance - b.distance); // Sort by distance (closest first)
+
+    return propertiesWithDistance;
   }
 
   async getStats(userId: string) {
+    // Try to get from cache first
+    const cacheKey = `stats:${userId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    
+    if (cached) {
+      this.logger.debug(`Cache hit for stats:${userId}`);
+      return cached;
+    }
+
+    // Calculate stats
     const [total, available, sold, rented, avgPrice] = await Promise.all([
-      this.prisma.properties.count({ where: { userId } }),
-      this.prisma.properties.count({ where: { userId, status: 'available' } }),
-      this.prisma.properties.count({ where: { userId, status: 'sold' } }),
-      this.prisma.properties.count({ where: { userId, status: 'rented' } }),
+      this.prisma.properties.count({ where: { userId, deletedAt: null } }),
+      this.prisma.properties.count({ where: { userId, deletedAt: null, status: 'available' } }),
+      this.prisma.properties.count({ where: { userId, deletedAt: null, status: 'sold' } }),
+      this.prisma.properties.count({ where: { userId, deletedAt: null, status: 'rented' } }),
       this.prisma.properties.aggregate({
-        where: { userId },
+        where: { userId, deletedAt: null },
         _avg: { price: true },
       }),
     ]);
 
-    return {
+    const stats = {
       total,
       available,
       sold,
       rented,
       avgPrice: avgPrice._avg.price || 0,
     };
+
+    // Cache for 5 minutes (300 seconds)
+    await this.cacheManager.set(cacheKey, stats, 300);
+
+    return stats;
   }
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -234,7 +454,7 @@ export class PropertiesService {
   }
 
   async exportCSV(userId: string, filters?: PropertyFiltersDto) {
-    const properties = await this.findAll(userId, filters);
+    const properties = await this.findAll(userId, filters); // Already filters deletedAt: null
 
     // Create CSV header
     const headers = [
@@ -325,6 +545,9 @@ export class PropertiesService {
           data: propertyData as any,
         });
 
+        // Log import to history
+        await this.historyService.logCreate(created.id, userId, propertyData);
+
         imported.push(created);
       } catch (error) {
         errors.push({
@@ -343,56 +566,127 @@ export class PropertiesService {
   }
 
   async updatePriority(id: string, userId: string, priority: string) {
-    return this.prisma.properties.update({
+    // Get old priority for history
+    const oldProperty = await this.prisma.properties.findFirst({
+      where: { id, userId, deletedAt: null },
+    });
+
+    if (!oldProperty) {
+      throw new Error('Property not found');
+    }
+
+    const updated = await this.prisma.properties.update({
       where: { id },
       data: { priority },
     });
+
+    // Log priority change
+    await this.historyService.logPriorityChange(id, userId, oldProperty.priority, priority);
+
+    return updated;
   }
 
   async bulkUpdatePriority(ids: string[], userId: string, priority: string) {
-    return this.prisma.properties.updateMany({
-      where: { id: { in: ids }, userId },
+    const result = await this.prisma.properties.updateMany({
+      where: { id: { in: ids }, userId, deletedAt: null },
       data: { priority },
     });
+
+    // Log bulk priority change
+    for (const id of ids) {
+      await this.historyService.logChange(id, userId, 'priority_changed', [
+        { field: 'priority', oldValue: null, newValue: priority },
+      ]);
+    }
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return result;
   }
 
   async bulkUpdateStatus(ids: string[], userId: string, status: string) {
-    return this.prisma.properties.updateMany({
-      where: { id: { in: ids }, userId },
+    const result = await this.prisma.properties.updateMany({
+      where: { id: { in: ids }, userId, deletedAt: null },
       data: { status },
     });
+
+    // Log bulk status change
+    for (const id of ids) {
+      await this.historyService.logChange(id, userId, 'status_changed', [
+        { field: 'status', oldValue: null, newValue: status },
+      ]);
+    }
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return result;
   }
 
   async bulkAssign(ids: string[], userId: string, assignedTo: string) {
-    return this.prisma.properties.updateMany({
-      where: { id: { in: ids }, userId },
+    const result = await this.prisma.properties.updateMany({
+      where: { id: { in: ids }, userId, deletedAt: null },
       data: { assignedTo },
     });
+
+    // Log bulk assignment
+    for (const id of ids) {
+      await this.historyService.logAssignment(id, userId, null, assignedTo);
+    }
+
+    return result;
   }
 
   async bulkDelete(ids: string[], userId: string) {
-    return this.prisma.properties.deleteMany({
-      where: { id: { in: ids }, userId },
+    // Soft delete multiple properties
+    const result = await this.prisma.properties.updateMany({
+      where: { id: { in: ids }, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
+
+    // Log bulk deletion
+    for (const id of ids) {
+      await this.historyService.logDelete(id, userId);
+    }
+
+    // Invalidate cache
+    await this.invalidateCacheForUser(userId);
+
+    return result;
   }
 
   async getFeatured(userId: string) {
-    return this.prisma.properties.findMany({
-      where: { userId, isFeatured: true },
+    // Try to get from cache first
+    const cacheKey = `featured:${userId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    
+    if (cached) {
+      this.logger.debug(`Cache hit for ${cacheKey}`);
+      return cached;
+    }
+
+    const featured = await this.prisma.properties.findMany({
+      where: { userId, isFeatured: true, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Cache for 5 minutes (300 seconds)
+    await this.cacheManager.set(cacheKey, featured, 300);
+
+    return featured;
   }
 
   async getAssigned(userId: string, assignedTo: string) {
     return this.prisma.properties.findMany({
-      where: { userId, assignedTo },
+      where: { userId, assignedTo, deletedAt: null },
       orderBy: { priority: 'desc' },
     });
   }
 
   async getWithRelations(id: string, userId: string) {
     return this.prisma.properties.findFirst({
-      where: { id, userId },
+      where: { id, userId, deletedAt: null },
       include: {
         appointments: { take: 5, orderBy: { startTime: 'desc' } },
         tasks: { take: 5, orderBy: { createdAt: 'desc' } },
@@ -403,5 +697,45 @@ export class PropertiesService {
         assignedUser: true,
       },
     });
+  }
+
+  /**
+   * Get property history
+   */
+  async getHistory(id: string, limit = 50) {
+    return this.historyService.getPropertyHistory(id, limit);
+  }
+
+  /**
+   * Get user activity
+   */
+  async getUserActivity(userId: string, limit = 50) {
+    return this.historyService.getUserActivity(userId, limit);
+  }
+
+  /**
+   * Invalidate all property-related caches for a user
+   */
+  async invalidateCacheForUser(userId: string) {
+    try {
+      // Clear user-specific cache keys
+      const cacheKeys = [`featured:${userId}`, `stats:${userId}`];
+      for (const key of cacheKeys) {
+        await this.cacheManager.del(key);
+      }
+      
+      this.logger.debug(`Property caches invalidated for user ${userId}`);
+    } catch (error) {
+      this.logger.warn(`Failed to invalidate cache: ${error.message}`);
+    }
+  }
+
+  /**
+   * Invalidate all property-related caches
+   */
+  async invalidateCache() {
+    // This is a simplified version that relies on TTL
+    // In production with many users, consider using Redis SCAN with pattern
+    this.logger.debug('Cache invalidation triggered (TTL-based)');
   }
 }
