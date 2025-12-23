@@ -238,6 +238,30 @@ Réponds uniquement avec un JSON valide.`;
   }
 
   /**
+   * Analyser du texte générique avec le LLM
+   * Utilisé par: Email AI Response module
+   */
+  async analyzeText(userId: string, prompt: string): Promise<string> {
+    try {
+      const provider = await this.llmFactory.createProvider(userId);
+
+      const startTime = Date.now();
+      const response = await provider.generate(prompt, {
+        maxTokens: 500,
+        temperature: 0.7,
+      });
+      const duration = Date.now() - startTime;
+
+      await this.trackUsage(userId, 'text_analysis', prompt.length, response.length, duration);
+
+      return response;
+    } catch (error) {
+      this.logger.error('Error analyzing text with LLM', error);
+      throw error;
+    }
+  }
+
+  /**
    * Tracker l'utilisation et les coûts
    */
   private async trackUsage(

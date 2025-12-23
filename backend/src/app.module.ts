@@ -47,6 +47,7 @@ import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
 // COMMUNICATIONS MODULE
 import { CommunicationsModule } from './modules/communications/communications.module';
+import { EmailAIResponseModule } from './modules/communications/email-ai-response/email-ai-response.module';
 
 // DASHBOARD MODULE
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -119,8 +120,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // PROSPECTING - 1 module
     ProspectingModule,
 
-    // COMMUNICATIONS - 1 module
+    // COMMUNICATIONS - 2 modules
     CommunicationsModule,
+    EmailAIResponseModule,
 
     // DASHBOARD - 1 module
     DashboardModule,
