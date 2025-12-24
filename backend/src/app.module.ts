@@ -46,6 +46,9 @@ import { AIChatAssistantModule } from './modules/intelligence/ai-chat-assistant/
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
+// SCRAPING MODULE
+import { ScrapingModule } from './modules/scraping/scraping.module';
+
 // COMMUNICATIONS MODULE
 import { CommunicationsModule } from './modules/communications/communications.module';
 import { EmailAIResponseModule } from './modules/communications/email-ai-response/email-ai-response.module';
@@ -121,6 +124,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
 
     // PROSPECTING - 1 module
     ProspectingModule,
+
+    // SCRAPING - 1 module (Web Data Services)
+    ScrapingModule,
 
     // COMMUNICATIONS - 2 modules
     CommunicationsModule,
