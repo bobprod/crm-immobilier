@@ -50,7 +50,7 @@ test.describe('Delete Property E2E Test', () => {
 
         // Wait for confirmation dialog to appear
         console.log('Waiting for confirmation dialog...');
-        await page.waitForTimeout(3000); // Give React time to render
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // Give React time to render
 
         const dialog = page.locator('[role="alertdialog"]');
 
@@ -123,7 +123,7 @@ test.describe('Delete Property E2E Test', () => {
         console.log('✓ Dialog closed');
 
         // Wait for table to refresh
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Verify property count decreased
         const propertiesCountAfter = await page.locator('tbody tr').count();
@@ -153,7 +153,7 @@ test.describe('Delete Property E2E Test', () => {
         await deleteButton.click();
 
         // Wait for dialog
-        await page.waitForTimeout(3000);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 10000 });
         console.log('✓ Dialog appeared');
@@ -168,7 +168,7 @@ test.describe('Delete Property E2E Test', () => {
         console.log('✓ Dialog closed');
 
         // Wait a moment
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Verify property still exists
         const propertiesCountAfter = await page.locator('tbody tr').count();

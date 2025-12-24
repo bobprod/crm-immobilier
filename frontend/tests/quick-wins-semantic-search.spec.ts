@@ -25,7 +25,7 @@ test.describe('Quick Wins - Semantic Search', () => {
     await searchInput.fill('appartement La Marsa');
     
     // Wait for debounce
-    await page.waitForTimeout(800);
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     // Check search input still has value
     const value = await searchInput.inputValue();
@@ -62,7 +62,7 @@ test.describe('Quick Wins - Semantic Search', () => {
     await searchInput.fill('villa');
     
     // Wait for suggestions
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     
     // Value should be set
     const value = await searchInput.inputValue();
@@ -80,7 +80,7 @@ test.describe('Quick Wins - Semantic Search Results', () => {
     const searchInput = page.locator('input[placeholder*="Ex: appartement"]');
     await searchInput.fill('xyzabc123nonexistent');
     
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     
     // Search should still work even with no results
     const value = await searchInput.inputValue();
@@ -91,7 +91,7 @@ test.describe('Quick Wins - Semantic Search Results', () => {
     const searchInput = page.locator('input[placeholder*="Ex: appartement"]');
     await searchInput.fill('test');
     
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     
     // Component should handle results display
     expect(await searchInput.inputValue()).toBe('test');

@@ -10,7 +10,7 @@ test.describe('Quick Wins - Smart Forms', () => {
   test('should display smart input field', async ({ page }) => {
     // Navigate to forms tab
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check if city input exists
     const cityInput = page.locator('input[placeholder*="La Marsa"]');
@@ -19,14 +19,14 @@ test.describe('Quick Wins - Smart Forms', () => {
 
   test('should show suggestions when typing', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Type in city input
     const cityInput = page.locator('input[placeholder*="La Marsa"]').first();
     await cityInput.fill('La');
     
     // Wait for debounce and API call
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Check for suggestions popover (may not appear if backend is not running)
     // This is acceptable for demo
@@ -36,17 +36,17 @@ test.describe('Quick Wins - Smart Forms', () => {
 
   test('should update input when suggestion is selected', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const cityInput = page.locator('input[placeholder*="La Marsa"]').first();
     await cityInput.fill('Tun');
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // If suggestions appear, click first one
     const suggestion = page.locator('div[role="option"]').first();
     if (await suggestion.isVisible({ timeout: 2000 }).catch(() => false)) {
       await suggestion.click();
-      await page.waitForTimeout(500);
+      await new Promise((resolve) => setTimeout(resolve, 500));
       
       const value = await cityInput.inputValue();
       expect(value.length).toBeGreaterThan(0);
@@ -55,7 +55,7 @@ test.describe('Quick Wins - Smart Forms', () => {
 
   test('should show loading spinner while fetching', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const cityInput = page.locator('input[placeholder*="La Marsa"]').first();
     await cityInput.fill('Mar');
@@ -69,11 +69,11 @@ test.describe('Quick Wins - Smart Forms', () => {
 
   test('should handle empty input', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const cityInput = page.locator('input[placeholder*="La Marsa"]').first();
     await cityInput.fill('');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Should not show suggestions for empty input
     const value = await cityInput.inputValue();
@@ -82,7 +82,7 @@ test.describe('Quick Wins - Smart Forms', () => {
 
   test('should support multiple smart input fields', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check both city and firstName inputs exist
     const cityInput = page.locator('input[placeholder*="La Marsa"]');

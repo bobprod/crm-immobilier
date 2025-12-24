@@ -34,7 +34,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should switch to forms tab', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const formsTitle = page.locator('text=📝 Smart Forms Auto-Fill');
     await expect(formsTitle).toBeVisible();
@@ -42,7 +42,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should switch to info tab', async ({ page }) => {
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const infoTitle = page.locator('text=📊 Modules Disponibles');
     await expect(infoTitle).toBeVisible();
@@ -50,7 +50,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should display module status on info tab', async ({ page }) => {
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check for module names
     const smartForms = page.locator('text=Smart Forms Auto-Fill');
@@ -66,7 +66,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should show active badges for all modules', async ({ page }) => {
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check for "Actif" badges
     const badges = page.locator('text=Actif');
@@ -77,7 +77,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should display page links on info tab', async ({ page }) => {
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const priorityInboxLink = page.locator('a:has-text("/priority-inbox")');
     const reportsLink = page.locator('a:has-text("/reports")');
@@ -88,7 +88,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should display ROI statistics', async ({ page }) => {
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check for ROI numbers
     const timesSaved = page.locator('text=77.5h');
@@ -105,13 +105,13 @@ test.describe('Quick Wins - Demo Page', () => {
   test('should navigate between tabs smoothly', async ({ page }) => {
     // Navigate through all tabs
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(300);
+    await new Promise((resolve) => setTimeout(resolve, 300));
     
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(300);
+    await new Promise((resolve) => setTimeout(resolve, 300));
     
     await page.click('button:has-text("Recherche Sémantique")');
-    await page.waitForTimeout(300);
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Should end up on search tab
     const searchTitle = page.locator('text=🔍 Recherche Sémantique');
@@ -126,7 +126,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should show form examples with labels', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const cityLabel = page.locator('label:has-text("Ville")');
     const firstNameLabel = page.locator('label:has-text("Prénom")');
@@ -137,7 +137,7 @@ test.describe('Quick Wins - Demo Page', () => {
 
   test('should display helpful tip', async ({ page }) => {
     await page.click('button:has-text("Smart Forms")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const tip = page.locator('text=💡');
     await expect(tip).toBeVisible();
@@ -146,13 +146,13 @@ test.describe('Quick Wins - Demo Page', () => {
   test('should be responsive', async ({ page }) => {
     // Test at different viewport sizes
     await page.setViewportSize({ width: 375, height: 667 }); // Mobile
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const title = page.locator('h1:has-text("Quick Wins Modules")');
     await expect(title).toBeVisible();
 
     await page.setViewportSize({ width: 1920, height: 1080 }); // Desktop
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     await expect(title).toBeVisible();
   });
@@ -164,12 +164,12 @@ test.describe('Quick Wins - Demo Page Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Click priority inbox link
     const priorityLink = page.locator('a:has-text("/priority-inbox")');
     await priorityLink.click();
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Should navigate to priority inbox page
     await expect(page).toHaveURL(/.*priority-inbox/);
@@ -180,12 +180,12 @@ test.describe('Quick Wins - Demo Page Navigation', () => {
     await page.waitForLoadState('networkidle');
 
     await page.click('button:has-text("Informations")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Click reports link
     const reportsLink = page.locator('a:has-text("/reports")');
     await reportsLink.click();
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Should navigate to reports page
     await expect(page).toHaveURL(/.*reports/);

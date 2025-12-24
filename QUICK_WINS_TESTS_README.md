@@ -386,7 +386,7 @@ npm run test:e2e quick-wins-smart-forms.spec.ts
 
 ### Frontend (Playwright)
 - **Page Object Pattern:** Locators
-- **Waiting Strategies:** waitForLoadState, waitForTimeout
+- **Waiting Strategies:** waitForLoadState, Promise with setTimeout
 - **Assertions:** expect(locator).toBeVisible()
 - **Error Handling:** .catch() for optional checks
 
