@@ -1,12 +1,19 @@
 import { Controller, Post, Get, Body, Req, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { WebDataService } from './services/web-data.service';
+import { WebDataService, WebDataProvider } from './services/web-data.service';
 import {
   ScrapeUrlDto,
   ScrapeMultipleUrlsDto,
   ExtractStructuredDataDto,
   TestProviderDto,
 } from './dto';
+
+/**
+ * Valide si une chaîne de caractères est un provider valide
+ */
+function isValidProvider(provider: any): provider is WebDataProvider {
+  return ['firecrawl', 'cheerio', 'puppeteer'].includes(provider);
+}
 
 /**
  * Contrôleur pour le scraping web unifié
@@ -51,7 +58,7 @@ export class ScrapingController {
     const tenantId = req?.user?.id; // Récupérer l'ID utilisateur depuis le token JWT
 
     const result = await this.webDataService.fetchHtml(dto.url, {
-      provider: dto.provider as any,
+      provider: dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined,
       tenantId,
       waitFor: dto.waitFor,
       screenshot: dto.screenshot,
@@ -80,7 +87,7 @@ export class ScrapingController {
     const tenantId = req?.user?.id;
 
     const results = await this.webDataService.fetchMultipleUrls(dto.urls, {
-      provider: dto.provider as any,
+      provider: dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined,
       tenantId,
       waitFor: dto.waitFor,
     });
@@ -133,7 +140,16 @@ export class ScrapingController {
 
     const tenantId = req?.user?.id;
 
-    const isAvailable = await this.webDataService.testProvider(dto.provider as any, tenantId);
+    if (!isValidProvider(dto.provider)) {
+      return {
+        success: false,
+        provider: dto.provider,
+        available: false,
+        error: 'Invalid provider. Must be one of: firecrawl, cheerio, puppeteer',
+      };
+    }
+
+    const isAvailable = await this.webDataService.testProvider(dto.provider, tenantId);
 
     return {
       success: true,
