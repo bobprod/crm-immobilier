@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { ScrapingConfigDto, UpdateScrapingConfigDto } from './dto';
 
 @Injectable()
 export class ScrapingService {
@@ -14,7 +15,7 @@ export class ScrapingService {
   /**
    * Get scraping configuration for a user
    */
-  async getScrapingConfig(userId: string) {
+  async getScrapingConfig(userId: string): Promise<ScrapingConfigDto> {
     try {
       this.logger.log(`Fetching scraping config for user ${userId}`);
       
@@ -41,7 +42,7 @@ export class ScrapingService {
   /**
    * Update scraping configuration for a user
    */
-  async updateScrapingConfig(userId: string, config: any) {
+  async updateScrapingConfig(userId: string, config: UpdateScrapingConfigDto) {
     try {
       this.logger.log(`Updating scraping config for user ${userId}`);
       
@@ -72,6 +73,8 @@ export class ScrapingService {
 
   /**
    * Test a scraping provider connection
+   * Note: This is a basic implementation. In production, this should perform
+   * actual connectivity tests to each provider's API endpoint.
    */
   async testProvider(userId: string, provider: string) {
     try {
@@ -85,8 +88,17 @@ export class ScrapingService {
         return { success: false, message: 'Provider not configured or not enabled' };
       }
 
-      // Test basic connectivity (simplified for now)
-      return { success: true, message: `Provider ${provider} is configured` };
+      if (!providerConfig.apiKey) {
+        return { success: false, message: 'API key is missing for this provider' };
+      }
+
+      // TODO: Add actual provider connectivity tests
+      // For now, just verify configuration exists
+      return { 
+        success: true, 
+        message: `Provider ${provider} is configured with API key`,
+        warning: 'Actual connectivity test not yet implemented'
+      };
     } catch (error) {
       this.logger.error(`Error testing provider: ${error.message}`);
       return { success: false, message: error.message };

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ScrapingService } from './scraping.service';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
+import { UpdateScrapingConfigDto } from './dto';
 
 @Controller('scraping')
 @UseGuards(JwtAuthGuard)
@@ -28,7 +29,7 @@ export class ScrapingController {
    * Update scraping configuration
    */
   @Post('config')
-  async updateConfig(@Request() req, @Body() config: any) {
+  async updateConfig(@Request() req, @Body() config: UpdateScrapingConfigDto) {
     const userId = req.user.userId;
     return this.scrapingService.updateScrapingConfig(userId, config);
   }
