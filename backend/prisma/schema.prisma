@@ -436,6 +436,7 @@ model users {
   activities               Activity[]                @relation("UserActivities")
   email_ai_analyses        EmailAIAnalysis[]         @relation("EmailAIAnalyses")
   email_ai_drafts          EmailAIDraft[]            @relation("EmailAIDrafts")
+  ai_chat_conversations    AIChatConversation[]      @relation("AIChatConversations")
   wordpressUrl             String?
   wordpressUsername        String?
   wordpressPassword        String?
@@ -1443,4 +1444,41 @@ model EmailAIDraft {
   @@index([status])
   @@index([createdAt])
   @@map("email_ai_drafts")
+}
+
+// ============================================
+// AI CHAT ASSISTANT - Conversational AI tables
+// ============================================
+
+model AIChatConversation {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String    @default("Nouvelle conversation")
+  context   Json?     // Conversation context/metadata
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user      users            @relation("AIChatConversations", fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIChatMessage[]
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@index([updatedAt])
+  @@map("ai_chat_conversations")
+}
+
+model AIChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // user, assistant, system
+  content        String   @db.Text
+  metadata       Json?    // Intent, confidence, tokens, etc.
+  createdAt      DateTime @default(now())
+
+  conversation   AIChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_chat_messages")
 }

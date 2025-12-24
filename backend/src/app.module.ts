@@ -41,6 +41,7 @@ import { SmartFormsModule } from './modules/intelligence/smart-forms/smart-forms
 import { SemanticSearchModule } from './modules/intelligence/semantic-search/semantic-search.module';
 import { PriorityInboxModule } from './modules/intelligence/priority-inbox/priority-inbox.module';
 import { AutoReportsModule } from './modules/intelligence/auto-reports/auto-reports.module';
+import { AIChatAssistantModule } from './modules/intelligence/ai-chat-assistant/ai-chat-assistant.module';
 
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
@@ -106,7 +107,7 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 9 modules (5 existing + 4 Quick Wins)
+    // INTELLIGENCE - 10 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant)
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
@@ -116,6 +117,7 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     SemanticSearchModule,
     PriorityInboxModule,
     AutoReportsModule,
+    AIChatAssistantModule,
 
     // PROSPECTING - 1 module
     ProspectingModule,
