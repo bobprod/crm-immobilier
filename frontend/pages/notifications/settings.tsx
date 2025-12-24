@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Label } from '@/shared/components/ui/label';
 import { Switch } from '@/shared/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Bell, Mail, MessageSquare, Smartphone, Clock, Check } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Smartphone, Clock, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import axios from 'axios';
 
@@ -44,13 +44,19 @@ const NotificationSettingsPage: React.FC = () => {
     loadSettings();
   }, []);
 
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token') || sessionStorage.getItem('token');
+    }
+    return null;
+  };
+
   const loadSettings = async () => {
     setLoading(true);
     try {
+      const token = getAuthToken();
       const response = await axios.get('/api/notifications/settings', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: token ? { Authorization: \`Bearer \${token}\` } : {},
       });
       if (response.data) {
         setSettings(response.data);
@@ -65,10 +71,9 @@ const NotificationSettingsPage: React.FC = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
+      const token = getAuthToken();
       await axios.post('/api/notifications/settings', settings, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: token ? { Authorization: \`Bearer \${token}\` } : {},
       });
       toast({
         title: 'Paramètres sauvegardés',
@@ -87,7 +92,7 @@ const NotificationSettingsPage: React.FC = () => {
   };
 
   const handleChannelToggle = (channel: string, enabled: boolean) => {
-    const key = `enable${channel.charAt(0).toUpperCase() + channel.slice(1)}` as keyof NotificationSettings;
+    const key = \`enable\${channel.charAt(0).toUpperCase() + channel.slice(1)}\` as keyof NotificationSettings;
     setSettings((prev) => ({
       ...prev,
       [key]: enabled,
@@ -108,7 +113,7 @@ const NotificationSettingsPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Paramètres des Notifications</h1>
-            <p className="text-gray-600 mt-2">Personnalisez vos préférences de notification</p>
+            <p className="text-gray-600 mt-2">Personnalisez vos préférences de notification intelligentes</p>
           </div>
           <Button onClick={saveSettings} disabled={saving}>
             {saving ? (
@@ -123,6 +128,16 @@ const NotificationSettingsPage: React.FC = () => {
               </>
             )}
           </Button>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start space-x-3">
+          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-blue-900">Notifications Intelligentes Activées</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              L'IA analyse votre comportement pour déterminer le meilleur moment et canal pour vous notifier.
+            </p>
+          </div>
         </div>
 
         <Card>
