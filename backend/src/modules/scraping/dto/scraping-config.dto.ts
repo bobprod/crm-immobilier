@@ -29,19 +29,19 @@ export interface ScrapingConfigDto {
 }
 
 export class UpdateScrapingConfigDto implements ScrapingConfigDto {
-  @ApiPropertyOptional({ description: 'PICA API configuration', type: () => ApiConfig })
+  @ApiPropertyOptional({ description: 'PICA API configuration', type: ApiConfig })
   @IsOptional()
   pica?: ApiConfig;
 
-  @ApiPropertyOptional({ description: 'SerpAPI configuration', type: () => ApiConfig })
+  @ApiPropertyOptional({ description: 'SerpAPI configuration', type: ApiConfig })
   @IsOptional()
   serpApi?: ApiConfig;
 
-  @ApiPropertyOptional({ description: 'ScrapingBee API configuration', type: () => ApiConfig })
+  @ApiPropertyOptional({ description: 'ScrapingBee API configuration', type: ApiConfig })
   @IsOptional()
   scrapingBee?: ApiConfig;
 
-  @ApiPropertyOptional({ description: 'Browserless API configuration', type: () => ApiConfig })
+  @ApiPropertyOptional({ description: 'Browserless API configuration', type: ApiConfig })
   @IsOptional()
   browserless?: ApiConfig;
 }
