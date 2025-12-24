@@ -152,8 +152,8 @@ export class WebDataService {
           return true;
 
         case 'puppeteer':
-          // Tester si Puppeteer peut démarrer
-          await this.puppeteerService.scrapeUrl('https://example.com');
+          // Tester si Puppeteer peut démarrer sans dépendre d'un site externe
+          await this.puppeteerService.scrapeUrl('about:blank');
           return true;
 
         default:
