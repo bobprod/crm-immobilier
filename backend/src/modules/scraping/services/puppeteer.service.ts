@@ -258,7 +258,7 @@ export class PuppeteerService {
         await page.evaluate(() => {
           window.scrollTo(0, document.body.scrollHeight);
         });
-        await page.waitForTimeout(1500);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
       const html = await page.content();
