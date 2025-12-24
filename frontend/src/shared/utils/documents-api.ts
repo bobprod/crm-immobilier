@@ -131,8 +131,7 @@ export const documentsAPI = {
     return response.data;
   },
 
-  getDocuments: (filters?: any): Promise<Document[]> => 
-    baseClient.list(filters).then((res: any) => res.data || res.items || res),
+  getDocuments: (filters?: any): Promise<Document[]> => baseClient.list(filters),
 
   getDocumentById: (id: string): Promise<Document> => baseClient.getById(id),
 

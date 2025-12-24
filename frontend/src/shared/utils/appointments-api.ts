@@ -87,7 +87,7 @@ export const appointmentsAPI = {
     priority?: string;
     limit?: number;
     skip?: number;
-  }): Promise<Appointment[]> => baseClient.list(filters).then((res: any) => res.data || res.items || res),
+  }): Promise<Appointment[]> => baseClient.list(filters),
 
   getById: (id: string): Promise<Appointment> => baseClient.getById(id),
 

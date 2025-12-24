@@ -36,11 +36,11 @@ export class ErrorHandler {
     resource: T | null | undefined,
     resourceType: string,
     identifier?: string,
-  ): T {
+  ): NonNullable<T> {
     if (!resource) {
       this.notFound(resourceType, identifier);
     }
-    return resource;
+    return resource as NonNullable<T>;
   }
 
   /**

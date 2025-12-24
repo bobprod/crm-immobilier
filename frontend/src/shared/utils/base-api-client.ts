@@ -17,10 +17,16 @@ export class BaseAPIClient<T, CreateDTO = Partial<T>, UpdateDTO = Partial<T>> {
 
   /**
    * List all resources with optional filters
+   * Normalizes different response formats to array
    */
-  async list(filters?: Record<string, any>): Promise<{ items?: T[]; data?: T[]; total?: number }> {
+  async list(filters?: Record<string, any>): Promise<T[]> {
     const response = await apiClient.get(this.basePath, { params: filters });
-    return response.data;
+    const data = response.data;
+    // Handle different response formats from backend
+    if (Array.isArray(data)) return data;
+    if (data.items) return data.items;
+    if (data.data) return data.data;
+    return [];
   }
 
   /**
