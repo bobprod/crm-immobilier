@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, Search, FileText, Inbox, FormInput, Brain } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Shield, Search, FileText, Inbox, FormInput, Brain } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
