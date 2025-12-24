@@ -42,7 +42,7 @@ export class ScrapingService {
   /**
    * Update scraping configuration for a user
    */
-  async updateScrapingConfig(userId: string, config: UpdateScrapingConfigDto) {
+  async updateScrapingConfig(userId: string, config: UpdateScrapingConfigDto): Promise<any> {
     try {
       this.logger.log(`Updating scraping config for user ${userId}`);
       
@@ -76,7 +76,7 @@ export class ScrapingService {
    * Note: This is a basic implementation. In production, this should perform
    * actual connectivity tests to each provider's API endpoint.
    */
-  async testProvider(userId: string, provider: string) {
+  async testProvider(userId: string, provider: string): Promise<{ success: boolean; message: string; warning?: string }> {
     try {
       this.logger.log(`Testing provider ${provider} for user ${userId}`);
       
