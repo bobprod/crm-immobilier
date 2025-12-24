@@ -106,7 +106,10 @@ export class PuppeteerService {
 
       // Attendre un délai supplémentaire si fourni
       if (options?.waitForTimeout) {
-        await page.waitForTimeout(options.waitForTimeout);
+        await page.evaluate(
+          (ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
+          options.waitForTimeout,
+        );
       }
 
       // Exécuter du JavaScript personnalisé si fourni
