@@ -78,10 +78,10 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
   ];
 
   const intelligenceItems = [
-    { id: 'smart-forms', label: 'Smart Forms', icon: FormInput, href: '/smart-forms', highlight: true },
-    { id: 'semantic-search', label: 'Recherche Sémantique', icon: Search, href: '/semantic-search', highlight: true },
-    { id: 'priority-inbox', label: 'Boîte Prioritaire', icon: Inbox, href: '/priority-inbox', highlight: true },
-    { id: 'reports', label: 'Rapports Auto', icon: FileText, href: '/reports', highlight: true },
+    { id: 'smart-forms', label: 'Smart Forms', icon: FormInput, href: '/smart-forms' },
+    { id: 'semantic-search', label: 'Recherche Sémantique', icon: Search, href: '/semantic-search' },
+    { id: 'priority-inbox', label: 'Boîte Prioritaire', icon: Inbox, href: '/priority-inbox' },
+    { id: 'reports', label: 'Rapports Auto', icon: FileText, href: '/reports' },
   ];
 
   const handleNavigation = (tabId: string, href: string) => {
