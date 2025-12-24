@@ -30,7 +30,7 @@ test.describe('Quick Wins - Auto Reports', () => {
   test('should open report type dropdown', async ({ page }) => {
     const selectTrigger = page.locator('button[role="combobox"]').first();
     await selectTrigger.click();
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check for options
     const dailyOption = page.locator('text=Journalier');
@@ -48,13 +48,13 @@ test.describe('Quick Wins - Auto Reports', () => {
   test('should select different report types', async ({ page }) => {
     const selectTrigger = page.locator('button[role="combobox"]').first();
     await selectTrigger.click();
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Try to click weekly option
     const weeklyOption = page.locator('text=Hebdomadaire').first();
     if (await weeklyOption.isVisible().catch(() => false)) {
       await weeklyOption.click();
-      await page.waitForTimeout(500);
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     // Generate button should still be visible
@@ -67,7 +67,7 @@ test.describe('Quick Wins - Auto Reports', () => {
     await generateButton.click();
     
     // Wait for API call
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Should show loading or result
     // Check if button still exists or changed state
@@ -80,7 +80,7 @@ test.describe('Quick Wins - Auto Reports', () => {
     await generateButton.click();
     
     // Check for loading indicator
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
     
     const loadingText = page.locator('text=Génération...');
     const isLoading = await loadingText.isVisible().catch(() => false);
@@ -101,7 +101,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
     await generateButton.click();
     
     // Wait for report generation
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Check for any report content
     const periodCard = page.locator('text=Période');
@@ -114,7 +114,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
   test('should show summary statistics in report', async ({ page }) => {
     const generateButton = page.locator('button:has-text("Générer")');
     await generateButton.click();
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Look for stat cards
     const prospectsCard = page.locator('text=Prospects');
@@ -126,7 +126,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
   test('should display insights section', async ({ page }) => {
     const generateButton = page.locator('button:has-text("Générer")');
     await generateButton.click();
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Check for insights
     const insightsTitle = page.locator('text=Insights');
@@ -138,7 +138,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
   test('should display recommendations section', async ({ page }) => {
     const generateButton = page.locator('button:has-text("Générer")');
     await generateButton.click();
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Check for recommendations
     const recommendationsTitle = page.locator('text=Recommandations');
@@ -150,7 +150,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
   test('should show period information', async ({ page }) => {
     const generateButton = page.locator('button:has-text("Générer")');
     await generateButton.click();
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Check for period display
     const periodLabel = page.locator('text=/Cette semaine|Ce mois|Aujourd\'hui/');
@@ -163,7 +163,7 @@ test.describe('Quick Wins - Auto Reports Display', () => {
     // Generate report (may fail if backend not available)
     const generateButton = page.locator('button:has-text("Générer")');
     await generateButton.click();
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Page should not crash
     const title = page.locator('h2:has-text("Rapports Automatiques")');
@@ -175,12 +175,12 @@ test.describe('Quick Wins - Auto Reports Display', () => {
     
     // First generation
     await generateButton.click();
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Second generation
     if (await generateButton.isVisible().catch(() => false)) {
       await generateButton.click();
-      await page.waitForTimeout(2000);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     // Page should still be functional

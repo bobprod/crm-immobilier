@@ -71,7 +71,7 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByRole('button', { name: 'Envoyés' }).click();
 
       // Wait for data to load
-      await page.waitForTimeout(500);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Check for empty state message (adjust selector based on your implementation)
       const draftItems = page.locator('[data-testid="draft-item"]');
@@ -103,7 +103,7 @@ test.describe('Email AI Auto-Response', () => {
         await refreshButton.click();
 
         // Check for loading indicator or data refresh
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     });
   });
@@ -127,7 +127,7 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByRole('button', { name: /Analyser/i }).click();
 
       // Wait for results
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check for analysis results (adjust based on your UI)
       await expect(page.getByText(/Intention détectée/i)).toBeVisible();
@@ -141,7 +141,7 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByLabel(/Corps:/i).fill('Can we arrange a viewing tomorrow?');
 
       await page.getByRole('button', { name: /Analyser/i }).click();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check for confidence percentage
       await expect(page.locator('text=/\\d+%/')).toBeVisible();
@@ -153,7 +153,7 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByLabel(/Corps:/i).fill('I am interested in the luxury apartment with sea view');
 
       await page.getByRole('button', { name: /Analyser/i }).click();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check for keywords section
       await expect(page.getByText(/Mots-clés/i)).toBeVisible();
@@ -165,7 +165,7 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByLabel(/Corps:/i).fill('Tell me more about this property');
 
       await page.getByRole('button', { name: /Analyser/i }).click();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check for suggested actions
       await expect(page.getByText(/Actions suggérées/i)).toBeVisible();
@@ -177,13 +177,13 @@ test.describe('Email AI Auto-Response', () => {
       await page.getByLabel(/Corps:/i).fill('I need more details');
 
       await page.getByRole('button', { name: /Analyser/i }).click();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Click generate draft button
       const generateButton = page.getByRole('button', { name: /Générer un brouillon/i });
       if (await generateButton.isVisible()) {
         await generateButton.click();
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Check for success message or draft created
         await expect(page.getByText(/Brouillon généré/i)).toBeVisible();
@@ -261,7 +261,7 @@ test.describe('Email AI Auto-Response', () => {
         await sendButton.click();
 
         // Wait for success message
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await expect(page.getByText(/Email envoyé/i)).toBeVisible();
       }
     });

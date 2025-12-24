@@ -76,12 +76,12 @@ test.describe('Property Modal E2E with Real Login', () => {
 
             // Sélectionner le type (Appartement)
             await page.locator('[data-testid="property-type-select"]').click();
-            await page.waitForTimeout(500);
+            await new Promise((resolve) => setTimeout(resolve, 500));
             await page.locator('[role="option"]:has-text("Appartement")').click();
 
             // Sélectionner la priorité (Haute)
             await page.locator('[data-testid="property-priority-select"]').click();
-            await page.waitForTimeout(500);
+            await new Promise((resolve) => setTimeout(resolve, 500));
             await page.locator('[role="option"]:has-text("Haute")').click();
 
             // Soumettre le formulaire
@@ -91,7 +91,7 @@ test.describe('Property Modal E2E with Real Login', () => {
             await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 10000 });
 
             // Attendre que la liste se rafraîchisse
-            await page.waitForTimeout(2000);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             // Vérifier que la nouvelle propriété apparaît dans la liste
             await expect(page.locator(`text=${testTitle}`)).toBeVisible({ timeout: 10000 });
@@ -146,14 +146,14 @@ test.describe('Property Modal E2E with Real Login', () => {
             await page.locator('[data-testid="property-city-input"]').fill('Sousse');
 
             await page.locator('[data-testid="property-type-select"]').click();
-            await page.waitForTimeout(500);
+            await new Promise((resolve) => setTimeout(resolve, 500));
             await page.locator('[role="option"]:has-text("Maison")').click();
 
             await page.locator('[data-testid="property-submit-button"]').click();
 
             // Attendre plus longtemps pour que le modal se ferme et la liste se rafraîchisse
             await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 15000 });
-            await page.waitForTimeout(3000); // Augmenté de 2s à 3s
+            await new Promise((resolve) => setTimeout(resolve, 3000)); // Augmenté de 2s à 3s
             await expect(page.locator(`text=${testPropertyTitle}`)).toBeVisible({ timeout: 15000 });
         }, { timeout: 60000 }); // Augmenter le timeout du beforeEach à 60s
 
@@ -193,7 +193,7 @@ test.describe('Property Modal E2E with Real Login', () => {
             await expect(page.locator('[role="dialog"]')).not.toBeVisible({ timeout: 15000 });
 
             // Attendre le rafraîchissement
-            await page.waitForTimeout(3000);
+            await new Promise((resolve) => setTimeout(resolve, 3000));
 
             // Vérifier que la propriété est toujours dans la liste (prix changé)
             await expect(page.locator(`text=${testPropertyTitle}`)).toBeVisible({ timeout: 10000 });

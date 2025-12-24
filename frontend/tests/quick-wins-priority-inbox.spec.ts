@@ -31,7 +31,7 @@ test.describe('Quick Wins - Priority Inbox', () => {
   test('should switch between tabs', async ({ page }) => {
     // Click prospects tab
     await page.click('button:has-text("Prospects")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Tab should be active
     const prospectsTab = page.locator('button:has-text("Prospects")');
@@ -39,7 +39,7 @@ test.describe('Quick Wins - Priority Inbox', () => {
 
     // Click tasks tab
     await page.click('button:has-text("Rendez-vous")');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const tasksTab = page.locator('button:has-text("Rendez-vous")');
     await expect(tasksTab).toBeVisible();
@@ -53,7 +53,7 @@ test.describe('Quick Wins - Priority Inbox', () => {
   test('should handle refresh action', async ({ page }) => {
     const refreshButton = page.locator('button:has-text("Actualiser")');
     await refreshButton.click();
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Button should still be visible after click
     await expect(refreshButton).toBeVisible();
@@ -72,7 +72,7 @@ test.describe('Quick Wins - Priority Inbox', () => {
   });
 
   test('should display empty state when no items', async ({ page }) => {
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Check for either items or empty state
     const emptyMessage = page.locator('text=Aucun élément prioritaire');
@@ -90,7 +90,7 @@ test.describe('Quick Wins - Priority Inbox Items', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/priority-inbox');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 
   test('should display priority items if available', async ({ page }) => {
@@ -137,7 +137,7 @@ test.describe('Quick Wins - Priority Inbox Items', () => {
       await firstCard.click().catch(() => {
         // Navigation might fail if item doesn't exist
       });
-      await page.waitForTimeout(500);
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   });
 });
