@@ -123,8 +123,8 @@ export class PuppeteerService {
       // Prendre une capture d'écran si demandé
       let screenshot: string | undefined;
       if (options?.screenshot) {
-        const screenshotBuffer = await page.screenshot({ encoding: 'base64' });
-        screenshot = screenshotBuffer as string;
+        const screenshotBuffer = await page.screenshot({ encoding: 'binary' });
+        screenshot = Buffer.from(screenshotBuffer as Buffer).toString('base64');
       }
 
       // Extraire les métadonnées

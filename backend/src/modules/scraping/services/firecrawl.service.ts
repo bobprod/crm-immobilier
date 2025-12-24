@@ -55,8 +55,10 @@ export class FirecrawlService {
    * - Soit depuis les variables d'environnement
    */
   private getApiKey(tenantId?: string): string {
-    // TODO: Récupérer depuis les settings du tenant si fourni
-    // Pour l'instant, utiliser la variable d'environnement
+    // NOTE: La récupération depuis les settings du tenant n'est pas encore implémentée
+    // Cette fonctionnalité sera ajoutée dans le module SettingsModule
+    // Pour l'instant, utiliser uniquement la variable d'environnement
+    
     const apiKey = this.configService.get<string>('FIRECRAWL_API_KEY');
     
     if (!apiKey) {

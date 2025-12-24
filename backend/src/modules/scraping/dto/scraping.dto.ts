@@ -5,7 +5,6 @@ export enum WebDataProviderEnum {
   FIRECRAWL = 'firecrawl',
   CHEERIO = 'cheerio',
   PUPPETEER = 'puppeteer',
-  PLAYWRIGHT = 'playwright',
 }
 
 export class ScrapeUrlDto {

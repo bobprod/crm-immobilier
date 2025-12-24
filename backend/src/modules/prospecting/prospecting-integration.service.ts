@@ -673,8 +673,14 @@ export class ProspectingIntegrationService {
     const html = scrapedData.html || '';
 
     // Utiliser les métadonnées extraites par les services de scraping
-    const emails: string[] = (scrapedData.metadata?.emails as string[]) || this.extractEmailsFromText(text);
-    const phones: string[] = (scrapedData.metadata?.phones as string[]) || this.extractPhonesFromText(text);
+    // Valider les types pour éviter les erreurs runtime
+    const emails: string[] = Array.isArray(scrapedData.metadata?.emails)
+      ? (scrapedData.metadata.emails as string[])
+      : this.extractEmailsFromText(text);
+    
+    const phones: string[] = Array.isArray(scrapedData.metadata?.phones)
+      ? (scrapedData.metadata.phones as string[])
+      : this.extractPhonesFromText(text);
 
     // Créer des leads à partir des contacts trouvés
     const uniqueEmails = [...new Set(emails)].slice(0, 10);

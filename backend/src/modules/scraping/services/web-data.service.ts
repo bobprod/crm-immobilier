@@ -3,7 +3,7 @@ import { CheerioService } from './cheerio.service';
 import { PuppeteerService } from './puppeteer.service';
 import { FirecrawlService } from './firecrawl.service';
 
-export type WebDataProvider = 'firecrawl' | 'cheerio' | 'puppeteer' | 'playwright';
+export type WebDataProvider = 'firecrawl' | 'cheerio' | 'puppeteer';
 
 export interface WebDataFetchOptions {
   provider?: WebDataProvider;
@@ -121,7 +121,7 @@ export class WebDataService {
     this.logger.log(`Extraction structurée pour ${url}`);
 
     try {
-      // Essayer d'abord avec Firecrawl (a l'IA intégrée)
+      // Essayer d'abord avec Firecrawl (avec l'IA intégrée)
       const data = await this.firecrawlService.extractWithLLM(url, extractionPrompt, tenantId);
       return { provider: 'firecrawl', data };
     } catch (error) {
@@ -221,9 +221,11 @@ export class WebDataService {
 
     for (const site of complexSites) {
       if (urlLower.includes(site)) {
-        // Préférer Firecrawl pour les sites complexes
-        // En production, vérifier si la clé API est configurée
-        return 'puppeteer'; // Fallback sur Puppeteer par défaut
+        // Préférer Puppeteer pour les sites complexes (gratuit)
+        // Note: Firecrawl serait optimal mais nécessite une clé API
+        // et vérification du budget. Pour l'instant, utiliser Puppeteer
+        // qui est gratuit et supporte le JavaScript
+        return 'puppeteer';
       }
     }
 
