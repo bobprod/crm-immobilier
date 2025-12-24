@@ -39,6 +39,9 @@ import { AnalyticsModule } from './modules/intelligence/analytics/analytics.modu
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
+// SCRAPING MODULE
+import { ScrapingModule } from './modules/scraping/scraping.module';
+
 // COMMUNICATIONS MODULE
 import { CommunicationsModule } from './modules/communications/communications.module';
 
@@ -108,6 +111,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
 
     // PROSPECTING - 1 module
     ProspectingModule,
+
+    // SCRAPING - 1 module (Web Data Services)
+    ScrapingModule,
 
     // COMMUNICATIONS - 1 module
     CommunicationsModule,
