@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, Search, FileText, Inbox, FormInput, Brain } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -43,6 +43,10 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     if (path.startsWith('/notifications')) return 'notifications';
     if (path.startsWith('/analytics') || path.startsWith('/ai-metrics')) return 'analytics';
     if (path.startsWith('/validation')) return 'validation';
+    if (path.startsWith('/smart-forms')) return 'smart-forms';
+    if (path.startsWith('/semantic-search')) return 'semantic-search';
+    if (path.startsWith('/priority-inbox')) return 'priority-inbox';
+    if (path.startsWith('/reports')) return 'reports';
     if (path.startsWith('/settings')) return 'settings';
     return 'dashboard'; // default
   };
@@ -71,7 +75,13 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
     { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
     { id: 'validation', label: 'Validation', icon: Shield, href: '/validation' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/analytics' },
-    { id: 'settings', label: 'Paramètres', icon: Settings, href: '/settings' },
+  ];
+
+  const intelligenceItems = [
+    { id: 'smart-forms', label: 'Smart Forms', icon: FormInput, href: '/smart-forms', highlight: true },
+    { id: 'semantic-search', label: 'Recherche Sémantique', icon: Search, href: '/semantic-search', highlight: true },
+    { id: 'priority-inbox', label: 'Boîte Prioritaire', icon: Inbox, href: '/priority-inbox', highlight: true },
+    { id: 'reports', label: 'Rapports Auto', icon: FileText, href: '/reports', highlight: true },
   ];
 
   const handleNavigation = (tabId: string, href: string) => {
@@ -124,6 +134,46 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
               )}
             </button>
           ))}
+
+          {/* Intelligence Section */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="px-6 py-2 flex items-center gap-2">
+              <Brain className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Intelligence IA</span>
+            </div>
+            {intelligenceItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item.id, item.href)}
+                className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
+                  activeTab === item.id
+                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 mr-3 ${activeTab !== item.id ? 'text-blue-600' : ''}`} />
+                {item.label}
+                {activeTab !== item.id && (
+                  <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">IA</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Settings at bottom of navigation */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => handleNavigation('settings', '/settings')}
+              className={`w-full flex items-center px-6 py-3 text-left transition-colors ${
+                activeTab === 'settings'
+                  ? 'bg-primary-foreground text-primary border-r-2 border-primary'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Settings className="w-5 h-5 mr-3" />
+              Paramètres
+            </button>
+          </div>
         </nav>
 
         <div className="border-t border-gray-200 p-6 mt-auto">
