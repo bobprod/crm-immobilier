@@ -5,6 +5,7 @@ import {
   getPriceRangeForSearch,
   MATCH_WEIGHTS,
 } from '../../../shared/utils/matching.utils';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class MatchingService {
@@ -176,7 +177,7 @@ export class MatchingService {
 
     // Verify the property belongs to the user
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     let result;
@@ -309,7 +310,7 @@ export class MatchingService {
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      ErrorHandler.notFound('Property');
     }
 
     return this.prisma.matches.findMany({
@@ -331,7 +332,7 @@ export class MatchingService {
     });
 
     if (!property || !prospect) {
-      throw new Error('Property or prospect not found');
+      ErrorHandler.notFound('Property or prospect');
     }
 
     // Calculate score using unified algorithm
@@ -439,7 +440,7 @@ export class MatchingService {
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      ErrorHandler.notFound('Property');
     }
 
     const where: any = { userId, status: 'active' };
@@ -493,7 +494,7 @@ export class MatchingService {
     });
 
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     return match;
@@ -506,7 +507,7 @@ export class MatchingService {
     });
 
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     await this.prisma.matches.delete({ where: { id } });
