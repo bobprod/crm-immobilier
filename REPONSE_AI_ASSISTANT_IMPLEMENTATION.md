@@ -1,7 +1,7 @@
 # 🎉 RÉPONSE : L'Assistant IA Immobilier est-il Implémenté ?
 
 **Date** : 24 décembre 2024  
-**Question posée** : "est ce que le ai assistant immobilera ete implimenté"
+**Question posée** : "est ce que l'assistant IA immobilier a été implémenté ?"
 
 ---
 

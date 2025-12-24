@@ -13,7 +13,6 @@ test.describe('AI Chat Assistant', () => {
         lastName: 'User',
         role: 'admin'
       }));
-      console.log('Test: Set auth_token in localStorage');
     });
     await page.reload();
     await page.waitForLoadState('networkidle');

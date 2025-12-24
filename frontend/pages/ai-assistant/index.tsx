@@ -1,8 +1,8 @@
-'use client';
-
 import { useEffect, useState, useRef } from 'react';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { apiClient } from '../../src/shared/utils/api-client-backend';
+
+const DEFAULT_CONVERSATION_TITLE = 'Nouvelle conversation';
 
 interface Message {
   id: string;
@@ -61,7 +61,7 @@ export default function AIAssistant() {
   const createNewConversation = async () => {
     try {
       const response = await apiClient.post('/ai-chat-assistant/conversation', {
-        title: 'Nouvelle conversation',
+        title: DEFAULT_CONVERSATION_TITLE,
       });
       const newConv = response.data;
       setConversations([newConv, ...conversations]);
@@ -123,12 +123,18 @@ export default function AIAssistant() {
       // Add both user and AI messages
       setMessages([...messages, response.data.userMessage, response.data.aiMessage]);
       
-      // Update conversation list
-      await fetchConversations();
-    } catch (error) {
+      // Update conversation message count locally
+      setConversations(conversations.map(conv => 
+        conv.id === currentConversation.id 
+          ? { ...conv, messageCount: (conv.messageCount || 0) + 2, updatedAt: new Date().toISOString() }
+          : conv
+      ));
+    } catch (error: any) {
       console.error('Error sending message:', error);
       // Re-add the message to input on error
       setInputMessage(messageText);
+      // Show error to user
+      alert(`Erreur lors de l'envoi du message: ${error.response?.data?.message || error.message || 'Erreur inconnue'}`);
     } finally {
       setSending(false);
     }
