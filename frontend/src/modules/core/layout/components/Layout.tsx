@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, Bot } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -33,6 +33,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
   const getActiveTab = () => {
     const path = router.pathname;
     if (path === '/dashboard' || path === '/') return 'dashboard';
+    if (path.startsWith('/ai-assistant')) return 'ai-assistant';
     if (path.startsWith('/prospecting')) return 'prospecting';
     if (path.startsWith('/properties')) return 'properties';
     if (path.startsWith('/prospects')) return 'prospects';
@@ -61,6 +62,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
 
   const menuItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
+    { id: 'ai-assistant', label: 'Copilot IA', icon: Bot, href: '/ai-assistant', highlight: true },
     { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
     { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
     { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
