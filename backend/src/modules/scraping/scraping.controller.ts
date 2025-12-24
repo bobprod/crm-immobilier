@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards, Req, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { WebDataService } from './services/web-data.service';
 import {
