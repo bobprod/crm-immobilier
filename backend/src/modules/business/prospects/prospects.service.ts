@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto';
 import { ProspectHistoryService } from './prospect-history.service';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
+import { paginate } from '../../../shared/utils/pagination.utils';
 
 interface ProspectFilters {
   type?: string;
@@ -136,11 +138,7 @@ export class ProspectsService {
       include,
     });
 
-    if (!prospect) {
-      throw new NotFoundException('Prospect non trouvé');
-    }
-
-    return prospect;
+    return ErrorHandler.ensureExists(prospect, 'Prospect', id);
   }
 
   async update(id: string, userId: string, data: UpdateProspectDto) {
@@ -252,7 +250,6 @@ export class ProspectsService {
    * Cursor-based pagination
    */
   async findAllPaginated(userId: string, query: PaginationQueryDto, filters?: ProspectFilters) {
-    const limit = query.limit || 20;
     const where: any = { userId, deletedAt: null };
 
     // Apply filters
@@ -265,33 +262,24 @@ export class ProspectsService {
       where.budget = { ...(where.budget || {}), lte: parseFloat(filters.maxBudget) };
     }
 
-    const prospects = await this.prisma.prospects.findMany({
-      where,
-      take: limit + 1,
-      ...(query.cursor && {
-        cursor: { id: query.cursor },
-        skip: 1,
-      }),
-      orderBy: { createdAt: 'desc' },
-      include: {
-        matches: {
+    return paginate(
+      query,
+      (take, cursorQuery) =>
+        this.prisma.prospects.findMany({
+          where,
+          take,
+          ...cursorQuery,
+          orderBy: { createdAt: 'desc' },
           include: {
-            properties: true,
+            matches: {
+              include: {
+                properties: true,
+              },
+            },
           },
-        },
-      },
-    });
-
-    const hasNextPage = prospects.length > limit;
-    const items = hasNextPage ? prospects.slice(0, limit) : prospects;
-    const nextCursor = hasNextPage ? items[items.length - 1].id : null;
-
-    return {
-      items,
-      nextCursor,
-      hasNextPage,
-      total: await this.prisma.prospects.count({ where }),
-    };
+        }),
+      () => this.prisma.prospects.count({ where }),
+    );
   }
 
   /**
