@@ -676,10 +676,6 @@ export class ProspectingIntegrationService {
     const emails: string[] = Array.isArray(scrapedData.metadata?.emails)
       ? (scrapedData.metadata.emails as string[])
       : this.extractEmailsFromText(text);
-    
-    const phones: string[] = Array.isArray(scrapedData.metadata?.phones)
-      ? (scrapedData.metadata.phones as string[])
-      : this.extractPhonesFromText(text);
 
     // Créer des leads à partir des contacts trouvés
     const uniqueEmails = [...new Set(emails)].slice(0, 10);
