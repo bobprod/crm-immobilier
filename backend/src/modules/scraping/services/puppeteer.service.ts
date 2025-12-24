@@ -46,26 +46,43 @@ export interface PuppeteerScrapingResult {
 export class PuppeteerService {
   private readonly logger = new Logger(PuppeteerService.name);
   private browser: Browser | null = null;
+  private browserPromise: Promise<Browser> | null = null;
 
   /**
-   * Initialiser le navigateur Puppeteer
+   * Initialiser le navigateur Puppeteer avec gestion thread-safe
    */
   private async getBrowser(): Promise<Browser> {
-    if (!this.browser || !this.browser.isConnected()) {
-      this.logger.log('Launching Puppeteer browser...');
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--window-size=1920,1080',
-        ],
-      });
+    // Si un browser est déjà disponible et connecté, le réutiliser
+    if (this.browser && this.browser.isConnected()) {
+      return this.browser;
     }
-    return this.browser;
+
+    // Si un lancement est déjà en cours, attendre au lieu d'en démarrer un nouveau
+    if (!this.browserPromise) {
+      this.logger.log('Launching Puppeteer browser...');
+      this.browserPromise = puppeteer
+        .launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--window-size=1920,1080',
+          ],
+        })
+        .then((browser) => {
+          this.browser = browser;
+          return browser;
+        })
+        .finally(() => {
+          // Permettre une nouvelle tentative de lancement si le browser se déconnecte plus tard
+          this.browserPromise = null;
+        });
+    }
+
+    return this.browserPromise;
   }
 
   /**
@@ -217,7 +234,7 @@ export class PuppeteerService {
       await interaction(page);
 
       // Attendre que le contenu se charge après l'interaction
-      await page.waitForTimeout(2000);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const html = await page.content();
       const text = await page.evaluate(() => document.body.innerText);
@@ -288,9 +305,15 @@ export class PuppeteerService {
    */
   async close(): Promise<void> {
     if (this.browser) {
-      this.logger.log('Closing Puppeteer browser...');
-      await this.browser.close();
-      this.browser = null;
+      try {
+        this.logger.log('Closing Puppeteer browser...');
+        await this.browser.close();
+      } catch (error) {
+        this.logger.error('Erreur lors de la fermeture du browser:', error);
+      } finally {
+        this.browser = null;
+        this.browserPromise = null;
+      }
     }
   }
 

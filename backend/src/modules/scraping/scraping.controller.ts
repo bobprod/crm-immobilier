@@ -57,6 +57,9 @@ export class ScrapingController {
 
     const tenantId = req?.user?.id; // Récupérer l'ID utilisateur depuis le token JWT
 
+    // Valider et convertir le provider de façon type-safe
+    const provider = dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined;
+
     const result = await this.webDataService.fetchHtml(dto.url, {
       provider: dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined,
       tenantId,
