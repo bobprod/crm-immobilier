@@ -165,6 +165,12 @@ POST /api/scraping/scrape-multiple
 }
 ```
 
+> 🔒 **Notes sécurité**
+>
+> - Les champs `url` et `urls` acceptent uniquement les protocoles `http` et `https`.
+> - Les URLs internes (localhost, 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, adresses de métadonnées cloud, etc.) doivent être rejetées par l’implémentation backend.
+> - Il est recommandé de mettre en place une liste d’hôtes/domains autorisés plutôt que d’autoriser toute URL arbitraire.
+> - Ces endpoints doivent être protégés par authentification et ne pas être exposés publiquement sans contrôle d’accès.
 #### 3. Extraction structurée avec IA
 ```bash
 POST /api/scraping/extract
