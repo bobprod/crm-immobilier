@@ -36,11 +36,19 @@ import { MatchingModule } from './modules/intelligence/matching/matching.module'
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
 
+// QUICK WINS MODULES
+import { SmartFormsModule } from './modules/intelligence/smart-forms/smart-forms.module';
+import { SemanticSearchModule } from './modules/intelligence/semantic-search/semantic-search.module';
+import { PriorityInboxModule } from './modules/intelligence/priority-inbox/priority-inbox.module';
+import { AutoReportsModule } from './modules/intelligence/auto-reports/auto-reports.module';
+import { AIChatAssistantModule } from './modules/intelligence/ai-chat-assistant/ai-chat-assistant.module';
+
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
 // COMMUNICATIONS MODULE
 import { CommunicationsModule } from './modules/communications/communications.module';
+import { EmailAIResponseModule } from './modules/communications/email-ai-response/email-ai-response.module';
 
 // DASHBOARD MODULE
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -99,18 +107,24 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 5 modules
+    // INTELLIGENCE - 10 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant)
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
+    SmartFormsModule,
+    SemanticSearchModule,
+    PriorityInboxModule,
+    AutoReportsModule,
+    AIChatAssistantModule,
 
     // PROSPECTING - 1 module
     ProspectingModule,
 
-    // COMMUNICATIONS - 1 module
+    // COMMUNICATIONS - 2 modules
     CommunicationsModule,
+    EmailAIResponseModule,
 
     // DASHBOARD - 1 module
     DashboardModule,

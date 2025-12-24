@@ -273,6 +273,7 @@ model properties {
   prospectShown       prospect_properties_shown[] @relation("PropertyProspectShown")
   prospecting_matches prospecting_matches[]       @relation("PropertyMatches")
   tasks               tasks[]                     @relation("PropertyTasks")
+  email_ai_analyses   EmailAIAnalysis[]           @relation("EmailAIProperty")
 
   // Priority & Organization
   priority            PropertyPriority            @default(medium)
@@ -346,6 +347,7 @@ model prospects {
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
   history              ProspectHistory[]           @relation("ProspectHistory")
+  email_ai_analyses    EmailAIAnalysis[]           @relation("EmailAIProspect")
 
   @@index([deletedAt])
 }
@@ -432,6 +434,9 @@ model users {
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
   activities               Activity[]                @relation("UserActivities")
+  email_ai_analyses        EmailAIAnalysis[]         @relation("EmailAIAnalyses")
+  email_ai_drafts          EmailAIDraft[]            @relation("EmailAIDrafts")
+  ai_chat_conversations    AIChatConversation[]      @relation("AIChatConversations")
   wordpressUrl             String?
   wordpressUsername        String?
   wordpressPassword        String?
@@ -1381,4 +1386,99 @@ model PropertyHistory {
   @@index([action])
   @@index([createdAt])
   @@map("property_history")
+}
+
+// ============================================
+// 🆕 EMAIL AI AUTO-RESPONSE MODULE
+// ============================================
+
+model EmailAIAnalysis {
+  id                String    @id @default(cuid())
+  userId            String
+  from              String    // Sender email
+  subject           String
+  body              String    @db.Text
+  prospectId        String?
+  propertyId        String?
+  intent            String    // information, appointment, negotiation, complaint, other
+  confidence        Int       // 0-100
+  keywords          Json?     // Array of keywords
+  suggestedActions  Json?     // Array of suggested actions
+  context           Json?     // Gathered context
+  status            String    @default("analyzed") // analyzed, draft_generated, completed
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              users             @relation("EmailAIAnalyses", fields: [userId], references: [id], onDelete: Cascade)
+  prospects         prospects?        @relation("EmailAIProspect", fields: [prospectId], references: [id], onDelete: SetNull)
+  properties        properties?       @relation("EmailAIProperty", fields: [propertyId], references: [id], onDelete: SetNull)
+  email_ai_drafts   EmailAIDraft[]
+
+  @@index([userId])
+  @@index([prospectId])
+  @@index([propertyId])
+  @@index([intent])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_ai_analyses")
+}
+
+model EmailAIDraft {
+  id                    String    @id @default(cuid())
+  userId                String
+  analysisId            String
+  to                    String
+  subject               String
+  body                  String    @db.Text
+  attachmentSuggestions Json?     // Array of suggested attachments
+  status                String    @default("pending") // pending, sent, failed
+  sentAt                DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user                  users            @relation("EmailAIDrafts", fields: [userId], references: [id], onDelete: Cascade)
+  email_ai_analyses     EmailAIAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([analysisId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_ai_drafts")
+}
+
+// ============================================
+// AI CHAT ASSISTANT - Conversational AI tables
+// ============================================
+
+model AIChatConversation {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String    @default("Nouvelle conversation")
+  context   Json?     // Conversation context/metadata
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user      users            @relation("AIChatConversations", fields: [userId], references: [id], onDelete: Cascade)
+  messages  AIChatMessage[]
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@index([updatedAt])
+  @@map("ai_chat_conversations")
+}
+
+model AIChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // user, assistant, system
+  content        String   @db.Text
+  metadata       Json?    // Intent, confidence, tokens, etc.
+  createdAt      DateTime @default(now())
+
+  conversation   AIChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_chat_messages")
 }
