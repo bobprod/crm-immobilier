@@ -670,7 +670,6 @@ export class ProspectingIntegrationService {
   private extractLeadsFromScrapedData(scrapedData: any, selectors?: any): LeadData[] {
     const leads: LeadData[] = [];
     const text = scrapedData.text || '';
-    const html = scrapedData.html || '';
 
     // Utiliser les métadonnées extraites par les services de scraping
     // Valider les types pour éviter les erreurs runtime
