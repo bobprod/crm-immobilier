@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
 import { SmartNotificationsService } from './smart-notifications.service';
+import { NotificationsGateway } from './notifications.gateway';
+import { EmailService } from '../communications/email/email.service';
+import { SmsService } from '../communications/sms/sms.service';
 
 @Injectable()
 export class NotificationsService {
@@ -10,6 +13,9 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private smartNotifications: SmartNotificationsService,
+    private notificationsGateway: NotificationsGateway,
+    private emailService: EmailService,
+    private smsService: SmsService,
   ) {}
 
   /**
@@ -77,8 +83,10 @@ export class NotificationsService {
         await this.smartNotifications.markAsDelivered(notification.id);
       }
 
-      // TODO: Envoyer via WebSocket si l'utilisateur est connecté
-      // this.websocketGateway.sendNotification(data.userId, notification);
+      // ✅ Envoyer via WebSocket si l'utilisateur est connecté (temps réel)
+      if (channel === 'in_app' && this.notificationsGateway.isUserConnected(data.userId)) {
+        this.notificationsGateway.sendNotificationToUser(data.userId, notification);
+      }
 
       // Envoyer via le canal externe si nécessaire
       if (channel !== 'in_app') {
@@ -179,31 +187,86 @@ export class NotificationsService {
   }
 
   /**
-   * Envoyer notification externe (Email/SMS/Push)
-   * TODO: Implémenter l'intégration avec le service de communications
+   * ✅ Envoyer notification externe (Email/SMS/Push/WhatsApp)
+   * Implémentation complète avec Email et SMS
    */
   private async sendExternalNotification(userId: string, notification: any, channel: string) {
     try {
-      // Récupérer les préférences de notification de l'utilisateur
+      // Récupérer les informations de l'utilisateur
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: {
           email: true,
           phone: true,
-          // TODO: Ajouter champ notificationPreferences dans le schema
+          firstName: true,
+          lastName: true,
         },
       });
 
-      if (!user) return;
+      if (!user) {
+        this.logger.warn(`User ${userId} not found for external notification`);
+        return;
+      }
 
-      // TODO: Intégrer avec le service de communications
-      // await this.communicationsService.sendEmail({
-      //   to: user.email,
-      //   subject: notification.title,
-      //   body: notification.message
-      // });
+      const notificationData = {
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+        type: notification.type,
+      };
 
-      this.logger.debug(`External notification sent to user ${userId}`);
+      // Envoyer selon le canal
+      switch (channel) {
+        case 'email':
+          if (user.email) {
+            const result = await this.emailService.sendNotificationEmail(user.email, notificationData);
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`📧 Email sent to ${user.email} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send email: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no email address`);
+          }
+          break;
+
+        case 'sms':
+          if (user.phone) {
+            const result = await this.smsService.sendNotificationSms(user.phone, notificationData);
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`📱 SMS sent to ${user.phone} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send SMS: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no phone number`);
+          }
+          break;
+
+        case 'whatsapp':
+          if (user.phone) {
+            const result = await this.smsService.sendNotificationWhatsApp(user.phone, notificationData);
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`💚 WhatsApp sent to ${user.phone} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send WhatsApp: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no phone number`);
+          }
+          break;
+
+        case 'push':
+          // TODO: Implémenter Push Notifications (Firebase Cloud Messaging)
+          this.logger.warn(`Push notifications not yet implemented`);
+          break;
+
+        default:
+          this.logger.warn(`Unknown notification channel: ${channel}`);
+      }
     } catch (error) {
       this.logger.error(`Error sending external notification: ${error.message}`);
       // Ne pas throw l'erreur pour ne pas bloquer la création de notification
