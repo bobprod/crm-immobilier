@@ -13,8 +13,49 @@ export interface Notification {
   read: boolean;
   link?: string;
   metadata?: Record<string, any>;
+  // ✅ Smart AI Notification fields
+  channel?: NotificationChannel;
+  deliveredAt?: string;
+  openedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'push' | 'whatsapp';
+
+export type NotificationPriority = 'high' | 'medium' | 'low';
+
+export interface NotificationPreferences {
+  id: string;
+  userId: string;
+  channels: Record<string, NotificationChannel[]>;
+  quietHours?: {
+    start: string;
+    end: string;
+    timezone?: string;
+  };
+  maxPerHour: number;
+  aiOptimization: boolean;
+  dailyDigest: boolean;
+  digestTime?: string;
+  minPriority: NotificationPriority;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChannelStatistics {
+  total: number;
+  delivered: number;
+  opened: number;
+  deliveryRate: number;
+  openRate: number;
+}
+
+export interface NotificationAnalytics {
+  period: string;
+  total: number;
+  unread: number;
+  byChannel: Record<NotificationChannel, ChannelStatistics>;
 }
 
 export type NotificationType =
@@ -83,6 +124,48 @@ export const notificationsAPI = {
   // Delete notification
   delete: async (id: string): Promise<{ success: boolean }> => {
     const response = await apiClient.delete(`/notifications/${id}`);
+    return response.data;
+  },
+
+  // ============================================
+  // 🤖 SMART AI NOTIFICATION ENDPOINTS
+  // ============================================
+
+  // Get user notification preferences
+  getSettings: async (): Promise<NotificationPreferences> => {
+    const response = await apiClient.get('/notifications/settings');
+    return response.data;
+  },
+
+  // Update user notification preferences
+  updateSettings: async (data: Partial<NotificationPreferences>): Promise<NotificationPreferences> => {
+    const response = await apiClient.put('/notifications/settings', data);
+    return response.data;
+  },
+
+  // Get channel statistics
+  getChannelAnalytics: async (days: number = 30): Promise<Record<NotificationChannel, ChannelStatistics>> => {
+    const response = await apiClient.get('/notifications/analytics/channels', { params: { days } });
+    return response.data;
+  },
+
+  // Get full analytics
+  getAnalytics: async (days: number = 30): Promise<NotificationAnalytics> => {
+    const response = await apiClient.get('/notifications/analytics', { params: { days } });
+    return response.data;
+  },
+
+  // Test Smart AI configuration
+  testConfiguration: async (): Promise<{
+    preferences: NotificationPreferences;
+    status: {
+      canSendNow: boolean;
+      withinRateLimit: boolean;
+      aiOptimizationActive: boolean;
+    };
+    optimalChannels: Record<string, NotificationChannel>;
+  }> => {
+    const response = await apiClient.get('/notifications/analytics/test');
     return response.data;
   },
 };
