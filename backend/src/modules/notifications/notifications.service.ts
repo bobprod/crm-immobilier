@@ -1,25 +1,65 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
+import { SmartNotificationsService } from './smart-notifications.service';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private smartNotifications: SmartNotificationsService,
+  ) {}
 
   /**
-   * Créer une nouvelle notification
+   * Créer une nouvelle notification avec Smart AI
    */
-  async createNotification(data: CreateNotificationDto) {
+  async createNotification(
+    data: CreateNotificationDto,
+    options?: {
+      priority?: 'high' | 'medium' | 'low';
+      bypassSmartRouting?: boolean;
+    },
+  ) {
     try {
-      // TODO: Implémenter WebSocket pour push temps réel
-      // TODO: Intégrer avec service Email/SMS pour notifications externes
+      const priority = options?.priority || 'medium';
+      const bypassSmartRouting = options?.bypassSmartRouting || false;
 
       this.logger.log(`Creating notification for user ${data.userId}: ${data.title}`);
 
-      // Créer la notification dans la base de données
-      const notification = await this.prisma.notifications.create({
+      // ✅ SMART AI ROUTING - Décider si et comment envoyer
+      let channel = 'in_app'; // Défaut
+      let shouldSend = true;
+
+      if (!bypassSmartRouting) {
+        const decision = await this.smartNotifications.shouldSendNotification(
+          data.userId,
+          data.type,
+          priority,
+        );
+
+        shouldSend = decision.shouldSend;
+        channel = decision.channel || 'in_app';
+
+        if (!shouldSend) {
+          this.logger.debug(
+            `Smart AI delayed notification: ${decision.reason}. Suggested time: ${decision.suggestedTime}`,
+          );
+
+          // TODO: Implémenter queue pour envoyer plus tard
+          // await this.scheduleNotification(data, decision.suggestedTime);
+
+          return {
+            delayed: true,
+            reason: decision.reason,
+            suggestedTime: decision.suggestedTime,
+          };
+        }
+      }
+
+      // Créer la notification dans la base de données avec le canal optimisé
+      const notification = await this.prisma.notification.create({
         data: {
           userId: data.userId,
           type: data.type,
@@ -27,16 +67,22 @@ export class NotificationsService {
           message: data.message,
           actionUrl: data.actionUrl,
           metadata: data.metadata ? JSON.parse(data.metadata) : {},
+          channel, // ✅ Canal sélectionné par l'AI
           isRead: false,
         },
       });
 
+      // Marquer comme livrée immédiatement pour in_app
+      if (channel === 'in_app') {
+        await this.smartNotifications.markAsDelivered(notification.id);
+      }
+
       // TODO: Envoyer via WebSocket si l'utilisateur est connecté
       // this.websocketGateway.sendNotification(data.userId, notification);
 
-      // Si notification importante, envoyer email/SMS
-      if (data.type === NotificationType.APPOINTMENT || data.type === NotificationType.LEAD) {
-        await this.sendExternalNotification(data.userId, notification);
+      // Envoyer via le canal externe si nécessaire
+      if (channel !== 'in_app') {
+        await this.sendExternalNotification(data.userId, notification, channel);
       }
 
       return notification;
@@ -83,13 +129,11 @@ export class NotificationsService {
   }
 
   /**
-   * Marquer une notification comme lue
+   * Marquer une notification comme lue (et ouverte)
    */
   async markAsRead(notificationId: string) {
-    return this.prisma.notifications.update({
-      where: { id: notificationId },
-      data: { isRead: true },
-    });
+    // Utiliser le SmartService pour tracking complet
+    return this.smartNotifications.markAsOpened(notificationId);
   }
 
   /**
@@ -135,10 +179,10 @@ export class NotificationsService {
   }
 
   /**
-   * Envoyer notification externe (Email/SMS)
+   * Envoyer notification externe (Email/SMS/Push)
    * TODO: Implémenter l'intégration avec le service de communications
    */
-  private async sendExternalNotification(userId: string, notification: any) {
+  private async sendExternalNotification(userId: string, notification: any, channel: string) {
     try {
       // Récupérer les préférences de notification de l'utilisateur
       const user = await this.prisma.user.findUnique({

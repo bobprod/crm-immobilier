@@ -405,6 +405,7 @@ model users {
   agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
+  notificationPreferences  NotificationPreference?   @relation("UserNotificationPreferences")
   activities               Activity[]                @relation("UserActivities")
   wordpressUrl             String?
   wordpressUsername        String?
@@ -1416,8 +1417,17 @@ model Notification {
   message   String    @db.Text
   actionUrl String?
   metadata  Json?     @default("{}")
+
+  // ✅ Smart AI Notification - Canal de livraison
+  channel   String    @default("in_app") // in_app, email, sms, push, whatsapp
+
   isRead    Boolean   @default(false)
   readAt    DateTime?
+
+  // ✅ Smart AI Notification - Tracking
+  deliveredAt DateTime?  // Quand la notification a été livrée
+  openedAt    DateTime?  // Quand l'utilisateur a ouvert/cliqué
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -1426,8 +1436,41 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([type])
+  @@index([channel])      // NEW - Pour stats par canal
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ✅ Smart AI Notification - Préférences utilisateur
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+
+  // Canaux activés par type de notification
+  channels  Json     @default("{\"appointment\":[\"in_app\",\"email\"],\"task\":[\"in_app\"],\"lead\":[\"in_app\",\"email\"],\"system\":[\"in_app\"],\"property\":[\"in_app\"],\"message\":[\"in_app\",\"push\"]}")
+
+  // Horaires préférés (format: { "start": "09:00", "end": "18:00", "timezone": "Europe/Paris" })
+  quietHours Json?
+
+  // Fréquence maximale (ex: max 5 notifications par heure)
+  maxPerHour Int      @default(10)
+
+  // AI Smart Routing activé
+  aiOptimization Boolean @default(true)
+
+  // Digest quotidien activé
+  dailyDigest Boolean  @default(false)
+  digestTime  String?  // Format: "09:00"
+
+  // Priorités (high, medium, low)
+  minPriority String   @default("low")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user users @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
 
 // ============================================
