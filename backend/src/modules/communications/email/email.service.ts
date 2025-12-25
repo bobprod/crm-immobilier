@@ -241,10 +241,10 @@ export class EmailService {
   /**
    * 📨 Resend Provider
    */
-  private async sendWithResend(options: EmailOptions): Promise<EmailResult> {
-    const apiKey = process.env.RESEND_API_KEY;
+  private async sendWithResend(options: EmailOptions, apiKey?: string): Promise<EmailResult> {
+    const key = apiKey || process.env.RESEND_API_KEY;
 
-    if (!apiKey) {
+    if (!key) {
       throw new Error('RESEND_API_KEY not configured');
     }
 
@@ -255,10 +255,10 @@ export class EmailService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${key}`,
         },
         body: JSON.stringify({
-          from: options.from || this.fromEmail,
+          from: options.from || this.defaultFromEmail,
           to: Array.isArray(options.to) ? options.to : [options.to],
           subject: options.subject,
           html: options.html,
@@ -293,10 +293,10 @@ export class EmailService {
   /**
    * 📬 SendGrid Provider
    */
-  private async sendWithSendGrid(options: EmailOptions): Promise<EmailResult> {
-    const apiKey = process.env.SENDGRID_API_KEY;
+  private async sendWithSendGrid(options: EmailOptions, apiKey?: string): Promise<EmailResult> {
+    const key = apiKey || process.env.SENDGRID_API_KEY;
 
-    if (!apiKey) {
+    if (!key) {
       throw new Error('SENDGRID_API_KEY not configured');
     }
 
@@ -307,7 +307,7 @@ export class EmailService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${key}`,
         },
         body: JSON.stringify({
           personalizations: [
@@ -327,7 +327,7 @@ export class EmailService {
                 : undefined,
             },
           ],
-          from: { email: options.from || this.fromEmail },
+          from: { email: options.from || this.defaultFromEmail },
           subject: options.subject,
           content: [
             ...(options.html ? [{ type: 'text/html', value: options.html }] : []),

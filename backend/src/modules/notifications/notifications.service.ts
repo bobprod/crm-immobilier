@@ -215,11 +215,23 @@ export class NotificationsService {
         type: notification.type,
       };
 
-      // Envoyer selon le canal
+      // Envoyer selon le canal (avec support multi-tenant)
       switch (channel) {
         case 'email':
           if (user.email) {
-            const result = await this.emailService.sendNotificationEmail(user.email, notificationData);
+            // Utiliser sendForUser pour support multi-tenant
+            const emailHtml = this.getNotificationEmailHtml(notificationData);
+            const emailText = `${notificationData.title}\n\n${notificationData.message}${
+              notificationData.actionUrl ? `\n\nLien: ${notificationData.actionUrl}` : ''
+            }`;
+
+            const result = await this.emailService.sendForUser(userId, {
+              to: user.email,
+              subject: notificationData.title,
+              html: emailHtml,
+              text: emailText,
+            });
+
             if (result.success) {
               await this.smartNotifications.markAsDelivered(notification.id);
               this.logger.log(`📧 Email sent to ${user.email} (messageId: ${result.messageId})`);
@@ -233,7 +245,13 @@ export class NotificationsService {
 
         case 'sms':
           if (user.phone) {
-            const result = await this.smsService.sendNotificationSms(user.phone, notificationData);
+            // Utiliser sendSmsForUser pour support multi-tenant
+            const smsMessage = this.getNotificationSmsText(notificationData);
+            const result = await this.smsService.sendSmsForUser(userId, {
+              to: user.phone,
+              message: smsMessage,
+            });
+
             if (result.success) {
               await this.smartNotifications.markAsDelivered(notification.id);
               this.logger.log(`📱 SMS sent to ${user.phone} (messageId: ${result.messageId})`);
@@ -247,7 +265,13 @@ export class NotificationsService {
 
         case 'whatsapp':
           if (user.phone) {
-            const result = await this.smsService.sendNotificationWhatsApp(user.phone, notificationData);
+            // Utiliser sendWhatsAppForUser pour support multi-tenant
+            const whatsappMessage = this.getNotificationWhatsAppText(notificationData);
+            const result = await this.smsService.sendWhatsAppForUser(userId, {
+              to: user.phone,
+              message: whatsappMessage,
+            });
+
             if (result.success) {
               await this.smartNotifications.markAsDelivered(notification.id);
               this.logger.log(`💚 WhatsApp sent to ${user.phone} (messageId: ${result.messageId})`);
@@ -317,5 +341,110 @@ export class NotificationsService {
       message,
       metadata: JSON.stringify({}),
     });
+  }
+
+  /**
+   * 🎨 Template HTML pour email de notification (simplifié)
+   */
+  private getNotificationEmailHtml(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+    type?: string;
+  }): string {
+    const typeColors: Record<string, string> = {
+      appointment: '#3B82F6',
+      task: '#F59E0B',
+      lead: '#10B981',
+      system: '#6B7280',
+      property: '#8B5CF6',
+      message: '#EC4899',
+    };
+
+    const color = typeColors[notification.type || 'system'] || '#6B7280';
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${notification.title}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+          <tr>
+            <td style="background-color: ${color}; padding: 20px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">🏠 CRM Immobilier</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">${notification.title}</h2>
+              <p style="margin: 0; color: #4B5563; font-size: 16px; line-height: 1.6;">${notification.message}</p>
+              ${
+                notification.actionUrl
+                  ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${notification.actionUrl}" style="display: inline-block; background-color: ${color}; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 16px;">Voir →</a>
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ''
+              }
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
+
+  /**
+   * 📱 Format SMS pour notification (max 160 caractères)
+   */
+  private getNotificationSmsText(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+  }): string {
+    let smsMessage = `${notification.title}\n${notification.message}`;
+
+    if (notification.actionUrl) {
+      smsMessage += `\n${notification.actionUrl}`;
+    }
+
+    // Tronquer si trop long
+    if (smsMessage.length > 160) {
+      smsMessage = smsMessage.substring(0, 157) + '...';
+    }
+
+    return smsMessage;
+  }
+
+  /**
+   * 💚 Format WhatsApp pour notification
+   */
+  private getNotificationWhatsAppText(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+  }): string {
+    let whatsappMessage = `*${notification.title}*\n\n${notification.message}`;
+
+    if (notification.actionUrl) {
+      whatsappMessage += `\n\n🔗 ${notification.actionUrl}`;
+    }
+
+    return whatsappMessage;
   }
 }

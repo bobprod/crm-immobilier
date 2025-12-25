@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { IntegrationsService } from '../integrations.service';
 
 /**
- * 📱 Service SMS avec Twilio
+ * 📱 Service SMS avec Twilio et support multi-tenant
  *
  * Fonctionnalités:
  * - Envoi SMS
@@ -9,11 +10,11 @@ import { Injectable, Logger } from '@nestjs/common';
  * - Validation numéros de téléphone
  * - Gestion erreurs
  *
- * Configuration via .env:
- * - TWILIO_ACCOUNT_SID=ACxxx
- * - TWILIO_AUTH_TOKEN=xxx
- * - TWILIO_PHONE_NUMBER=+33612345678
- * - TWILIO_WHATSAPP_NUMBER=whatsapp:+33612345678
+ * Configuration:
+ * 1. Par utilisateur (via IntegrationsService) - Prioritaire
+ * 2. Par .env (fallback global)
+ *
+ * Mode multi-tenant: Chaque user peut configurer ses propres credentials Twilio
  */
 
 export interface SmsOptions {
@@ -35,31 +36,102 @@ export interface SmsResult {
   error?: string;
 }
 
+export interface TwilioCredentials {
+  accountSid: string;
+  authToken: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
+}
+
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
-  private readonly accountSid: string;
-  private readonly authToken: string;
-  private readonly phoneNumber: string;
-  private readonly whatsappNumber: string;
 
-  constructor() {
-    this.accountSid = process.env.TWILIO_ACCOUNT_SID || '';
-    this.authToken = process.env.TWILIO_AUTH_TOKEN || '';
-    this.phoneNumber = process.env.TWILIO_PHONE_NUMBER || '';
-    this.whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER || '';
+  constructor(private integrationsService: IntegrationsService) {}
+
+  /**
+   * 📤 Envoyer un SMS avec les credentials de l'utilisateur
+   * Méthode principale pour le mode multi-tenant
+   */
+  async sendSmsForUser(userId: string, options: SmsOptions): Promise<SmsResult> {
+    try {
+      // Essayer d'abord avec les credentials utilisateur
+      try {
+        const twilioConfig = await this.integrationsService.getDecryptedConfig(userId, 'twilio');
+        if (twilioConfig.twilioAccountSid && twilioConfig.twilioAuthToken) {
+          this.logger.log(`Sending SMS via user's Twilio to ${options.to}`);
+          return await this.sendSms(options, {
+            accountSid: twilioConfig.twilioAccountSid,
+            authToken: twilioConfig.twilioAuthToken,
+            phoneNumber: twilioConfig.twilioPhoneNumber,
+            whatsappNumber: twilioConfig.twilioWhatsappNumber,
+          });
+        }
+      } catch (e) {
+        // Pas de config Twilio utilisateur
+      }
+
+      // Fallback sur les credentials globaux .env
+      this.logger.warn(`No user Twilio config found for ${userId}, using global .env fallback`);
+      return await this.sendSms(options);
+    } catch (error) {
+      this.logger.error(`Failed to send SMS for user: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   /**
-   * 📤 Envoyer un SMS
+   * 💚 Envoyer un WhatsApp avec les credentials de l'utilisateur
+   * Méthode principale pour le mode multi-tenant
    */
-  async sendSms(options: SmsOptions): Promise<SmsResult> {
+  async sendWhatsAppForUser(userId: string, options: WhatsAppOptions): Promise<SmsResult> {
     try {
-      if (!this.accountSid || !this.authToken) {
+      // Essayer d'abord avec les credentials utilisateur
+      try {
+        const twilioConfig = await this.integrationsService.getDecryptedConfig(userId, 'twilio');
+        if (twilioConfig.twilioAccountSid && twilioConfig.twilioAuthToken) {
+          this.logger.log(`Sending WhatsApp via user's Twilio to ${options.to}`);
+          return await this.sendWhatsApp(options, {
+            accountSid: twilioConfig.twilioAccountSid,
+            authToken: twilioConfig.twilioAuthToken,
+            phoneNumber: twilioConfig.twilioPhoneNumber,
+            whatsappNumber: twilioConfig.twilioWhatsappNumber,
+          });
+        }
+      } catch (e) {
+        // Pas de config Twilio utilisateur
+      }
+
+      // Fallback sur les credentials globaux .env
+      this.logger.warn(`No user Twilio config found for ${userId}, using global .env fallback`);
+      return await this.sendWhatsApp(options);
+    } catch (error) {
+      this.logger.error(`Failed to send WhatsApp for user: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 📤 Envoyer un SMS (fallback avec credentials globaux .env)
+   */
+  async sendSms(options: SmsOptions, credentials?: TwilioCredentials): Promise<SmsResult> {
+    try {
+      // Utiliser credentials fournis ou .env
+      const accountSid = credentials?.accountSid || process.env.TWILIO_ACCOUNT_SID;
+      const authToken = credentials?.authToken || process.env.TWILIO_AUTH_TOKEN;
+      const phoneNumber = credentials?.phoneNumber || process.env.TWILIO_PHONE_NUMBER;
+
+      if (!accountSid || !authToken) {
         throw new Error('Twilio credentials not configured');
       }
 
-      if (!this.phoneNumber && !options.from) {
+      if (!phoneNumber && !options.from) {
         throw new Error('No sender phone number configured');
       }
 
@@ -71,11 +143,15 @@ export class SmsService {
       }
 
       // Appeler l'API Twilio
-      const response = await this.callTwilioApi('Messages', {
-        To: options.to,
-        From: options.from || this.phoneNumber,
-        Body: options.message,
-      });
+      const response = await this.callTwilioApi(
+        'Messages',
+        {
+          To: options.to,
+          From: options.from || phoneNumber,
+          Body: options.message,
+        },
+        { accountSid, authToken },
+      );
 
       return {
         success: true,
@@ -92,15 +168,20 @@ export class SmsService {
   }
 
   /**
-   * 💚 Envoyer un message WhatsApp
+   * 💚 Envoyer un message WhatsApp (fallback avec credentials globaux .env)
    */
-  async sendWhatsApp(options: WhatsAppOptions): Promise<SmsResult> {
+  async sendWhatsApp(options: WhatsAppOptions, credentials?: TwilioCredentials): Promise<SmsResult> {
     try {
-      if (!this.accountSid || !this.authToken) {
+      // Utiliser credentials fournis ou .env
+      const accountSid = credentials?.accountSid || process.env.TWILIO_ACCOUNT_SID;
+      const authToken = credentials?.authToken || process.env.TWILIO_AUTH_TOKEN;
+      const whatsappNumber = credentials?.whatsappNumber || process.env.TWILIO_WHATSAPP_NUMBER;
+
+      if (!accountSid || !authToken) {
         throw new Error('Twilio credentials not configured');
       }
 
-      if (!this.whatsappNumber && !options.from) {
+      if (!whatsappNumber && !options.from) {
         throw new Error('No WhatsApp sender number configured');
       }
 
@@ -112,11 +193,15 @@ export class SmsService {
       }
 
       // Appeler l'API Twilio avec préfixe WhatsApp
-      const response = await this.callTwilioApi('Messages', {
-        To: `whatsapp:${options.to}`,
-        From: options.from || this.whatsappNumber,
-        Body: options.message,
-      });
+      const response = await this.callTwilioApi(
+        'Messages',
+        {
+          To: `whatsapp:${options.to}`,
+          From: options.from || whatsappNumber,
+          Body: options.message,
+        },
+        { accountSid, authToken },
+      );
 
       return {
         success: true,
@@ -198,11 +283,15 @@ export class SmsService {
   /**
    * 📞 Appeler l'API Twilio
    */
-  private async callTwilioApi(endpoint: string, body: Record<string, string>): Promise<any> {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/${endpoint}.json`;
+  private async callTwilioApi(
+    endpoint: string,
+    body: Record<string, string>,
+    credentials: { accountSid: string; authToken: string },
+  ): Promise<any> {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${credentials.accountSid}/${endpoint}.json`;
 
     // Encoder les credentials en Base64 pour Basic Auth
-    const credentials = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+    const authString = Buffer.from(`${credentials.accountSid}:${credentials.authToken}`).toString('base64');
 
     // Encoder le body en form-urlencoded
     const formBody = Object.entries(body)
@@ -213,7 +302,7 @@ export class SmsService {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          Authorization: `Basic ${credentials}`,
+          Authorization: `Basic ${authString}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: formBody,
@@ -231,24 +320,37 @@ export class SmsService {
   }
 
   /**
-   * ✅ Vérifier la configuration Twilio
+   * ✅ Vérifier la configuration Twilio globale (.env)
    */
   isConfigured(): boolean {
-    return Boolean(this.accountSid && this.authToken && this.phoneNumber);
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    return Boolean(accountSid && authToken && phoneNumber);
   }
 
   /**
    * 📊 Obtenir le statut d'un message
    */
-  async getMessageStatus(messageSid: string): Promise<any> {
+  async getMessageStatus(
+    messageSid: string,
+    credentials?: { accountSid: string; authToken: string },
+  ): Promise<any> {
     try {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Messages/${messageSid}.json`;
-      const credentials = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+      const accountSid = credentials?.accountSid || process.env.TWILIO_ACCOUNT_SID;
+      const authToken = credentials?.authToken || process.env.TWILIO_AUTH_TOKEN;
+
+      if (!accountSid || !authToken) {
+        throw new Error('Twilio credentials not configured');
+      }
+
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages/${messageSid}.json`;
+      const authString = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          Authorization: `Basic ${credentials}`,
+          Authorization: `Basic ${authString}`,
         },
       });
 
