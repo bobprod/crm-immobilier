@@ -687,14 +687,25 @@ model prospecting_leads {
   budgetMax           Float?                // Maximum budget
   budgetCurrency      String?               @default("TND")
   qualificationNotes  String?               @db.Text // Notes de qualification du lead
-  prospectType        String?               // @deprecated
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  retryCount          Int                   @default(0)  // Nombre de tentatives de contact
+  lastContactedAt     DateTime?                          // Dernière tentative de contact
+  nextActionDate      DateTime?                          // Prochaine action planifiée
+  sourceMetadata      Json?                              // Métadonnées du scraping
+  qualityScore        Int?                               // Score qualité 0-100
+  aiModelVersion      String?                            // Version du modèle LLM utilisé
+
+  // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
+  prospectType        String?               // @deprecated - Use leadType
   subType             String?               // @deprecated
   searchCriteria      Json?                 // @deprecated
   mandatInfo          Json?                 // @deprecated
   profiling           Json?                 // @deprecated
-  timeline            String?               // @deprecated
-  budget              Json?                 // @deprecated
-  matchedPropertyIds  String[]              // Array of matched property IDs
+  timeline            String?               // @deprecated - Use urgency
+  budget              Json?                 // @deprecated - Use budgetMin/budgetMax
+  matchedPropertyIds  String[]              // @deprecated - Use prospecting_lead_properties junction table
+
   metadata            Json?
   convertedProspectId String?
   convertedAt         DateTime?
@@ -729,15 +740,24 @@ model prospecting_matches {
   reason         Json              // MatchReason structure from matching algorithm
   status         MatchStatus       @default(pending)
   isQualified    Boolean           @default(false) // score >= 50
-  // @deprecated fields - will be removed
-  prospectType   String?
-  subType        String?
-  searchCriteria Json?
-  mandatInfo     Json?
-  profiling      Json?
-  timeline       String?
-  budget         Json?
-  // Tracking
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  convertedAt       DateTime?        // Date de conversion en prospect/client
+  conversionValue   Float?           // Valeur de la conversion (€)
+  attemptCount      Int       @default(1)   // Nombre de tentatives de contact
+  lastAttemptAt     DateTime?        // Dernière tentative
+  feedbackScore     Int?             // Note de satisfaction (1-5)
+
+  // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
+  prospectType   String?              // @deprecated - Use lead.leadType
+  subType        String?              // @deprecated
+  searchCriteria Json?                // @deprecated
+  mandatInfo     Json?                // @deprecated
+  profiling      Json?                // @deprecated
+  timeline       String?              // @deprecated - Use lead.urgency
+  budget         Json?                // @deprecated - Use lead.budgetMin/budgetMax
+
+  // Tracking existant
   notifiedAt     DateTime?
   contactedAt    DateTime?
   createdAt      DateTime          @default(now())
@@ -1128,16 +1148,27 @@ model LlmConfig {
 // ═══════════════════════════════════════════════════════
 
 model UserLlmProvider {
-  id            String   @id @default(cuid())
-  userId        String
-  provider      String   // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
-  apiKey        String   // Clé API (cryptée)
-  model         String?  // Modèle par défaut pour ce provider
-  isActive      Boolean  @default(true)
-  priority      Int      @default(0)  // 0 = plus haute priorité
-  monthlyBudget Float?   // Budget mensuel pour ce provider (en $)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  userId                String
+  provider              String   // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
+  apiKey                String   // Clé API (cryptée)
+  model                 String?  // Modèle par défaut pour ce provider
+  isActive              Boolean  @default(true)
+  priority              Int      @default(0)  // 0 = plus haute priorité
+  monthlyBudget         Float?   // Budget mensuel pour ce provider (en $)
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  monthlyTokensUsed     Int      @default(0)  // Tokens utilisés ce mois
+  estimatedMonthCost    Float    @default(0)  // Coût estimé ce mois
+  quotaRemainingTokens  Int?                  // Tokens restants (quota API)
+  rateLimitPerMinute    Int?                  // Rate limit du provider
+  lastUsedAt            DateTime?             // Dernière utilisation
+  successRate           Float    @default(100) // Taux de succès (0-100%)
+  failureCount          Int      @default(0)  // Nombre d'échecs
+  totalApiCalls         Int      @default(0)  // Total d'appels API
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Relations
   user                  users                   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1147,6 +1178,8 @@ model UserLlmProvider {
   @@unique([userId, provider])
   @@index([userId])
   @@index([userId, isActive])
+  @@index([lastUsedAt])
+  @@index([successRate])
   @@map("user_llm_providers")
 }
 

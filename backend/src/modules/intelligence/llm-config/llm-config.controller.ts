@@ -118,20 +118,7 @@ export class LLMConfigController {
   @Post('user-providers')
   @ApiOperation({ summary: 'Ajouter un nouveau provider' })
   async addUserProvider(@Request() req, @Body() data: any) {
-    // Migration automatique si nécessaire
-    await this.llmRouterService.migrateOldConfig(req.user.userId);
-
-    return this.llmRouterService['prisma'].userLlmProvider.create({
-      data: {
-        userId: req.user.userId,
-        provider: data.provider,
-        apiKey: data.apiKey,
-        model: data.model,
-        isActive: data.isActive ?? true,
-        priority: data.priority ?? 0,
-        monthlyBudget: data.monthlyBudget,
-      },
-    });
+    return this.llmRouterService.addUserProvider(req.user.userId, data);
   }
 
   /**
@@ -144,15 +131,7 @@ export class LLMConfigController {
     @Param('provider') provider: string,
     @Body() data: any,
   ) {
-    return this.llmRouterService['prisma'].userLlmProvider.update({
-      where: {
-        userId_provider: {
-          userId: req.user.userId,
-          provider,
-        },
-      },
-      data,
-    });
+    return this.llmRouterService.updateUserProvider(req.user.userId, provider, data);
   }
 
   /**
@@ -161,14 +140,16 @@ export class LLMConfigController {
   @Delete('user-providers/:provider')
   @ApiOperation({ summary: 'Supprimer un provider configuré' })
   async deleteUserProvider(@Request() req, @Param('provider') provider: string) {
-    return this.llmRouterService['prisma'].userLlmProvider.delete({
-      where: {
-        userId_provider: {
-          userId: req.user.userId,
-          provider,
-        },
-      },
-    });
+    return this.llmRouterService.deleteUserProvider(req.user.userId, provider);
+  }
+
+  /**
+   * Tester un provider
+   */
+  @Post('user-providers/:provider/test')
+  @ApiOperation({ summary: 'Tester la connexion à un provider configuré' })
+  async testUserProvider(@Request() req, @Param('provider') provider: string) {
+    return this.llmRouterService.testUserProvider(req.user.userId, provider);
   }
 
   /**

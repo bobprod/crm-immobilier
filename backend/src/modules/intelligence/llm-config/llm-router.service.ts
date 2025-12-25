@@ -524,4 +524,121 @@ export class LLMRouterService {
       },
     });
   }
+
+  // ═══════════════════════════════════════════════════════
+  // CRUD METHODS FOR USER PROVIDERS
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * ✅ Ajouter un nouveau provider
+   */
+  async addUserProvider(userId: string, data: {
+    provider: string;
+    apiKey: string;
+    model?: string;
+    isActive?: boolean;
+    priority?: number;
+    monthlyBudget?: number;
+  }) {
+    // Migration automatique si nécessaire
+    await this.migrateOldConfig(userId);
+
+    return this.prisma.userLlmProvider.create({
+      data: {
+        userId,
+        provider: data.provider,
+        apiKey: data.apiKey,
+        model: data.model,
+        isActive: data.isActive ?? true,
+        priority: data.priority ?? 0,
+        monthlyBudget: data.monthlyBudget,
+      },
+    });
+  }
+
+  /**
+   * ✅ Mettre à jour un provider
+   */
+  async updateUserProvider(userId: string, provider: string, data: {
+    apiKey?: string;
+    model?: string;
+    isActive?: boolean;
+    priority?: number;
+    monthlyBudget?: number;
+  }) {
+    const updateData: any = {};
+
+    if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
+    if (data.model !== undefined) updateData.model = data.model;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.priority !== undefined) updateData.priority = data.priority;
+    if (data.monthlyBudget !== undefined) updateData.monthlyBudget = data.monthlyBudget;
+
+    return this.prisma.userLlmProvider.update({
+      where: {
+        userId_provider: {
+          userId,
+          provider,
+        },
+      },
+      data: updateData,
+    });
+  }
+
+  /**
+   * ✅ Supprimer un provider
+   */
+  async deleteUserProvider(userId: string, provider: string) {
+    return this.prisma.userLlmProvider.delete({
+      where: {
+        userId_provider: {
+          userId,
+          provider,
+        },
+      },
+    });
+  }
+
+  /**
+   * ✅ Tester un provider
+   */
+  async testUserProvider(userId: string, provider: string) {
+    const userProvider = await this.prisma.userLlmProvider.findUnique({
+      where: {
+        userId_provider: {
+          userId,
+          provider,
+        },
+      },
+    });
+
+    if (!userProvider) {
+      throw new Error(`Provider ${provider} not configured for user ${userId}`);
+    }
+
+    // Créer une instance du provider et tester
+    try {
+      const providerInstance = this.createProviderInstance(
+        userProvider.provider,
+        userProvider.apiKey,
+        userProvider.model,
+      );
+
+      // Test simple avec un prompt minimal
+      await providerInstance.generate('Test connection', {
+        maxTokens: 10,
+        temperature: 0,
+      });
+
+      return {
+        success: true,
+        message: `✅ ${provider} is configured correctly and working`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `❌ ${provider} test failed: ${error.message}`,
+      };
+    }
+  }
 }
