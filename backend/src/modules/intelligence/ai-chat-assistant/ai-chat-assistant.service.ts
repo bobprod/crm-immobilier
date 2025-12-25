@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../core/database/prisma.service';
 import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
 import {
@@ -8,6 +8,7 @@ import {
   ChatConversation,
   CommandType,
 } from './dto';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class AIChatAssistantService {
@@ -82,7 +83,7 @@ export class AIChatAssistantService {
     });
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+      ErrorHandler.notFound('Conversation');
     }
 
     const messages = await this.prisma.aiChatMessage.findMany({
@@ -116,7 +117,7 @@ export class AIChatAssistantService {
     });
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+      ErrorHandler.notFound('Conversation');
     }
 
     // Save user message
@@ -194,7 +195,7 @@ export class AIChatAssistantService {
     });
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+      ErrorHandler.notFound('Conversation');
     }
 
     await this.prisma.aiChatConversation.update({

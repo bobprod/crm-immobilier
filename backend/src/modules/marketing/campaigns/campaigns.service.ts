@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto, ConvertLeadDto } from './dto';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class CampaignsService {
@@ -37,11 +38,7 @@ export class CampaignsService {
       where: { id, userId },
     });
 
-    if (!campaign) {
-      throw new NotFoundException('Campaign not found');
-    }
-
-    return campaign;
+    return ErrorHandler.ensureExists(campaign, 'Campaign', id);
   }
 
   async update(id: string, userId: string, dto: UpdateCampaignDto) {
