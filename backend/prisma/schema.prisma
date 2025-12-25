@@ -406,6 +406,7 @@ model users {
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
   notificationPreferences  NotificationPreference?   @relation("UserNotificationPreferences")
+  userIntegrations         UserIntegration[]         @relation("UserIntegrations")
   activities               Activity[]                @relation("UserActivities")
   wordpressUrl             String?
   wordpressUsername        String?
@@ -1471,6 +1472,41 @@ model NotificationPreference {
   user users @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+// ✅ Smart AI Notification - Intégrations API utilisateur
+model UserIntegration {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String   // resend, sendgrid, twilio, firebase, etc.
+
+  // Configuration (JSON chiffré contenant les clés API)
+  config    Json     // { apiKey, accountSid, authToken, phoneNumber, etc. }
+
+  // Métadonnées
+  isActive  Boolean  @default(true)
+  label     String?  // Nom personnalisé (ex: "Twilio Production")
+
+  // Quotas & Limites
+  monthlyQuota     Int?     // Quota mensuel (emails, SMS)
+  currentUsage     Int      @default(0)
+  lastResetAt      DateTime @default(now())
+
+  // Statut
+  lastTestedAt     DateTime?
+  lastTestStatus   String?  // success, failed
+  lastTestError    String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user users @relation("UserIntegrations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider])
+  @@index([isActive])
+  @@map("user_integrations")
 }
 
 // ============================================

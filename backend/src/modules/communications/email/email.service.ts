@@ -1,19 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { IntegrationsService } from '../integrations.service';
 
 /**
- * 📧 Service Email avec support multi-providers
+ * 📧 Service Email avec support multi-providers et multi-tenant
  *
  * Providers supportés:
  * - Resend (recommandé - moderne, simple)
  * - SendGrid (classique - feature-rich)
- * - SMTP générique (fallback)
  *
- * Configuration via .env:
- * - EMAIL_PROVIDER=resend|sendgrid|smtp
- * - EMAIL_FROM=notifications@example.com
- * - RESEND_API_KEY=re_xxx
- * - SENDGRID_API_KEY=SG.xxx
- * - SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+ * Configuration:
+ * 1. Par utilisateur (via IntegrationsService) - Prioritaire
+ * 2. Par .env (fallback global)
+ *
+ * Mode multi-tenant: Chaque user peut configurer ses propres clés API
  */
 
 export interface EmailOptions {
@@ -41,34 +40,77 @@ export interface EmailResult {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly provider: string;
-  private readonly fromEmail: string;
+  private readonly defaultFromEmail: string;
 
-  constructor() {
-    this.provider = process.env.EMAIL_PROVIDER || 'resend';
-    this.fromEmail = process.env.EMAIL_FROM || 'notifications@crm-immobilier.com';
+  constructor(private integrationsService: IntegrationsService) {
+    this.defaultFromEmail = process.env.EMAIL_FROM || 'notifications@crm-immobilier.com';
   }
 
   /**
-   * 📤 Envoyer un email
+   * 📤 Envoyer un email avec les credentials de l'utilisateur
+   * Méthode principale pour le mode multi-tenant
+   */
+  async sendForUser(userId: string, options: EmailOptions): Promise<EmailResult> {
+    try {
+      // Essayer d'abord avec les credentials utilisateur
+      try {
+        const resendConfig = await this.integrationsService.getDecryptedConfig(userId, 'resend');
+        if (resendConfig.resendApiKey) {
+          this.logger.log(`Sending email via user's Resend to ${options.to}`);
+          return await this.sendWithResend(options, resendConfig.resendApiKey);
+        }
+      } catch (e) {
+        // Pas de Resend user, essayer SendGrid
+      }
+
+      try {
+        const sendgridConfig = await this.integrationsService.getDecryptedConfig(userId, 'sendgrid');
+        if (sendgridConfig.sendgridApiKey) {
+          this.logger.log(`Sending email via user's SendGrid to ${options.to}`);
+          return await this.sendWithSendGrid(options, sendgridConfig.sendgridApiKey);
+        }
+      } catch (e) {
+        // Pas de SendGrid user
+      }
+
+      // Fallback sur les credentials globaux .env
+      this.logger.warn(`No user email config found for ${userId}, using global .env fallback`);
+      return await this.send(options);
+    } catch (error) {
+      this.logger.error(`Failed to send email for user: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * 📤 Envoyer un email (fallback avec credentials globaux .env)
    */
   async send(options: EmailOptions): Promise<EmailResult> {
     try {
-      this.logger.log(`Sending email to ${options.to} via ${this.provider}`);
+      const provider = process.env.EMAIL_PROVIDER || 'resend';
+      this.logger.log(`Sending email to ${options.to} via global ${provider}`);
 
       // Sélectionner le provider
-      switch (this.provider) {
+      switch (provider) {
         case 'resend':
-          return await this.sendWithResend(options);
+          const resendKey = process.env.RESEND_API_KEY;
+          if (!resendKey) {
+            throw new Error('RESEND_API_KEY not configured in .env');
+          }
+          return await this.sendWithResend(options, resendKey);
 
         case 'sendgrid':
-          return await this.sendWithSendGrid(options);
-
-        case 'smtp':
-          return await this.sendWithSMTP(options);
+          const sendgridKey = process.env.SENDGRID_API_KEY;
+          if (!sendgridKey) {
+            throw new Error('SENDGRID_API_KEY not configured in .env');
+          }
+          return await this.sendWithSendGrid(options, sendgridKey);
 
         default:
-          throw new Error(`Unknown email provider: ${this.provider}`);
+          throw new Error(`Unknown email provider: ${provider}`);
       }
     } catch (error) {
       this.logger.error(`Failed to send email: ${error.message}`);
