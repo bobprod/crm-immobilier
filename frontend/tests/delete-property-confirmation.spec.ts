@@ -31,7 +31,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait a bit for dialog to appear
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Verify confirmation dialog appears
         const dialog = page.locator('[role="alertdialog"]');
@@ -73,7 +73,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for dialog
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -111,7 +111,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for dialog
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -120,7 +120,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await confirmButton.click();
 
         // Wait for deletion to complete
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Verify dialog is closed
         await expect(dialog).not.toBeVisible({ timeout: 3000 });
@@ -150,7 +150,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         }
 
         // Wait for bulk actions to appear
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Find and click the delete bulk action button
         // This might be in PropertyBulkActions component
@@ -158,7 +158,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await bulkDeleteButton.click();
 
         // Wait for dialog
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -196,7 +196,7 @@ test.describe('Property Delete with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for confirmation dialog
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Verify custom dialog is shown
         const dialog = page.locator('[role="alertdialog"]');

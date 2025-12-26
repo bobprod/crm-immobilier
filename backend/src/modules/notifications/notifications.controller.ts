@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -19,6 +20,8 @@ import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
+  private readonly logger = new Logger(NotificationsController.name);
+
   constructor(private readonly notificationsService: NotificationsService) {}
 
   /**
@@ -115,5 +118,48 @@ export class NotificationsController {
   async getReadingStats(@Request() req) {
     const userId = req.user.userId;
     return this.notificationsService.getReadingStats(userId);
+  }
+
+  /**
+   * Obtenir les paramètres de notification de l'utilisateur
+   */
+  @Get('settings')
+  async getSettings(@Request() req) {
+    const userId = req.user.userId;
+    // Return default settings for now, can be extended to store in DB
+    return {
+      preferredChannel: 'push',
+      optimalTimingEnabled: true,
+      preferredHours: [9, 10, 11, 14, 15, 16],
+      enablePush: true,
+      enableEmail: true,
+      enableSMS: false,
+      enableWhatsApp: false,
+      frequency: 'normal',
+      quietHoursEnabled: false,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '08:00',
+    };
+  }
+
+  /**
+   * Sauvegarder les paramètres de notification
+   */
+  @Post('settings')
+  async saveSettings(@Request() req, @Body() settings: any) {
+    const userId = req.user.userId;
+    // Save settings logic here (store in DB or cache)
+    this.logger.log(`Settings saved for user ${userId}`);
+    return { success: true, settings };
+  }
+
+  /**
+   * Obtenir les statistiques d'engagement
+   */
+  @Get('stats/engagement')
+  async getEngagementStats(@Request() req) {
+    const userId = req.user.userId;
+    const stats = await this.notificationsService.getEngagementStats(userId);
+    return stats;
   }
 }

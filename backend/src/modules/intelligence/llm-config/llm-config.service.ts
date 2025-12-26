@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { LLMProviderFactory } from './providers/llm-provider.factory';
 import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker.service';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 /**
  * Service de gestion de la configuration LLM
@@ -73,7 +74,7 @@ export class LLMConfigService {
     });
 
     if (!config || !config.apiKey) {
-      throw new NotFoundException('Configuration LLM non trouvée');
+      ErrorHandler.notFound('Configuration LLM');
     }
 
     const isValid = await this.llmFactory.testProvider(config as any);

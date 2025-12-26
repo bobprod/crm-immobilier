@@ -13,7 +13,7 @@ test.describe('Notifications Module E2E', () => {
     await page.fill('input[type="email"]', TEST_USER_EMAIL);
     await page.fill('input[type="password"]', TEST_USER_PASSWORD);
     await page.click('button[type="submit"]');
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Navigate to notifications
     await page.goto('/notifications');
@@ -37,7 +37,7 @@ test.describe('Notifications Module E2E', () => {
   test('should filter notifications by status', async ({ page }) => {
     // Click filter button
     await page.click('[data-testid="filter-unread"]');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Check that page loaded (may show empty state or notifications)
     const content = page.locator('body');
@@ -53,7 +53,7 @@ test.describe('Notifications Module E2E', () => {
       if (await markReadBtn.isVisible()) {
         // Click mark as read
         await markReadBtn.click();
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         
         // Check that button disappeared (notification is now marked as read)
         await expect(markReadBtn).not.toBeVisible();
@@ -68,7 +68,7 @@ test.describe('Notifications Module E2E', () => {
     
     if (await markAllBtn.isVisible()) {
       await markAllBtn.click();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Unread count should be 0 or badge should disappear
       const badge = page.locator('[data-testid="unread-count"]');
@@ -88,7 +88,7 @@ test.describe('Notifications Module E2E', () => {
       
       const deleteBtn = firstNotif.locator('[data-testid="delete-btn"]');
       await deleteBtn.click();
-      await page.waitForTimeout(500);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Check count decreased or empty message appears
       const newCount = await page.locator('[data-testid="notification-item"]').count();
@@ -164,11 +164,11 @@ test.describe('Notifications Module E2E', () => {
       });
 
       // Wait for notification to appear
-      await page.waitForTimeout(2000);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       
       // Check if notification appears (may require reload)
       await page.reload();
-      await page.waitForTimeout(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       
       const notification = page.locator('[data-testid="notification-item"]', {
         hasText: 'E2E Test Notification',
@@ -185,7 +185,7 @@ test.describe('Notifications Module E2E', () => {
     // Try to select a type filter
     const typeSelect = page.locator('select');
     await typeSelect.selectOption('system');
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
     
     // Check page still works
     const content = page.locator('body');
@@ -195,7 +195,7 @@ test.describe('Notifications Module E2E', () => {
   test('should refresh notifications list', async ({ page }) => {
     const refreshBtn = page.getByRole('button', { name: /actualiser/i });
     await refreshBtn.click();
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     
     // Check that page is still functional
     await expect(page.locator('h1')).toContainText('Notifications');

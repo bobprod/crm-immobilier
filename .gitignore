@@ -9,3 +9,11 @@ frontend/*.md
 
 backend/*.bat
 backend/*.md
+
+# TypeScript build info
+frontend/tsconfig.tsbuildinfo
+backend/tsconfig.tsbuildinfo
+
+# Next.js build output
+frontend/.next/
+frontend/out/

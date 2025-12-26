@@ -5,6 +5,8 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto, PaginationQueryDto, PaginatedResponse } from './dto';
 import { PropertyHistoryService } from './property-history.service';
 import { ImageCompressionService } from '../../../shared/services/image-compression.service';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
+import { paginate } from '../../../shared/utils/pagination.utils';
 
 @Injectable()
 export class PropertiesService {
@@ -55,9 +57,10 @@ export class PropertiesService {
   }
 
   async findOne(id: string, userId: string) {
-    return this.prisma.properties.findFirst({
+    const property = await this.prisma.properties.findFirst({
       where: { id, userId, deletedAt: null }, // Filter out soft-deleted
     });
+    return ErrorHandler.ensureExists(property, 'Property', id);
   }
 
   async update(id: string, userId: string, data: UpdatePropertyDto) {
@@ -66,9 +69,7 @@ export class PropertiesService {
       where: { id, userId },
     });
 
-    if (!oldProperty) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(oldProperty, 'Property', id);
 
     const updated = await this.prisma.properties.update({
       where: { id },
@@ -148,7 +149,6 @@ export class PropertiesService {
     pagination: PaginationQueryDto,
     filters?: PropertyFiltersDto,
   ): Promise<PaginatedResponse<any>> {
-    const limit = pagination.limit || 20;
     const where: any = { userId, deletedAt: null };
 
     // Apply filters
@@ -162,32 +162,17 @@ export class PropertiesService {
       if (filters.maxPrice) where.price.lte = parseFloat(String(filters.maxPrice));
     }
 
-    // Get total count
-    const total = await this.prisma.properties.count({ where });
-
-    // Build cursor query
-    const cursorQuery: any = pagination.cursor
-      ? { cursor: { id: pagination.cursor }, skip: 1 }
-      : {};
-
-    // Fetch items
-    const items = await this.prisma.properties.findMany({
-      where,
-      take: limit + 1, // Fetch one extra to check if there's a next page
-      orderBy: { createdAt: 'desc' },
-      ...cursorQuery,
-    });
-
-    const hasNextPage = items.length > limit;
-    const resultItems = hasNextPage ? items.slice(0, limit) : items;
-    const nextCursor = hasNextPage ? resultItems[resultItems.length - 1].id : null;
-
-    return {
-      items: resultItems,
-      nextCursor,
-      hasNextPage,
-      total,
-    };
+    return paginate(
+      pagination,
+      (take, cursorQuery) =>
+        this.prisma.properties.findMany({
+          where,
+          take,
+          orderBy: { createdAt: 'desc' },
+          ...cursorQuery,
+        }),
+      () => this.prisma.properties.count({ where }),
+    );
   }
 
   async syncWithWordPress(id: string, userId: string, wpSyncId: string) {
@@ -206,9 +191,7 @@ export class PropertiesService {
       where: { id, userId, deletedAt: null },
     });
 
-    if (!property) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(property, 'Property', id);
 
     const existingImages = (property.images as string[]) || [];
     const newImages: string[] = [];
@@ -260,9 +243,7 @@ export class PropertiesService {
       where: { id, userId, deletedAt: null },
     });
 
-    if (!property) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(property, 'Property', id);
 
     const images = (property.images as string[]) || [];
     const updatedImages = images.filter((img) => img !== imageUrl);
@@ -288,9 +269,7 @@ export class PropertiesService {
       where: { id, userId, deletedAt: null },
     });
 
-    if (!oldProperty) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(oldProperty, 'Property', id);
 
     const updated = await this.prisma.properties.update({
       where: { id },
@@ -338,9 +317,7 @@ export class PropertiesService {
       where: { id, userId, deletedAt: null },
     });
 
-    if (!property) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(property, 'Property', id);
 
     // Find similar properties based on type, category, and price range
     const priceRange = property.price * 0.2; // 20% price range
@@ -571,9 +548,7 @@ export class PropertiesService {
       where: { id, userId, deletedAt: null },
     });
 
-    if (!oldProperty) {
-      throw new Error('Property not found');
-    }
+    ErrorHandler.ensureExists(oldProperty, 'Property', id);
 
     const updated = await this.prisma.properties.update({
       where: { id },
