@@ -10,7 +10,7 @@ import {
   Request,
   Logger,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../core/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { AIChatAssistantService } from './ai-chat-assistant.service';
 import { CreateConversationDto, SendMessageDto } from './dto';
 
@@ -19,7 +19,7 @@ import { CreateConversationDto, SendMessageDto } from './dto';
 export class AIChatAssistantController {
   private readonly logger = new Logger(AIChatAssistantController.name);
 
-  constructor(private readonly chatService: AIChatAssistantService) {}
+  constructor(private readonly chatService: AIChatAssistantService) { }
 
   /**
    * Create a new conversation
