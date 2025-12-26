@@ -35,7 +35,7 @@ test.describe('Authentication', () => {
 
     // The form should be pre-filled with test credentials due to useEffect
     // Wait a bit for useEffect to run
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Check current values
     const emailValue = await emailInput.inputValue();
@@ -74,7 +74,7 @@ test.describe('Authentication', () => {
     console.log('Clicked login button');
 
     // Wait for the API call to complete
-    await page.waitForTimeout(3000);
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Check if login was successful by monitoring for success indicators
     const currentURL = page.url();
@@ -115,7 +115,7 @@ test.describe('Authentication', () => {
     await loginButton.click();
 
     // Wait for error response
-    await page.waitForTimeout(2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Check for error message - look for any error text
     const pageText = await page.textContent('body');

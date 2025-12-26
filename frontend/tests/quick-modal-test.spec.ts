@@ -37,7 +37,7 @@ test.describe('Quick Modal Test', () => {
         await createButton.click();
 
         // Wait a bit
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Log current URL after clicking
         console.log('Current URL after click:', page.url());

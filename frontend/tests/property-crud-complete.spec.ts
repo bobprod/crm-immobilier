@@ -26,7 +26,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await createButton.click();
 
         // Wait for modal
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const modal = page.locator('[role="dialog"]');
         await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -62,7 +62,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await expect(modal).not.toBeVisible({ timeout: 5000 });
 
         // Wait for table to refresh
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Verify property appears in table (use .first() to handle duplicates)
         const newProperty = page.locator('tr', { hasText: 'Test Property No Rooms' }).first();
@@ -78,7 +78,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await editButton.click();
 
         // Wait for modal
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const modal = page.locator('[role="dialog"]');
         await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -150,7 +150,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for confirmation dialog with longer timeout
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 10000 });
 
@@ -194,7 +194,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for dialog with longer timeout
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 10000 });
 
@@ -216,7 +216,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await expect(dialog).not.toBeVisible({ timeout: 3000 });
 
         // Wait for table to refresh
-        await page.waitForTimeout(1000);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Verify property count decreased
         const propertiesCountAfter = await page.locator('tbody tr').count();
@@ -242,7 +242,7 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
         await deleteButton.click();
 
         // Wait for custom dialog with longer timeout
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Verify custom AlertDialog is shown
         const customDialog = page.locator('[role="alertdialog"]');
@@ -268,14 +268,14 @@ test.describe('Property CRUD with Confirmation Dialog', () => {
             return;
         }
 
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Find bulk delete button
         const bulkDeleteButton = page.locator('button', { hasText: /supprimer|delete/i }).first();
         await bulkDeleteButton.click();
 
         // Wait for dialog
-        await page.waitForTimeout(500);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const dialog = page.locator('[role="alertdialog"]');
         await expect(dialog).toBeVisible({ timeout: 5000 });
 

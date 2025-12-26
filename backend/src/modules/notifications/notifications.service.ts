@@ -360,4 +360,30 @@ export class NotificationsService {
       },
     });
   }
+
+  /**
+   * Obtenir les statistiques d'engagement des notifications
+   */
+  async getEngagementStats(userId: string) {
+    const [total, unread, read] = await Promise.all([
+      this.prisma.notifications.count({
+        where: { userId, deletedAt: null },
+      }),
+      this.prisma.notifications.count({
+        where: { userId, isRead: false, deletedAt: null },
+      }),
+      this.prisma.notifications.count({
+        where: { userId, isRead: true, deletedAt: null },
+      }),
+    ]);
+
+    const openRate = total > 0 ? (read / total) * 100 : 0;
+
+    return {
+      total,
+      unread,
+      read,
+      openRate: openRate.toFixed(1),
+    };
+  }
 }

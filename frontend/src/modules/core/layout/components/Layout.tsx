@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield } from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, Search, FileText, Inbox, FormInput, Brain, Bot } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -52,6 +52,7 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
   const getActiveTab = () => {
     const path = router.pathname;
     if (path === '/dashboard' || path === '/') return 'dashboard';
+    if (path.startsWith('/ai-assistant')) return 'ai-assistant';
     if (path.startsWith('/prospecting')) return 'prospecting';
     if (path.startsWith('/properties')) return 'properties';
     if (path.startsWith('/prospects')) return 'prospects';

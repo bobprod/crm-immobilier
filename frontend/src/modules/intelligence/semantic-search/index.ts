@@ -1,0 +1,1 @@
+export { SemanticSearchBar } from './SemanticSearchBar';

@@ -26,7 +26,7 @@ test.describe('Prospect CRUD Operations', () => {
     await createButton.click();
 
     // Wait for modal
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const modal = page.locator('[role="dialog"]');
     await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -64,7 +64,7 @@ test.describe('Prospect CRUD Operations', () => {
     await expect(modal).not.toBeVisible({ timeout: 5000 });
 
     // Wait for table to refresh
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Verify prospect appears in table
     const newProspect = page.locator('tr', { hasText: 'Jean Dupont' }).first();
@@ -80,7 +80,7 @@ test.describe('Prospect CRUD Operations', () => {
     await editButton.click();
 
     // Wait for modal
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const modal = page.locator('[role="dialog"]');
     await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -109,7 +109,7 @@ test.describe('Prospect CRUD Operations', () => {
     await expect(modal).not.toBeVisible({ timeout: 5000 });
 
     // Wait for table to refresh
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Verify updated name appears
     await expect(page.locator(`text=${newName}`).first()).toBeVisible({ timeout: 5000 });
@@ -128,7 +128,7 @@ test.describe('Prospect CRUD Operations', () => {
     await deleteButton.click();
 
     // Wait for confirmation dialog
-    await page.waitForTimeout(500);
+    await new Promise((resolve) => setTimeout(resolve, 500));
     const dialog = page.locator('[role="alertdialog"]');
     await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -161,6 +161,6 @@ test.describe('Prospect CRUD Operations', () => {
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
     // Wait for table to refresh
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 });

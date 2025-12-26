@@ -35,7 +35,7 @@ test.describe('Prospect Interactions', () => {
     await addInteractionButton.click();
 
     // Wait for modal
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const modal = page.locator('[role="dialog"]');
     await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -70,7 +70,7 @@ test.describe('Prospect Interactions', () => {
     await expect(modal).not.toBeVisible({ timeout: 5000 });
 
     // Wait for page to refresh
-    await page.waitForTimeout(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Verify interaction appears on page
     const interactionText = page.locator('text=Discussion sur les critères');
