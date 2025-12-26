@@ -23,7 +23,7 @@ export default function MarketingTrackingPage() {
       apiClient.get('/marketing-tracking/automation/suggestions'),
       apiClient.get('/marketing-tracking/ml/anomalies?platform=facebook'),
     ]);
-    
+
     setConfigs(configsData.data);
     setMlConfig(mlConfigData.data);
     setSuggestions(suggestionsData.data);
@@ -54,7 +54,7 @@ export default function MarketingTrackingPage() {
         <TabsContent value="config">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {['Facebook', 'TikTok', 'GA4', 'GTM', 'Google Ads', 'LinkedIn'].map((platform) => {
-              const config = configs.find(c => c.platform === platform.toLowerCase());
+              const config = configs.find((c) => c.platform === platform.toLowerCase());
               return (
                 <Card key={platform}>
                   <CardHeader>
@@ -109,12 +109,8 @@ export default function MarketingTrackingPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium">Limites</h4>
-                  <p className="text-sm mt-2">
-                    Budget : ±{mlConfig?.budgetAdjustmentLimit}%
-                  </p>
-                  <p className="text-sm">
-                    Confiance min : {mlConfig?.minConfidenceScore}
-                  </p>
+                  <p className="text-sm mt-2">Budget : ±{mlConfig?.budgetAdjustmentLimit}%</p>
+                  <p className="text-sm">Confiance min : {mlConfig?.minConfidenceScore}</p>
                 </div>
               </div>
             </CardContent>
@@ -146,7 +142,9 @@ export default function MarketingTrackingPage() {
                     <p className="text-sm mb-3">{suggestion.reasoning}</p>
                     <div className="flex gap-2">
                       <Button size="sm">Accepter</Button>
-                      <Button size="sm" variant="outline">Refuser</Button>
+                      <Button size="sm" variant="outline">
+                        Refuser
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -170,11 +168,15 @@ export default function MarketingTrackingPage() {
                   <CardHeader>
                     <CardTitle className="text-base flex items-center justify-between">
                       {anomaly.description}
-                      <Badge className={
-                        anomaly.severity === 'critical' ? 'bg-red-500' :
-                        anomaly.severity === 'high' ? 'bg-orange-500' :
-                        'bg-yellow-500'
-                      }>
+                      <Badge
+                        className={
+                          anomaly.severity === 'critical'
+                            ? 'bg-red-500'
+                            : anomaly.severity === 'high'
+                              ? 'bg-orange-500'
+                              : 'bg-yellow-500'
+                        }
+                      >
                         {anomaly.severity}
                       </Badge>
                     </CardTitle>

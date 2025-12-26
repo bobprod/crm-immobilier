@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { LLMProspectingService } from './llm-prospecting.service';
+import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
 import { WebDataService } from '../scraping/services/web-data.service';
 import axios from 'axios';
@@ -44,7 +45,7 @@ export class ProspectingIntegrationService {
     private configService: ConfigService,
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
-    private webDataService: WebDataService,
+    private llmRouter: LLMRouterService,
   ) {}
 
   // ============================================
@@ -186,12 +187,18 @@ export class ProspectingIntegrationService {
     userId: string,
     campaignId: string,
     items: RawScrapedItem[],
+    providerOverride?: string, // ✅ NOUVEAU: Support pour forcer un provider spécifique
   ): Promise<IngestResult> {
     this.logger.log(`Ingesting ${items.length} scraped items for campaign ${campaignId}`);
 
     // 1) Appeler le LLM pour structurer les items
     const leadsToCreate: ProspectingLeadCreateInput[] =
-      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items);
+      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(
+        items,
+        userId,
+        undefined, // config
+        providerOverride, // ✅ Passer le provider override au LLM service
+      );
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
@@ -751,12 +758,14 @@ export class ProspectingIntegrationService {
     };
   }
 
-  async analyzeContentForLeads(userId: string, content: string, source?: string): Promise<any> {
+  async analyzeContentForLeads(
+    userId: string,
+    content: string,
+    source?: string,
+    providerOverride?: string,
+  ): Promise<any> {
     this.logger.log(`Analyzing content for leads`);
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
-    // Utiliser l'IA pour extraire les informations
     const prompt = `Analyse ce texte et extrait les informations de contact et immobilieres:
 
     Texte: ${content}
@@ -767,12 +776,54 @@ export class ProspectingIntegrationService {
     - leadType: "requete" (cherche un bien) ou "mandat" (propose un bien)
     - score: 0-100 (qualite du lead)`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
-      return { success: true, analysis: result, method: 'llm' };
+      // ✅ Routing intelligent: qualification = équilibre qualité/coût
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify', // Gemini, Mistral, Qwen prioritaires
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // ✅ Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
+
+      return { success: true, analysis: result, method: 'llm', provider: providerName };
     } catch (error) {
-      // Log l'erreur pour le debugging
       this.logger.warn(`LLM analysis failed, falling back to regex: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
 
       // Fallback sur extraction regex
       const contact = this.extractContactFromText(content);
@@ -798,8 +849,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Classifie ce lead immobilier:
 
     Nom: ${lead.firstName} ${lead.lastName}
@@ -818,8 +867,35 @@ export class ProspectingIntegrationService {
     4. quality: 0-100
     5. reason: explication`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       // Mettre a jour le lead
       await this.prisma.prospecting_leads.update({
@@ -835,8 +911,22 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, classification: result, method: 'llm' };
+      return { success: true, classification: result, method: 'llm', provider: providerName };
     } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Log l'erreur pour le debugging
       this.logger.warn(
         `LLM classification failed for lead ${leadId}, using basic rules: ${error.message}`,
@@ -862,8 +952,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Qualifie ce lead immobilier sur 100:
 
     ${JSON.stringify(lead)}
@@ -877,8 +965,35 @@ export class ProspectingIntegrationService {
 
     Retourne: { score: number, reasons: string[], recommendations: string[] }`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       await this.prisma.prospecting_leads.update({
         where: { id: leadId },
@@ -891,11 +1006,25 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, qualification: result };
-    } catch {
+      return { success: true, qualification: result, provider: providerName };
+    } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Scoring basique
       const score = this.calculateBasicScore(lead);
-      return { success: true, qualification: { score, reasons: ['Scoring automatique'] } };
+      return { success: true, qualification: { score, reasons: ['Scoring automatique'] }, method: 'fallback' };
     }
   }
 
@@ -1081,27 +1210,6 @@ export class ProspectingIntegrationService {
     }));
   }
 
-  private async callLLM(config: any, prompt: string): Promise<any> {
-    if (!config?.apiKey) {
-      throw new Error('LLM non configure');
-    }
-
-    // Implementation simplifiee - en production utiliser OpenAI/Anthropic
-    const response = await axios.post(
-      config.endpoint || 'https://api.openai.com/v1/chat/completions',
-      {
-        model: config.model || 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      },
-      {
-        headers: { Authorization: `Bearer ${config.apiKey}` },
-        timeout: 30000,
-      },
-    );
-
-    return JSON.parse(response.data.choices[0].message.content);
-  }
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

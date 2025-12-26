@@ -95,10 +95,7 @@ export const validationAPI = {
   // VALIDATION EMAIL
   // ============================================
 
-  validateEmail: async (
-    email: string,
-    prospectId?: string,
-  ): Promise<ValidationResult> => {
+  validateEmail: async (email: string, prospectId?: string): Promise<ValidationResult> => {
     const response = await apiClient.post('/validation/email', {
       email,
       prospectId,
@@ -115,10 +112,7 @@ export const validationAPI = {
   // VALIDATION TÉLÉPHONE
   // ============================================
 
-  validatePhone: async (
-    phone: string,
-    prospectId?: string,
-  ): Promise<ValidationResult> => {
+  validatePhone: async (phone: string, prospectId?: string): Promise<ValidationResult> => {
     const response = await apiClient.post('/validation/phone', {
       phone,
       prospectId,
@@ -140,7 +134,7 @@ export const validationAPI = {
   addToBlacklist: async (
     type: ContactType,
     value: string,
-    reason?: string,
+    reason?: string
   ): Promise<BlacklistItem> => {
     const response = await apiClient.post('/validation/blacklist', {
       type,
@@ -201,7 +195,7 @@ export const validationAPI = {
 
   validateEmailWithAI: async (
     email: string,
-    context?: string,
+    context?: string
   ): Promise<ValidationResult & { aiAnalysis?: string }> => {
     const response = await apiClient.post('/validation/email/ai', {
       email,
@@ -213,7 +207,7 @@ export const validationAPI = {
   detectSpamWithAI: async (
     email: string,
     name?: string,
-    message?: string,
+    message?: string
   ): Promise<SpamDetectionResult> => {
     const response = await apiClient.post('/validation/spam/ai', {
       email,
@@ -226,7 +220,7 @@ export const validationAPI = {
   enrichContactWithAI: async (
     email: string,
     phone?: string,
-    name?: string,
+    name?: string
   ): Promise<EnrichedContact> => {
     const response = await apiClient.post('/validation/enrich/ai', {
       email,
@@ -259,7 +253,5 @@ export const getValidationStatusLabel = (isValid: boolean): string => {
 };
 
 export const getValidationStatusColor = (isValid: boolean): string => {
-  return isValid
-    ? 'bg-green-100 text-green-800'
-    : 'bg-red-100 text-red-800';
+  return isValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
 };

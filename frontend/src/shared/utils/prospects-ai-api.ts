@@ -18,10 +18,11 @@ export const prospectsAIAPI = {
     context?: string,
     provider = 'openai'
   ) => {
-    const response = await apiClient.post(
-      `/prospects-ai/${prospectId}/generate-message`,
-      { messageType, context, provider }
-    );
+    const response = await apiClient.post(`/prospects-ai/${prospectId}/generate-message`, {
+      messageType,
+      context,
+      provider,
+    });
     return response.data;
   },
 
@@ -46,33 +47,24 @@ export const prospectsAIAPI = {
   },
 
   // Extraire préférences de texte
-  extractPreferences: async (
-    prospectId: string,
-    text: string,
-    provider = 'openai'
-  ) => {
-    const response = await apiClient.post(
-      `/prospects-ai/${prospectId}/extract-preferences`,
-      { text, provider }
-    );
+  extractPreferences: async (prospectId: string, text: string, provider = 'openai') => {
+    const response = await apiClient.post(`/prospects-ai/${prospectId}/extract-preferences`, {
+      text,
+      provider,
+    });
     return response.data;
   },
 
   // Générer résumé
   generateSummary: async (prospectId: string, provider = 'openai') => {
-    const response = await apiClient.get(
-      `/prospects-ai/${prospectId}/summary`,
-      { params: { provider } }
-    );
+    const response = await apiClient.get(`/prospects-ai/${prospectId}/summary`, {
+      params: { provider },
+    });
     return response.data;
   },
 
   // Expliquer match
-  explainMatch: async (
-    prospectId: string,
-    propertyId: string,
-    provider = 'openai'
-  ) => {
+  explainMatch: async (prospectId: string, propertyId: string, provider = 'openai') => {
     const response = await apiClient.post(
       `/prospects-ai/${prospectId}/explain-match/${propertyId}`,
       {},
@@ -82,15 +74,11 @@ export const prospectsAIAPI = {
   },
 
   // Générer email de relance
-  generateFollowUp: async (
-    prospectId: string,
-    lastInteraction?: any,
-    provider = 'openai'
-  ) => {
-    const response = await apiClient.post(
-      `/prospects-ai/${prospectId}/generate-follow-up`,
-      { lastInteraction, provider }
-    );
+  generateFollowUp: async (prospectId: string, lastInteraction?: any, provider = 'openai') => {
+    const response = await apiClient.post(`/prospects-ai/${prospectId}/generate-follow-up`, {
+      lastInteraction,
+      provider,
+    });
     return response.data;
   },
 };

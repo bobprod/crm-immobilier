@@ -67,7 +67,9 @@ export function QuickActions() {
                 onClick={action.action}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${action.color} text-white group-hover:scale-110 transition-transform`}>
+                  <div
+                    className={`p-2 rounded-lg ${action.color} text-white group-hover:scale-110 transition-transform`}
+                  >
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1">

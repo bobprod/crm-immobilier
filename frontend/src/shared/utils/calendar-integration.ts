@@ -4,7 +4,7 @@
 export interface AppointmentData {
   id?: string;
   title: string;
-  type: "viewing" | "signing" | "meeting" | "call";
+  type: 'viewing' | 'signing' | 'meeting' | 'call';
   date: string;
   time: string;
   duration: number;
@@ -18,19 +18,19 @@ export interface AppointmentData {
   prospectId?: string;
   campaignId?: string;
   notes: string;
-  status: "scheduled" | "confirmed" | "completed" | "cancelled";
-  source?: "prospects" | "properties" | "marketing" | "prospecting";
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  source?: 'prospects' | 'properties' | 'marketing' | 'prospecting';
 }
 
 class CalendarIntegrationService {
-  private static STORAGE_KEY = "crm-appointments";
+  private static STORAGE_KEY = 'crm-appointments';
 
   // Create a new appointment
   static createAppointment(data: AppointmentData): AppointmentData {
     const appointment: AppointmentData = {
       ...data,
       id: data.id || `apt-${Date.now()}`,
-      status: data.status || "scheduled",
+      status: data.status || 'scheduled',
     };
 
     const appointments = this.getAppointments();
@@ -46,7 +46,7 @@ class CalendarIntegrationService {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      console.error('Error loading appointments:', error);
       return [];
     }
   }
@@ -54,10 +54,10 @@ class CalendarIntegrationService {
   // Save appointments to localStorage
   private static saveAppointments(appointments: AppointmentData[]): void {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(appointments));
-    
+
     // Trigger storage event for real-time sync
     window.dispatchEvent(
-      new StorageEvent("storage", {
+      new StorageEvent('storage', {
         key: this.STORAGE_KEY,
         newValue: JSON.stringify(appointments),
         storageArea: localStorage,
@@ -66,10 +66,7 @@ class CalendarIntegrationService {
   }
 
   // Update appointment status
-  static updateAppointmentStatus(
-    appointmentId: string,
-    status: AppointmentData["status"]
-  ): void {
+  static updateAppointmentStatus(appointmentId: string, status: AppointmentData['status']): void {
     const appointments = this.getAppointments();
     const updated = appointments.map((apt) =>
       apt.id === appointmentId ? { ...apt, status } : apt
@@ -85,9 +82,7 @@ class CalendarIntegrationService {
   }
 
   // Get appointments by source
-  static getAppointmentsBySource(
-    source: AppointmentData["source"]
-  ): AppointmentData[] {
+  static getAppointmentsBySource(source: AppointmentData['source']): AppointmentData[] {
     return this.getAppointments().filter((apt) => apt.source === source);
   }
 
@@ -125,18 +120,18 @@ class CalendarIntegrationService {
   ): AppointmentData {
     return this.createAppointment({
       title: `Rendez-vous - ${prospectName}`,
-      type: "meeting",
+      type: 'meeting',
       date,
       time,
       duration: 60,
-      location: "À définir",
+      location: 'À définir',
       clientName: prospectName,
       clientEmail: prospectEmail,
       clientPhone: prospectPhone,
       prospectId,
       notes,
-      status: "scheduled",
-      source: "prospects",
+      status: 'scheduled',
+      source: 'prospects',
     });
   }
 
@@ -155,7 +150,7 @@ class CalendarIntegrationService {
   ): AppointmentData {
     return this.createAppointment({
       title: `Visite - ${propertyTitle}`,
-      type: "viewing",
+      type: 'viewing',
       date,
       time,
       duration: 60,
@@ -167,8 +162,8 @@ class CalendarIntegrationService {
       propertyTitle,
       mandatId,
       notes,
-      status: "scheduled",
-      source: "properties",
+      status: 'scheduled',
+      source: 'properties',
     });
   }
 
@@ -185,18 +180,18 @@ class CalendarIntegrationService {
   ): AppointmentData {
     return this.createAppointment({
       title: `Suivi Campagne - ${campaignName}`,
-      type: "call",
+      type: 'call',
       date,
       time,
       duration: 30,
-      location: "Appel téléphonique",
+      location: 'Appel téléphonique',
       clientName,
       clientEmail,
       clientPhone,
       campaignId,
       notes,
-      status: "scheduled",
-      source: "marketing",
+      status: 'scheduled',
+      source: 'marketing',
     });
   }
 }

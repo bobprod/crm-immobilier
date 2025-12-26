@@ -22,12 +22,15 @@ export default function PageBuilderEditor() {
   };
 
   const addBlock = (type: string) => {
-    setBlocks([...blocks, {
-      id: `block-${Date.now()}`,
-      type,
-      order: blocks.length,
-      props: {},
-    }]);
+    setBlocks([
+      ...blocks,
+      {
+        id: `block-${Date.now()}`,
+        type,
+        order: blocks.length,
+        props: {},
+      },
+    ]);
   };
 
   const savePage = async () => {
@@ -46,7 +49,7 @@ export default function PageBuilderEditor() {
 
       <div className="flex-1 p-8">
         <Button onClick={savePage}>Sauvegarder</Button>
-        
+
         <div className="space-y-4 mt-4">
           {blocks.map((block) => (
             <Card key={block.id} className="p-4">

@@ -96,7 +96,7 @@ export const communicationsAPI = {
   // ============================================
   // SEND MESSAGES
   // ============================================
-  
+
   /**
    * Envoyer un email
    */
@@ -139,7 +139,7 @@ export const communicationsAPI = {
   // ============================================
   // HISTORY
   // ============================================
-  
+
   /**
    * Récupérer l'historique des communications
    */
@@ -180,7 +180,7 @@ export const communicationsAPI = {
   // ============================================
   // TEMPLATES
   // ============================================
-  
+
   /**
    * Récupérer la liste des templates
    */
@@ -238,7 +238,7 @@ export const communicationsAPI = {
   // ============================================
   // STATS
   // ============================================
-  
+
   /**
    * Récupérer les statistiques
    */

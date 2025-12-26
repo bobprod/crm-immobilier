@@ -16,9 +16,42 @@ interface Property {
 }
 
 const mockProperties: Property[] = [
-  { id: '1', title: 'Property 1', type: 'House', price: 100000, currency: 'USD', location: 'Test City 1', bedrooms: 3, bathrooms: 2, area: 150, status: 'For Sale' },
-  { id: '2', title: 'Property 2', type: 'Apartment', price: 200000, currency: 'USD', location: 'Test City 2', bedrooms: 2, bathrooms: 1, area: 100, status: 'For Rent' },
-  { id: '3', title: 'Property 3', type: 'Villa', price: 300000, currency: 'USD', location: 'Test City 3', bedrooms: 5, bathrooms: 3, area: 250, status: 'Sold' },
+  {
+    id: '1',
+    title: 'Property 1',
+    type: 'House',
+    price: 100000,
+    currency: 'USD',
+    location: 'Test City 1',
+    bedrooms: 3,
+    bathrooms: 2,
+    area: 150,
+    status: 'For Sale',
+  },
+  {
+    id: '2',
+    title: 'Property 2',
+    type: 'Apartment',
+    price: 200000,
+    currency: 'USD',
+    location: 'Test City 2',
+    bedrooms: 2,
+    bathrooms: 1,
+    area: 100,
+    status: 'For Rent',
+  },
+  {
+    id: '3',
+    title: 'Property 3',
+    type: 'Villa',
+    price: 300000,
+    currency: 'USD',
+    location: 'Test City 3',
+    bedrooms: 5,
+    bathrooms: 3,
+    area: 250,
+    status: 'Sold',
+  },
 ];
 
 export default function PropertiesPage() {

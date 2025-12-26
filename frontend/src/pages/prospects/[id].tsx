@@ -29,11 +29,7 @@ export default function ProspectDetailPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/prospects')}
-            className="mb-4"
-          >
+          <Button variant="ghost" onClick={() => router.push('/prospects')} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour aux prospects
           </Button>

@@ -8,7 +8,7 @@ import {
   Megaphone,
   CheckSquare,
   MessageSquare,
-  Award
+  Award,
 } from 'lucide-react';
 import type { DashboardStats } from '../types/dashboard.types';
 
@@ -33,7 +33,7 @@ export function StatsWidget({ stats }: StatsWidgetProps) {
       bgColor: 'bg-blue-100',
     },
     {
-      title: 'RDV Aujourd\'hui',
+      title: "RDV Aujourd'hui",
       value: stats.todayAppointments,
       icon: Calendar,
       color: 'text-purple-600',

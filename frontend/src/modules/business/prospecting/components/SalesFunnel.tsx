@@ -92,25 +92,31 @@ const LeadCard: React.FC<{
             <p className="text-xs text-gray-500">{lead.email || lead.phone || '-'}</p>
           </div>
         </div>
-        <div className={`w-6 h-6 rounded-full ${getScoreColor(lead.score)} flex items-center justify-center`}>
+        <div
+          className={`w-6 h-6 rounded-full ${getScoreColor(lead.score)} flex items-center justify-center`}
+        >
           <span className="text-white text-xs font-bold">{lead.score}</span>
         </div>
       </div>
       <div className="flex items-center gap-2 text-xs">
-        <span className={`px-2 py-0.5 rounded-full ${
-          lead.leadType === 'mandat' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
-        }`}>
+        <span
+          className={`px-2 py-0.5 rounded-full ${
+            lead.leadType === 'mandat'
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-indigo-100 text-indigo-700'
+          }`}
+        >
           {lead.leadType === 'mandat' ? '🏠 Mandat' : '🔍 Requete'}
         </span>
-        {lead.city && (
-          <span className="text-gray-500">📍 {lead.city}</span>
-        )}
+        {lead.city && <span className="text-gray-500">📍 {lead.city}</span>}
       </div>
       {lead.budget && (
         <div className="mt-2 text-xs text-gray-600">
-          💰 {typeof lead.budget === 'object'
+          💰{' '}
+          {typeof lead.budget === 'object'
             ? `${((lead.budget as any).min / 1000).toFixed(0)}k - ${((lead.budget as any).max / 1000).toFixed(0)}k`
-            : `${(lead.budget / 1000).toFixed(0)}k`} TND
+            : `${(lead.budget / 1000).toFixed(0)}k`}{' '}
+          TND
         </div>
       )}
     </div>
@@ -127,7 +133,10 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   const [draggedLead, setDraggedLead] = useState<ProspectingLead | null>(null);
   const [viewMode, setViewMode] = useState<'funnel' | 'kanban'>('funnel');
   const [showExportModal, setShowExportModal] = useState(false);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
   // Auto-dismiss notification after 4 seconds
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -145,7 +154,7 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
       rejected: [],
     };
 
-    leads.forEach(lead => {
+    leads.forEach((lead) => {
       if (grouped[lead.status]) {
         grouped[lead.status].push(lead);
       }
@@ -157,9 +166,9 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   // Calculate conversion rates
   const conversionRates = useMemo(() => {
     const total = leads.length;
-    const stages = FUNNEL_STAGES.filter(s => s.id !== 'rejected');
+    const stages = FUNNEL_STAGES.filter((s) => s.id !== 'rejected');
 
-    return stages.map(stage => {
+    return stages.map((stage) => {
       const count = leadsByStage[stage.id].length;
       const rate = total > 0 ? (count / total) * 100 : 0;
       return { ...stage, count, rate };
@@ -186,15 +195,12 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   const totalLeads = leads.length;
   const convertedCount = leadsByStage.converted.length;
   const conversionRate = totalLeads > 0 ? ((convertedCount / totalLeads) * 100).toFixed(1) : '0';
-  const avgScore = totalLeads > 0
-    ? (leads.reduce((sum, l) => sum + l.score, 0) / totalLeads).toFixed(0)
-    : '0';
+  const avgScore =
+    totalLeads > 0 ? (leads.reduce((sum, l) => sum + l.score, 0) / totalLeads).toFixed(0) : '0';
 
   // Find inactive leads (new or contacted for more than 7 days - simulated)
   const inactiveLeads = useMemo(() => {
-    return leads.filter(lead =>
-      lead.status === 'new' || lead.status === 'contacted'
-    );
+    return leads.filter((lead) => lead.status === 'new' || lead.status === 'contacted');
   }, [leads]);
 
   // Export stats as CSV
@@ -205,18 +211,19 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
       // Default export behavior
       const stats = {
         totalLeads,
-        byStage: FUNNEL_STAGES.map(stage => ({
+        byStage: FUNNEL_STAGES.map((stage) => ({
           stage: stage.name,
           count: leadsByStage[stage.id].length,
-          rate: totalLeads > 0 ? ((leadsByStage[stage.id].length / totalLeads) * 100).toFixed(1) : '0'
+          rate:
+            totalLeads > 0 ? ((leadsByStage[stage.id].length / totalLeads) * 100).toFixed(1) : '0',
         })),
         conversionRate,
-        avgScore
+        avgScore,
       };
 
       const csvContent = [
         ['Etape', 'Nombre', 'Taux (%)'].join(','),
-        ...stats.byStage.map(s => [s.stage, s.count, s.rate].join(','))
+        ...stats.byStage.map((s) => [s.stage, s.count, s.rate].join(',')),
       ].join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -231,15 +238,15 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
 
   // Relaunch inactive leads
   const handleRelaunchInactive = () => {
-    const inactiveIds = inactiveLeads.map(l => l.id);
+    const inactiveIds = inactiveLeads.map((l) => l.id);
     if (onRelaunchInactive) {
       onRelaunchInactive(inactiveIds);
       showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
     } else if (onStageChange && inactiveIds.length > 0) {
       // Default: Mark new leads as contacted
       inactiveLeads
-        .filter(l => l.status === 'new')
-        .forEach(lead => onStageChange(lead.id, 'contacted'));
+        .filter((l) => l.status === 'new')
+        .forEach((lead) => onStageChange(lead.id, 'contacted'));
       showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
     }
   };
@@ -248,12 +255,16 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
     <div className="bg-white rounded-xl shadow-lg overflow-hidden relative">
       {/* Notification Toast */}
       {notification && (
-        <div className={`absolute top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
+        <div
+          className={`absolute top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}
+        >
           <span>{notification.type === 'success' ? '✓' : '✕'}</span>
           <span>{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75">×</button>
+          <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75">
+            ×
+          </button>
         </div>
       )}
       {/* Header */}
@@ -263,9 +274,7 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
             <h2 className="text-xl font-bold flex items-center gap-2">
               <span>🎯</span> Tunnel de Conversion
             </h2>
-            <p className="text-indigo-100 text-sm mt-1">
-              Suivez la progression de vos leads
-            </p>
+            <p className="text-indigo-100 text-sm mt-1">Suivez la progression de vos leads</p>
           </div>
           <div className="flex rounded-lg overflow-hidden bg-white/20">
             <button
@@ -313,10 +322,10 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
         <div className="p-6">
           <div className="relative">
             {conversionRates.map((stage, index) => {
-              const width = 100 - (index * 15);
+              const width = 100 - index * 15;
               const nextStage = conversionRates[index + 1];
               const dropRate = nextStage
-                ? ((stage.count - nextStage.count) / Math.max(stage.count, 1) * 100).toFixed(0)
+                ? (((stage.count - nextStage.count) / Math.max(stage.count, 1)) * 100).toFixed(0)
                 : null;
 
               return (
@@ -365,9 +374,7 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
                   {/* Drop rate indicator */}
                   {dropRate && Number(dropRate) > 0 && (
                     <div className="text-center my-1">
-                      <span className="text-xs text-red-500">
-                        ↓ -{dropRate}% perte
-                      </span>
+                      <span className="text-xs text-red-500">↓ -{dropRate}% perte</span>
                     </div>
                   )}
                 </div>
@@ -383,11 +390,8 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
                 <span className="text-red-600 font-bold">{leadsByStage.rejected.length}</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {leadsByStage.rejected.slice(0, 5).map(lead => (
-                  <span
-                    key={lead.id}
-                    className="px-2 py-1 bg-red-50 text-red-700 rounded text-sm"
-                  >
+                {leadsByStage.rejected.slice(0, 5).map((lead) => (
+                  <span key={lead.id} className="px-2 py-1 bg-red-50 text-red-700 rounded text-sm">
                     {lead.firstName} {lead.lastName}
                   </span>
                 ))}
@@ -404,7 +408,7 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
         /* Kanban View */
         <div className="p-4 overflow-x-auto">
           <div className="flex gap-4 min-w-max">
-            {FUNNEL_STAGES.map(stage => (
+            {FUNNEL_STAGES.map((stage) => (
               <div
                 key={stage.id}
                 className="w-72 flex-shrink-0"
@@ -417,13 +421,15 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
                       <span>{stage.icon}</span>
                       <span className={`font-semibold ${stage.color}`}>{stage.name}</span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full ${stage.bgColor} ${stage.color} text-sm font-bold`}>
+                    <span
+                      className={`px-2 py-0.5 rounded-full ${stage.bgColor} ${stage.color} text-sm font-bold`}
+                    >
                       {leadsByStage[stage.id].length}
                     </span>
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-b-lg p-3 min-h-[400px] space-y-2">
-                  {leadsByStage[stage.id].map(lead => (
+                  {leadsByStage[stage.id].map((lead) => (
                     <LeadCard
                       key={lead.id}
                       lead={lead}
@@ -448,7 +454,8 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
       <div className="p-4 bg-gray-50 border-t flex items-center justify-between">
         <div className="text-sm text-gray-600">
           <span className="font-medium">{totalLeads}</span> leads au total •
-          <span className="text-green-600 font-medium ml-1">{conversionRate}%</span> taux de conversion
+          <span className="text-green-600 font-medium ml-1">{conversionRate}%</span> taux de
+          conversion
           {inactiveLeads.length > 0 && (
             <span className="text-orange-600 ml-2">• {inactiveLeads.length} inactif(s)</span>
           )}

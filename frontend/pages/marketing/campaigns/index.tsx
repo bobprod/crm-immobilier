@@ -7,7 +7,18 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import { Search, Plus, Mail, MessageSquare, Phone, Play, Pause, Copy, Trash2, BarChart3 } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  Mail,
+  MessageSquare,
+  Phone,
+  Play,
+  Pause,
+  Copy,
+  Trash2,
+  BarChart3,
+} from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
 import { useToast } from '@/shared/components/ui/use-toast';
 
@@ -61,17 +72,18 @@ export default function CampaignsListPage() {
     }
   };
 
-  const filteredCampaigns = campaigns.filter(c =>
-    c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.message?.toLowerCase().includes(search.toLowerCase())
+  const filteredCampaigns = campaigns.filter(
+    (c) =>
+      c.name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.message?.toLowerCase().includes(search.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'draft': 'bg-gray-100 text-gray-800',
-      'active': 'bg-green-100 text-green-800',
-      'paused': 'bg-yellow-100 text-yellow-800',
-      'completed': 'bg-blue-100 text-blue-800',
+      draft: 'bg-gray-100 text-gray-800',
+      active: 'bg-green-100 text-green-800',
+      paused: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-blue-100 text-blue-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -256,13 +268,9 @@ export default function CampaignsListPage() {
                           {getTypeIcon(campaign.type)}
                           <h3 className="text-lg font-semibold">{campaign.name}</h3>
                         </div>
-                        <Badge className={getStatusColor(campaign.status)}>
-                          {campaign.status}
-                        </Badge>
+                        <Badge className={getStatusColor(campaign.status)}>{campaign.status}</Badge>
                       </div>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {campaign.message}
-                      </p>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{campaign.message}</p>
                       <div className="flex gap-4 text-sm text-gray-500">
                         <span>Type: {campaign.type}</span>
                         <span>Audience: {campaign.targetAudience?.length || 0} contacts</span>

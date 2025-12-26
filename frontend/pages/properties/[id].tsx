@@ -80,12 +80,16 @@ export default function PropertyDetailPage() {
 
               <div className="flex items-center gap-2">
                 <Home className="h-5 w-5" />
-                <span>{property.surface} m² - {property.rooms} pièces</span>
+                <span>
+                  {property.surface} m² - {property.rooms} pièces
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                <span>{property.address}, {property.city}</span>
+                <span>
+                  {property.address}, {property.city}
+                </span>
               </div>
 
               <div className="pt-4">

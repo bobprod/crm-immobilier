@@ -32,7 +32,7 @@ export default function VitrinePage() {
         vitrineAPI.getAnalytics(30),
         vitrineAPI.getVitrineLeads(),
       ]);
-      
+
       setConfig(configData);
       setPublishedProperties(propertiesData);
       setAnalytics(analyticsData);
@@ -71,7 +71,7 @@ export default function VitrinePage() {
           <h1 className="text-3xl font-bold">🌐 Vitrine Publique</h1>
           <p className="text-gray-600">Gérez votre site vitrine et capturez des leads</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Label htmlFor="vitrine-toggle">
             {config?.isActive ? '✅ Vitrine active' : '❌ Vitrine inactive'}
@@ -185,9 +185,7 @@ export default function VitrinePage() {
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        {pub.isFeatured && (
-                          <Badge className="bg-yellow-500">⭐ En vedette</Badge>
-                        )}
+                        {pub.isFeatured && <Badge className="bg-yellow-500">⭐ En vedette</Badge>}
                         <div>
                           <h3 className="font-semibold">{pub.property.title}</h3>
                           <p className="text-sm text-gray-600">
@@ -237,9 +235,10 @@ export default function VitrinePage() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">
-                  {analytics?.totalVisitors > 0 
+                  {analytics?.totalVisitors > 0
                     ? ((leads.length / analytics.totalVisitors) * 100).toFixed(1)
-                    : 0}%
+                    : 0}
+                  %
                 </p>
               </CardContent>
             </Card>
@@ -286,7 +285,9 @@ export default function VitrinePage() {
                         <h3 className="font-semibold">
                           {lead.firstName} {lead.lastName}
                         </h3>
-                        <p className="text-sm text-gray-600">{lead.email} • {lead.phone}</p>
+                        <p className="text-sm text-gray-600">
+                          {lead.email} • {lead.phone}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {new Date(lead.createdAt).toLocaleDateString()}
                         </p>

@@ -52,7 +52,9 @@ const StatCard: React.FC<{
         <p className="text-sm text-gray-500 font-medium">{title}</p>
         <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
         {change !== undefined && (
-          <p className={`text-sm mt-2 flex items-center gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p
+            className={`text-sm mt-2 flex items-center gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}
+          >
             <span>{change >= 0 ? '↗' : '↘'}</span>
             {Math.abs(change)}% vs mois dernier
           </p>
@@ -82,7 +84,9 @@ const CampaignCard: React.FC<{
         </h3>
         <p className="text-sm text-gray-500 mt-1">{campaign.description || 'Pas de description'}</p>
       </div>
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCampaignStatusColor(campaign.status)}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-medium ${getCampaignStatusColor(campaign.status)}`}
+      >
         {getCampaignStatusLabel(campaign.status)}
       </span>
     </div>
@@ -91,7 +95,9 @@ const CampaignCard: React.FC<{
       <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
-          style={{ width: `${Math.min((campaign.foundCount / (campaign.targetCount || 100)) * 100, 100)}%` }}
+          style={{
+            width: `${Math.min((campaign.foundCount / (campaign.targetCount || 100)) * 100, 100)}%`,
+          }}
         />
       </div>
       <span className="text-sm font-medium text-gray-600">
@@ -112,7 +118,10 @@ const CampaignCard: React.FC<{
       <div className="flex gap-2">
         {(campaign.status === 'draft' || campaign.status === 'paused') && (
           <button
-            onClick={(e) => { e.stopPropagation(); onStart(campaign.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStart(campaign.id);
+            }}
             className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-md"
           >
             ▶ Lancer
@@ -120,7 +129,10 @@ const CampaignCard: React.FC<{
         )}
         {campaign.status === 'active' && (
           <button
-            onClick={(e) => { e.stopPropagation(); onPause(campaign.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPause(campaign.id);
+            }}
             className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-all shadow-md"
           >
             ⏸ Pause
@@ -135,9 +147,7 @@ const CampaignCard: React.FC<{
 // MAIN COMPONENT
 // ============================================
 
-export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
-  language = 'fr',
-}) => {
+export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ language = 'fr' }) => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
@@ -219,60 +229,72 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   }, []);
 
   // Handle find matches for a lead
-  const handleFindMatches = useCallback(async (leadId: string) => {
-    setLoadingMatches(true);
-    try {
-      const matches = await findMatches(leadId);
-      if (matches && Array.isArray(matches)) {
-        setLeadMatches(matches);
+  const handleFindMatches = useCallback(
+    async (leadId: string) => {
+      setLoadingMatches(true);
+      try {
+        const matches = await findMatches(leadId);
+        if (matches && Array.isArray(matches)) {
+          setLeadMatches(matches);
+        }
+      } catch (error) {
+        console.error('Failed to find matches:', error);
+      } finally {
+        setLoadingMatches(false);
       }
-    } catch (error) {
-      console.error('Failed to find matches:', error);
-    } finally {
-      setLoadingMatches(false);
-    }
-  }, [findMatches]);
+    },
+    [findMatches]
+  );
 
   // Handle load existing matches for a lead
-  const handleLoadMatches = useCallback(async (leadId: string) => {
-    setLoadingMatches(true);
-    try {
-      const matches = await loadMatches(leadId);
-      if (matches) {
-        setLeadMatches(matches);
+  const handleLoadMatches = useCallback(
+    async (leadId: string) => {
+      setLoadingMatches(true);
+      try {
+        const matches = await loadMatches(leadId);
+        if (matches) {
+          setLeadMatches(matches);
+        }
+      } catch (error) {
+        console.error('Failed to load matches:', error);
+      } finally {
+        setLoadingMatches(false);
       }
-    } catch (error) {
-      console.error('Failed to load matches:', error);
-    } finally {
-      setLoadingMatches(false);
-    }
-  }, [loadMatches]);
+    },
+    [loadMatches]
+  );
 
   // Handle notify match
-  const handleNotifyMatch = useCallback(async (matchId: string) => {
-    try {
-      await notifyMatch(matchId);
-      // Refresh matches
-      if (selectedLead) {
-        handleLoadMatches(selectedLead.id);
+  const handleNotifyMatch = useCallback(
+    async (matchId: string) => {
+      try {
+        await notifyMatch(matchId);
+        // Refresh matches
+        if (selectedLead) {
+          handleLoadMatches(selectedLead.id);
+        }
+      } catch (error) {
+        console.error('Failed to notify match:', error);
       }
-    } catch (error) {
-      console.error('Failed to notify match:', error);
-    }
-  }, [notifyMatch, selectedLead, handleLoadMatches]);
+    },
+    [notifyMatch, selectedLead, handleLoadMatches]
+  );
 
   // Handle update match status
-  const handleUpdateMatchStatus = useCallback(async (matchId: string, status: MatchStatus) => {
-    try {
-      await updateMatchStatus(matchId, status);
-      // Refresh matches
-      if (selectedLead) {
-        handleLoadMatches(selectedLead.id);
+  const handleUpdateMatchStatus = useCallback(
+    async (matchId: string, status: MatchStatus) => {
+      try {
+        await updateMatchStatus(matchId, status);
+        // Refresh matches
+        if (selectedLead) {
+          handleLoadMatches(selectedLead.id);
+        }
+      } catch (error) {
+        console.error('Failed to update match status:', error);
       }
-    } catch (error) {
-      console.error('Failed to update match status:', error);
-    }
-  }, [updateMatchStatus, selectedLead, handleLoadMatches]);
+    },
+    [updateMatchStatus, selectedLead, handleLoadMatches]
+  );
 
   // Initial data load
   useEffect(() => {
@@ -306,79 +328,91 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
     }
   };
 
-  const handleLeadValidation = useCallback(async (leadIds: string[]) => {
-    const leadsToValidate = leads.filter(l => leadIds.includes(l.id));
-    const emails = leadsToValidate.map(l => l.email).filter(Boolean) as string[];
-    const phones = leadsToValidate.map(l => l.phone).filter(Boolean) as string[];
+  const handleLeadValidation = useCallback(
+    async (leadIds: string[]) => {
+      const leadsToValidate = leads.filter((l) => leadIds.includes(l.id));
+      const emails = leadsToValidate.map((l) => l.email).filter(Boolean) as string[];
+      const phones = leadsToValidate.map((l) => l.phone).filter(Boolean) as string[];
 
-    // Call actual validation APIs
-    let validEmails: string[] = [];
-    let invalidEmails: string[] = [];
+      // Call actual validation APIs
+      let validEmails: string[] = [];
+      let invalidEmails: string[] = [];
 
-    if (emails.length > 0) {
-      try {
-        const response = await validateEmails(emails);
-        if (response) {
-          validEmails = response.valid || [];
-          invalidEmails = response.invalid || [];
+      if (emails.length > 0) {
+        try {
+          const response = await validateEmails(emails);
+          if (response) {
+            validEmails = response.valid || [];
+            invalidEmails = response.invalid || [];
+          }
+        } catch (error) {
+          console.error('Email validation failed:', error);
         }
-      } catch (error) {
-        console.error('Email validation failed:', error);
       }
-    }
 
-    // Build validation results from actual API responses
-    return leadIds.map(id => {
-      const lead = leadsToValidate.find(l => l.id === id);
-      const isEmailValid = lead?.email ? validEmails.includes(lead.email) : false;
+      // Build validation results from actual API responses
+      return leadIds.map((id) => {
+        const lead = leadsToValidate.find((l) => l.id === id);
+        const isEmailValid = lead?.email ? validEmails.includes(lead.email) : false;
 
-      // Calculate scores based on actual validation
-      const emailScore = isEmailValid ? 90 : (lead?.email ? 30 : 0);
-      const hasPhone = !!lead?.phone;
-      const hasName = !!(lead?.firstName || lead?.lastName);
-      const phoneScore = hasPhone ? 70 : 0;
-      const nameScore = hasName ? 80 : 40;
-      const overallScore = Math.round((emailScore + phoneScore + nameScore) / 3);
+        // Calculate scores based on actual validation
+        const emailScore = isEmailValid ? 90 : lead?.email ? 30 : 0;
+        const hasPhone = !!lead?.phone;
+        const hasName = !!(lead?.firstName || lead?.lastName);
+        const phoneScore = hasPhone ? 70 : 0;
+        const nameScore = hasName ? 80 : 40;
+        const overallScore = Math.round((emailScore + phoneScore + nameScore) / 3);
 
-      return {
-        leadId: id,
-        email: {
-          valid: isEmailValid,
-          deliverable: isEmailValid,
-          disposable: false,
-          role: false,
-          score: emailScore,
-        },
-        phone: {
-          valid: hasPhone,
-          formatted: lead?.phone || '',
-          type: 'mobile' as const,
-        },
-        name: {
-          valid: hasName,
-          confidence: hasName ? 85 : 0,
-          issues: hasName ? [] : ['Nom manquant'],
-        },
-        overall: {
-          score: overallScore,
-          status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'spam') as 'valid' | 'suspicious' | 'spam',
-          flags: [
-            ...(!isEmailValid ? ['Email invalide'] : []),
-            ...(!hasPhone ? ['Téléphone manquant'] : []),
-            ...(!hasName ? ['Nom manquant'] : []),
-          ],
-        },
-      };
-    });
-  }, [leads, validateEmails]);
+        return {
+          leadId: id,
+          email: {
+            valid: isEmailValid,
+            deliverable: isEmailValid,
+            disposable: false,
+            role: false,
+            score: emailScore,
+          },
+          phone: {
+            valid: hasPhone,
+            formatted: lead?.phone || '',
+            type: 'mobile' as const,
+          },
+          name: {
+            valid: hasName,
+            confidence: hasName ? 85 : 0,
+            issues: hasName ? [] : ['Nom manquant'],
+          },
+          overall: {
+            score: overallScore,
+            status: (overallScore >= 70 ? 'valid' : overallScore >= 40 ? 'suspicious' : 'spam') as
+              | 'valid'
+              | 'suspicious'
+              | 'spam',
+            flags: [
+              ...(!isEmailValid ? ['Email invalide'] : []),
+              ...(!hasPhone ? ['Téléphone manquant'] : []),
+              ...(!hasName ? ['Nom manquant'] : []),
+            ],
+          },
+        };
+      });
+    },
+    [leads, validateEmails]
+  );
 
-  const handleLeadUpdate = useCallback((leadId: string, data: Partial<ProspectingLead>) => {
-    updateLead(leadId, data);
-  }, [updateLead]);
+  const handleLeadUpdate = useCallback(
+    (leadId: string, data: Partial<ProspectingLead>) => {
+      updateLead(leadId, data);
+    },
+    [updateLead]
+  );
 
-  const handleStageChange = useCallback((leadId: string, newStatus: LeadStatus) => {
-    updateLead(leadId, { status: newStatus });
-  }, [updateLead]);
+  const handleStageChange = useCallback(
+    (leadId: string, newStatus: LeadStatus) => {
+      updateLead(leadId, { status: newStatus });
+    },
+    [updateLead]
+  );
 
   // Handle scraping with user config
   const handleLaunchScraping = useCallback(async () => {
@@ -405,7 +439,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
       setScrapingSource(null);
       setScrapingConfig({ query: '', urls: [''], maxResults: 50 });
     }
-  }, [scrapingSource, scrapingConfig, scrapePica, scrapeSERP, scrapeSocial, scrapeFirecrawl, scrapeWebsites]);
+  }, [
+    scrapingSource,
+    scrapingConfig,
+    scrapePica,
+    scrapeSERP,
+    scrapeSocial,
+    scrapeFirecrawl,
+    scrapeWebsites,
+  ]);
 
   // Handle detect opportunities with AI
   const handleDetectOpportunities = useCallback(async () => {
@@ -443,10 +485,13 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   // Handle export stats from funnel
   const handleExportStats = useCallback(() => {
     // Export funnel statistics as CSV
-    const stats = leads.reduce((acc, lead) => {
-      acc[lead.status] = (acc[lead.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const stats = leads.reduce(
+      (acc, lead) => {
+        acc[lead.status] = (acc[lead.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const csv = Object.entries(stats)
       .map(([status, count]) => `${status},${count}`)
@@ -462,16 +507,19 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
   }, [leads]);
 
   // Handle relaunch inactive leads
-  const handleRelaunchInactive = useCallback(async (leadIds: string[]) => {
-    // Update inactive leads status to trigger follow-up
-    try {
-      for (const id of leadIds) {
-        await updateLead(id, { status: 'contacted' });
+  const handleRelaunchInactive = useCallback(
+    async (leadIds: string[]) => {
+      // Update inactive leads status to trigger follow-up
+      try {
+        for (const id of leadIds) {
+          await updateLead(id, { status: 'contacted' });
+        }
+      } catch (error) {
+        console.error('Failed to relaunch inactive leads:', error);
       }
-    } catch (error) {
-      console.error('Failed to relaunch inactive leads:', error);
-    }
-  }, [updateLead]);
+    },
+    [updateLead]
+  );
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -511,14 +559,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
       <nav className="bg-white border-b shadow-sm sticky top-[73px] z-30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1 overflow-x-auto py-2">
-            {tabs.map(tab => (
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
+                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${
+                  activeTab === tab.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
                     : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                }`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
@@ -626,7 +675,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 </button>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {campaigns.slice(0, 4).map(campaign => (
+                {campaigns.slice(0, 4).map((campaign) => (
                   <CampaignCard
                     key={campaign.id}
                     campaign={campaign}
@@ -660,16 +709,20 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         {activeTab === 'targeting' && (
           <div className="space-y-6">
             <GeographicTargeting
-              onZonesChange={(zones) => setNewCampaign(prev => ({
-                ...prev,
-                config: { ...prev.config, zones }
-              }))}
+              onZonesChange={(zones) =>
+                setNewCampaign((prev) => ({
+                  ...prev,
+                  config: { ...prev.config, zones },
+                }))
+              }
             />
             <DemographicTargeting
-              onChange={(demographics) => setNewCampaign(prev => ({
-                ...prev,
-                config: { ...prev.config, demographics }
-              }))}
+              onChange={(demographics) =>
+                setNewCampaign((prev) => ({
+                  ...prev,
+                  config: { ...prev.config, demographics },
+                }))
+              }
             />
           </div>
         )}
@@ -689,9 +742,11 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               <div className="bg-white rounded-xl shadow-lg p-12 text-center">
                 <div className="text-5xl mb-4">📊</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Selectionnez une campagne</h3>
-                <p className="text-gray-500 mb-6">Choisissez une campagne pour voir son tunnel de conversion</p>
+                <p className="text-gray-500 mb-6">
+                  Choisissez une campagne pour voir son tunnel de conversion
+                </p>
                 <div className="flex flex-wrap justify-center gap-3">
-                  {campaigns.map(c => (
+                  {campaigns.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => setSelectedCampaignId(c.id)}
@@ -728,7 +783,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               </button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {campaigns.map(campaign => (
+              {campaigns.map((campaign) => (
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}
@@ -778,16 +833,60 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
-                  { id: 'pica', name: 'Pica API', icon: '🔮', desc: 'SERP + Firecrawl', color: 'purple', needsQuery: true },
-                  { id: 'serp', name: 'Google SERP', icon: '🔍', desc: 'Recherche Google', color: 'blue', needsQuery: true },
-                  { id: 'meta', name: 'Meta/Facebook', icon: '📘', desc: 'Marketplace', color: 'indigo', needsQuery: true },
-                  { id: 'linkedin', name: 'LinkedIn', icon: '💼', desc: 'Profils pro', color: 'cyan', needsQuery: true },
-                  { id: 'firecrawl', name: 'Firecrawl', icon: '🔥', desc: 'Web scraping', color: 'orange', needsQuery: false },
-                  { id: 'website', name: 'Sites web', icon: '🌐', desc: 'Agences immo', color: 'gray', needsQuery: false },
-                ].map(source => (
+                  {
+                    id: 'pica',
+                    name: 'Pica API',
+                    icon: '🔮',
+                    desc: 'SERP + Firecrawl',
+                    color: 'purple',
+                    needsQuery: true,
+                  },
+                  {
+                    id: 'serp',
+                    name: 'Google SERP',
+                    icon: '🔍',
+                    desc: 'Recherche Google',
+                    color: 'blue',
+                    needsQuery: true,
+                  },
+                  {
+                    id: 'meta',
+                    name: 'Meta/Facebook',
+                    icon: '📘',
+                    desc: 'Marketplace',
+                    color: 'indigo',
+                    needsQuery: true,
+                  },
+                  {
+                    id: 'linkedin',
+                    name: 'LinkedIn',
+                    icon: '💼',
+                    desc: 'Profils pro',
+                    color: 'cyan',
+                    needsQuery: true,
+                  },
+                  {
+                    id: 'firecrawl',
+                    name: 'Firecrawl',
+                    icon: '🔥',
+                    desc: 'Web scraping',
+                    color: 'orange',
+                    needsQuery: false,
+                  },
+                  {
+                    id: 'website',
+                    name: 'Sites web',
+                    icon: '🌐',
+                    desc: 'Agences immo',
+                    color: 'gray',
+                    needsQuery: false,
+                  },
+                ].map((source) => (
                   <div key={source.id} className="border rounded-xl p-5 hover:shadow-md transition">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}>
+                      <div
+                        className={`w-12 h-12 rounded-xl bg-${source.color}-100 flex items-center justify-center text-2xl`}
+                      >
                         {source.icon}
                       </div>
                       <div>
@@ -802,28 +901,34 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                         // Set default values based on source
                         if (source.needsQuery) {
                           setScrapingConfig({
-                            query: source.id === 'pica' ? 'immobilier tunis' :
-                              source.id === 'serp' ? 'appartement vendre tunis' :
-                                source.id === 'meta' ? 'immobilier tunisie' :
-                                  'agent immobilier tunis',
+                            query:
+                              source.id === 'pica'
+                                ? 'immobilier tunis'
+                                : source.id === 'serp'
+                                  ? 'appartement vendre tunis'
+                                  : source.id === 'meta'
+                                    ? 'immobilier tunisie'
+                                    : 'agent immobilier tunis',
                             urls: [''],
                             maxResults: 50,
                           });
                         } else {
                           setScrapingConfig({
                             query: '',
-                            urls: source.id === 'firecrawl'
-                              ? ['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']
-                              : ['https://www.afif.tn', 'https://www.immobilier.com.tn'],
+                            urls:
+                              source.id === 'firecrawl'
+                                ? ['https://www.mubawab.tn', 'https://www.tayara.tn/immobilier']
+                                : ['https://www.afif.tn', 'https://www.immobilier.com.tn'],
                             maxResults: 50,
                           });
                         }
                       }}
                       disabled={scrapingInProgress}
-                      className={`w-full py-2 rounded-lg font-medium transition ${scrapingInProgress
+                      className={`w-full py-2 rounded-lg font-medium transition ${
+                        scrapingInProgress
                           ? 'bg-gray-100 text-gray-400'
                           : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
-                        }`}
+                      }`}
                     >
                       {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
                     </button>
@@ -835,7 +940,6 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
         )}
 
         {/* Settings Tab */}
-
       </main>
 
       {/* Campaign Creation Modal */}
@@ -850,7 +954,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   <p className="text-purple-100 text-sm mt-1">Etape {campaignStep} sur 3</p>
                 </div>
                 <button
-                  onClick={() => { setShowCampaignForm(false); setCampaignStep(1); }}
+                  onClick={() => {
+                    setShowCampaignForm(false);
+                    setCampaignStep(1);
+                  }}
                   className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
                 >
                   ×
@@ -858,11 +965,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               </div>
               {/* Progress bar */}
               <div className="flex gap-2 mt-4">
-                {[1, 2, 3].map(step => (
+                {[1, 2, 3].map((step) => (
                   <div
                     key={step}
-                    className={`flex-1 h-1 rounded-full ${step <= campaignStep ? 'bg-white' : 'bg-white/30'
-                      }`}
+                    className={`flex-1 h-1 rounded-full ${
+                      step <= campaignStep ? 'bg-white' : 'bg-white/30'
+                    }`}
                   />
                 ))}
               </div>
@@ -874,20 +982,28 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Informations de base</h3>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la campagne</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom de la campagne
+                    </label>
                     <input
                       type="text"
                       value={newCampaign.name}
-                      onChange={(e) => setNewCampaign(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCampaign((prev) => ({ ...prev, name: e.target.value }))
+                      }
                       className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       placeholder="Ex: Prospection Tunis Q4 2024"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Description
+                    </label>
                     <textarea
                       value={newCampaign.description}
-                      onChange={(e) => setNewCampaign(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCampaign((prev) => ({ ...prev, description: e.target.value }))
+                      }
                       className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       rows={3}
                       placeholder="Objectifs et details de la campagne..."
@@ -895,10 +1011,17 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type de lead</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Type de lead
+                      </label>
                       <select
                         value={newCampaign.type}
-                        onChange={(e) => setNewCampaign(prev => ({ ...prev, type: e.target.value as CampaignType }))}
+                        onChange={(e) =>
+                          setNewCampaign((prev) => ({
+                            ...prev,
+                            type: e.target.value as CampaignType,
+                          }))
+                        }
                         className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       >
                         <option value="requete">🔍 Requete - Chercheurs</option>
@@ -908,11 +1031,18 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Objectif de leads</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Objectif de leads
+                      </label>
                       <input
                         type="number"
                         value={newCampaign.targetCount}
-                        onChange={(e) => setNewCampaign(prev => ({ ...prev, targetCount: parseInt(e.target.value) }))}
+                        onChange={(e) =>
+                          setNewCampaign((prev) => ({
+                            ...prev,
+                            targetCount: parseInt(e.target.value),
+                          }))
+                        }
                         className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       />
                     </div>
@@ -924,16 +1054,20 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage geographique</h3>
                   <GeographicTargeting
-                    onZonesChange={(zones: any) => setNewCampaign(prev => ({
-                      ...prev,
-                      config: { ...prev.config, locations: zones.map((z: any) => z.name || z) }
-                    }))}
-                    initialZones={newCampaign.config.locations?.map((l, idx) => ({
-                      id: `zone-${idx}`,
-                      name: l,
-                      type: 'city' as const,
-                      selected: true
-                    })) || []}
+                    onZonesChange={(zones: any) =>
+                      setNewCampaign((prev) => ({
+                        ...prev,
+                        config: { ...prev.config, locations: zones.map((z: any) => z.name || z) },
+                      }))
+                    }
+                    initialZones={
+                      newCampaign.config.locations?.map((l, idx) => ({
+                        id: `zone-${idx}`,
+                        name: l,
+                        type: 'city' as const,
+                        selected: true,
+                      })) || []
+                    }
                   />
                 </div>
               )}
@@ -942,20 +1076,22 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 <div className="space-y-4">
                   <h3 className="font-bold text-lg text-gray-900">Ciblage demographique</h3>
                   <DemographicTargeting
-                    onChange={(demographics: any) => setNewCampaign(prev => ({
-                      ...prev,
-                      config: {
-                        ...prev.config,
-                        propertyTypes: demographics.propertyTypes || prev.config.propertyTypes,
-                        minPrice: demographics.budgetRange?.min || prev.config.minPrice,
-                        maxPrice: demographics.budgetRange?.max || prev.config.maxPrice,
-                      }
-                    }))}
+                    onChange={(demographics: any) =>
+                      setNewCampaign((prev) => ({
+                        ...prev,
+                        config: {
+                          ...prev.config,
+                          propertyTypes: demographics.propertyTypes || prev.config.propertyTypes,
+                          minPrice: demographics.budgetRange?.min || prev.config.minPrice,
+                          maxPrice: demographics.budgetRange?.max || prev.config.maxPrice,
+                        },
+                      }))
+                    }
                     initialCriteria={{
                       propertyTypes: newCampaign.config.propertyTypes,
                       budgetRange: {
                         min: newCampaign.config.minPrice || 0,
-                        max: newCampaign.config.maxPrice || 1000000
+                        max: newCampaign.config.maxPrice || 1000000,
                       },
                     }}
                   />
@@ -974,7 +1110,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               </button>
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setShowCampaignForm(false); setCampaignStep(1); }}
+                  onClick={() => {
+                    setShowCampaignForm(false);
+                    setCampaignStep(1);
+                  }}
                   className="px-6 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Annuler
@@ -1010,9 +1149,11 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
           </div>
           <div>
             <p className="font-medium text-gray-900">
-              {aiProcessingInProgress ? 'Analyse IA en cours...' :
-                scrapingInProgress ? 'Scraping en cours...' :
-                  'Chargement...'}
+              {aiProcessingInProgress
+                ? 'Analyse IA en cours...'
+                : scrapingInProgress
+                  ? 'Scraping en cours...'
+                  : 'Chargement...'}
             </p>
             <p className="text-sm text-gray-500">Veuillez patienter</p>
           </div>
@@ -1076,10 +1217,14 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">📊 Statut</h3>
                 <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadStatusColor(selectedLead.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadStatusColor(selectedLead.status)}`}
+                  >
                     {getLeadStatusLabel(selectedLead.status)}
                   </span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(selectedLead.leadType)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getLeadTypeColor(selectedLead.leadType)}`}
+                  >
                     {getLeadTypeLabel(selectedLead.leadType)}
                   </span>
                 </div>
@@ -1111,7 +1256,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               {selectedLead.source && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">🔗 Source</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source)}`}
+                  >
                     {getSourceLabel(selectedLead.source)}
                   </span>
                 </div>
@@ -1158,9 +1305,13 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                     </div>
                   </div>
                 ) : selectedLead.qualificationNotes ? (
-                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{selectedLead.qualificationNotes}</p>
+                  <p className="text-gray-600 bg-gray-50 rounded-lg p-3">
+                    {selectedLead.qualificationNotes}
+                  </p>
                 ) : (
-                  <p className="text-gray-400 bg-gray-50 rounded-lg p-3 italic">Aucune note. Cliquez sur Modifier pour en ajouter.</p>
+                  <p className="text-gray-400 bg-gray-50 rounded-lg p-3 italic">
+                    Aucune note. Cliquez sur Modifier pour en ajouter.
+                  </p>
                 )}
               </div>
 
@@ -1190,22 +1341,32 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 {leadMatches.length > 0 ? (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {leadMatches.map((match: ProspectingMatch) => (
-                      <div key={match.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div
+                        key={match.id}
+                        className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                      >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">
                               {match.property?.title || 'Bien immobilier'}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {match.property?.city} • {match.property?.type} • {((match.property?.price || 0) / 1000).toFixed(0)}k TND
+                              {match.property?.city} • {match.property?.type} •{' '}
+                              {((match.property?.price || 0) / 1000).toFixed(0)}k TND
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${match.score >= 80 ? 'bg-green-100 text-green-700' :
-                                match.score >= 60 ? 'bg-blue-100 text-blue-700' :
-                                  match.score >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                              }`}>
+                            <div
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${
+                                match.score >= 80
+                                  ? 'bg-green-100 text-green-700'
+                                  : match.score >= 60
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : match.score >= 50
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-red-100 text-red-700'
+                              }`}
+                            >
                               {match.score}%
                             </div>
                           </div>
@@ -1266,7 +1427,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                 ) : (
                   <div className="text-center py-4 text-gray-500 bg-gray-50 rounded-lg">
                     <p>Aucun match trouvé</p>
-                    <p className="text-xs mt-1">Cliquez sur "Trouver des matchs" pour lancer la recherche</p>
+                    <p className="text-xs mt-1">
+                      Cliquez sur "Trouver des matchs" pour lancer la recherche
+                    </p>
                   </div>
                 )}
               </div>
@@ -1309,12 +1472,14 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                       const result = await convertLead(selectedLead.id);
                       if (result?.prospect) {
                         // Dispatch event to notify other modules (prospects, etc.)
-                        window.dispatchEvent(new CustomEvent('prospecting:lead-converted', {
-                          detail: {
-                            leadId: selectedLead.id,
-                            prospect: result.prospect,
-                          }
-                        }));
+                        window.dispatchEvent(
+                          new CustomEvent('prospecting:lead-converted', {
+                            detail: {
+                              leadId: selectedLead.id,
+                              prospect: result.prospect,
+                            },
+                          })
+                        );
                       }
                       setShowLeadModal(false);
                     }}
@@ -1370,7 +1535,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                     <input
                       type="text"
                       value={scrapingConfig.query}
-                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, query: e.target.value }))}
+                      onChange={(e) =>
+                        setScrapingConfig((prev) => ({ ...prev, query: e.target.value }))
+                      }
                       className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       placeholder="Ex: appartement vendre tunis"
                     />
@@ -1382,7 +1549,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                     <input
                       type="number"
                       value={scrapingConfig.maxResults}
-                      onChange={(e) => setScrapingConfig(prev => ({ ...prev, maxResults: parseInt(e.target.value) || 50 }))}
+                      onChange={(e) =>
+                        setScrapingConfig((prev) => ({
+                          ...prev,
+                          maxResults: parseInt(e.target.value) || 50,
+                        }))
+                      }
                       className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                       min={1}
                       max={200}
@@ -1396,7 +1568,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
                   </label>
                   <textarea
                     value={scrapingConfig.urls.join('\n')}
-                    onChange={(e) => setScrapingConfig(prev => ({ ...prev, urls: e.target.value.split('\n').filter(Boolean) }))}
+                    onChange={(e) =>
+                      setScrapingConfig((prev) => ({
+                        ...prev,
+                        urls: e.target.value.split('\n').filter(Boolean),
+                      }))
+                    }
                     className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500"
                     rows={5}
                     placeholder="https://www.mubawab.tn&#10;https://www.tayara.tn/immobilier"
@@ -1421,7 +1598,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({
               </button>
               <button
                 onClick={handleLaunchScraping}
-                disabled={scrapingInProgress || (!scrapingConfig.query && scrapingConfig.urls.filter(Boolean).length === 0)}
+                disabled={
+                  scrapingInProgress ||
+                  (!scrapingConfig.query && scrapingConfig.urls.filter(Boolean).length === 0)
+                }
                 className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
               >
                 {scrapingInProgress ? '⏳ Scraping...' : '🚀 Lancer le scraping'}

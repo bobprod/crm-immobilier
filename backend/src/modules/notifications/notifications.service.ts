@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { SmartNotificationsService } from './smart-notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
+import { EmailService } from '../communications/email/email.service';
+import { SmsService } from '../communications/sms/sms.service';
 
 @Injectable()
 export class NotificationsService {
@@ -11,18 +12,60 @@ export class NotificationsService {
 
   constructor(
     private prisma: PrismaService,
+    private smartNotifications: SmartNotificationsService,
     private notificationsGateway: NotificationsGateway,
+    private emailService: EmailService,
+    private smsService: SmsService,
   ) {}
 
   /**
-   * Créer une nouvelle notification
+   * Créer une nouvelle notification avec Smart AI
    */
-  async createNotification(data: CreateNotificationDto) {
+  async createNotification(
+    data: CreateNotificationDto,
+    options?: {
+      priority?: 'high' | 'medium' | 'low';
+      bypassSmartRouting?: boolean;
+    },
+  ) {
     try {
+      const priority = options?.priority || 'medium';
+      const bypassSmartRouting = options?.bypassSmartRouting || false;
+
       this.logger.log(`Creating notification for user ${data.userId}: ${data.title}`);
 
-      // Créer la notification dans la base de données
-      const notification = await this.prisma.notifications.create({
+      // ✅ SMART AI ROUTING - Décider si et comment envoyer
+      let channel = 'in_app'; // Défaut
+      let shouldSend = true;
+
+      if (!bypassSmartRouting) {
+        const decision = await this.smartNotifications.shouldSendNotification(
+          data.userId,
+          data.type,
+          priority,
+        );
+
+        shouldSend = decision.shouldSend;
+        channel = decision.channel || 'in_app';
+
+        if (!shouldSend) {
+          this.logger.debug(
+            `Smart AI delayed notification: ${decision.reason}. Suggested time: ${decision.suggestedTime}`,
+          );
+
+          // TODO: Implémenter queue pour envoyer plus tard
+          // await this.scheduleNotification(data, decision.suggestedTime);
+
+          return {
+            delayed: true,
+            reason: decision.reason,
+            suggestedTime: decision.suggestedTime,
+          };
+        }
+      }
+
+      // Créer la notification dans la base de données avec le canal optimisé
+      const notification = await this.prisma.notification.create({
         data: {
           userId: data.userId,
           type: data.type,
@@ -30,16 +73,24 @@ export class NotificationsService {
           message: data.message,
           actionUrl: data.actionUrl,
           metadata: data.metadata ? JSON.parse(data.metadata) : {},
+          channel, // ✅ Canal sélectionné par l'AI
           isRead: false,
         },
       });
 
-      // Envoyer via WebSocket
-      this.notificationsGateway.sendNotificationToUser(data.userId, notification);
+      // Marquer comme livrée immédiatement pour in_app
+      if (channel === 'in_app') {
+        await this.smartNotifications.markAsDelivered(notification.id);
+      }
 
-      // Si notification importante, envoyer email/SMS
-      if (data.type === NotificationType.APPOINTMENT || data.type === NotificationType.LEAD) {
-        await this.sendExternalNotification(data.userId, notification);
+      // ✅ Envoyer via WebSocket si l'utilisateur est connecté (temps réel)
+      if (channel === 'in_app' && this.notificationsGateway.isUserConnected(data.userId)) {
+        this.notificationsGateway.sendNotificationToUser(data.userId, notification);
+      }
+
+      // Envoyer via le canal externe si nécessaire
+      if (channel !== 'in_app') {
+        await this.sendExternalNotification(data.userId, notification, channel);
       }
 
       return notification;
@@ -88,43 +139,11 @@ export class NotificationsService {
   }
 
   /**
-   * Pagination cursor-based des notifications
-   */
-  async getUserNotificationsPaginated(userId: string, query: PaginationQueryDto) {
-    const limit = query.limit || 20;
-
-    const notifications = await this.prisma.notifications.findMany({
-      where: { userId, deletedAt: null },
-      take: limit + 1, // +1 pour savoir s'il y a une page suivante
-      ...(query.cursor && {
-        cursor: { id: query.cursor },
-        skip: 1, // Skip le cursor lui-même
-      }),
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const hasNextPage = notifications.length > limit;
-    const items = hasNextPage ? notifications.slice(0, limit) : notifications;
-    const nextCursor = hasNextPage ? items[items.length - 1].id : null;
-
-    return {
-      items,
-      nextCursor,
-      hasNextPage,
-    };
-  }
-
-  /**
-   * Marquer une notification comme lue
+   * Marquer une notification comme lue (et ouverte)
    */
   async markAsRead(notificationId: string) {
-    return this.prisma.notifications.update({
-      where: { id: notificationId },
-      data: {
-        isRead: true,
-        readAt: new Date(),
-      },
-    });
+    // Utiliser le SmartService pour tracking complet
+    return this.smartNotifications.markAsOpened(notificationId);
   }
 
   /**
@@ -239,31 +258,110 @@ export class NotificationsService {
   }
 
   /**
-   * Envoyer notification externe (Email/SMS)
-   * TODO: Implémenter l'intégration avec le service de communications
+   * ✅ Envoyer notification externe (Email/SMS/Push/WhatsApp)
+   * Implémentation complète avec Email et SMS
    */
-  private async sendExternalNotification(userId: string, notification: any) {
+  private async sendExternalNotification(userId: string, notification: any, channel: string) {
     try {
-      // Récupérer les préférences de notification de l'utilisateur
+      // Récupérer les informations de l'utilisateur
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: {
           email: true,
           phone: true,
-          // TODO: Ajouter champ notificationPreferences dans le schema
+          firstName: true,
+          lastName: true,
         },
       });
 
-      if (!user) return;
+      if (!user) {
+        this.logger.warn(`User ${userId} not found for external notification`);
+        return;
+      }
 
-      // TODO: Intégrer avec le service de communications
-      // await this.communicationsService.sendEmail({
-      //   to: user.email,
-      //   subject: notification.title,
-      //   body: notification.message
-      // });
+      const notificationData = {
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+        type: notification.type,
+      };
 
-      this.logger.debug(`External notification sent to user ${userId}`);
+      // Envoyer selon le canal (avec support multi-tenant)
+      switch (channel) {
+        case 'email':
+          if (user.email) {
+            // Utiliser sendForUser pour support multi-tenant
+            const emailHtml = this.getNotificationEmailHtml(notificationData);
+            const emailText = `${notificationData.title}\n\n${notificationData.message}${
+              notificationData.actionUrl ? `\n\nLien: ${notificationData.actionUrl}` : ''
+            }`;
+
+            const result = await this.emailService.sendForUser(userId, {
+              to: user.email,
+              subject: notificationData.title,
+              html: emailHtml,
+              text: emailText,
+            });
+
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`📧 Email sent to ${user.email} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send email: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no email address`);
+          }
+          break;
+
+        case 'sms':
+          if (user.phone) {
+            // Utiliser sendSmsForUser pour support multi-tenant
+            const smsMessage = this.getNotificationSmsText(notificationData);
+            const result = await this.smsService.sendSmsForUser(userId, {
+              to: user.phone,
+              message: smsMessage,
+            });
+
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`📱 SMS sent to ${user.phone} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send SMS: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no phone number`);
+          }
+          break;
+
+        case 'whatsapp':
+          if (user.phone) {
+            // Utiliser sendWhatsAppForUser pour support multi-tenant
+            const whatsappMessage = this.getNotificationWhatsAppText(notificationData);
+            const result = await this.smsService.sendWhatsAppForUser(userId, {
+              to: user.phone,
+              message: whatsappMessage,
+            });
+
+            if (result.success) {
+              await this.smartNotifications.markAsDelivered(notification.id);
+              this.logger.log(`💚 WhatsApp sent to ${user.phone} (messageId: ${result.messageId})`);
+            } else {
+              this.logger.error(`Failed to send WhatsApp: ${result.error}`);
+            }
+          } else {
+            this.logger.warn(`User ${userId} has no phone number`);
+          }
+          break;
+
+        case 'push':
+          // TODO: Implémenter Push Notifications (Firebase Cloud Messaging)
+          this.logger.warn(`Push notifications not yet implemented`);
+          break;
+
+        default:
+          this.logger.warn(`Unknown notification channel: ${channel}`);
+      }
     } catch (error) {
       this.logger.error(`Error sending external notification: ${error.message}`);
       // Ne pas throw l'erreur pour ne pas bloquer la création de notification
@@ -317,73 +415,107 @@ export class NotificationsService {
   }
 
   /**
-   * Obtenir les statistiques de lecture
+   * 🎨 Template HTML pour email de notification (simplifié)
    */
-  async getReadingStats(userId: string) {
-    const notifications = await this.prisma.notifications.findMany({
-      where: { userId, isRead: true, readAt: { not: null }, deletedAt: null },
-      select: { createdAt: true, readAt: true },
-    });
+  private getNotificationEmailHtml(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+    type?: string;
+  }): string {
+    const typeColors: Record<string, string> = {
+      appointment: '#3B82F6',
+      task: '#F59E0B',
+      lead: '#10B981',
+      system: '#6B7280',
+      property: '#8B5CF6',
+      message: '#EC4899',
+    };
 
-    if (notifications.length === 0) {
-      return {
-        totalRead: 0,
-        averageReadingTimeMinutes: 0,
-        fastestReadMinutes: 0,
-        slowestReadMinutes: 0,
-      };
+    const color = typeColors[notification.type || 'system'] || '#6B7280';
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${notification.title}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+          <tr>
+            <td style="background-color: ${color}; padding: 20px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">🏠 CRM Immobilier</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">${notification.title}</h2>
+              <p style="margin: 0; color: #4B5563; font-size: 16px; line-height: 1.6;">${notification.message}</p>
+              ${
+                notification.actionUrl
+                  ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${notification.actionUrl}" style="display: inline-block; background-color: ${color}; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 16px;">Voir →</a>
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ''
+              }
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
+
+  /**
+   * 📱 Format SMS pour notification (max 160 caractères)
+   */
+  private getNotificationSmsText(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+  }): string {
+    let smsMessage = `${notification.title}\n${notification.message}`;
+
+    if (notification.actionUrl) {
+      smsMessage += `\n${notification.actionUrl}`;
     }
 
-    const readingTimes = notifications.map((n) => {
-      const created = new Date(n.createdAt).getTime();
-      const read = new Date(n.readAt!).getTime();
-      return (read - created) / 1000 / 60; // minutes
-    });
+    // Tronquer si trop long
+    if (smsMessage.length > 160) {
+      smsMessage = smsMessage.substring(0, 157) + '...';
+    }
 
-    const avgReadingTime = readingTimes.reduce((a, b) => a + b, 0) / readingTimes.length;
-
-    return {
-      totalRead: notifications.length,
-      averageReadingTimeMinutes: parseFloat(avgReadingTime.toFixed(2)),
-      fastestReadMinutes: parseFloat(Math.min(...readingTimes).toFixed(2)),
-      slowestReadMinutes: parseFloat(Math.max(...readingTimes).toFixed(2)),
-    };
+    return smsMessage;
   }
 
   /**
-   * Supprimer définitivement les notifications soft-deleted anciennes
+   * 💚 Format WhatsApp pour notification
    */
-  async hardDeleteOldSoftDeleted(beforeDate: Date) {
-    return this.prisma.notifications.deleteMany({
-      where: {
-        deletedAt: { lt: beforeDate, not: null },
-      },
-    });
-  }
+  private getNotificationWhatsAppText(notification: {
+    title: string;
+    message: string;
+    actionUrl?: string;
+  }): string {
+    let whatsappMessage = `*${notification.title}*\n\n${notification.message}`;
 
-  /**
-   * Obtenir les statistiques d'engagement des notifications
-   */
-  async getEngagementStats(userId: string) {
-    const [total, unread, read] = await Promise.all([
-      this.prisma.notifications.count({
-        where: { userId, deletedAt: null },
-      }),
-      this.prisma.notifications.count({
-        where: { userId, isRead: false, deletedAt: null },
-      }),
-      this.prisma.notifications.count({
-        where: { userId, isRead: true, deletedAt: null },
-      }),
-    ]);
+    if (notification.actionUrl) {
+      whatsappMessage += `\n\n🔗 ${notification.actionUrl}`;
+    }
 
-    const openRate = total > 0 ? (read / total) * 100 : 0;
-
-    return {
-      total,
-      unread,
-      read,
-      openRate: openRate.toFixed(1),
-    };
+    return whatsappMessage;
   }
 }

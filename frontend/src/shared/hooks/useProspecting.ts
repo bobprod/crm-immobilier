@@ -71,336 +71,398 @@ export function useProspecting() {
 
   // Helper to update state
   const updateState = useCallback((updates: Partial<UseProspectingState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState((prev) => ({ ...prev, ...updates }));
   }, []);
 
   // Helper to handle errors
-  const handleError = useCallback((error: any, context: string) => {
-    const message = error?.response?.data?.message || error?.message || `Erreur: ${context}`;
-    console.error(`[Prospecting] ${context}:`, error);
-    updateState({ error: message, loading: false });
-    return message;
-  }, [updateState]);
+  const handleError = useCallback(
+    (error: any, context: string) => {
+      const message = error?.response?.data?.message || error?.message || `Erreur: ${context}`;
+      console.error(`[Prospecting] ${context}:`, error);
+      updateState({ error: message, loading: false });
+      return message;
+    },
+    [updateState]
+  );
 
   // ============================================
   // CAMPAIGNS
   // ============================================
 
-  const loadCampaigns = useCallback(async (filters?: {
-    status?: CampaignStatus;
-    type?: CampaignType;
-  }) => {
-    updateState({ loading: true, error: null });
-    try {
-      const campaigns = await prospectingAPI.getCampaigns(filters);
-      updateState({ campaigns, loading: false });
-      return campaigns;
-    } catch (error) {
-      handleError(error, 'Chargement des campagnes');
-      return [];
-    }
-  }, [updateState, handleError]);
+  const loadCampaigns = useCallback(
+    async (filters?: { status?: CampaignStatus; type?: CampaignType }) => {
+      updateState({ loading: true, error: null });
+      try {
+        const campaigns = await prospectingAPI.getCampaigns(filters);
+        updateState({ campaigns, loading: false });
+        return campaigns;
+      } catch (error) {
+        handleError(error, 'Chargement des campagnes');
+        return [];
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const loadCampaign = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const campaign = await prospectingAPI.getCampaignById(id);
-      updateState({ currentCampaign: campaign, loading: false });
-      return campaign;
-    } catch (error) {
-      handleError(error, 'Chargement de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const loadCampaign = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const campaign = await prospectingAPI.getCampaignById(id);
+        updateState({ currentCampaign: campaign, loading: false });
+        return campaign;
+      } catch (error) {
+        handleError(error, 'Chargement de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const createCampaign = useCallback(async (data: {
-    name: string;
-    description?: string;
-    type?: CampaignType;
-    config?: CampaignConfig;
-    targetCount?: number;
-  }) => {
-    updateState({ loading: true, error: null });
-    try {
-      const campaign = await prospectingAPI.createCampaign(data);
-      setState(prev => ({
-        ...prev,
-        campaigns: [campaign, ...prev.campaigns],
-        currentCampaign: campaign,
-        loading: false,
-      }));
-      return campaign;
-    } catch (error) {
-      handleError(error, 'Creation de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const createCampaign = useCallback(
+    async (data: {
+      name: string;
+      description?: string;
+      type?: CampaignType;
+      config?: CampaignConfig;
+      targetCount?: number;
+    }) => {
+      updateState({ loading: true, error: null });
+      try {
+        const campaign = await prospectingAPI.createCampaign(data);
+        setState((prev) => ({
+          ...prev,
+          campaigns: [campaign, ...prev.campaigns],
+          currentCampaign: campaign,
+          loading: false,
+        }));
+        return campaign;
+      } catch (error) {
+        handleError(error, 'Creation de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const updateCampaign = useCallback(async (id: string, data: Partial<ProspectingCampaign>) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.updateCampaign(id, data);
-      setState(prev => ({
-        ...prev,
-        campaigns: prev.campaigns.map(c => c.id === id ? updated : c),
-        currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Mise a jour de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const updateCampaign = useCallback(
+    async (id: string, data: Partial<ProspectingCampaign>) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.updateCampaign(id, data);
+        setState((prev) => ({
+          ...prev,
+          campaigns: prev.campaigns.map((c) => (c.id === id ? updated : c)),
+          currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Mise a jour de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const deleteCampaign = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      await prospectingAPI.deleteCampaign(id);
-      setState(prev => ({
-        ...prev,
-        campaigns: prev.campaigns.filter(c => c.id !== id),
-        currentCampaign: prev.currentCampaign?.id === id ? null : prev.currentCampaign,
-        loading: false,
-      }));
-      return true;
-    } catch (error) {
-      handleError(error, 'Suppression de la campagne');
-      return false;
-    }
-  }, [updateState, handleError]);
+  const deleteCampaign = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        await prospectingAPI.deleteCampaign(id);
+        setState((prev) => ({
+          ...prev,
+          campaigns: prev.campaigns.filter((c) => c.id !== id),
+          currentCampaign: prev.currentCampaign?.id === id ? null : prev.currentCampaign,
+          loading: false,
+        }));
+        return true;
+      } catch (error) {
+        handleError(error, 'Suppression de la campagne');
+        return false;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const startCampaign = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.startCampaign(id);
-      setState(prev => ({
-        ...prev,
-        campaigns: prev.campaigns.map(c => c.id === id ? updated : c),
-        currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Demarrage de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const startCampaign = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.startCampaign(id);
+        setState((prev) => ({
+          ...prev,
+          campaigns: prev.campaigns.map((c) => (c.id === id ? updated : c)),
+          currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Demarrage de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const pauseCampaign = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.pauseCampaign(id);
-      setState(prev => ({
-        ...prev,
-        campaigns: prev.campaigns.map(c => c.id === id ? updated : c),
-        currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Mise en pause de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const pauseCampaign = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.pauseCampaign(id);
+        setState((prev) => ({
+          ...prev,
+          campaigns: prev.campaigns.map((c) => (c.id === id ? updated : c)),
+          currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Mise en pause de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const resumeCampaign = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.resumeCampaign(id);
-      setState(prev => ({
-        ...prev,
-        campaigns: prev.campaigns.map(c => c.id === id ? updated : c),
-        currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Reprise de la campagne');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const resumeCampaign = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.resumeCampaign(id);
+        setState((prev) => ({
+          ...prev,
+          campaigns: prev.campaigns.map((c) => (c.id === id ? updated : c)),
+          currentCampaign: prev.currentCampaign?.id === id ? updated : prev.currentCampaign,
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Reprise de la campagne');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // LEADS
   // ============================================
 
-  const loadLeads = useCallback(async (campaignId: string, filters?: {
-    status?: LeadStatus;
-    minScore?: number;
-    leadType?: LeadType;
-    limit?: number;
-  }) => {
-    updateState({ loading: true, error: null });
-    try {
-      const leads = await prospectingAPI.getLeads(campaignId, filters);
-      updateState({ leads, loading: false });
-      return leads;
-    } catch (error) {
-      handleError(error, 'Chargement des leads');
-      return [];
-    }
-  }, [updateState, handleError]);
+  const loadLeads = useCallback(
+    async (
+      campaignId: string,
+      filters?: {
+        status?: LeadStatus;
+        minScore?: number;
+        leadType?: LeadType;
+        limit?: number;
+      }
+    ) => {
+      updateState({ loading: true, error: null });
+      try {
+        const leads = await prospectingAPI.getLeads(campaignId, filters);
+        updateState({ leads, loading: false });
+        return leads;
+      } catch (error) {
+        handleError(error, 'Chargement des leads');
+        return [];
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const loadLead = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const lead = await prospectingAPI.getLeadById(id);
-      updateState({ currentLead: lead, loading: false });
-      return lead;
-    } catch (error) {
-      handleError(error, 'Chargement du lead');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const loadLead = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const lead = await prospectingAPI.getLeadById(id);
+        updateState({ currentLead: lead, loading: false });
+        return lead;
+      } catch (error) {
+        handleError(error, 'Chargement du lead');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const updateLead = useCallback(async (id: string, data: Partial<ProspectingLead>) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.updateLead(id, data);
-      setState(prev => ({
-        ...prev,
-        leads: prev.leads.map(l => l.id === id ? updated : l),
-        currentLead: prev.currentLead?.id === id ? updated : prev.currentLead,
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Mise a jour du lead');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const updateLead = useCallback(
+    async (id: string, data: Partial<ProspectingLead>) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.updateLead(id, data);
+        setState((prev) => ({
+          ...prev,
+          leads: prev.leads.map((l) => (l.id === id ? updated : l)),
+          currentLead: prev.currentLead?.id === id ? updated : prev.currentLead,
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Mise a jour du lead');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const deleteLead = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      await prospectingAPI.deleteLead(id);
-      setState(prev => ({
-        ...prev,
-        leads: prev.leads.filter(l => l.id !== id),
-        currentLead: prev.currentLead?.id === id ? null : prev.currentLead,
-        loading: false,
-      }));
-      return true;
-    } catch (error) {
-      handleError(error, 'Suppression du lead');
-      return false;
-    }
-  }, [updateState, handleError]);
+  const deleteLead = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        await prospectingAPI.deleteLead(id);
+        setState((prev) => ({
+          ...prev,
+          leads: prev.leads.filter((l) => l.id !== id),
+          currentLead: prev.currentLead?.id === id ? null : prev.currentLead,
+          loading: false,
+        }));
+        return true;
+      } catch (error) {
+        handleError(error, 'Suppression du lead');
+        return false;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const convertLead = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const result = await prospectingAPI.convertLead(id);
-      setState(prev => ({
-        ...prev,
-        leads: prev.leads.map(l => l.id === id ? result.lead : l),
-        currentLead: prev.currentLead?.id === id ? result.lead : prev.currentLead,
-        loading: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Conversion du lead');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const convertLead = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const result = await prospectingAPI.convertLead(id);
+        setState((prev) => ({
+          ...prev,
+          leads: prev.leads.map((l) => (l.id === id ? result.lead : l)),
+          currentLead: prev.currentLead?.id === id ? result.lead : prev.currentLead,
+          loading: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Conversion du lead');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const qualifyLead = useCallback(async (id: string) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.qualifyLead(id);
-      setState(prev => ({
-        ...prev,
-        leads: prev.leads.map(l => l.id === id ? result.lead : l),
-        currentLead: prev.currentLead?.id === id ? result.lead : prev.currentLead,
-        aiProcessingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Qualification du lead');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const qualifyLead = useCallback(
+    async (id: string) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.qualifyLead(id);
+        setState((prev) => ({
+          ...prev,
+          leads: prev.leads.map((l) => (l.id === id ? result.lead : l)),
+          currentLead: prev.currentLead?.id === id ? result.lead : prev.currentLead,
+          aiProcessingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Qualification du lead');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const enrichLead = useCallback(async (id: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const enriched = await prospectingAPI.enrichLead(id);
-      setState(prev => ({
-        ...prev,
-        leads: prev.leads.map(l => l.id === id ? enriched : l),
-        currentLead: prev.currentLead?.id === id ? enriched : prev.currentLead,
-        loading: false,
-      }));
-      return enriched;
-    } catch (error) {
-      handleError(error, 'Enrichissement du lead');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const enrichLead = useCallback(
+    async (id: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const enriched = await prospectingAPI.enrichLead(id);
+        setState((prev) => ({
+          ...prev,
+          leads: prev.leads.map((l) => (l.id === id ? enriched : l)),
+          currentLead: prev.currentLead?.id === id ? enriched : prev.currentLead,
+          loading: false,
+        }));
+        return enriched;
+      } catch (error) {
+        handleError(error, 'Enrichissement du lead');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // MATCHING
   // ============================================
 
-  const findMatches = useCallback(async (leadId: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const matches = await prospectingAPI.findMatches(leadId);
-      updateState({ matches, loading: false });
-      return matches;
-    } catch (error) {
-      handleError(error, 'Recherche des correspondances');
-      return [];
-    }
-  }, [updateState, handleError]);
+  const findMatches = useCallback(
+    async (leadId: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const matches = await prospectingAPI.findMatches(leadId);
+        updateState({ matches, loading: false });
+        return matches;
+      } catch (error) {
+        handleError(error, 'Recherche des correspondances');
+        return [];
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const loadMatches = useCallback(async (leadId: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const matches = await prospectingAPI.getLeadMatches(leadId);
-      updateState({ matches, loading: false });
-      return matches;
-    } catch (error) {
-      handleError(error, 'Chargement des correspondances');
-      return [];
-    }
-  }, [updateState, handleError]);
+  const loadMatches = useCallback(
+    async (leadId: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const matches = await prospectingAPI.getLeadMatches(leadId);
+        updateState({ matches, loading: false });
+        return matches;
+      } catch (error) {
+        handleError(error, 'Chargement des correspondances');
+        return [];
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const notifyMatch = useCallback(async (matchId: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const result = await prospectingAPI.notifyMatch(matchId);
-      setState(prev => ({
-        ...prev,
-        matches: prev.matches.map(m =>
-          m.id === matchId ? { ...m, status: 'notified' as MatchStatus, notifiedAt: result.notifiedAt } : m
-        ),
-        loading: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Notification du match');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const notifyMatch = useCallback(
+    async (matchId: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const result = await prospectingAPI.notifyMatch(matchId);
+        setState((prev) => ({
+          ...prev,
+          matches: prev.matches.map((m) =>
+            m.id === matchId
+              ? { ...m, status: 'notified' as MatchStatus, notifiedAt: result.notifiedAt }
+              : m
+          ),
+          loading: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Notification du match');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const updateMatchStatus = useCallback(async (matchId: string, status: MatchStatus) => {
-    updateState({ loading: true, error: null });
-    try {
-      const updated = await prospectingAPI.updateMatchStatus(matchId, status);
-      setState(prev => ({
-        ...prev,
-        matches: prev.matches.map(m => m.id === matchId ? updated : m),
-        loading: false,
-      }));
-      return updated;
-    } catch (error) {
-      handleError(error, 'Mise a jour du statut du match');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const updateMatchStatus = useCallback(
+    async (matchId: string, status: MatchStatus) => {
+      updateState({ loading: true, error: null });
+      try {
+        const updated = await prospectingAPI.updateMatchStatus(matchId, status);
+        setState((prev) => ({
+          ...prev,
+          matches: prev.matches.map((m) => (m.id === matchId ? updated : m)),
+          loading: false,
+        }));
+        return updated;
+      } catch (error) {
+        handleError(error, 'Mise a jour du statut du match');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // SOURCES
@@ -418,235 +480,277 @@ export function useProspecting() {
     }
   }, [updateState, handleError]);
 
-  const testSource = useCallback(async (source: ScrapingSource) => {
-    updateState({ loading: true, error: null });
-    try {
-      const result = await prospectingAPI.testSource(source);
-      updateState({ loading: false });
-      return result;
-    } catch (error) {
-      handleError(error, 'Test de la source');
-      return null;
-    }
-  }, [updateState, handleError]);
+  const testSource = useCallback(
+    async (source: ScrapingSource) => {
+      updateState({ loading: true, error: null });
+      try {
+        const result = await prospectingAPI.testSource(source);
+        updateState({ loading: false });
+        return result;
+      } catch (error) {
+        handleError(error, 'Test de la source');
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // SCRAPING
   // ============================================
 
-  const scrapeSERP = useCallback(async (config: ScrapingConfig) => {
-    updateState({ scrapingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapeSERP(config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Scraping SERP');
-      updateState({ scrapingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapeSERP = useCallback(
+    async (config: ScrapingConfig) => {
+      updateState({ scrapingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapeSERP(config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Scraping SERP');
+        updateState({ scrapingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const scrapeFirecrawl = useCallback(async (urls: string[], config?: any) => {
-    updateState({ scrapingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapeFirecrawl(urls, config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Scraping Firecrawl');
-      updateState({ scrapingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapeFirecrawl = useCallback(
+    async (urls: string[], config?: any) => {
+      updateState({ scrapingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapeFirecrawl(urls, config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Scraping Firecrawl');
+        updateState({ scrapingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const scrapePica = useCallback(async (config: ScrapingConfig) => {
-    updateState({ scrapingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapePica(config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Scraping Pica API');
-      updateState({ scrapingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapePica = useCallback(
+    async (config: ScrapingConfig) => {
+      updateState({ scrapingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapePica(config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Scraping Pica API');
+        updateState({ scrapingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const scrapeSocial = useCallback(async (platform: 'meta' | 'linkedin', query: string, config?: any) => {
-    updateState({ scrapingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapeSocial(platform, query, config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, `Scraping ${platform}`);
-      updateState({ scrapingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapeSocial = useCallback(
+    async (platform: 'meta' | 'linkedin', query: string, config?: any) => {
+      updateState({ scrapingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapeSocial(platform, query, config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, `Scraping ${platform}`);
+        updateState({ scrapingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const scrapeWebsites = useCallback(async (urls: string[], selectors?: any) => {
-    updateState({ scrapingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapeWebsites(urls, selectors);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Scraping de sites web');
-      updateState({ scrapingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapeWebsites = useCallback(
+    async (urls: string[], selectors?: any) => {
+      updateState({ scrapingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapeWebsites(urls, selectors);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Scraping de sites web');
+        updateState({ scrapingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // AI DETECTION
   // ============================================
 
-  const detectOpportunities = useCallback(async (config: AIDetectionConfig) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.detectOpportunities(config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.opportunities, ...prev.leads],
-        aiProcessingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Detection IA des opportunites');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const detectOpportunities = useCallback(
+    async (config: AIDetectionConfig) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.detectOpportunities(config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.opportunities, ...prev.leads],
+          aiProcessingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Detection IA des opportunites');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const analyzeContent = useCallback(async (content: string, source?: string) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.analyzeContent(content, source);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        aiProcessingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Analyse du contenu');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const analyzeContent = useCallback(
+    async (content: string, source?: string) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.analyzeContent(content, source);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          aiProcessingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Analyse du contenu');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const classifyLead = useCallback(async (leadId: string) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.classifyLead(leadId);
-      updateState({ aiProcessingInProgress: false });
-      return result;
-    } catch (error) {
-      handleError(error, 'Classification du lead');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const classifyLead = useCallback(
+    async (leadId: string) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.classifyLead(leadId);
+        updateState({ aiProcessingInProgress: false });
+        return result;
+      } catch (error) {
+        handleError(error, 'Classification du lead');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // LLM PROSPECTING
   // ============================================
 
-  const llmAnalyzeItem = useCallback(async (item: RawScrapedItem) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.llmAnalyzeItem(item);
-      updateState({ aiProcessingInProgress: false });
-      return result;
-    } catch (error) {
-      handleError(error, 'Analyse LLM de l\'element');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const llmAnalyzeItem = useCallback(
+    async (item: RawScrapedItem) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.llmAnalyzeItem(item);
+        updateState({ aiProcessingInProgress: false });
+        return result;
+      } catch (error) {
+        handleError(error, "Analyse LLM de l'element");
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const llmBuildLead = useCallback(async (item: RawScrapedItem) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.llmBuildLead(item);
-      updateState({ aiProcessingInProgress: false });
-      return result;
-    } catch (error) {
-      handleError(error, 'Construction du lead structure');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const llmBuildLead = useCallback(
+    async (item: RawScrapedItem) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.llmBuildLead(item);
+        updateState({ aiProcessingInProgress: false });
+        return result;
+      } catch (error) {
+        handleError(error, 'Construction du lead structure');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const llmAnalyzeBatch = useCallback(async (items: RawScrapedItem[]) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.llmAnalyzeBatch(items);
-      updateState({ aiProcessingInProgress: false });
-      return result;
-    } catch (error) {
-      handleError(error, 'Analyse LLM du batch');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const llmAnalyzeBatch = useCallback(
+    async (items: RawScrapedItem[]) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.llmAnalyzeBatch(items);
+        updateState({ aiProcessingInProgress: false });
+        return result;
+      } catch (error) {
+        handleError(error, 'Analyse LLM du batch');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const ingestScrapedItems = useCallback(async (campaignId: string, items: RawScrapedItem[]) => {
-    updateState({ aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.ingestScrapedItems(campaignId, items);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        aiProcessingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Ingestion des elements scrappes');
-      updateState({ aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const ingestScrapedItems = useCallback(
+    async (campaignId: string, items: RawScrapedItem[]) => {
+      updateState({ aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.ingestScrapedItems(campaignId, items);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          aiProcessingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Ingestion des elements scrappes');
+        updateState({ aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
-  const scrapeAndIngest = useCallback(async (campaignId: string, source: string, config: any) => {
-    updateState({ scrapingInProgress: true, aiProcessingInProgress: true, error: null });
-    try {
-      const result = await prospectingAPI.scrapeAndIngest(campaignId, source, config);
-      setState(prev => ({
-        ...prev,
-        leads: [...result.leads, ...prev.leads],
-        scrapingInProgress: false,
-        aiProcessingInProgress: false,
-      }));
-      return result;
-    } catch (error) {
-      handleError(error, 'Scraping et ingestion');
-      updateState({ scrapingInProgress: false, aiProcessingInProgress: false });
-      return null;
-    }
-  }, [updateState, handleError]);
+  const scrapeAndIngest = useCallback(
+    async (campaignId: string, source: string, config: any) => {
+      updateState({ scrapingInProgress: true, aiProcessingInProgress: true, error: null });
+      try {
+        const result = await prospectingAPI.scrapeAndIngest(campaignId, source, config);
+        setState((prev) => ({
+          ...prev,
+          leads: [...result.leads, ...prev.leads],
+          scrapingInProgress: false,
+          aiProcessingInProgress: false,
+        }));
+        return result;
+      } catch (error) {
+        handleError(error, 'Scraping et ingestion');
+        updateState({ scrapingInProgress: false, aiProcessingInProgress: false });
+        return null;
+      }
+    },
+    [updateState, handleError]
+  );
 
   // ============================================
   // STATISTICS
@@ -721,66 +825,81 @@ export function useProspecting() {
   // UTILS
   // ============================================
 
-  const validateEmails = useCallback(async (emails: string[]) => {
-    try {
-      return await prospectingAPI.validateEmails(emails);
-    } catch (error) {
-      handleError(error, 'Validation des emails');
-      return null;
-    }
-  }, [handleError]);
-
-  const validatePhones = useCallback(async (phones: string[]) => {
-    try {
-      return await prospectingAPI.validatePhones(phones);
-    } catch (error) {
-      handleError(error, 'Validation des telephones');
-      return null;
-    }
-  }, [handleError]);
-
-  const deduplicateLeads = useCallback(async (campaignId?: string) => {
-    updateState({ loading: true, error: null });
-    try {
-      const result = await prospectingAPI.deduplicateLeads(campaignId);
-      updateState({ loading: false });
-      // Reload leads after deduplication
-      if (campaignId) {
-        await loadLeads(campaignId);
+  const validateEmails = useCallback(
+    async (emails: string[]) => {
+      try {
+        return await prospectingAPI.validateEmails(emails);
+      } catch (error) {
+        handleError(error, 'Validation des emails');
+        return null;
       }
-      return result;
-    } catch (error) {
-      handleError(error, 'Deduplication des leads');
-      return null;
-    }
-  }, [updateState, handleError, loadLeads]);
+    },
+    [handleError]
+  );
+
+  const validatePhones = useCallback(
+    async (phones: string[]) => {
+      try {
+        return await prospectingAPI.validatePhones(phones);
+      } catch (error) {
+        handleError(error, 'Validation des telephones');
+        return null;
+      }
+    },
+    [handleError]
+  );
+
+  const deduplicateLeads = useCallback(
+    async (campaignId?: string) => {
+      updateState({ loading: true, error: null });
+      try {
+        const result = await prospectingAPI.deduplicateLeads(campaignId);
+        updateState({ loading: false });
+        // Reload leads after deduplication
+        if (campaignId) {
+          await loadLeads(campaignId);
+        }
+        return result;
+      } catch (error) {
+        handleError(error, 'Deduplication des leads');
+        return null;
+      }
+    },
+    [updateState, handleError, loadLeads]
+  );
 
   // ============================================
   // EXPORT/IMPORT
   // ============================================
 
-  const exportLeads = useCallback(async (campaignId: string, format: 'csv' | 'xlsx' | 'json' = 'csv') => {
-    try {
-      return await prospectingAPI.exportLeads(campaignId, format);
-    } catch (error) {
-      handleError(error, 'Export des leads');
-      return null;
-    }
-  }, [handleError]);
+  const exportLeads = useCallback(
+    async (campaignId: string, format: 'csv' | 'xlsx' | 'json' = 'csv') => {
+      try {
+        return await prospectingAPI.exportLeads(campaignId, format);
+      } catch (error) {
+        handleError(error, 'Export des leads');
+        return null;
+      }
+    },
+    [handleError]
+  );
 
-  const importLeads = useCallback(async (campaignId: string, leads: Partial<ProspectingLead>[]) => {
-    updateState({ loading: true, error: null });
-    try {
-      const result = await prospectingAPI.importLeads(campaignId, leads);
-      updateState({ loading: false });
-      // Reload leads after import
-      await loadLeads(campaignId);
-      return result;
-    } catch (error) {
-      handleError(error, 'Import des leads');
-      return null;
-    }
-  }, [updateState, handleError, loadLeads]);
+  const importLeads = useCallback(
+    async (campaignId: string, leads: Partial<ProspectingLead>[]) => {
+      updateState({ loading: true, error: null });
+      try {
+        const result = await prospectingAPI.importLeads(campaignId, leads);
+        updateState({ loading: false });
+        // Reload leads after import
+        await loadLeads(campaignId);
+        return result;
+      } catch (error) {
+        handleError(error, 'Import des leads');
+        return null;
+      }
+    },
+    [updateState, handleError, loadLeads]
+  );
 
   // ============================================
   // CLEAR & RESET
