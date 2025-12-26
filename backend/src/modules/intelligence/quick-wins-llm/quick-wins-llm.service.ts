@@ -13,7 +13,7 @@ export class QuickWinsLLMService {
   constructor(
     private readonly llmFactory: LLMProviderFactory,
     private readonly costTracker: ApiCostTrackerService,
-  ) {}
+  ) { }
 
   /**
    * Analyser une requête de recherche sémantique
@@ -276,15 +276,14 @@ Réponds uniquement avec un JSON valide.`;
       const inputTokens = Math.ceil(inputLength / 4);
       const outputTokens = Math.ceil(outputLength / 4);
 
-      await this.costTracker.trackApiCall({
+      await this.costTracker.trackUsage({
         userId,
-        provider: 'llm', // Will be replaced by actual provider
-        feature: `quick_wins_${feature}`,
+        provider: 'openai',
+        model: 'gpt-3.5-turbo',
         inputTokens,
         outputTokens,
-        cost: 0, // Will be calculated by cost tracker
-        duration,
-        success: true,
+        requestType: `quick_wins_${feature}`,
+        metadata: { duration },
       });
     } catch (error) {
       this.logger.warn('Failed to track usage', error);

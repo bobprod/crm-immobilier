@@ -10,7 +10,7 @@ export class SemanticSearchService {
   constructor(
     private prisma: PrismaService,
     private llmService: QuickWinsLLMService,
-  ) {}
+  ) { }
 
   /**
    * Recherche sémantique dans le CRM
@@ -108,14 +108,9 @@ Extract:
 
 Return as JSON object.`;
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 200,
-      });
+      const response = await this.llmService.analyzeText('', prompt);
 
-      const content = response.choices[0]?.message?.content || '{}';
+      const content = response || '{}';
       try {
         return JSON.parse(content);
       } catch (parseError) {
