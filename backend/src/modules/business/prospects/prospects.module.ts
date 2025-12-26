@@ -6,6 +6,7 @@ import { ProspectsConversionTrackerService } from './prospects-conversion-tracke
 import { ProspectsConversionTrackerController } from './prospects-conversion-tracker.controller';
 import { ProspectsEnhancedController } from './prospects-enhanced.controller';
 import { ProspectsEnhancedService } from './prospects-enhanced.service';
+import { ProspectHistoryService } from './prospect-history.service';
 
 @Module({
   imports: [AIMetricsModule],
@@ -14,7 +15,17 @@ import { ProspectsEnhancedService } from './prospects-enhanced.service';
     ProspectsConversionTrackerController,
     ProspectsEnhancedController,
   ],
-  providers: [ProspectsService, ProspectsConversionTrackerService, ProspectsEnhancedService],
-  exports: [ProspectsService, ProspectsConversionTrackerService, ProspectsEnhancedService],
+  providers: [
+    ProspectsService,
+    ProspectsConversionTrackerService,
+    ProspectsEnhancedService,
+    ProspectHistoryService,
+  ],
+  exports: [
+    ProspectsService,
+    ProspectsConversionTrackerService,
+    ProspectsEnhancedService,
+    ProspectHistoryService,
+  ],
 })
 export class ProspectsModule {}

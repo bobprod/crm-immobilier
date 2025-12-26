@@ -85,7 +85,7 @@ test.describe('Property Creation via Modal', () => {
         console.log('✅ Modal closed after submission');
 
         // Wait for the properties list to refresh
-        await page.waitForTimeout(2000);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // Verify the property appears in the list (use .first() to avoid strict mode error)
         const propertyRow = page.locator('text=Test Apartment E2E').first();

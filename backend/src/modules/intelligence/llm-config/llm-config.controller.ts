@@ -1,6 +1,14 @@
 import { Controller, Get, Put, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { UpdateLLMConfigDto, LLMConfigResponseDto, ProviderInfoDto, TestLLMConfigResponseDto, UsageStatsDto, DashboardMetricsDto, BudgetCheckDto } from './dto';
+import {
+  UpdateLLMConfigDto,
+  LLMConfigResponseDto,
+  ProviderInfoDto,
+  TestLLMConfigResponseDto,
+  UsageStatsDto,
+  DashboardMetricsDto,
+  BudgetCheckDto,
+} from './dto';
 import { LLMConfigService } from './llm-config.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 
@@ -12,7 +20,7 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 @Controller('llm-config')
 @UseGuards(JwtAuthGuard)
 export class LLMConfigController {
-  constructor(private readonly llmConfigService: LLMConfigService) { }
+  constructor(private readonly llmConfigService: LLMConfigService) {}
 
   /**
    * Récupérer la configuration actuelle
@@ -78,7 +86,7 @@ export class LLMConfigController {
    * Vérification du budget
    */
   @Get('budget-check')
-  @ApiOperation({ summary: 'Vérifier l\'utilisation par rapport au budget' })
+  @ApiOperation({ summary: "Vérifier l'utilisation par rapport au budget" })
   @ApiQuery({
     name: 'budget',
     required: false,
@@ -87,10 +95,7 @@ export class LLMConfigController {
     example: 100,
   })
   @ApiResponse({ status: 200, type: BudgetCheckDto })
-  async checkBudget(
-    @Request() req,
-    @Query('budget') budget?: number,
-  ) {
+  async checkBudget(@Request() req, @Query('budget') budget?: number) {
     const budgetLimit = budget ? parseFloat(budget.toString()) : 100;
     return this.llmConfigService.checkBudget(req.user.userId, budgetLimit);
   }

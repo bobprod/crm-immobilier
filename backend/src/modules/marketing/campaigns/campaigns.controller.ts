@@ -102,21 +102,13 @@ export class CampaignsController {
 
   @Post(':id/duplicate')
   @ApiOperation({ summary: 'Dupliquer une campagne' })
-  duplicateCampaign(
-    @Param('id') id: string,
-    @Body() body: { name: string },
-    @Request() req,
-  ) {
+  duplicateCampaign(@Param('id') id: string, @Body() body: { name: string }, @Request() req) {
     return this.campaignsService.duplicate(id, body.name, req.user.userId);
   }
 
   @Post(':id/test')
   @ApiOperation({ summary: 'Tester avec échantillon' })
-  testCampaign(
-    @Param('id') id: string,
-    @Body() body: { testEmails: string[] },
-    @Request() req,
-  ) {
+  testCampaign(@Param('id') id: string, @Body() body: { testEmails: string[] }, @Request() req) {
     return this.campaignsService.test(id, body.testEmails, req.user.userId);
   }
 }

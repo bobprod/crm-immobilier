@@ -16,15 +16,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   // Mapping des noms de modèle Prisma vers les noms de table PostgreSQL
   private readonly tableNameMap: Record<string, string> = {
-    'llmConfig': 'llm_configs',
-    'mlConfig': 'ml_configs',
+    llmConfig: 'llm_configs',
+    mlConfig: 'ml_configs',
     // Ajoutez d'autres mappings si nécessaire
   };
 
   constructor() {
     // Désactiver SSL pour le développement local
-    const isLocalDev = process.env.NODE_ENV === 'development' &&
-      process.env.DATABASE_URL?.includes('localhost');
+    const isLocalDev =
+      process.env.NODE_ENV === 'development' && process.env.DATABASE_URL?.includes('localhost');
 
     this.pool = new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -33,24 +33,66 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
     // Créer les proxies pour toutes les tables
     const tables = [
-      'users', 'user', 'properties', 'property', 'prospects', 'prospect',
-      'appointments', 'appointment', 'tasks', 'agencies', 'documents',
-      'interactions', 'llmConfig', 'ai_usage_metrics', 'prospecting_campaigns',
-      'prospecting_leads', 'prospecting_matches', 'conversion_events',
-      'notifications', 'notification', 'settings', 'communications',
-      'matching', 'matches', 'campaign', 'campaigns', 'activity', 'activities',
-      'prospect_interactions', 'prospect_preferences', 'prospect_properties_shown',
-      'prospect_timeline', 'transaction', 'transactions',
+      'users',
+      'user',
+      'properties',
+      'property',
+      'prospects',
+      'prospect',
+      'appointments',
+      'appointment',
+      'tasks',
+      'agencies',
+      'documents',
+      'interactions',
+      'llmConfig',
+      'ai_usage_metrics',
+      'prospecting_campaigns',
+      'prospecting_leads',
+      'prospecting_matches',
+      'conversion_events',
+      'notifications',
+      'notification',
+      'settings',
+      'communications',
+      'matching',
+      'matches',
+      'campaign',
+      'campaigns',
+      'activity',
+      'activities',
+      'prospect_interactions',
+      'prospect_preferences',
+      'prospect_properties_shown',
+      'prospect_timeline',
+      'transaction',
+      'transactions',
       // Tables additionnelles
-      'ai_generations', 'ai_settings', 'analytics_events', 'communication_templates',
-      'contact_validations', 'disposable_domains', 'document_categories',
-      'document_templates', 'mlConfig', 'ocr_results', 'page', 'pages',
-      'propertySeo', 'publishedProperty', 'syncLog', 'trackingConfig',
-      'trackingEvent', 'user_integrations', 'validation_blacklist',
-      'validation_whitelist', 'vitrineAnalytics', 'vitrineConfig',
+      'ai_generations',
+      'ai_settings',
+      'analytics_events',
+      'communication_templates',
+      'contact_validations',
+      'disposable_domains',
+      'document_categories',
+      'document_templates',
+      'mlConfig',
+      'ocr_results',
+      'page',
+      'pages',
+      'propertySeo',
+      'publishedProperty',
+      'syncLog',
+      'trackingConfig',
+      'trackingEvent',
+      'user_integrations',
+      'validation_blacklist',
+      'validation_whitelist',
+      'vitrineAnalytics',
+      'vitrineConfig',
     ];
 
-    tables.forEach(table => {
+    tables.forEach((table) => {
       this[table] = this.createTableProxy(table);
     });
   }
@@ -87,9 +129,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       params = values;
     } else {
       // Template literal - construire la query avec placeholders $1, $2, etc.
-      query = (queryOrStrings as TemplateStringsArray).reduce((acc: string, str: string, i: number) => {
-        return acc + str + (i < values.length ? `$${i + 1}` : '');
-      }, '');
+      query = (queryOrStrings as TemplateStringsArray).reduce(
+        (acc: string, str: string, i: number) => {
+          return acc + str + (i < values.length ? `$${i + 1}` : '');
+        },
+        '',
+      );
       params = values;
     }
 
@@ -108,9 +153,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       query = queryOrStrings;
       params = values;
     } else {
-      query = (queryOrStrings as TemplateStringsArray).reduce((acc: string, str: string, i: number) => {
-        return acc + str + (i < values.length ? `$${i + 1}` : '');
-      }, '');
+      query = (queryOrStrings as TemplateStringsArray).reduce(
+        (acc: string, str: string, i: number) => {
+          return acc + str + (i < values.length ? `$${i + 1}` : '');
+        },
+        '',
+      );
       params = values;
     }
 
@@ -159,7 +207,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         return result.rows[0] || null;
       },
 
-      findMany: async (args?: { where?: any; orderBy?: any; take?: number; skip?: number; select?: any; include?: any }) => {
+      findMany: async (args?: {
+        where?: any;
+        orderBy?: any;
+        take?: number;
+        skip?: number;
+        select?: any;
+        include?: any;
+      }) => {
         let query = `SELECT * FROM "${actualTableName}"`;
         if (args?.where) {
           query += ` WHERE ${self.buildWhereClause(args.where)}`;
@@ -190,7 +245,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         const keys = Object.keys(dataWithDefaults);
         const values = Object.values(dataWithDefaults);
         const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-        const columns = keys.map(k => `"${k}"`).join(', ');
+        const columns = keys.map((k) => `"${k}"`).join(', ');
 
         const query = `INSERT INTO "${actualTableName}" (${columns}) VALUES (${placeholders}) RETURNING *`;
         const result = await self.pool.query(query, values);
@@ -230,29 +285,36 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         return parseInt(result.rows[0].count, 10);
       },
 
-      aggregate: async (args: { where?: any; _sum?: any; _count?: any; _avg?: any; _min?: any; _max?: any }) => {
+      aggregate: async (args: {
+        where?: any;
+        _sum?: any;
+        _count?: any;
+        _avg?: any;
+        _min?: any;
+        _max?: any;
+      }) => {
         const aggregates: string[] = [];
 
         if (args._count) {
           aggregates.push('COUNT(*) as "_count"');
         }
         if (args._sum) {
-          Object.keys(args._sum).forEach(field => {
+          Object.keys(args._sum).forEach((field) => {
             if (args._sum[field]) aggregates.push(`SUM("${field}") as "sum_${field}"`);
           });
         }
         if (args._avg) {
-          Object.keys(args._avg).forEach(field => {
+          Object.keys(args._avg).forEach((field) => {
             if (args._avg[field]) aggregates.push(`AVG("${field}") as "avg_${field}"`);
           });
         }
         if (args._min) {
-          Object.keys(args._min).forEach(field => {
+          Object.keys(args._min).forEach((field) => {
             if (args._min[field]) aggregates.push(`MIN("${field}") as "min_${field}"`);
           });
         }
         if (args._max) {
-          Object.keys(args._max).forEach(field => {
+          Object.keys(args._max).forEach((field) => {
             if (args._max[field]) aggregates.push(`MAX("${field}") as "max_${field}"`);
           });
         }
@@ -267,10 +329,30 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
         return {
           _count: parseInt(row._count || '0', 10),
-          _sum: args._sum ? Object.keys(args._sum).reduce((acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }), {}) : null,
-          _avg: args._avg ? Object.keys(args._avg).reduce((acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }), {}) : null,
-          _min: args._min ? Object.keys(args._min).reduce((acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }), {}) : null,
-          _max: args._max ? Object.keys(args._max).reduce((acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }), {}) : null,
+          _sum: args._sum
+            ? Object.keys(args._sum).reduce(
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+                {},
+              )
+            : null,
+          _avg: args._avg
+            ? Object.keys(args._avg).reduce(
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+                {},
+              )
+            : null,
+          _min: args._min
+            ? Object.keys(args._min).reduce(
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+                {},
+              )
+            : null,
+          _max: args._max
+            ? Object.keys(args._max).reduce(
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+                {},
+              )
+            : null,
         };
       },
 
@@ -335,14 +417,26 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     const isPrismaOperator = (obj: any): boolean => {
       if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return false;
       const keys = Object.keys(obj);
-      const operatorKeys = ['gte', 'lte', 'gt', 'lt', 'contains', 'startsWith', 'endsWith', 'equals', 'not', 'in', 'notIn'];
-      return keys.some(k => operatorKeys.includes(k));
+      const operatorKeys = [
+        'gte',
+        'lte',
+        'gt',
+        'lt',
+        'contains',
+        'startsWith',
+        'endsWith',
+        'equals',
+        'not',
+        'in',
+        'notIn',
+      ];
+      return keys.some((k) => operatorKeys.includes(k));
     };
 
     for (const [key, value] of Object.entries(where)) {
       // Handle Prisma's OR operator
       if (key === 'OR' && Array.isArray(value)) {
-        const orConditions = value.map(condition => `(${this.buildWhereClause(condition)})`);
+        const orConditions = value.map((condition) => `(${this.buildWhereClause(condition)})`);
         if (orConditions.length > 0) {
           conditions.push(`(${orConditions.join(' OR ')})`);
         }
@@ -351,7 +445,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
       // Handle Prisma's AND operator
       if (key === 'AND' && Array.isArray(value)) {
-        const andConditions = value.map(condition => `(${this.buildWhereClause(condition)})`);
+        const andConditions = value.map((condition) => `(${this.buildWhereClause(condition)})`);
         if (andConditions.length > 0) {
           conditions.push(`(${andConditions.join(' AND ')})`);
         }
@@ -361,7 +455,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       // Handle Prisma's NOT operator
       if (key === 'NOT') {
         if (Array.isArray(value)) {
-          const notConditions = value.map(condition => `NOT (${this.buildWhereClause(condition)})`);
+          const notConditions = value.map(
+            (condition) => `NOT (${this.buildWhereClause(condition)})`,
+          );
           conditions.push(notConditions.join(' AND '));
         } else {
           conditions.push(`NOT (${this.buildWhereClause(value)})`);
@@ -378,14 +474,30 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           for (const [op, val] of Object.entries(value as object)) {
             const formattedVal = formatValue(val);
             switch (op) {
-              case 'gte': conditions.push(`"${key}" >= '${formattedVal}'`); break;
-              case 'lte': conditions.push(`"${key}" <= '${formattedVal}'`); break;
-              case 'gt': conditions.push(`"${key}" > '${formattedVal}'`); break;
-              case 'lt': conditions.push(`"${key}" < '${formattedVal}'`); break;
-              case 'contains': conditions.push(`"${key}" ILIKE '%${formattedVal}%'`); break;
-              case 'startsWith': conditions.push(`"${key}" ILIKE '${formattedVal}%'`); break;
-              case 'endsWith': conditions.push(`"${key}" ILIKE '%${formattedVal}'`); break;
-              case 'equals': conditions.push(`"${key}" = '${formattedVal}'`); break;
+              case 'gte':
+                conditions.push(`"${key}" >= '${formattedVal}'`);
+                break;
+              case 'lte':
+                conditions.push(`"${key}" <= '${formattedVal}'`);
+                break;
+              case 'gt':
+                conditions.push(`"${key}" > '${formattedVal}'`);
+                break;
+              case 'lt':
+                conditions.push(`"${key}" < '${formattedVal}'`);
+                break;
+              case 'contains':
+                conditions.push(`"${key}" ILIKE '%${formattedVal}%'`);
+                break;
+              case 'startsWith':
+                conditions.push(`"${key}" ILIKE '${formattedVal}%'`);
+                break;
+              case 'endsWith':
+                conditions.push(`"${key}" ILIKE '%${formattedVal}'`);
+                break;
+              case 'equals':
+                conditions.push(`"${key}" = '${formattedVal}'`);
+                break;
               case 'not':
                 if (val === null) {
                   conditions.push(`"${key}" IS NOT NULL`);
@@ -394,10 +506,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
                 }
                 break;
               case 'in':
-                conditions.push(`"${key}" IN (${(val as any[]).map(v => `'${formatValue(v)}'`).join(', ')})`);
+                conditions.push(
+                  `"${key}" IN (${(val as any[]).map((v) => `'${formatValue(v)}'`).join(', ')})`,
+                );
                 break;
               case 'notIn':
-                conditions.push(`"${key}" NOT IN (${(val as any[]).map(v => `'${formatValue(v)}'`).join(', ')})`);
+                conditions.push(
+                  `"${key}" NOT IN (${(val as any[]).map((v) => `'${formatValue(v)}'`).join(', ')})`,
+                );
                 break;
               default:
                 // Unknown operator - treat as equality
@@ -410,7 +526,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
         }
       } else if (Array.isArray(value)) {
         // Array value without operator - use IN clause
-        conditions.push(`"${key}" IN (${value.map(v => `'${formatValue(v)}'`).join(', ')})`);
+        conditions.push(`"${key}" IN (${value.map((v) => `'${formatValue(v)}'`).join(', ')})`);
       } else {
         conditions.push(`"${key}" = '${formatValue(value)}'`);
       }
@@ -421,10 +537,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   private buildOrderByClause(orderBy: any): string {
     if (Array.isArray(orderBy)) {
-      return orderBy.map(o => {
-        const [key, dir] = Object.entries(o)[0];
-        return `"${key}" ${(dir as string).toUpperCase()}`;
-      }).join(', ');
+      return orderBy
+        .map((o) => {
+          const [key, dir] = Object.entries(o)[0];
+          return `"${key}" ${(dir as string).toUpperCase()}`;
+        })
+        .join(', ');
     }
 
     const [key, dir] = Object.entries(orderBy)[0];

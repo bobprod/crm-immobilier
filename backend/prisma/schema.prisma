@@ -255,10 +255,12 @@ model properties {
   wpSyncId            String?
   wpSyncedAt          DateTime?
   wordpressId         String?
+  deletedAt           DateTime?                   // Soft delete timestamp
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
   // Relations
+  history             PropertyHistory[]
   propertySeo         PropertySeo?
   publishedProperty   PublishedProperty[]
   vitrineAnalytics    VitrineAnalytics[]
@@ -271,6 +273,7 @@ model properties {
   prospectShown       prospect_properties_shown[] @relation("PropertyProspectShown")
   prospecting_matches prospecting_matches[]       @relation("PropertyMatches")
   tasks               tasks[]                     @relation("PropertyTasks")
+  email_ai_analyses   EmailAIAnalysis[]           @relation("EmailAIProperty")
 
   // Priority & Organization
   priority            PropertyPriority            @default(medium)
@@ -299,6 +302,7 @@ model properties {
   @@index([city])
   @@index([type])
   @@index([status])
+  @@index([deletedAt])
   @@index([userId, status, price])  // Composite for matching queries
 }
 
@@ -324,6 +328,7 @@ model prospects {
   timeline             String?
   budget               Json?
   notes                String?
+  deletedAt            DateTime?
   createdAt            DateTime                    @default(now())
   updatedAt            DateTime                    @updatedAt
   appointments         appointments[]
@@ -341,6 +346,29 @@ model prospects {
   users                users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
+  history              ProspectHistory[]           @relation("ProspectHistory")
+  email_ai_analyses    EmailAIAnalysis[]           @relation("EmailAIProspect")
+
+  @@index([deletedAt])
+}
+
+model ProspectHistory {
+  id         String    @id @default(cuid())
+  prospectId String
+  userId     String
+  action     String    // created, updated, deleted, restored, status_changed, score_updated, etc.
+  changes    Json      // Avant/après
+  metadata   Json?     // Info additionnelle
+  createdAt  DateTime  @default(now())
+
+  prospect prospects @relation("ProspectHistory", fields: [prospectId], references: [id], onDelete: Cascade)
+  user     users     @relation("UserProspectHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("prospect_history")
 }
 
 model user_integrations {
@@ -398,6 +426,7 @@ model users {
   prospecting_campaigns    prospecting_campaigns[]   @relation("UserProspectingCampaigns")
   prospecting_leads        prospecting_leads[]       @relation("UserProspectingLeads")
   prospects                prospects[]
+  prospectHistory          ProspectHistory[]         @relation("UserProspectHistory")
   settings                 settings[]                @relation("UserSettings")
   tasks                    tasks[]                   @relation("UserTasks")
   user_integrations        user_integrations[]
@@ -407,6 +436,9 @@ model users {
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
   activities               Activity[]                @relation("UserActivities")
+  email_ai_analyses        EmailAIAnalysis[]         @relation("EmailAIAnalyses")
+  email_ai_drafts          EmailAIDraft[]            @relation("EmailAIDrafts")
+  ai_chat_conversations    AIChatConversation[]      @relation("AIChatConversations")
   wordpressUrl             String?
   wordpressUsername        String?
   wordpressPassword        String?
@@ -1275,6 +1307,7 @@ model Notification {
   metadata  Json?     @default("{}")
   isRead    Boolean   @default(false)
   readAt    DateTime?
+  deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -1284,6 +1317,7 @@ model Notification {
   @@index([isRead])
   @@index([type])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("notifications")
 }
 

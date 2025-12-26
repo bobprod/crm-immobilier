@@ -88,7 +88,7 @@ Dialog appears on screen
          ↓
 BUT TEST ALREADY CHECKED! ❌
          ↓
-await page.waitForTimeout(1000);  ← Too short!
+await new Promise((resolve) => setTimeout(resolve, 1000));  ← Too short!
 const dialog = page.locator('[role="alertdialog"]');
 await expect(dialog).toBeVisible({ timeout: 5000 });
                                     ↑
@@ -103,7 +103,7 @@ React updates state
          ↓
 Render scheduled
          ↓
-await page.waitForTimeout(2000);  ← Longer wait!
+await new Promise((resolve) => setTimeout(resolve, 2000));  ← Longer wait!
          ↓
 Dialog component renders
          ↓
@@ -243,7 +243,7 @@ await expect(newProperty).toBeVisible();
 
   // Create test:
   await expect(modal).not.toBeVisible({ timeout: 5000 });
-+ await page.waitForTimeout(1000);  // Wait for table refresh
++ await new Promise((resolve) => setTimeout(resolve, 1000));  // Wait for table refresh
 
 - const newProperty = page.locator('tr', { hasText: 'Test Property No Rooms' });
 + const newProperty = page.locator('tr', { hasText: 'Test Property No Rooms' }).first();
@@ -251,8 +251,8 @@ await expect(newProperty).toBeVisible();
 
   // Delete tests:
   await deleteButton.click();
-- await page.waitForTimeout(1000);
-+ await page.waitForTimeout(2000);  // Longer wait
+- await new Promise((resolve) => setTimeout(resolve, 1000));
++ await new Promise((resolve) => setTimeout(resolve, 2000));  // Longer wait
   const dialog = page.locator('[role="alertdialog"]');
 - await expect(dialog).toBeVisible({ timeout: 5000 });
 + await expect(dialog).toBeVisible({ timeout: 10000 });  // Longer timeout
