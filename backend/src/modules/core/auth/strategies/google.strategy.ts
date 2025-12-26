@@ -25,12 +25,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     super({
       clientID: clientID || 'not-configured',
       clientSecret: clientSecret || 'not-configured',
-      callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/api/auth/google/callback',
+      callbackURL:
+        configService.get<string>('GOOGLE_CALLBACK_URL') ||
+        'http://localhost:3000/api/auth/google/callback',
       scope: ['email', 'profile'],
     });
 
     if (!clientID || !clientSecret) {
-      console.warn('[GoogleStrategy] Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env');
+      console.warn(
+        '[GoogleStrategy] Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env',
+      );
     }
   }
 

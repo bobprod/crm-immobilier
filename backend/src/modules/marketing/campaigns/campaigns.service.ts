@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto, ConvertLeadDto } from './dto';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class CampaignsService {
@@ -37,11 +38,7 @@ export class CampaignsService {
       where: { id, userId },
     });
 
-    if (!campaign) {
-      throw new NotFoundException('Campaign not found');
-    }
-
-    return campaign;
+    return ErrorHandler.ensureExists(campaign, 'Campaign', id);
   }
 
   async update(id: string, userId: string, dto: UpdateCampaignDto) {
@@ -70,15 +67,17 @@ export class CampaignsService {
 
   async getStats(id: string, userId: string) {
     const campaign = await this.findOne(id, userId);
-    return campaign.stats || {
-      sent: 0,
-      delivered: 0,
-      opened: 0,
-      clicked: 0,
-      converted: 0,
-      bounced: 0,
-      unsubscribed: 0,
-    };
+    return (
+      campaign.stats || {
+        sent: 0,
+        delivered: 0,
+        opened: 0,
+        clicked: 0,
+        converted: 0,
+        bounced: 0,
+        unsubscribed: 0,
+      }
+    );
   }
 
   async getCampaignLeads(campaignId: string, userId: string) {
@@ -90,10 +89,10 @@ export class CampaignsService {
 
   async start(id: string, userId: string) {
     await this.findOne(id, userId);
-    
+
     return this.prisma.campaigns.update({
       where: { id },
-      data: { 
+      data: {
         status: 'active',
         startedAt: new Date(),
       },
@@ -102,10 +101,10 @@ export class CampaignsService {
 
   async pause(id: string, userId: string) {
     await this.findOne(id, userId);
-    
+
     return this.prisma.campaigns.update({
       where: { id },
-      data: { 
+      data: {
         status: 'paused',
         pausedAt: new Date(),
       },
@@ -114,10 +113,10 @@ export class CampaignsService {
 
   async resume(id: string, userId: string) {
     await this.findOne(id, userId);
-    
+
     return this.prisma.campaigns.update({
       where: { id },
-      data: { 
+      data: {
         status: 'active',
         resumedAt: new Date(),
       },
@@ -126,10 +125,10 @@ export class CampaignsService {
 
   async complete(id: string, userId: string) {
     await this.findOne(id, userId);
-    
+
     return this.prisma.campaigns.update({
       where: { id },
-      data: { 
+      data: {
         status: 'completed',
         completedAt: new Date(),
       },
@@ -138,7 +137,7 @@ export class CampaignsService {
 
   async duplicate(id: string, newName: string, userId: string) {
     const original = await this.findOne(id, userId);
-    
+
     return this.prisma.campaigns.create({
       data: {
         userId,
@@ -154,7 +153,7 @@ export class CampaignsService {
 
   async test(id: string, testEmails: string[], userId: string) {
     const campaign = await this.findOne(id, userId);
-    
+
     // Logique de test de campagne - envoyer à quelques emails de test
     // Pour l'instant, on retourne juste la campagne avec un message
     return {
@@ -187,7 +186,9 @@ export class CampaignsService {
             lastName: dto.lastName || existingProspect.lastName,
             budget: dto.budget || existingProspect.budget,
             preferences: dto.preferences || existingProspect.preferences,
-            notes: (existingProspect.notes || '') + `\n[${new Date().toLocaleDateString('fr-FR')}] Mis à jour depuis campagne marketing`,
+            notes:
+              (existingProspect.notes || '') +
+              `\n[${new Date().toLocaleDateString('fr-FR')}] Mis à jour depuis campagne marketing`,
           },
         });
       }

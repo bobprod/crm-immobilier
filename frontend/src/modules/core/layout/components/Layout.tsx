@@ -61,6 +61,7 @@ export default function Layout({
   const getActiveTab = () => {
     const path = router.pathname;
     if (path === '/dashboard' || path === '/') return 'dashboard';
+    if (path.startsWith('/ai-assistant')) return 'ai-assistant';
     if (path.startsWith('/prospecting')) return 'prospecting';
     if (path.startsWith('/properties')) return 'properties';
     if (path.startsWith('/prospects')) return 'prospects';

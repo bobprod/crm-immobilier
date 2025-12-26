@@ -5,12 +5,13 @@ import {
   getPriceRangeForSearch,
   MATCH_WEIGHTS,
 } from '../../../shared/utils/matching.utils';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Génère les matches entre prospects et propriétés
@@ -25,7 +26,9 @@ export class MatchingService {
       where: { userId, status: 'active' },
     });
 
-    this.logger.log(`Generating matches for ${prospects.length} prospects and ${properties.length} properties`);
+    this.logger.log(
+      `Generating matches for ${prospects.length} prospects and ${properties.length} properties`,
+    );
 
     const matches = [];
 
@@ -52,7 +55,8 @@ export class MatchingService {
             budgetMax: budget.max || preferences.budgetMax || null,
             city: prospect.city || preferences.city || null,
             country: preferences.country || 'Tunisie',
-            propertyTypes: preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
+            propertyTypes:
+              preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
             urgency: preferences.urgency || null,
             seriousnessScore: prospect.score || null,
           },
@@ -122,7 +126,9 @@ export class MatchingService {
       });
     }
 
-    this.logger.log(`Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`);
+    this.logger.log(
+      `Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`,
+    );
   }
 
   async findAll(userId: string, filters?: any) {
@@ -171,7 +177,7 @@ export class MatchingService {
 
     // Verify the property belongs to the user
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     let result;
@@ -304,7 +310,7 @@ export class MatchingService {
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      ErrorHandler.notFound('Property');
     }
 
     return this.prisma.matches.findMany({
@@ -326,7 +332,7 @@ export class MatchingService {
     });
 
     if (!property || !prospect) {
-      throw new Error('Property or prospect not found');
+      ErrorHandler.notFound('Property or prospect');
     }
 
     // Calculate score using unified algorithm
@@ -339,7 +345,9 @@ export class MatchingService {
         budgetMax: budget.max || (preferences.budgetMax as number) || null,
         city: prospect.city || (preferences.city as string) || null,
         country: (preferences.country as string) || 'Tunisie',
-        propertyTypes: (preferences.propertyTypes as string[]) || (preferences.type ? [preferences.type as string] : []),
+        propertyTypes:
+          (preferences.propertyTypes as string[]) ||
+          (preferences.type ? [preferences.type as string] : []),
         urgency: (preferences.urgency as string) || null,
         seriousnessScore: prospect.score || null,
       },
@@ -432,7 +440,7 @@ export class MatchingService {
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      ErrorHandler.notFound('Property');
     }
 
     const where: any = { userId, status: 'active' };
@@ -486,7 +494,7 @@ export class MatchingService {
     });
 
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     return match;
@@ -499,7 +507,7 @@ export class MatchingService {
     });
 
     if (!match || match.properties.userId !== userId) {
-      throw new Error('Match not found');
+      ErrorHandler.notFound('Match');
     }
 
     await this.prisma.matches.delete({ where: { id } });

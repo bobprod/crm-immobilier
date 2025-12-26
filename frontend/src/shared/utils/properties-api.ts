@@ -41,6 +41,7 @@ export interface Property {
   feesPercentage?: number;
   viewsCount?: number;
   reference?: string;
+  deletedAt?: string; // Soft delete timestamp
   createdAt: string;
   updatedAt: string;
 }
@@ -331,6 +332,92 @@ export const propertiesAPI = {
    */
   getAssigned: async (userId: string): Promise<Property[]> => {
     const response = await apiClient.get(`/properties/assigned/${userId}`);
+    return response.data;
+  },
+
+  // ============================================
+  // NEW: SOFT DELETE & HISTORY
+  // ============================================
+
+  /**
+   * Get all trashed (soft-deleted) properties
+   */
+  getTrashed: async (): Promise<Property[]> => {
+    const response = await apiClient.get('/properties/trashed');
+    return response.data;
+  },
+
+  /**
+   * Restore a soft-deleted property
+   */
+  restore: async (id: string): Promise<Property> => {
+    const response = await apiClient.post(`/properties/${id}/restore`);
+    return response.data;
+  },
+
+  /**
+   * Permanently delete a property (cannot be undone)
+   */
+  permanentDelete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/properties/${id}/permanent`);
+  },
+
+  /**
+   * Get property change history
+   */
+  getHistory: async (id: string, limit = 50): Promise<any[]> => {
+    const response = await apiClient.get(`/properties/${id}/history`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get user activity across all properties
+   */
+  getUserActivity: async (userId: string, limit = 50): Promise<any[]> => {
+    const response = await apiClient.get(`/properties/user/${userId}/activity`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  // ============================================
+  // NEW: CURSOR-BASED PAGINATION
+  // ============================================
+
+  /**
+   * Get paginated properties with cursor-based pagination for infinite scroll
+   */
+  getPaginated: async (
+    cursor?: string,
+    limit = 20,
+    filters?: PropertyFilters
+  ): Promise<{
+    items: Property[];
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    total: number;
+  }> => {
+    const params: any = { limit, ...filters };
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    const response = await apiClient.get('/properties/paginated', { params });
+    return response.data;
+  },
+
+  /**
+   * Find nearby properties by geolocation (with distance sorting)
+   */
+  findNearby: async (
+    lat: number,
+    lng: number,
+    radius = 5
+  ): Promise<Array<Property & { distance: number }>> => {
+    const response = await apiClient.get('/properties/nearby', {
+      params: { lat, lng, radius },
+    });
     return response.data;
   },
 };

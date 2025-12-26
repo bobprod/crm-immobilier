@@ -10,10 +10,13 @@ import {
   UseGuards,
   Request,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { SmartNotificationsService } from './smart-notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -42,6 +45,15 @@ export class NotificationsController {
     const userId = req.user.userId;
     const limitNum = limit ? parseInt(limit, 10) : 20;
     return this.notificationsService.getUserNotifications(userId, limitNum);
+  }
+
+  /**
+   * Récupérer les notifications paginées
+   */
+  @Get('paginated')
+  async findPaginated(@Request() req, @Query() query: PaginationQueryDto) {
+    const userId = req.user.userId;
+    return this.notificationsService.getUserNotificationsPaginated(userId, query);
   }
 
   /**
@@ -78,6 +90,14 @@ export class NotificationsController {
   async markAllAsRead(@Request() req) {
     const userId = req.user.userId;
     return this.notificationsService.markAllAsRead(userId);
+  }
+
+  /**
+   * Mettre à jour une notification
+   */
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+    return this.notificationsService.updateNotification(id, updateNotificationDto);
   }
 
   /**

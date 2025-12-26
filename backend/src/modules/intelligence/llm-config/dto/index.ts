@@ -184,8 +184,8 @@ export class DashboardMetricsDto {
         requests: { type: 'number' },
         tokens: { type: 'number' },
         cost: { type: 'number' },
-      }
-    }
+      },
+    },
   })
   dailyStats: Array<{
     date: string;
@@ -203,8 +203,8 @@ export class DashboardMetricsDto {
         provider: { type: 'string' },
         requests: { type: 'number' },
         percentage: { type: 'number' },
-      }
-    }
+      },
+    },
   })
   providerDistribution: Array<{
     provider: string;
@@ -232,7 +232,7 @@ export class BudgetCheckDto {
   @ApiProperty({ description: 'Statut du budget (safe, warning, danger)' })
   status: 'safe' | 'warning' | 'danger';
 
-  @ApiProperty({ description: 'Message d\'alerte si applicable' })
+  @ApiProperty({ description: "Message d'alerte si applicable" })
   message: string;
 
   @ApiProperty({ description: 'Budget dépassé ou non' })
@@ -241,4 +241,3 @@ export class BudgetCheckDto {
   @ApiProperty({ description: 'Projection des dépenses pour le mois' })
   projectedMonthlySpend: number;
 }
-

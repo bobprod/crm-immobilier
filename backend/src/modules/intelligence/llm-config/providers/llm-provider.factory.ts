@@ -1,10 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
-import {
-  LLMProvider,
-  LLMConfig,
-  PRICING_PER_1M_TOKENS,
-} from './llm-provider.interface';
+import { LLMProvider, LLMConfig, PRICING_PER_1M_TOKENS } from './llm-provider.interface';
 import { AnthropicProvider } from './anthropic.provider';
 import { OpenAIProvider } from './openai.provider';
 import { GeminiProvider } from './gemini.provider';

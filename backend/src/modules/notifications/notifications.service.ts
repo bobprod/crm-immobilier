@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
 import { SmartNotificationsService } from './smart-notifications.service';
@@ -105,7 +105,7 @@ export class NotificationsService {
    */
   async getUserNotifications(userId: string, limit: number = 20) {
     return this.prisma.notifications.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
@@ -119,6 +119,7 @@ export class NotificationsService {
       where: {
         userId,
         isRead: false,
+        deletedAt: null,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -132,6 +133,7 @@ export class NotificationsService {
       where: {
         userId,
         isRead: false,
+        deletedAt: null,
       },
     });
   }
@@ -152,15 +154,84 @@ export class NotificationsService {
       where: {
         userId,
         isRead: false,
+        deletedAt: null,
       },
-      data: { isRead: true },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
     });
   }
 
   /**
-   * Supprimer une notification
+   * Mettre à jour une notification
+   */
+  async updateNotification(notificationId: string, data: UpdateNotificationDto) {
+    try {
+      this.logger.log(`Updating notification ${notificationId}`);
+
+      // Check if notification exists
+      const existingNotification = await this.prisma.notifications.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!existingNotification) {
+        throw new NotFoundException(`Notification with id ${notificationId} not found`);
+      }
+
+      const updateData: any = {};
+
+      if (data.type !== undefined) updateData.type = data.type;
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.message !== undefined) updateData.message = data.message;
+      if (data.actionUrl !== undefined) updateData.actionUrl = data.actionUrl;
+      if (data.metadata !== undefined) {
+        try {
+          updateData.metadata = JSON.parse(data.metadata);
+        } catch (parseError) {
+          this.logger.error(`Invalid JSON in metadata: ${parseError.message}`);
+          throw new BadRequestException(
+            `Invalid JSON format in metadata field: ${parseError.message}`,
+          );
+        }
+      }
+
+      const notification = await this.prisma.notifications.update({
+        where: { id: notificationId },
+        data: updateData,
+      });
+
+      return notification;
+    } catch (error) {
+      this.logger.error(`Error updating notification: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Supprimer une notification (soft delete)
    */
   async deleteNotification(notificationId: string) {
+    return this.prisma.notifications.update({
+      where: { id: notificationId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  /**
+   * Restaurer une notification supprimée
+   */
+  async restoreNotification(notificationId: string) {
+    return this.prisma.notifications.update({
+      where: { id: notificationId },
+      data: { deletedAt: null },
+    });
+  }
+
+  /**
+   * Supprimer définitivement une notification (hard delete)
+   */
+  async hardDeleteNotification(notificationId: string) {
     return this.prisma.notifications.delete({
       where: { id: notificationId },
     });

@@ -270,7 +270,11 @@ export function calculateMetaBonus(
   // Bonus urgence
   if (urgency) {
     const normalizedUrgency = urgency.toLowerCase();
-    if (normalizedUrgency === 'haute' || normalizedUrgency === 'high' || normalizedUrgency === 'immediate') {
+    if (
+      normalizedUrgency === 'haute' ||
+      normalizedUrgency === 'high' ||
+      normalizedUrgency === 'immediate'
+    ) {
       urgencyBonus = 5;
     } else if (normalizedUrgency === 'moyenne' || normalizedUrgency === 'medium') {
       urgencyBonus = 3;
@@ -326,10 +330,7 @@ export interface MatchScoreResult {
   isQualified: boolean;
 }
 
-export function calculateMatchScore(
-  lead: MatchInput,
-  property: PropertyInput,
-): MatchScoreResult {
+export function calculateMatchScore(lead: MatchInput, property: PropertyInput): MatchScoreResult {
   const budgetReason = calculateBudgetScore(
     lead.budgetMin || null,
     lead.budgetMax || null,
@@ -343,15 +344,9 @@ export function calculateMatchScore(
     property.country || null,
   );
 
-  const typeReason = calculateTypeScore(
-    lead.propertyTypes || [],
-    property.type || null,
-  );
+  const typeReason = calculateTypeScore(lead.propertyTypes || [], property.type || null);
 
-  const metaReason = calculateMetaBonus(
-    lead.urgency || null,
-    lead.seriousnessScore || null,
-  );
+  const metaReason = calculateMetaBonus(lead.urgency || null, lead.seriousnessScore || null);
 
   const totalScore = Math.min(
     100,

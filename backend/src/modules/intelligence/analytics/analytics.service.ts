@@ -3,7 +3,7 @@ import { PrismaService } from '../../../shared/database/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Dashboard global - Vue d'ensemble
@@ -108,7 +108,7 @@ export class AnalyticsService {
           WHERE "userId" = ${userId}
           GROUP BY type
         `;
-        return result.map(r => ({ type: r.type, _count: Number(r.count) }));
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
       })(),
     ]);
 
@@ -152,7 +152,7 @@ export class AnalyticsService {
           WHERE "userId" = ${userId}
           GROUP BY type
         `;
-        return result.map(r => ({ type: r.type, _count: Number(r.count) }));
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
       })(),
     ]);
 
@@ -207,7 +207,7 @@ export class AnalyticsService {
           WHERE "userId" = ${userId}
           GROUP BY type
         `;
-        return result.map(r => ({ type: r.type, _count: Number(r.count) }));
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
       })(),
     ]);
 

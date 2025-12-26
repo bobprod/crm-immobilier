@@ -7,6 +7,8 @@ import { NotificationsGateway } from './notifications.gateway';
 import { EmailService } from '../communications/email/email.service';
 import { SmsService } from '../communications/sms/sms.service';
 import { PrismaModule } from '../../shared/database/prisma.module';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [

@@ -25,13 +25,17 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     super({
       clientID: clientID || 'not-configured',
       clientSecret: clientSecret || 'not-configured',
-      callbackURL: configService.get<string>('FACEBOOK_CALLBACK_URL') || 'http://localhost:3000/api/auth/facebook/callback',
+      callbackURL:
+        configService.get<string>('FACEBOOK_CALLBACK_URL') ||
+        'http://localhost:3000/api/auth/facebook/callback',
       scope: ['email'],
       profileFields: ['id', 'emails', 'name', 'photos'],
     });
 
     if (!clientID || !clientSecret) {
-      console.warn('[FacebookStrategy] Facebook OAuth not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in .env');
+      console.warn(
+        '[FacebookStrategy] Facebook OAuth not configured. Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in .env',
+      );
     }
   }
 

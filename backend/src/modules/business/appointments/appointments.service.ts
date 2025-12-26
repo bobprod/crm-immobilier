@@ -1,12 +1,13 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Créer un rendez-vous
@@ -157,11 +158,7 @@ export class AppointmentsService {
       },
     });
 
-    if (!appointment) {
-      throw new NotFoundException('Rendez-vous non trouvé');
-    }
-
-    return appointment;
+    return ErrorHandler.ensureExists(appointment, 'Appointment', id);
   }
 
   /**

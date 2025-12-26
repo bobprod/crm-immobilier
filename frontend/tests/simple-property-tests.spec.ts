@@ -36,7 +36,7 @@ test.describe('Property Delete Confirmation Dialog - Simple Tests', () => {
         await deleteButton.click();
 
         // Wait for custom dialog
-        await page.waitForTimeout(1500);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         // Verify custom AlertDialog appears
         const customDialog = page.locator('[role="alertdialog"]');
@@ -72,7 +72,7 @@ test.describe('Property Delete Confirmation Dialog - Simple Tests', () => {
         await editButton.click();
 
         // Wait for modal
-        await page.waitForTimeout(1500);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         const modal = page.locator('[role="dialog"]');
         await expect(modal).toBeVisible({ timeout: 5000 });
 
@@ -108,7 +108,7 @@ test.describe('Property Delete Confirmation Dialog - Simple Tests', () => {
         console.log('✅ Rooms field NOT sent to backend');
 
         // Wait for response and modal to close
-        await page.waitForTimeout(3000);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
 
         // Verify no error (modal should close)
         const isModalGone = await modal.isVisible().catch(() => false);

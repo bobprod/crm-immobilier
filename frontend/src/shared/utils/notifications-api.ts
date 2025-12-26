@@ -91,6 +91,14 @@ export const notificationsAPI = {
     return response.data;
   },
 
+  // Get paginated notifications
+  getPaginated: async (cursor?: string | null, limit = 20) => {
+    const response = await apiClient.get('/notifications/paginated', {
+      params: { cursor, limit },
+    });
+    return response.data;
+  },
+
   // Get unread notifications
   getUnread: async (): Promise<Notification[]> => {
     const response = await apiClient.get('/notifications/unread');
@@ -118,6 +126,12 @@ export const notificationsAPI = {
   // Mark all as read
   markAllAsRead: async (): Promise<{ updated: number }> => {
     const response = await apiClient.patch('/notifications/read-all');
+    return response.data;
+  },
+
+  // Update notification
+  update: async (id: string, data: Partial<CreateNotificationDto>): Promise<Notification> => {
+    const response = await apiClient.patch(`/notifications/${id}`, data);
     return response.data;
   },
 

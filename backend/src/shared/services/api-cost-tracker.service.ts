@@ -194,9 +194,9 @@ export class ApiCostTrackerService {
 
     // Trouver le top provider
     const stats = await this.getUsageStats(userId, 30);
-    const topProvider = Object.entries(stats.byProvider).sort(
-      (a, b) => b[1].requests - a[1].requests,
-    )[0]?.[0] || null;
+    const topProvider =
+      Object.entries(stats.byProvider).sort((a, b) => b[1].requests - a[1].requests)[0]?.[0] ||
+      null;
 
     return {
       today: todayMetrics,
