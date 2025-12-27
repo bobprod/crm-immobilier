@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test('Debug: Check page console logs', async ({ page }) => {
     const consoleLogs: any[] = [];
