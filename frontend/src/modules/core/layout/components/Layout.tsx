@@ -77,9 +77,8 @@ export default function Layout({ children, initialTab = 'dashboard', disableAuth
       </div>
     );
   }
-}
 
-const menuItems = [
+  const menuItems = [
   { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
   { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
   { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
