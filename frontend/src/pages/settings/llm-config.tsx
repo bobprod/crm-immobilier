@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
 import { Badge } from '@/shared/components/ui/badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
@@ -65,7 +77,7 @@ export default function LLMConfigPage() {
     }
   };
 
-  const selectedProvider = providers.find(p => p.id === config?.provider);
+  const selectedProvider = providers.find((p) => p.id === config?.provider);
 
   if (loading) {
     return (
@@ -98,9 +110,7 @@ export default function LLMConfigPage() {
           <Card>
             <CardHeader>
               <CardTitle>Configuration active</CardTitle>
-              <CardDescription>
-                Configurez votre provider IA et votre clé API
-              </CardDescription>
+              <CardDescription>Configurez votre provider IA et votre clé API</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Provider */}
@@ -130,11 +140,10 @@ export default function LLMConfigPage() {
                     <div className="space-y-2">
                       <p className="font-semibold">{selectedProvider.name}</p>
                       <p className="text-sm">{selectedProvider.description}</p>
-                      <p className="text-sm text-gray-600">
-                        Tarif : {selectedProvider.pricing}
-                      </p>
+                      <p className="text-sm text-gray-600">Tarif : {selectedProvider.pricing}</p>
                       <p className="text-sm">
-                        Format clé : <code className="bg-gray-100 px-1">{selectedProvider.keyFormat}</code>
+                        Format clé :{' '}
+                        <code className="bg-gray-100 px-1">{selectedProvider.keyFormat}</code>
                       </p>
                       <a
                         href={selectedProvider.website}
@@ -234,7 +243,10 @@ export default function LLMConfigPage() {
         <TabsContent value="providers">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {providers.map((provider) => (
-              <Card key={provider.id} className={config?.provider === provider.id ? 'border-blue-500' : ''}>
+              <Card
+                key={provider.id}
+                className={config?.provider === provider.id ? 'border-blue-500' : ''}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     {provider.name}

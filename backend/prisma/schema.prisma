@@ -270,10 +270,10 @@ model properties {
   matches             matches[]
   agencies            agencies?                   @relation(fields: [agencyId], references: [id])
   users               users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prospectShown       prospect_properties_shown[] @relation("PropertyProspectShown")
-  prospecting_matches prospecting_matches[]       @relation("PropertyMatches")
-  tasks               tasks[]                     @relation("PropertyTasks")
-  email_ai_analyses   EmailAIAnalysis[]           @relation("EmailAIProperty")
+  prospectShown              prospect_properties_shown[]     @relation("PropertyProspectShown")
+  prospecting_matches        prospecting_matches[]           @relation("PropertyMatches")
+  matchedLeads               prospecting_lead_properties[]   @relation("PropertyLeadMatches")
+  tasks                      tasks[]                         @relation("PropertyTasks")
 
   // Priority & Organization
   priority            PropertyPriority            @default(medium)
@@ -430,9 +430,13 @@ model users {
   settings                 settings[]                @relation("UserSettings")
   tasks                    tasks[]                   @relation("UserTasks")
   user_integrations        user_integrations[]
+  aiOrchestrations         AiOrchestration[]
+  toolCallLogs             ToolCallLog[]
   agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
   assignedProperties       properties[]              @relation("AssignedProperties")
   notifications            Notification[]            @relation("UserNotifications")
+  notificationPreferences  NotificationPreference?   @relation("UserNotificationPreferences")
+  userIntegrations         UserIntegration[]         @relation("UserIntegrations")
   activities               Activity[]                @relation("UserActivities")
   email_ai_analyses        EmailAIAnalysis[]         @relation("EmailAIAnalyses")
   email_ai_drafts          EmailAIDraft[]            @relation("EmailAIDrafts")
@@ -682,6 +686,9 @@ model prospecting_campaigns {
   @@index([userId])
   @@index([status])
   @@index([type])
+  @@index([userId, status, createdAt])
+  @@index([startedAt])
+  @@index([foundCount, matchedCount])
 }
 
 model prospecting_leads {
@@ -715,23 +722,35 @@ model prospecting_leads {
   budgetMax           Float?                // Maximum budget
   budgetCurrency      String?               @default("TND")
   qualificationNotes  String?               @db.Text // Notes de qualification du lead
-  prospectType        String?               // @deprecated
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  retryCount          Int                   @default(0)  // Nombre de tentatives de contact
+  lastContactedAt     DateTime?                          // Dernière tentative de contact
+  nextActionDate      DateTime?                          // Prochaine action planifiée
+  sourceMetadata      Json?                              // Métadonnées du scraping
+  qualityScore        Int?                               // Score qualité 0-100
+  aiModelVersion      String?                            // Version du modèle LLM utilisé
+
+  // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
+  prospectType        String?               // @deprecated - Use leadType
   subType             String?               // @deprecated
   searchCriteria      Json?                 // @deprecated
   mandatInfo          Json?                 // @deprecated
   profiling           Json?                 // @deprecated
-  timeline            String?               // @deprecated
-  budget              Json?                 // @deprecated
-  matchedPropertyIds  String[]              // Array of matched property IDs
+  timeline            String?               // @deprecated - Use urgency
+  budget              Json?                 // @deprecated - Use budgetMin/budgetMax
+  matchedPropertyIds  String[]              // @deprecated - Use prospecting_lead_properties junction table
+
   metadata            Json?
   convertedProspectId String?
   convertedAt         DateTime?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   campaigns           prospecting_campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  convertedProspect   prospects?            @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
-  users               users                 @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
-  prospecting_matches prospecting_matches[] @relation("LeadMatches")
+  convertedProspect   prospects?                        @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
+  users               users                             @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
+  prospecting_matches prospecting_matches[]             @relation("LeadMatches")
+  matchedProperties   prospecting_lead_properties[]     @relation("LeadPropertyMatches")
 
   @@index([campaignId])
   @@index([userId])
@@ -741,6 +760,10 @@ model prospecting_leads {
   @@index([leadType])
   @@index([validationStatus])
   @@index([city])
+  @@index([campaignId, status, leadType])
+  @@index([userId, createdAt, status])
+  @@index([validationStatus, createdAt])
+  @@index([intention, urgency, city])
 }
 
 model prospecting_matches {
@@ -752,15 +775,24 @@ model prospecting_matches {
   reason         Json              // MatchReason structure from matching algorithm
   status         MatchStatus       @default(pending)
   isQualified    Boolean           @default(false) // score >= 50
-  // @deprecated fields - will be removed
-  prospectType   String?
-  subType        String?
-  searchCriteria Json?
-  mandatInfo     Json?
-  profiling      Json?
-  timeline       String?
-  budget         Json?
-  // Tracking
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  convertedAt       DateTime?        // Date de conversion en prospect/client
+  conversionValue   Float?           // Valeur de la conversion (€)
+  attemptCount      Int       @default(1)   // Nombre de tentatives de contact
+  lastAttemptAt     DateTime?        // Dernière tentative
+  feedbackScore     Int?             // Note de satisfaction (1-5)
+
+  // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
+  prospectType   String?              // @deprecated - Use lead.leadType
+  subType        String?              // @deprecated
+  searchCriteria Json?                // @deprecated
+  mandatInfo     Json?                // @deprecated
+  profiling      Json?                // @deprecated
+  timeline       String?              // @deprecated - Use lead.urgency
+  budget         Json?                // @deprecated - Use lead.budgetMin/budgetMax
+
+  // Tracking existant
   notifiedAt     DateTime?
   contactedAt    DateTime?
   createdAt      DateTime          @default(now())
@@ -777,6 +809,30 @@ model prospecting_matches {
   @@index([score])
   @@index([status])
   @@index([isQualified])
+  @@index([status, isQualified, createdAt])
+  @@index([score, status])
+  @@index([propertyId, status])
+}
+
+// Table de junction pour remplacer matchedPropertyIds[] dans prospecting_leads
+// Permet de créer une vraie relation many-to-many avec indexes efficaces
+model prospecting_lead_properties {
+  id          String            @id @default(cuid())
+  leadId      String
+  propertyId  String
+  matchScore  Int               @default(0) // Score spécifique de ce match (0-100)
+  matchedAt   DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+
+  // Relations
+  lead        prospecting_leads @relation("LeadPropertyMatches", fields: [leadId], references: [id], onDelete: Cascade)
+  property    properties        @relation("PropertyLeadMatches", fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, propertyId])
+  @@index([leadId, matchScore])
+  @@index([propertyId, matchScore])
+  @@index([matchedAt])
+  @@map("prospecting_lead_properties")
 }
 
 model contact_validations {
@@ -1122,6 +1178,98 @@ model LlmConfig {
   @@map("llm_configs")
 }
 
+// ═══════════════════════════════════════════════════════
+// LLM ROUTER - Multi-providers support
+// ═══════════════════════════════════════════════════════
+
+model UserLlmProvider {
+  id                    String   @id @default(cuid())
+  userId                String
+  provider              String   // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
+  apiKey                String   // Clé API (cryptée)
+  model                 String?  // Modèle par défaut pour ce provider
+  isActive              Boolean  @default(true)
+  priority              Int      @default(0)  // 0 = plus haute priorité
+  monthlyBudget         Float?   // Budget mensuel pour ce provider (en $)
+
+  // ✅ NOUVEAUX CHAMPS TRACKING
+  monthlyTokensUsed     Int      @default(0)  // Tokens utilisés ce mois
+  estimatedMonthCost    Float    @default(0)  // Coût estimé ce mois
+  quotaRemainingTokens  Int?                  // Tokens restants (quota API)
+  rateLimitPerMinute    Int?                  // Rate limit du provider
+  lastUsedAt            DateTime?             // Dernière utilisation
+  successRate           Float    @default(100) // Taux de succès (0-100%)
+  failureCount          Int      @default(0)  // Nombre d'échecs
+  totalApiCalls         Int      @default(0)  // Total d'appels API
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  users                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs             LlmUsageLog[]           @relation("ProviderUsageLogs")
+  performanceMetrics    ProviderPerformance[]   @relation("ProviderMetrics")
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([userId, isActive])
+  @@index([lastUsedAt])
+  @@index([successRate])
+  @@map("user_llm_providers")
+}
+
+model LlmUsageLog {
+  id                String            @id @default(cuid())
+  userId            String
+  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel car peut être un provider non configuré)
+  provider          String            // Provider utilisé
+  operationType     String            // 'seo', 'prospecting_mass', 'analysis_quick', etc.
+  tokensInput       Int               @default(0)
+  tokensOutput      Int               @default(0)
+  cost              Float             @default(0) // Coût en $
+  latency           Int               @default(0) // Latence en ms
+  success           Boolean           @default(true)
+  errorMessage      String?
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  user              users?            @relation("UserLlmUsageLogs", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider   UserLlmProvider?  @relation("ProviderUsageLogs", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userLlmProviderId, createdAt])
+  @@index([provider, createdAt])
+  @@index([operationType])
+  @@index([userId, operationType, createdAt])
+  @@index([success, createdAt])
+  @@index([operationType, success])
+  @@map("llm_usage_logs")
+}
+
+model ProviderPerformance {
+  id                String            @id @default(cuid())
+  userId            String
+  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel)
+  provider          String
+  avgLatency        Int               @default(0) // Latence moyenne (ms)
+  successRate       Float             @default(100) // Taux de succès (0-100%)
+  totalCalls        Int               @default(0)
+  totalTokens       Int               @default(0)
+  totalCost         Float             @default(0)
+  lastUsed          DateTime?
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  user              users             @relation("UserProviderPerformance", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider   UserLlmProvider?  @relation("ProviderMetrics", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, provider])
+  @@index([avgLatency])
+  @@index([successRate])
+  @@index([userId, updatedAt])
+  @@map("provider_performance")
+}
+
 model Page {
   id          String   @id @default(cuid())
   userId      String
@@ -1303,9 +1451,17 @@ model Notification {
   message   String    @db.Text
   actionUrl String?
   metadata  Json?     @default("{}")
+
+  // ✅ Smart AI Notification - Canal de livraison
+  channel   String    @default("in_app") // in_app, email, sms, push, whatsapp
+
   isRead    Boolean   @default(false)
   readAt    DateTime?
-  deletedAt DateTime?
+
+  // ✅ Smart AI Notification - Tracking
+  deliveredAt DateTime?  // Quand la notification a été livrée
+  openedAt    DateTime?  // Quand l'utilisateur a ouvert/cliqué
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -1314,9 +1470,77 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([type])
+  @@index([channel])      // NEW - Pour stats par canal
   @@index([createdAt])
   @@index([deletedAt])
   @@map("notifications")
+}
+
+// ✅ Smart AI Notification - Préférences utilisateur
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+
+  // Canaux activés par type de notification
+  channels  Json     @default("{\"appointment\":[\"in_app\",\"email\"],\"task\":[\"in_app\"],\"lead\":[\"in_app\",\"email\"],\"system\":[\"in_app\"],\"property\":[\"in_app\"],\"message\":[\"in_app\",\"push\"]}")
+
+  // Horaires préférés (format: { "start": "09:00", "end": "18:00", "timezone": "Europe/Paris" })
+  quietHours Json?
+
+  // Fréquence maximale (ex: max 5 notifications par heure)
+  maxPerHour Int      @default(10)
+
+  // AI Smart Routing activé
+  aiOptimization Boolean @default(true)
+
+  // Digest quotidien activé
+  dailyDigest Boolean  @default(false)
+  digestTime  String?  // Format: "09:00"
+
+  // Priorités (high, medium, low)
+  minPriority String   @default("low")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user users @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+// ✅ Smart AI Notification - Intégrations API utilisateur
+model UserIntegration {
+  id        String   @id @default(cuid())
+  userId    String
+  provider  String   // resend, sendgrid, twilio, firebase, etc.
+
+  // Configuration (JSON chiffré contenant les clés API)
+  config    Json     // { apiKey, accountSid, authToken, phoneNumber, etc. }
+
+  // Métadonnées
+  isActive  Boolean  @default(true)
+  label     String?  // Nom personnalisé (ex: "Twilio Production")
+
+  // Quotas & Limites
+  monthlyQuota     Int?     // Quota mensuel (emails, SMS)
+  currentUsage     Int      @default(0)
+  lastResetAt      DateTime @default(now())
+
+  // Statut
+  lastTestedAt     DateTime?
+  lastTestStatus   String?  // success, failed
+  lastTestError    String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user users @relation("UserIntegrations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider])
+  @@index([isActive])
+  @@map("user_integrations")
 }
 
 // ============================================
@@ -1367,118 +1591,74 @@ model Activity {
 }
 
 // ============================================
-// 🆕 PROPERTY HISTORY MODULE
+// AI ORCHESTRATOR MODULE
 // ============================================
 
-model PropertyHistory {
-  id         String     @id @default(cuid())
-  propertyId String
-  userId     String
-  action     String     // create, update, delete, restore, status_changed
-  changes    Json?      // Changed fields with before/after values
-  metadata   Json?      // Additional metadata
-  createdAt  DateTime   @default(now())
+// Orchestrations IA (tracking des demandes d'orchestration)
+model AiOrchestration {
+  id            String    @id @default(cuid())
+  userId        String
+  tenantId      String
+  objective     String    // prospection, investment_benchmark, property_analysis, etc.
+  context       Json      // Contexte métier de la demande
+  status        String    // pending, planning, executing, completed, failed, partial
+  plan          Json?     // ExecutionPlan généré
+  results       Json?     // Résultats des ToolCalls
+  finalResult   Json?     // Résultat final synthétisé
+  metrics       Json?     // { totalDurationMs, totalTokensUsed, totalCost, ... }
+  errors        String[]  // Messages d'erreur
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
   
-  property   properties @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  @@index([propertyId])
   @@index([userId])
-  @@index([action])
+  @@index([tenantId])
+  @@index([status])
+  @@index([objective])
   @@index([createdAt])
-  @@map("property_history")
+  @@map("ai_orchestrations")
 }
 
-// ============================================
-// 🆕 EMAIL AI AUTO-RESPONSE MODULE
-// ============================================
-
-model EmailAIAnalysis {
+// Logs des appels d'outils individuels
+model ToolCallLog {
   id                String    @id @default(cuid())
+  orchestrationId   String?   // Lien vers AiOrchestration (optionnel)
   userId            String
-  from              String    // Sender email
-  subject           String
-  body              String    @db.Text
-  prospectId        String?
-  propertyId        String?
-  intent            String    // information, appointment, negotiation, complaint, other
-  confidence        Int       // 0-100
-  keywords          Json?     // Array of keywords
-  suggestedActions  Json?     // Array of suggested actions
-  context           Json?     // Gathered context
-  status            String    @default("analyzed") // analyzed, draft_generated, completed
+  tenantId          String
+  tool              String    // serpapi, firecrawl, llm
+  action            String    // search, scrape, generate, etc.
+  params            Json      // Paramètres de l'appel
+  result            Json?     // Résultat de l'appel
+  success           Boolean
+  error             String?
+  durationMs        Int?
+  tokensUsed        Int?
+  cost              Float?
   createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  user              users             @relation("EmailAIAnalyses", fields: [userId], references: [id], onDelete: Cascade)
-  prospects         prospects?        @relation("EmailAIProspect", fields: [prospectId], references: [id], onDelete: SetNull)
-  properties        properties?       @relation("EmailAIProperty", fields: [propertyId], references: [id], onDelete: SetNull)
-  email_ai_drafts   EmailAIDraft[]
-
+  
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([orchestrationId])
   @@index([userId])
-  @@index([prospectId])
-  @@index([propertyId])
-  @@index([intent])
-  @@index([status])
+  @@index([tenantId])
+  @@index([tool])
   @@index([createdAt])
-  @@map("email_ai_analyses")
+  @@map("tool_call_logs")
 }
 
-model EmailAIDraft {
-  id                    String    @id @default(cuid())
-  userId                String
-  analysisId            String
-  to                    String
-  subject               String
-  body                  String    @db.Text
-  attachmentSuggestions Json?     // Array of suggested attachments
-  status                String    @default("pending") // pending, sent, failed
-  sentAt                DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  user                  users            @relation("EmailAIDrafts", fields: [userId], references: [id], onDelete: Cascade)
-  email_ai_analyses     EmailAIAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([analysisId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("email_ai_drafts")
-}
-
-// ============================================
-// AI CHAT ASSISTANT - Conversational AI tables
-// ============================================
-
-model AIChatConversation {
-  id        String    @id @default(cuid())
-  userId    String
-  title     String    @default("Nouvelle conversation")
-  context   Json?     // Conversation context/metadata
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  user      users            @relation("AIChatConversations", fields: [userId], references: [id], onDelete: Cascade)
-  messages  AIChatMessage[]
-
-  @@index([userId])
-  @@index([deletedAt])
-  @@index([updatedAt])
-  @@map("ai_chat_conversations")
-}
-
-model AIChatMessage {
-  id             String   @id @default(cuid())
-  conversationId String
-  role           String   // user, assistant, system
-  content        String   @db.Text
-  metadata       Json?    // Intent, confidence, tokens, etc.
-  createdAt      DateTime @default(now())
-
-  conversation   AIChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId])
-  @@index([createdAt])
-  @@map("ai_chat_messages")
+// Clés d'intégration pour les outils externes (SerpAPI, Firecrawl, etc.)
+model IntegrationKeys {
+  id            String    @id @default(cuid())
+  tenantId      String    @unique
+  serpApiKey    String?   @db.Text // Encrypted
+  firecrawlKey  String?   @db.Text // Encrypted
+  picaAiKey     String?   @db.Text
+  googleApiKey  String?   @db.Text
+  customKeys    Json?     // Pour d'autres intégrations futures
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([tenantId])
+  @@map("integration_keys")
 }

@@ -60,7 +60,12 @@ export const DEFAULT_PROVIDERS: ProviderInfo[] = [
   {
     id: 'anthropic',
     name: 'Anthropic (Claude)',
-    models: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
+    models: [
+      'claude-sonnet-4-20250514',
+      'claude-3-5-sonnet-20241022',
+      'claude-3-opus-20240229',
+      'claude-3-haiku-20240307',
+    ],
     description: 'Claude AI models - Best for analysis and creative tasks',
     pricing: '$3-15 / 1M tokens',
     keyFormat: 'sk-ant-...',

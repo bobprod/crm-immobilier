@@ -1,27 +1,27 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Badge } from "@/shared/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Badge } from '@/shared/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/shared/components/ui/dialog";
+} from '@/shared/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { Label } from "@/shared/components/ui/label";
-import { Textarea } from "@/shared/components/ui/textarea";
-import { useToast } from "@/shared/components/ui/use-toast";
+} from '@/shared/components/ui/select';
+import { Label } from '@/shared/components/ui/label';
+import { Textarea } from '@/shared/components/ui/textarea';
+import { useToast } from '@/shared/components/ui/use-toast';
 import {
   Plus,
   Search,
@@ -44,12 +44,28 @@ import {
   Building2,
   Loader2,
   RefreshCw,
-} from "lucide-react";
-import { useProspectsEnhanced, ProspectEnhanced, ProspectInteraction } from "@/shared/hooks/useProspectsEnhanced";
+} from 'lucide-react';
+import {
+  useProspectsEnhanced,
+  ProspectEnhanced,
+  ProspectInteraction,
+} from '@/shared/hooks/useProspectsEnhanced';
 
 // Types
-type ProspectType = 'requete_location' | 'requete_achat' | 'mandat_location' | 'mandat_vente' | 'promoteur';
-type FunnelStage = 'lead' | 'contacted' | 'qualified' | 'negotiation' | 'closing' | 'converted' | 'lost';
+type ProspectType =
+  | 'requete_location'
+  | 'requete_achat'
+  | 'mandat_location'
+  | 'mandat_vente'
+  | 'promoteur';
+type FunnelStage =
+  | 'lead'
+  | 'contacted'
+  | 'qualified'
+  | 'negotiation'
+  | 'closing'
+  | 'converted'
+  | 'lost';
 
 interface ProspectManagementConnectedProps {
   language?: string;
@@ -77,8 +93,8 @@ const PROSPECT_TYPES: { key: ProspectType; label: string; icon: React.ReactNode 
 ];
 
 export default function ProspectManagementConnected({
-  language = "fr",
-  currency = "TND",
+  language = 'fr',
+  currency = 'TND',
 }: ProspectManagementConnectedProps) {
   const { toast } = useToast();
 
@@ -101,36 +117,38 @@ export default function ProspectManagementConnected({
 
   // Local state
   const [activeTab, setActiveTab] = useState<ProspectType>('requete_achat');
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<ProspectEnhanced | null>(null);
-  const [interactionType, setInteractionType] = useState<'phone' | 'email' | 'sms' | 'whatsapp' | 'meeting'>('phone');
-  const [interactionNotes, setInteractionNotes] = useState("");
-  const [interactionOutcome, setInteractionOutcome] = useState("");
-  const [nextAction, setNextAction] = useState("");
-  const [nextActionDate, setNextActionDate] = useState("");
+  const [interactionType, setInteractionType] = useState<
+    'phone' | 'email' | 'sms' | 'whatsapp' | 'meeting'
+  >('phone');
+  const [interactionNotes, setInteractionNotes] = useState('');
+  const [interactionOutcome, setInteractionOutcome] = useState('');
+  const [nextAction, setNextAction] = useState('');
+  const [nextActionDate, setNextActionDate] = useState('');
 
   // Form state for new prospect
   const [newProspect, setNewProspect] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    type: "buyer" as const,
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    type: 'buyer' as const,
     prospectType: activeTab,
-    status: "lead" as const,
+    status: 'lead' as const,
     budget: { min: 0, max: 0, currency },
     searchCriteria: {
-      propertyType: "",
-      city: "",
+      propertyType: '',
+      city: '',
       bedrooms: 0,
       area: 0,
     },
-    notes: "",
-    source: "",
+    notes: '',
+    source: '',
   });
 
   // Load prospects on tab change
@@ -156,14 +174,13 @@ export default function ProspectManagementConnected({
   }, [searchTerm, activeTab, searchProspects, loadProspectsByType]);
 
   // Filter prospects by status
-  const filteredProspects = statusFilter === "all"
-    ? prospects
-    : prospects.filter(p => p.status === statusFilter);
+  const filteredProspects =
+    statusFilter === 'all' ? prospects : prospects.filter((p) => p.status === statusFilter);
 
   // Format currency
   const formatCurrency = (amount: number, curr: string = currency) => {
-    return new Intl.NumberFormat("fr-TN", {
-      style: "currency",
+    return new Intl.NumberFormat('fr-TN', {
+      style: 'currency',
       currency: curr,
     }).format(amount);
   };
@@ -181,16 +198,16 @@ export default function ProspectManagementConnected({
         prospectType: activeTab,
       });
       toast({
-        title: "Succes",
-        description: "Prospect cree avec succes",
+        title: 'Succes',
+        description: 'Prospect cree avec succes',
       });
       setIsAddDialogOpen(false);
       resetNewProspectForm();
     } catch (err) {
       toast({
-        title: "Erreur",
-        description: "Impossible de creer le prospect",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de creer le prospect',
+        variant: 'destructive',
       });
     }
   };
@@ -198,22 +215,22 @@ export default function ProspectManagementConnected({
   // Reset form
   const resetNewProspectForm = () => {
     setNewProspect({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      type: "buyer",
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      type: 'buyer',
       prospectType: activeTab,
-      status: "lead",
+      status: 'lead',
       budget: { min: 0, max: 0, currency },
       searchCriteria: {
-        propertyType: "",
-        city: "",
+        propertyType: '',
+        city: '',
         bedrooms: 0,
         area: 0,
       },
-      notes: "",
-      source: "",
+      notes: '',
+      source: '',
     });
   };
 
@@ -228,11 +245,16 @@ export default function ProspectManagementConnected({
         notes: interactionNotes,
         nextAction,
         nextActionDate: nextActionDate || undefined,
-        sentiment: interactionOutcome === 'positive' ? 'positive' : interactionOutcome === 'negative' ? 'negative' : 'neutral',
+        sentiment:
+          interactionOutcome === 'positive'
+            ? 'positive'
+            : interactionOutcome === 'negative'
+              ? 'negative'
+              : 'neutral',
       });
       toast({
-        title: "Succes",
-        description: "Interaction ajoutee",
+        title: 'Succes',
+        description: 'Interaction ajoutee',
       });
       setIsInteractionDialogOpen(false);
       resetInteractionForm();
@@ -243,19 +265,19 @@ export default function ProspectManagementConnected({
       }
     } catch (err) {
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: "Impossible d'ajouter l'interaction",
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
 
   // Reset interaction form
   const resetInteractionForm = () => {
-    setInteractionNotes("");
-    setInteractionOutcome("");
-    setNextAction("");
-    setNextActionDate("");
+    setInteractionNotes('');
+    setInteractionOutcome('');
+    setNextAction('');
+    setNextActionDate('');
     setInteractionType('phone');
   };
 
@@ -264,14 +286,14 @@ export default function ProspectManagementConnected({
     try {
       await changeStage(prospectId, newStage);
       toast({
-        title: "Succes",
+        title: 'Succes',
         description: `Etape changee vers ${newStage}`,
       });
     } catch (err) {
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: "Impossible de changer l'etape",
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
@@ -284,15 +306,18 @@ export default function ProspectManagementConnected({
       setIsDetailDialogOpen(true);
     } catch (err) {
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les details",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les details',
+        variant: 'destructive',
       });
     }
   };
 
   // Open interaction dialog
-  const handleOpenInteraction = (prospect: ProspectEnhanced, type: 'phone' | 'email' | 'sms' | 'whatsapp') => {
+  const handleOpenInteraction = (
+    prospect: ProspectEnhanced,
+    type: 'phone' | 'email' | 'sms' | 'whatsapp'
+  ) => {
     setSelectedProspect(prospect);
     setInteractionType(type);
     setIsInteractionDialogOpen(true);
@@ -301,18 +326,24 @@ export default function ProspectManagementConnected({
   // Get interaction icon
   const getInteractionIcon = (type: string) => {
     switch (type) {
-      case 'phone': return <Phone className="h-4 w-4" />;
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'sms': return <MessageSquare className="h-4 w-4" />;
-      case 'whatsapp': return <MessageSquare className="h-4 w-4 text-green-500" />;
-      case 'meeting': return <Calendar className="h-4 w-4" />;
-      default: return <Circle className="h-4 w-4" />;
+      case 'phone':
+        return <Phone className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'sms':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'whatsapp':
+        return <MessageSquare className="h-4 w-4 text-green-500" />;
+      case 'meeting':
+        return <Calendar className="h-4 w-4" />;
+      default:
+        return <Circle className="h-4 w-4" />;
     }
   };
 
   // Get stage color
   const getStageColor = (status: string) => {
-    const stage = FUNNEL_STAGES.find(s => s.key === status);
+    const stage = FUNNEL_STAGES.find((s) => s.key === status);
     return stage?.color || 'bg-gray-500';
   };
 
@@ -332,13 +363,11 @@ export default function ProspectManagementConnected({
                 {prospect.firstName} {prospect.lastName}
               </h3>
               <p className="text-sm text-gray-500">{prospect.email}</p>
-              {prospect.phone && (
-                <p className="text-sm text-gray-500">{prospect.phone}</p>
-              )}
+              {prospect.phone && <p className="text-sm text-gray-500">{prospect.phone}</p>}
             </div>
           </div>
           <Badge className={`${getStageColor(prospect.status)} text-white`}>
-            {FUNNEL_STAGES.find(s => s.key === prospect.status)?.label || prospect.status}
+            {FUNNEL_STAGES.find((s) => s.key === prospect.status)?.label || prospect.status}
           </Badge>
         </div>
 
@@ -346,7 +375,8 @@ export default function ProspectManagementConnected({
         {prospect.budget && (
           <div className="mt-3 flex items-center text-sm text-gray-600">
             <TrendingUp className="h-4 w-4 mr-1" />
-            Budget: {formatCurrency(prospect.budget.min || 0)} - {formatCurrency(prospect.budget.max || 0)}
+            Budget: {formatCurrency(prospect.budget.min || 0)} -{' '}
+            {formatCurrency(prospect.budget.max || 0)}
           </div>
         )}
 
@@ -362,11 +392,10 @@ export default function ProspectManagementConnected({
           <div className="mt-2 p-2 bg-gray-50 rounded-md">
             <p className="text-xs text-gray-500 flex items-center">
               <History className="h-3 w-3 mr-1" />
-              Derniere interaction: {new Date(prospect.interactions[0].date).toLocaleDateString('fr-FR')}
+              Derniere interaction:{' '}
+              {new Date(prospect.interactions[0].date).toLocaleDateString('fr-FR')}
             </p>
-            <p className="text-sm text-gray-700 truncate">
-              {prospect.interactions[0].notes}
-            </p>
+            <p className="text-sm text-gray-700 truncate">{prospect.interactions[0].notes}</p>
           </div>
         )}
 
@@ -376,7 +405,10 @@ export default function ProspectManagementConnected({
             <Button
               size="sm"
               variant="outline"
-              onClick={(e) => { e.stopPropagation(); handleOpenInteraction(prospect, 'phone'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenInteraction(prospect, 'phone');
+              }}
               title="Appeler"
             >
               <Phone className="h-4 w-4" />
@@ -384,7 +416,10 @@ export default function ProspectManagementConnected({
             <Button
               size="sm"
               variant="outline"
-              onClick={(e) => { e.stopPropagation(); handleOpenInteraction(prospect, 'email'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenInteraction(prospect, 'email');
+              }}
               title="Email"
             >
               <Mail className="h-4 w-4" />
@@ -392,17 +427,16 @@ export default function ProspectManagementConnected({
             <Button
               size="sm"
               variant="outline"
-              onClick={(e) => { e.stopPropagation(); handleOpenInteraction(prospect, 'whatsapp'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenInteraction(prospect, 'whatsapp');
+              }}
               title="WhatsApp"
             >
               <MessageSquare className="h-4 w-4 text-green-500" />
             </Button>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleViewProspect(prospect)}
-          >
+          <Button size="sm" variant="ghost" onClick={() => handleViewProspect(prospect)}>
             Voir details
             <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
@@ -418,7 +452,8 @@ export default function ProspectManagementConnected({
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gestion des Prospects</h1>
           <p className="text-gray-600">
-            {prospects.length} prospect{prospects.length > 1 ? 's' : ''} {activeTab.replace('_', ' ')}
+            {prospects.length} prospect{prospects.length > 1 ? 's' : ''}{' '}
+            {activeTab.replace('_', ' ')}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -506,7 +541,10 @@ export default function ProspectManagementConnected({
                   <p className="text-red-500">{error}</p>
                   <Button
                     variant="outline"
-                    onClick={() => { clearError(); loadProspectsByType(activeTab); }}
+                    onClick={() => {
+                      clearError();
+                      loadProspectsByType(activeTab);
+                    }}
                     className="mt-4"
                   >
                     Reessayer
@@ -521,7 +559,9 @@ export default function ProspectManagementConnected({
                     Aucun prospect trouve
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    {searchTerm ? "Essayez une autre recherche" : "Commencez par ajouter un prospect"}
+                    {searchTerm
+                      ? 'Essayez une autre recherche'
+                      : 'Commencez par ajouter un prospect'}
                   </p>
                   <Button onClick={() => setIsAddDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -619,11 +659,13 @@ export default function ProspectManagementConnected({
               <Label>Budget Min ({currency})</Label>
               <Input
                 type="number"
-                value={newProspect.budget.min || ""}
-                onChange={(e) => setNewProspect({
-                  ...newProspect,
-                  budget: { ...newProspect.budget, min: parseInt(e.target.value) || 0 }
-                })}
+                value={newProspect.budget.min || ''}
+                onChange={(e) =>
+                  setNewProspect({
+                    ...newProspect,
+                    budget: { ...newProspect.budget, min: parseInt(e.target.value) || 0 },
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -631,11 +673,13 @@ export default function ProspectManagementConnected({
               <Label>Budget Max ({currency})</Label>
               <Input
                 type="number"
-                value={newProspect.budget.max || ""}
-                onChange={(e) => setNewProspect({
-                  ...newProspect,
-                  budget: { ...newProspect.budget, max: parseInt(e.target.value) || 0 }
-                })}
+                value={newProspect.budget.max || ''}
+                onChange={(e) =>
+                  setNewProspect({
+                    ...newProspect,
+                    budget: { ...newProspect.budget, max: parseInt(e.target.value) || 0 },
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -643,10 +687,12 @@ export default function ProspectManagementConnected({
               <Label>Ville recherchee</Label>
               <Input
                 value={newProspect.searchCriteria.city}
-                onChange={(e) => setNewProspect({
-                  ...newProspect,
-                  searchCriteria: { ...newProspect.searchCriteria, city: e.target.value }
-                })}
+                onChange={(e) =>
+                  setNewProspect({
+                    ...newProspect,
+                    searchCriteria: { ...newProspect.searchCriteria, city: e.target.value },
+                  })
+                }
                 placeholder="Tunis, La Marsa..."
               />
             </div>
@@ -654,10 +700,12 @@ export default function ProspectManagementConnected({
               <Label>Type de propriete</Label>
               <Select
                 value={newProspect.searchCriteria.propertyType}
-                onValueChange={(v) => setNewProspect({
-                  ...newProspect,
-                  searchCriteria: { ...newProspect.searchCriteria, propertyType: v }
-                })}
+                onValueChange={(v) =>
+                  setNewProspect({
+                    ...newProspect,
+                    searchCriteria: { ...newProspect.searchCriteria, propertyType: v },
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selectionner..." />
@@ -676,11 +724,16 @@ export default function ProspectManagementConnected({
               <Label>Nombre de chambres</Label>
               <Input
                 type="number"
-                value={newProspect.searchCriteria.bedrooms || ""}
-                onChange={(e) => setNewProspect({
-                  ...newProspect,
-                  searchCriteria: { ...newProspect.searchCriteria, bedrooms: parseInt(e.target.value) || 0 }
-                })}
+                value={newProspect.searchCriteria.bedrooms || ''}
+                onChange={(e) =>
+                  setNewProspect({
+                    ...newProspect,
+                    searchCriteria: {
+                      ...newProspect.searchCriteria,
+                      bedrooms: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -688,11 +741,16 @@ export default function ProspectManagementConnected({
               <Label>Surface min (m2)</Label>
               <Input
                 type="number"
-                value={newProspect.searchCriteria.area || ""}
-                onChange={(e) => setNewProspect({
-                  ...newProspect,
-                  searchCriteria: { ...newProspect.searchCriteria, area: parseInt(e.target.value) || 0 }
-                })}
+                value={newProspect.searchCriteria.area || ''}
+                onChange={(e) =>
+                  setNewProspect({
+                    ...newProspect,
+                    searchCriteria: {
+                      ...newProspect.searchCriteria,
+                      area: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
                 placeholder="0"
               />
             </div>
@@ -710,7 +768,10 @@ export default function ProspectManagementConnected({
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleCreateProspect} disabled={!newProspect.firstName || !newProspect.lastName}>
+            <Button
+              onClick={handleCreateProspect}
+              disabled={!newProspect.firstName || !newProspect.lastName}
+            >
               Creer le prospect
             </Button>
           </DialogFooter>
@@ -729,10 +790,7 @@ export default function ProspectManagementConnected({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Type d'interaction</Label>
-              <Select
-                value={interactionType}
-                onValueChange={(v) => setInteractionType(v as any)}
-              >
+              <Select value={interactionType} onValueChange={(v) => setInteractionType(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -789,9 +847,7 @@ export default function ProspectManagementConnected({
             <Button variant="outline" onClick={() => setIsInteractionDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleAddInteraction}>
-              Enregistrer l'interaction
-            </Button>
+            <Button onClick={handleAddInteraction}>Enregistrer l'interaction</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -833,7 +889,8 @@ export default function ProspectManagementConnected({
                 <div>
                   <Label className="text-gray-500">Budget</Label>
                   <p>
-                    {formatCurrency(selectedProspect.budget.min || 0)} - {formatCurrency(selectedProspect.budget.max || 0)}
+                    {formatCurrency(selectedProspect.budget.min || 0)} -{' '}
+                    {formatCurrency(selectedProspect.budget.max || 0)}
                   </p>
                 </div>
               )}
@@ -844,10 +901,16 @@ export default function ProspectManagementConnected({
                   <Label className="text-gray-500">Criteres de recherche</Label>
                   <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                     {selectedProspect.searchCriteria.city && (
-                      <p><MapPin className="h-4 w-4 inline mr-1" />{selectedProspect.searchCriteria.city}</p>
+                      <p>
+                        <MapPin className="h-4 w-4 inline mr-1" />
+                        {selectedProspect.searchCriteria.city}
+                      </p>
                     )}
                     {selectedProspect.searchCriteria.propertyType && (
-                      <p><Home className="h-4 w-4 inline mr-1" />{selectedProspect.searchCriteria.propertyType}</p>
+                      <p>
+                        <Home className="h-4 w-4 inline mr-1" />
+                        {selectedProspect.searchCriteria.propertyType}
+                      </p>
                     )}
                     {selectedProspect.searchCriteria.bedrooms && (
                       <p>{selectedProspect.searchCriteria.bedrooms} chambres</p>
@@ -864,7 +927,7 @@ export default function ProspectManagementConnected({
                     <Button
                       key={stage.key}
                       size="sm"
-                      variant={selectedProspect.status === stage.key ? "default" : "outline"}
+                      variant={selectedProspect.status === stage.key ? 'default' : 'outline'}
                       className={selectedProspect.status === stage.key ? stage.color : ''}
                       onClick={() => handleStageChange(selectedProspect.id, stage.key)}
                     >

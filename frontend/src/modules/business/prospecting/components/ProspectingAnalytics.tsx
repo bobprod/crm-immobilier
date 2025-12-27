@@ -48,10 +48,30 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
   const funnelStages = useMemo(() => {
     const total = data.leads.total || 1;
     return [
-      { name: 'Nouveaux', count: data.leads.new, percent: (data.leads.new / total) * 100, color: colors.primary },
-      { name: 'Contactes', count: data.leads.contacted, percent: (data.leads.contacted / total) * 100, color: colors.cyan },
-      { name: 'Qualifies', count: data.leads.qualified, percent: (data.leads.qualified / total) * 100, color: colors.warning },
-      { name: 'Convertis', count: data.leads.converted, percent: (data.leads.converted / total) * 100, color: colors.success },
+      {
+        name: 'Nouveaux',
+        count: data.leads.new,
+        percent: (data.leads.new / total) * 100,
+        color: colors.primary,
+      },
+      {
+        name: 'Contactes',
+        count: data.leads.contacted,
+        percent: (data.leads.contacted / total) * 100,
+        color: colors.cyan,
+      },
+      {
+        name: 'Qualifies',
+        count: data.leads.qualified,
+        percent: (data.leads.qualified / total) * 100,
+        color: colors.warning,
+      },
+      {
+        name: 'Convertis',
+        count: data.leads.converted,
+        percent: (data.leads.converted / total) * 100,
+        color: colors.success,
+      },
     ];
   }, [data.leads]);
 
@@ -71,11 +91,20 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
             <div className="text-4xl opacity-50">👥</div>
           </div>
           <div className="mt-2 flex items-center text-sm">
-            <span className={`px-2 py-0.5 rounded ${
-              data.performance.trend === 'up' ? 'bg-green-400/30' :
-              data.performance.trend === 'down' ? 'bg-red-400/30' : 'bg-gray-400/30'
-            }`}>
-              {data.performance.trend === 'up' ? '↑' : data.performance.trend === 'down' ? '↓' : '→'}
+            <span
+              className={`px-2 py-0.5 rounded ${
+                data.performance.trend === 'up'
+                  ? 'bg-green-400/30'
+                  : data.performance.trend === 'down'
+                    ? 'bg-red-400/30'
+                    : 'bg-gray-400/30'
+              }`}
+            >
+              {data.performance.trend === 'up'
+                ? '↑'
+                : data.performance.trend === 'down'
+                  ? '↓'
+                  : '→'}
               {data.performance.trendPercent}%
             </span>
             <span className="ml-2 text-blue-100">vs semaine derniere</span>
@@ -103,9 +132,7 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
             </div>
             <div className="text-4xl opacity-50">🎯</div>
           </div>
-          <div className="mt-2 text-sm text-purple-100">
-            {data.campaigns.completed} terminees
-          </div>
+          <div className="mt-2 text-sm text-purple-100">{data.campaigns.completed} terminees</div>
         </div>
 
         <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl p-4 text-white">
@@ -116,9 +143,7 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
             </div>
             <div className="text-4xl opacity-50">⏱️</div>
           </div>
-          <div className="mt-2 text-sm text-orange-100">
-            Pour convertir un lead
-          </div>
+          <div className="mt-2 text-sm text-orange-100">Pour convertir un lead</div>
         </div>
       </div>
 
@@ -146,9 +171,14 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
                   />
                   {index < funnelStages.length - 1 && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                      ↓ {funnelStages[index + 1].count > 0
-                        ? ((funnelStages[index + 1].count / Math.max(stage.count, 1)) * 100).toFixed(0)
-                        : 0}%
+                      ↓{' '}
+                      {funnelStages[index + 1].count > 0
+                        ? (
+                            (funnelStages[index + 1].count / Math.max(stage.count, 1)) *
+                            100
+                          ).toFixed(0)
+                        : 0}
+                      %
                     </div>
                   )}
                 </div>
@@ -159,7 +189,9 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
 
         {/* Performance hebdomadaire */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Leads par Jour (7 derniers jours)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Leads par Jour (7 derniers jours)
+          </h3>
           <div className="flex items-end justify-between h-40 gap-2">
             {data.performance.lastWeek.map((value, index) => {
               const height = (value / maxWeekValue) * 100;
@@ -185,7 +217,13 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance par Source</h3>
           <div className="space-y-4">
             {data.leads.bySource.map((source, index) => {
-              const sourceColors = [colors.primary, colors.purple, colors.cyan, colors.success, colors.warning];
+              const sourceColors = [
+                colors.primary,
+                colors.purple,
+                colors.cyan,
+                colors.success,
+                colors.warning,
+              ];
               return (
                 <div key={source.source} className="flex items-center gap-4">
                   <div
@@ -278,10 +316,18 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etape</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Leads</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Taux</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Progression</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Etape
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Leads
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Taux
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Progression
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -289,12 +335,17 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
                 <tr key={stage.stage} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                        index === 0 ? 'bg-blue-500' :
-                        index === 1 ? 'bg-cyan-500' :
-                        index === 2 ? 'bg-orange-500' :
-                        'bg-green-500'
-                      }`}>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                          index === 0
+                            ? 'bg-blue-500'
+                            : index === 1
+                              ? 'bg-cyan-500'
+                              : index === 2
+                                ? 'bg-orange-500'
+                                : 'bg-green-500'
+                        }`}
+                      >
                         {index + 1}
                       </div>
                       <span className="font-medium text-gray-900">{stage.stage}</span>
@@ -302,11 +353,15 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
                   </td>
                   <td className="px-6 py-4 text-gray-700">{stage.count}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      stage.rate >= 50 ? 'bg-green-100 text-green-700' :
-                      stage.rate >= 30 ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        stage.rate >= 50
+                          ? 'bg-green-100 text-green-700'
+                          : stage.rate >= 30
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
                       {stage.rate.toFixed(1)}%
                     </span>
                   </td>
@@ -314,10 +369,13 @@ export const ProspectingAnalytics: React.FC<ProspectingAnalyticsProps> = ({ data
                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${
-                          index === 0 ? 'bg-blue-500' :
-                          index === 1 ? 'bg-cyan-500' :
-                          index === 2 ? 'bg-orange-500' :
-                          'bg-green-500'
+                          index === 0
+                            ? 'bg-blue-500'
+                            : index === 1
+                              ? 'bg-cyan-500'
+                              : index === 2
+                                ? 'bg-orange-500'
+                                : 'bg-green-500'
                         }`}
                         style={{ width: `${stage.rate}%` }}
                       />

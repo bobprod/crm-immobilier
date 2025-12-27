@@ -3,11 +3,11 @@ import TaskManager from '@/modules/business/tasks/components/TaskManager';
 import DashboardLayout from '@/shared/components/layout/DashboardLayout';
 
 export default function TasksPage() {
-    return (
-        <DashboardLayout>
-            <div className="p-6">
-                <TaskManager />
-            </div>
-        </DashboardLayout>
-    );
+  return (
+    <DashboardLayout>
+      <div className="p-6">
+        <TaskManager />
+      </div>
+    </DashboardLayout>
+  );
 }

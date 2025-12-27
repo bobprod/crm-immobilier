@@ -26,10 +26,7 @@ class ApiClient {
     localStorage.removeItem('crm-token');
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const token = this.getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',

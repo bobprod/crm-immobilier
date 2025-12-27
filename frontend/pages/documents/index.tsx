@@ -145,17 +145,18 @@ export default function DocumentsPage() {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const getFileTypeIcon = (type: string) => {
     return <FileText className="h-5 w-5 text-blue-600" />;
   };
 
-  const filteredDocuments = documents.filter(doc =>
-    doc.title?.toLowerCase().includes(search.toLowerCase()) ||
-    doc.filename?.toLowerCase().includes(search.toLowerCase()) ||
-    doc.category?.toLowerCase().includes(search.toLowerCase())
+  const filteredDocuments = documents.filter(
+    (doc) =>
+      doc.title?.toLowerCase().includes(search.toLowerCase()) ||
+      doc.filename?.toLowerCase().includes(search.toLowerCase()) ||
+      doc.category?.toLowerCase().includes(search.toLowerCase())
   );
 
   if (loading) {
@@ -175,9 +176,7 @@ export default function DocumentsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gestion des Documents</h1>
-            <p className="text-gray-600 mt-1">
-              Téléversez, organisez et gérez vos documents
-            </p>
+            <p className="text-gray-600 mt-1">Téléversez, organisez et gérez vos documents</p>
           </div>
           <div className="flex gap-2">
             <Link href="/documents/generate">
@@ -243,7 +242,7 @@ export default function DocumentsPage() {
                 <div>
                   <p className="text-sm text-gray-600">Catégories</p>
                   <p className="text-2xl font-bold">
-                    {new Set(documents.map(d => d.category).filter(Boolean)).size}
+                    {new Set(documents.map((d) => d.category).filter(Boolean)).size}
                   </p>
                 </div>
                 <Tag className="h-8 w-8 text-purple-600" />
@@ -257,12 +256,16 @@ export default function DocumentsPage() {
                 <div>
                   <p className="text-sm text-gray-600">Ce mois</p>
                   <p className="text-2xl font-bold">
-                    {documents.filter(d => {
-                      const docDate = new Date(d.createdAt);
-                      const now = new Date();
-                      return docDate.getMonth() === now.getMonth() &&
-                        docDate.getFullYear() === now.getFullYear();
-                    }).length}
+                    {
+                      documents.filter((d) => {
+                        const docDate = new Date(d.createdAt);
+                        const now = new Date();
+                        return (
+                          docDate.getMonth() === now.getMonth() &&
+                          docDate.getFullYear() === now.getFullYear()
+                        );
+                      }).length
+                    }
                   </p>
                 </div>
                 <Upload className="h-8 w-8 text-orange-600" />

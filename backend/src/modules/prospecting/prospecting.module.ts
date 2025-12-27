@@ -6,10 +6,16 @@ import { ProspectingService } from './prospecting.service';
 import { ProspectingIntegrationService } from './prospecting-integration.service';
 import { LLMProspectingService } from './llm-prospecting.service';
 import { PrismaService } from '../../shared/database/prisma.service';
-import { ScrapingModule } from '../scraping/scraping.module';
+import { SeoAiModule } from '../content/seo-ai/seo-ai.module';
+import { LLMConfigModule } from '../intelligence/llm-config/llm-config.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ConfigModule, ScrapingModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    ConfigModule,
+    SeoAiModule,
+    LLMConfigModule, // Import pour accéder au LLM Router intelligent
+  ],
   controllers: [ProspectingController],
   providers: [
     ProspectingService,

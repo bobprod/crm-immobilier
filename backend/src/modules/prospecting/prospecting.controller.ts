@@ -89,7 +89,7 @@ export class ProspectingController {
   @Post('campaigns/:id/resume')
   @ApiOperation({ summary: 'Reprendre une campagne en pause' })
   resumeCampaign(@Request() req, @Param('id') id: string) {
-    return this.prospectingService.startCampaign(req.user.userId, id);
+    return this.prospectingService.resumeCampaign(req.user.userId, id);
   }
 
   @Get('campaigns/:id/stats')
@@ -283,20 +283,20 @@ export class ProspectingController {
       required: ['source', 'text'],
     },
   })
-  async analyzeRawItem(@Body() item: RawScrapedItem) {
-    return this.llmService.analyzeRawItem(item);
+  async analyzeRawItem(@Request() req, @Body() item: RawScrapedItem) {
+    return this.llmService.analyzeRawItem(item, req.user.userId);
   }
 
   @Post('llm/build-lead')
   @ApiOperation({ summary: 'Construire un lead structure a partir d un element scrappe' })
-  async buildLeadFromRaw(@Body() item: RawScrapedItem) {
-    return this.llmService.buildProspectingLeadFromRaw(item);
+  async buildLeadFromRaw(@Request() req, @Body() item: RawScrapedItem) {
+    return this.llmService.buildProspectingLeadFromRaw(item, req.user.userId);
   }
 
   @Post('llm/analyze-batch')
   @ApiOperation({ summary: 'Analyser un batch d elements scrappes' })
-  async analyzeBatch(@Body() data: { items: RawScrapedItem[] }) {
-    return this.llmService.analyzeBatch(data.items);
+  async analyzeBatch(@Request() req, @Body() data: { items: RawScrapedItem[] }) {
+    return this.llmService.analyzeBatch(data.items, req.user.userId);
   }
 
   @Post('campaigns/:campaignId/ingest')

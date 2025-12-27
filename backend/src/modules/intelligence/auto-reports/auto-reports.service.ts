@@ -10,7 +10,7 @@ export class AutoReportsService {
   constructor(
     private prisma: PrismaService,
     private llmService: QuickWinsLLMService,
-  ) {}
+  ) { }
 
   /**
    * Générer un rapport automatique
@@ -232,7 +232,7 @@ export class AutoReportsService {
     insights: string[],
   ): Promise<string[]> {
     try {
-      if (!this.openai) {
+      if (!this.llmService) {
         return this.generateStaticRecommendations(summary);
       }
 
@@ -246,14 +246,9 @@ ${insights.join('\n')}
 
 Provide specific, actionable recommendations. Return as JSON array of strings.`;
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 300,
-      });
+      const response = await this.llmService.analyzeText(summary.userId || '', prompt);
 
-      const content = response.choices[0]?.message?.content || '[]';
+      const content = response || '[]';
       try {
         const recommendations = JSON.parse(content);
         return Array.isArray(recommendations)

@@ -35,6 +35,9 @@ import { LLMConfigModule } from './modules/intelligence/llm-config/llm-config.mo
 import { MatchingModule } from './modules/intelligence/matching/matching.module';
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
+import { AiOrchestratorModule } from './modules/intelligence/ai-orchestrator/ai-orchestrator.module';
+import { ProspectingAiModule } from './modules/prospecting-ai/prospecting-ai.module';
+import { InvestmentIntelligenceModule } from './modules/investment-intelligence/investment-intelligence.module';
 
 // QUICK WINS MODULES
 import { SmartFormsModule } from './modules/intelligence/smart-forms/smart-forms.module';
@@ -110,20 +113,18 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     AppointmentsModule,
     TasksModule,
 
-    // INTELLIGENCE - 10 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant)
+    // INTELLIGENCE - 7 modules
     AIMetricsModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
-    SmartFormsModule,
-    SemanticSearchModule,
-    PriorityInboxModule,
-    AutoReportsModule,
-    AIChatAssistantModule,
+    AiOrchestratorModule,
+    InvestmentIntelligenceModule,
 
-    // PROSPECTING - 1 module
+    // PROSPECTING - 2 modules
     ProspectingModule,
+    ProspectingAiModule,
 
     // SCRAPING - 1 module (Web Data Services)
     ScrapingModule,
