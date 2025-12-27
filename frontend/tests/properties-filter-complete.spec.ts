@@ -117,7 +117,7 @@ test.describe('Property Filters - E2E Testing with Real Backend', () => {
             // If there are properties to display
             if (rowCount > 0) {
                 const content = await rows.first().textContent();
-                console.log(`✅ Search filter working - displaying filtered results`);
+                console.log(`✅ Search filter working - displaying filtered results: ${content}`);
             }
         } else {
             console.log('❌ Search input not found');
