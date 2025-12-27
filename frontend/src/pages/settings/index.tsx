@@ -22,6 +22,7 @@ import {
   Brain,
   Zap,
   ChevronRight,
+  Coins
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -65,8 +66,22 @@ export default function SettingsPage() {
       description: 'WordPress, Google Calendar, Email - Connectez vos services externes',
       icon: Zap,
       href: '/settings/integrations',
-      color: 'bg-green-500',
+      color: 'bg-green-500'
     },
+    {
+      title: 'Mes Clés API (BYOK)',
+      description: 'Configurez vos propres clés API pour tous les providers IA et scraping',
+      icon: Key,
+      href: '/settings/ai-api-keys',
+      color: 'bg-yellow-500'
+    },
+    {
+      title: 'Mes Crédits AI',
+      description: 'Consultez votre solde, historique et statistiques de consommation',
+      icon: Coins,
+      href: '/settings/ai-credits',
+      color: 'bg-orange-500'
+    }
   ];
 
   return (

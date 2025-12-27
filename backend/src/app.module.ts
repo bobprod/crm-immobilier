@@ -51,6 +51,9 @@ import { PriorityInboxModule } from './modules/intelligence/priority-inbox/prior
 import { AutoReportsModule } from './modules/intelligence/auto-reports/auto-reports.module';
 import { AIChatAssistantModule } from './modules/intelligence/ai-chat-assistant/ai-chat-assistant.module';
 
+// AI BILLING MODULE
+import { AiBillingModule } from './modules/ai-billing/ai-billing.module';
+
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
 
@@ -122,15 +125,19 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     TransactionsModule,
     FinanceModule,
 
-    // INTELLIGENCE - 7 modules
+    // INTELLIGENCE - 11 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant + 1 AI Billing)
     AIMetricsModule,
     AIMetricsProspectingModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
     AnalyticsModule,
-    AiOrchestratorModule,
-    InvestmentIntelligenceModule,
+    SmartFormsModule,
+    SemanticSearchModule,
+    PriorityInboxModule,
+    AutoReportsModule,
+    AIChatAssistantModule,
+    AiBillingModule,
 
     // PROSPECTING - 2 modules
     ProspectingModule,

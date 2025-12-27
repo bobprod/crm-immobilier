@@ -186,6 +186,12 @@ model agencies {
   properties properties[]
   prospects  prospects[]
   users      users[]
+
+  // ── Nouvelles relations AI Billing ──
+  apiKeys      AgencyApiKeys?
+  aiCredits    AiCredits?
+  aiUsages     AiUsage[]
+  aiErrorLogs  AiErrorLog[]
 }
 
 model appointments {
@@ -498,6 +504,11 @@ model users {
   wordpressUrl             String?
   wordpressUsername        String?
   wordpressPassword        String?
+
+  // ── Nouvelles relations AI Billing ──
+  aiUsages                 AiUsage[]
+  aiErrorLogs              AiErrorLog[]
+  userAiCredits            UserAiCredits?
 }
 
 model communications {
@@ -1897,4 +1908,210 @@ model Payment {
   @@index([commissionId])
   @@index([paidAt])
   @@map("payments")
+}
+
+// ============================================
+// AI BILLING & MULTI-TENANT API KEYS SYSTEM
+// Architecture: USER → AGENCY → SUPER ADMIN
+// ============================================
+
+// ──────────────────────────────────────────
+// 1. CLÉS API AU NIVEAU AGENCE (BYOK)
+// ──────────────────────────────────────────
+model AgencyApiKeys {
+  id        String   @id @default(cuid())
+  agencyId  String   @unique
+  agency    agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  // ── LLM Providers ──
+  llmProvider         String?  @default("anthropic") // Provider par défaut
+  llmApiKey           String?  // Clé LLM principale (déprécié, utiliser les spécifiques)
+  anthropicApiKey     String?
+  openaiApiKey        String?
+  geminiApiKey        String?
+  deepseekApiKey      String?
+  openrouterApiKey    String?
+
+  // ── Scraping & Data Providers ──
+  serpApiKey          String?  // Google SERP
+  firecrawlApiKey     String?  // Firecrawl web scraping
+  picaApiKey          String?  // Pica real estate data
+  jinaReaderApiKey    String?  // Jina Reader (URL → Markdown)
+  scrapingBeeApiKey   String?  // ScrapingBee
+  browserlessApiKey   String?  // Browserless headless browser
+  rapidApiKey         String?  // RapidAPI (futur)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("agency_api_keys")
+}
+
+// ──────────────────────────────────────────
+// 2. PRICING DES ACTIONS IA
+// ──────────────────────────────────────────
+model AiPricing {
+  id          String   @id @default(cuid())
+  actionCode  String   @unique // Ex: "AI_PROSPECTION_INTERNAL", "AI_MATCHING"
+  actionName  String   // Nom lisible
+  description String?
+
+  creditsCost Int      // Crédits consommés par action
+
+  // Détails techniques (optionnel)
+  estimatedTokens Int?     // Tokens moyens
+  providerCostUsd Float?   // Coût réel USD
+
+  enabled     Boolean  @default(true)
+  category    String?  // "prospecting", "matching", "seo", "chat", "email"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ai_pricing")
+}
+
+// ──────────────────────────────────────────
+// 3. CONSOMMATION DE CRÉDITS (Billing)
+// ──────────────────────────────────────────
+model AiUsage {
+  id         String   @id @default(cuid())
+
+  // ── Soit agence, soit user (au moins un des deux) ──
+  agencyId   String?
+  agency     agencies? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  userId     String?
+  user       users?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // ── Action ──
+  actionCode String
+  actionName String?
+
+  // ── Crédits ──
+  creditsUsed     Int
+  creditsBalance  Int?     // Snapshot du solde après
+
+  // ── Métadonnées techniques ──
+  provider        String?  // "anthropic", "serp", etc.
+  model           String?
+  tokensUsed      Int?
+  realCostUsd     Float?
+
+  // ── Contexte métier ──
+  entityType      String?  // "prospect", "property", "campaign"
+  entityId        String?
+
+  metadata        Json?
+
+  createdAt  DateTime @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([actionCode])
+  @@map("ai_usage")
+}
+
+// ──────────────────────────────────────────
+// 4. LOGS D'ERREURS IA
+// ──────────────────────────────────────────
+model AiErrorLog {
+  id         String   @id @default(cuid())
+
+  agencyId   String?
+  agency     agencies? @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+
+  userId     String?
+  user       users?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  actionCode   String
+  provider     String
+  errorType    String    // "api_key_invalid", "quota_exceeded", "network_error"
+  errorMessage String    @db.Text
+
+  // Contexte technique
+  statusCode Int?
+  endpoint   String?
+
+  // Contexte métier
+  entityType String?
+  entityId   String?
+
+  metadata   Json?
+
+  createdAt  DateTime @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([provider, errorType])
+  @@map("ai_error_log")
+}
+
+// ──────────────────────────────────────────
+// 5. CRÉDITS AGENCE (pool partagé)
+// ──────────────────────────────────────────
+model AiCredits {
+  id              String   @id @default(cuid())
+  agencyId        String   @unique
+  agency          agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  balance         Int      @default(0)
+  consumed        Int      @default(0)
+  quotaMonthly    Int?                      // null = illimité
+  quotaDaily      Int?
+
+  // Reset automatique
+  lastResetAt     DateTime?
+  resetFrequency  String?  @default("monthly") // "daily", "weekly", "monthly", "never"
+
+  // Alertes
+  alertThreshold  Int?     @default(20)     // % restants
+  alertSent       Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("ai_credits")
+}
+
+// ──────────────────────────────────────────
+// 6. CRÉDITS USER (users indépendants)
+// ──────────────────────────────────────────
+model UserAiCredits {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  balance         Int      @default(0)
+  consumed        Int      @default(0)
+  quotaMonthly    Int?
+  quotaDaily      Int?
+
+  lastResetAt     DateTime?
+  resetFrequency  String?  @default("monthly")
+
+  alertThreshold  Int?     @default(20)
+  alertSent       Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("user_ai_credits")
+}
+
+// ──────────────────────────────────────────
+// 7. GLOBAL SETTINGS (Super Admin)
+// ──────────────────────────────────────────
+model GlobalSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+
+  encrypted   Boolean @default(false)
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("global_settings")
 }
