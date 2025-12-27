@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
@@ -12,6 +12,8 @@ import {
   arePropertyTypesCompatible,
 } from './dto/matching.dto';
 import { CreateCampaignDto, UpdateLeadDto } from './dto';
+import { ProspectingIntegrationService } from './prospecting-integration.service';
+import { RawScrapedItem } from './dto/llm-prospecting.dto';
 
 interface CampaignFilters {
   status?: string;
@@ -29,7 +31,11 @@ interface LeadFilters {
 export class ProspectingService {
   private readonly logger = new Logger(ProspectingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => ProspectingIntegrationService))
+    private integrationService: ProspectingIntegrationService,
+  ) { }
 
   // ============================================
   // CAMPAIGNS
@@ -132,6 +138,24 @@ export class ProspectingService {
   }
 
   /**
+   * Reprendre une campagne en pause
+   */
+  async resumeCampaign(userId: string, campaignId: string) {
+    const campaign = await this.getCampaignById(userId, campaignId);
+
+    if (campaign.status !== 'paused') {
+      throw new BadRequestException(
+        'Cette campagne n\'est pas en pause. Status actuel: ' + campaign.status,
+      );
+    }
+
+    return this.prisma.prospecting_campaigns.update({
+      where: { id: campaignId },
+      data: { status: 'active' }, // Important: ne pas modifier startedAt
+    });
+  }
+
+  /**
    * Supprimer une campagne
    */
   async deleteCampaign(userId: string, campaignId: string) {
@@ -211,7 +235,9 @@ export class ProspectingService {
         where: { id: lead.convertedProspectId },
       });
       if (existingProspect) {
-        this.logger.warn(`Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`);
+        this.logger.warn(
+          `Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`,
+        );
         return existingProspect;
       }
     }
@@ -272,7 +298,9 @@ export class ProspectingService {
         city: lead.city,
         zipCode: lead.zipCode,
         type: this.mapLeadTypeToProspectType(lead.leadType, lead.intention),
-        budget: lead.budget || (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
+        budget:
+          lead.budget ||
+          (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
         preferences: lead.metadata,
         source: `Prospection: ${lead.source}`,
         status: 'active',
@@ -398,9 +426,10 @@ export class ProspectingService {
           type,
           entityType: 'prospecting_lead',
           entityId: leadId,
-          description: type === 'lead_converted'
-            ? `Lead converti en prospect ${prospectId}`
-            : `Lead fusionné avec prospect existant ${prospectId}`,
+          description:
+            type === 'lead_converted'
+              ? `Lead converti en prospect ${prospectId}`
+              : `Lead fusionné avec prospect existant ${prospectId}`,
           metadata: { leadId, prospectId },
         },
       });
@@ -991,38 +1020,198 @@ export class ProspectingService {
   // ============================================
 
   /**
-   * Exécuter le scraping d'une campagne
+   * Exécuter le scraping d'une campagne avec orchestration IA complète
+   * Pipeline: Scraping → LLM Analysis → Validation → Ingestion → Auto-Matching
    */
   private async runCampaignScraping(userId: string, campaign: any) {
-    this.logger.log(`Starting scraping for campaign ${campaign.id}`);
+    this.logger.log(`Starting intelligent scraping for campaign ${campaign.id}`);
 
     try {
-      const mockLeads = this.generateMockLeads(campaign);
+      const config = campaign.config as any;
+      const sources = config?.sources || ['pica'];
+      const autoMatch = config?.autoMatch !== false;
+      const llmProviderOverride = config?.llmProvider || 'auto'; // ✅ NOUVEAU: Provider override
 
-      for (const leadData of mockLeads) {
-        const score = this.calculateLeadScore(leadData);
+      // 1. SCRAPING MULTI-SOURCES EN PARALLÈLE ⚡
+      this.logger.log(`⚡ Parallel scraping from sources: ${sources.join(', ')}`);
+      const allRawItems: RawScrapedItem[] = [];
 
-        await this.prisma.prospecting_leads.create({
-          data: {
-            ...leadData,
-            campaignId: campaign.id,
-            userId,
-            score,
-          },
+      // ✅ OPTIMISATION: Scraper toutes les sources en parallèle
+      const scrapingPromises = sources.map(async (source) => {
+        try {
+          let result;
+
+          switch (source) {
+            case 'pica':
+              result = await this.integrationService.scrapeWithPica(userId, config);
+              break;
+
+            case 'serp':
+              result = await this.integrationService.scrapeFromSERP(userId, config);
+              break;
+
+            case 'firecrawl':
+              const urls = config.urls || [];
+              if (urls.length > 0) {
+                result = await this.integrationService.scrapeWithFirecrawl(userId, urls, config);
+              }
+              break;
+
+            case 'meta':
+            case 'facebook':
+              result = await this.integrationService.scrapeFromSocial(userId, {
+                platform: 'meta',
+                query: config.query || config.keywords?.join(' ') || 'immobilier Tunisie',
+                config,
+              });
+              break;
+
+            case 'linkedin':
+              result = await this.integrationService.scrapeFromSocial(userId, {
+                platform: 'linkedin',
+                query: config.query || config.keywords?.join(' ') || 'immobilier Tunisie',
+                config,
+              });
+              break;
+
+            case 'webscrape':
+              const websiteUrls = config.urls || [];
+              if (websiteUrls.length > 0) {
+                result = await this.integrationService.scrapeWebsites(userId, websiteUrls);
+              }
+              break;
+
+            default:
+              this.logger.warn(`Unknown scraping source: ${source}`);
+              return { source, leads: [], error: 'Unknown source' };
+          }
+
+          // Convertir les résultats en RawScrapedItem
+          if (result?.leads) {
+            const rawItems = this.integrationService.convertToRawScrapedItems(result.leads, source);
+            this.logger.log(`✅ Source ${source}: ${rawItems.length} raw items scraped`);
+            return { source, leads: rawItems, error: null };
+          }
+
+          return { source, leads: [], error: null };
+        } catch (error) {
+          this.logger.warn(`❌ Source ${source} failed: ${error.message}`);
+          return { source, leads: [], error: error.message };
+        }
+      });
+
+      // Attendre que toutes les sources finissent (en parallèle)
+      const scrapingResults = await Promise.all(scrapingPromises);
+
+      // Agréger tous les résultats
+      for (const result of scrapingResults) {
+        if (result.leads.length > 0) {
+          allRawItems.push(...result.leads);
+        }
+      }
+
+      this.logger.log(`✅ Total raw items scraped: ${allRawItems.length}`);
+
+      // 2. LLM ANALYSIS + VALIDATION + INGESTION
+      let ingestResult;
+      if (allRawItems.length > 0) {
+        ingestResult = await this.integrationService.ingestScrapedItems(
+          userId,
+          campaign.id,
+          allRawItems,
+          llmProviderOverride, // ✅ NOUVEAU: Passer le provider au service
+        );
+
+        this.logger.log(
+          `Ingestion: ${ingestResult.created} created, ${ingestResult.rejected} rejected`,
+        );
+      } else {
+        // Si aucun item scraped, fallback sur mock data pour démo
+        this.logger.warn('No items scraped, generating mock leads for demo');
+        const mockLeads = this.generateMockLeads(campaign);
+
+        for (const leadData of mockLeads) {
+          const score = this.calculateLeadScore(leadData);
+          await this.prisma.prospecting_leads.create({
+            data: {
+              ...leadData,
+              campaignId: campaign.id,
+              userId,
+              score,
+            },
+          });
+        }
+
+        ingestResult = {
+          created: mockLeads.length,
+          rejected: 0,
+          total: mockLeads.length,
+          leads: [],
+        };
+      }
+
+      // 3. AUTO-MATCHING EN PARALLÈLE PAR BATCH ⚡
+      if (autoMatch && ingestResult.leads && ingestResult.leads.length > 0) {
+        this.logger.log(`⚡ Starting parallel auto-matching for ${ingestResult.leads.length} leads`);
+        let totalMatches = 0;
+
+        // ✅ OPTIMISATION: Matching en parallèle par batches de 20
+        const MATCH_BATCH_SIZE = 20;
+        for (let i = 0; i < ingestResult.leads.length; i += MATCH_BATCH_SIZE) {
+          const batch = ingestResult.leads.slice(i, i + MATCH_BATCH_SIZE);
+
+          const matchPromises = batch.map(async (leadId) => {
+            try {
+              const matchResult = await this.findMatchesForLead(userId, leadId);
+              return matchResult.matchesCreated || 0;
+            } catch (error) {
+              this.logger.warn(`Auto-matching failed for lead ${leadId}: ${error.message}`);
+              return 0;
+            }
+          });
+
+          // Attendre ce batch
+          const batchMatches = await Promise.all(matchPromises);
+          const batchTotal = batchMatches.reduce((sum, count) => sum + count, 0);
+          totalMatches += batchTotal;
+
+          this.logger.log(
+            `Batch ${Math.floor(i / MATCH_BATCH_SIZE) + 1}: ${batchTotal} matches created`,
+          );
+        }
+
+        this.logger.log(`✅ Auto-matching completed: ${totalMatches} total matches created`);
+
+        // Mettre à jour le compteur de matches de la campagne
+        await this.prisma.prospecting_campaigns.update({
+          where: { id: campaign.id },
+          data: { matchedCount: totalMatches },
         });
       }
 
+      // 4. FINALISER LA CAMPAGNE
       await this.prisma.prospecting_campaigns.update({
         where: { id: campaign.id },
         data: {
-          foundCount: mockLeads.length,
+          foundCount: ingestResult.created,
+          status: 'completed',
           completedAt: new Date(),
         },
       });
 
-      this.logger.log(`Scraping completed: ${mockLeads.length} leads`);
+      this.logger.log(
+        `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${
+          autoMatch ? 'auto-matching enabled' : 'manual matching'
+        } (Provider: ${llmProviderOverride})`,
+      );
     } catch (error) {
-      this.logger.error(`Scraping failed: ${error.message}`);
+      this.logger.error(`❌ Scraping failed for campaign ${campaign.id}: ${error.message}`);
+
+      // Marquer la campagne en erreur
+      await this.prisma.prospecting_campaigns.update({
+        where: { id: campaign.id },
+        data: { status: 'paused' },
+      });
     }
   }
 
@@ -1103,34 +1292,54 @@ export class ProspectingService {
    * Statistiques globales
    */
   async getGlobalStats(userId: string) {
-    const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
-      this.prisma.prospecting_campaigns.count({ where: { userId } }),
-      this.prisma.prospecting_leads.count({ where: { userId } }),
-      this.prisma.prospecting_matches.count({
-        where: {
-          properties: {
-            userId,
-          },
-        },
-      }),
-      this.prisma.prospecting_leads.findMany({
+    try {
+      // First get all lead IDs for this user
+      const userLeads = await this.prisma.prospecting_leads.findMany({
         where: { userId },
-        orderBy: { score: 'desc' },
-        take: 5,
-        include: {
-          campaigns: {
-            select: { name: true },
-          },
-        },
-      }),
-    ]);
+        select: { id: true },
+      });
+      const leadIds = userLeads.map((l) => l.id);
 
-    return {
-      totalCampaigns,
-      totalLeads,
-      totalMatches,
-      topLeads,
-    };
+      const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
+        this.prisma.prospecting_campaigns.count({ where: { userId } }),
+        this.prisma.prospecting_leads.count({ where: { userId } }),
+        // Use leadId IN array instead of relation filtering
+        leadIds.length > 0
+          ? this.prisma.prospecting_matches.count({
+              where: {
+                leadId: { in: leadIds },
+              },
+            })
+          : Promise.resolve(0),
+        this.prisma.prospecting_leads.findMany({
+          where: { userId },
+          orderBy: { score: 'desc' },
+          take: 5,
+          include: {
+            campaigns: {
+              select: { name: true },
+            },
+          },
+        }),
+      ]);
+
+      return {
+        totalCampaigns,
+        totalLeads,
+        totalMatches,
+        topLeads,
+      };
+    } catch (error) {
+      this.logger.error(`Error in getGlobalStats: ${error.message}`);
+      this.logger.error(error.stack);
+      // Return default values instead of crashing
+      return {
+        totalCampaigns: 0,
+        totalLeads: 0,
+        totalMatches: 0,
+        topLeads: [],
+      };
+    }
   }
 
   // ============================================
@@ -1272,17 +1481,30 @@ export class ProspectingService {
    * Statistiques par source
    */
   async getStatsBySource(userId: string) {
-    const stats = await this.prisma.prospecting_leads.groupBy({
-      by: ['source'],
+    const leads = await this.prisma.prospecting_leads.findMany({
       where: { userId },
-      _count: true,
-      _avg: { score: true },
+      select: { source: true, score: true },
     });
 
-    return stats.map((s) => ({
-      source: s.source || 'unknown',
-      count: s._count,
-      avgScore: Math.round(s._avg.score || 0),
+    interface GroupedData {
+      count: number;
+      totalScore: number;
+    }
+    const grouped: Record<string, GroupedData> = {};
+
+    for (const lead of leads) {
+      const source = lead.source || 'unknown';
+      if (!grouped[source]) {
+        grouped[source] = { count: 0, totalScore: 0 };
+      }
+      grouped[source].count++;
+      grouped[source].totalScore += lead.score || 0;
+    }
+
+    return Object.entries(grouped).map(([source, data]) => ({
+      source,
+      count: data.count,
+      avgScore: Math.round(data.totalScore / data.count),
     }));
   }
 
@@ -1290,15 +1512,25 @@ export class ProspectingService {
    * Statistiques de conversion
    */
   async getConversionStats(userId: string) {
-    const [total, converted, byStage] = await Promise.all([
+    const [total, converted, leads] = await Promise.all([
       this.prisma.prospecting_leads.count({ where: { userId } }),
       this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
-      this.prisma.prospecting_leads.groupBy({
-        by: ['status'],
+      this.prisma.prospecting_leads.findMany({
         where: { userId },
-        _count: true,
+        select: { status: true },
       }),
     ]);
+
+    const grouped: Record<string, number> = {};
+    for (const lead of leads) {
+      const status = lead.status;
+      grouped[status] = (grouped[status] || 0) + 1;
+    }
+
+    const byStage = Object.entries(grouped).map(([status, count]) => ({
+      status,
+      count,
+    }));
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;
 
@@ -1308,15 +1540,15 @@ export class ProspectingService {
       conversionRate: Math.round(conversionRate * 10) / 10,
       byStage: byStage.map((s) => ({
         stage: s.status,
-        count: s._count,
-        percentage: Math.round((s._count / total) * 100 * 10) / 10,
+        count: s.count,
+        percentage: Math.round((s.count / total) * 100 * 10) / 10,
       })),
       funnel: {
-        new: byStage.find((s) => s.status === 'new')?._count || 0,
-        contacted: byStage.find((s) => s.status === 'contacted')?._count || 0,
-        qualified: byStage.find((s) => s.status === 'qualified')?._count || 0,
-        converted: byStage.find((s) => s.status === 'converted')?._count || 0,
-        rejected: byStage.find((s) => s.status === 'rejected')?._count || 0,
+        new: byStage.find((s) => s.status === 'new')?.count || 0,
+        contacted: byStage.find((s) => s.status === 'contacted')?.count || 0,
+        qualified: byStage.find((s) => s.status === 'qualified')?.count || 0,
+        converted: byStage.find((s) => s.status === 'converted')?.count || 0,
+        rejected: byStage.find((s) => s.status === 'rejected')?.count || 0,
       },
     };
   }

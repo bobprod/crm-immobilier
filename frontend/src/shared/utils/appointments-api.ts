@@ -1,4 +1,5 @@
 import apiClient from './backend-api';
+import { BaseAPIClient } from './base-api-client';
 
 // Types
 export interface Appointment {
@@ -47,20 +48,23 @@ export interface AvailabilitySlot {
   end: string;
 }
 
+// Create base API client for appointments
+const baseClient = new BaseAPIClient<Appointment>('/appointments');
+
 export const appointmentsAPI = {
   // ============================================
-  // CRUD DE BASE
+  // CRUD DE BASE (using BaseAPIClient)
   // ============================================
 
-  create: async (data: {
+  create: (data: {
     title: string;
     startTime: string;
     endTime: string;
     description?: string;
     location?: string;
-    type?: string;
-    status?: string;
-    priority?: string;
+    type?: Appointment['type'];
+    status?: Appointment['status'];
+    priority?: Appointment['priority'];
     prospectId?: string;
     propertyId?: string;
     isAllDay?: boolean;
@@ -70,12 +74,9 @@ export const appointmentsAPI = {
     notes?: string;
     color?: string;
     recurrence?: any;
-  }): Promise<Appointment> => {
-    const response = await apiClient.post('/appointments', data);
-    return response.data;
-  },
+  }): Promise<Appointment> => baseClient.create(data as any),
 
-  getAll: async (filters?: {
+  getAll: (filters?: {
     date?: string;
     startDate?: string;
     endDate?: string;
@@ -86,25 +87,13 @@ export const appointmentsAPI = {
     priority?: string;
     limit?: number;
     skip?: number;
-  }): Promise<Appointment[]> => {
-    const response = await apiClient.get('/appointments', { params: filters });
-    return response.data;
-  },
+  }): Promise<Appointment[]> => baseClient.list(filters),
 
-  getById: async (id: string): Promise<Appointment> => {
-    const response = await apiClient.get(`/appointments/${id}`);
-    return response.data;
-  },
+  getById: (id: string): Promise<Appointment> => baseClient.getById(id),
 
-  update: async (id: string, data: Partial<Appointment>): Promise<Appointment> => {
-    const response = await apiClient.put(`/appointments/${id}`, data);
-    return response.data;
-  },
+  update: (id: string, data: Partial<Appointment>): Promise<Appointment> => baseClient.update(id, data),
 
-  delete: async (id: string): Promise<any> => {
-    const response = await apiClient.delete(`/appointments/${id}`);
-    return response.data;
-  },
+  delete: (id: string): Promise<any> => baseClient.delete(id),
 
   // ============================================
   // ACTIONS SPÉCIFIQUES
@@ -165,10 +154,7 @@ export const appointmentsAPI = {
     return response.data;
   },
 
-  getAvailability: async (
-    date: string,
-    duration?: number
-  ): Promise<AvailabilitySlot[]> => {
+  getAvailability: async (date: string, duration?: number): Promise<AvailabilitySlot[]> => {
     const response = await apiClient.get('/appointments/availability', {
       params: { date, duration },
     });
@@ -243,7 +229,7 @@ export const getAppointmentPriorityColor = (priority: string): string => {
 export const formatAppointmentTime = (startTime: string, endTime: string): string => {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('fr-FR', {
       hour: '2-digit',

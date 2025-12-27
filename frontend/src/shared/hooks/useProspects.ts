@@ -22,7 +22,7 @@ export function useProspects() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     };
   };
 
@@ -97,7 +97,7 @@ export function useProspects() {
       }
 
       const updatedProspect = await response.json();
-      setProspects(prospects.map(p => p.id === id ? updatedProspect : p));
+      setProspects(prospects.map((p) => (p.id === id ? updatedProspect : p)));
       return updatedProspect;
     } catch (err: any) {
       setError(err.message);
@@ -116,7 +116,7 @@ export function useProspects() {
         throw new Error('Erreur lors de la suppression du prospect');
       }
 
-      setProspects(prospects.filter(p => p.id !== id));
+      setProspects(prospects.filter((p) => p.id !== id));
     } catch (err: any) {
       setError(err.message);
       throw err;

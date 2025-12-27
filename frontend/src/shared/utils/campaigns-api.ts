@@ -75,11 +75,8 @@ export const campaignsAPI = {
   /**
    * Mettre à jour une campagne
    */
-  update: async (
-    id: string,
-    updates: Partial<CreateCampaignDTO>
-  ): Promise<Campaign> => {
-    const response = await apiClient.patch(`/campaigns/${id}`, updates);
+  update: async (id: string, updates: Partial<CreateCampaignDTO>): Promise<Campaign> => {
+    const response = await apiClient.put(`/campaigns/${id}`, updates);
     return response.data;
   },
 
@@ -110,9 +107,7 @@ export const campaignsAPI = {
    * Convertir un lead de campagne en prospect
    */
   convertLead: async (campaignId: string, leadId: string): Promise<any> => {
-    const response = await apiClient.post(
-      `/campaigns/${campaignId}/leads/${leadId}/convert`
-    );
+    const response = await apiClient.post(`/campaigns/leads/convert`, { campaignId, leadId });
     return response.data;
   },
 

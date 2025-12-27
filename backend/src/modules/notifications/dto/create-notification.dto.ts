@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 
 export enum NotificationType {
   APPOINTMENT = 'appointment',
@@ -10,7 +10,7 @@ export enum NotificationType {
 }
 
 export class CreateNotificationDto {
-  @IsUUID()
+  @IsString()
   userId: string;
 
   @IsEnum(NotificationType)

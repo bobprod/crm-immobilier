@@ -5,10 +5,20 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import { Settings as SettingsIcon, User, Bell, Shield } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  User,
+  Bell,
+  Shield,
+  Search,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
+import { useRouter } from 'next/router';
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -19,7 +29,7 @@ export default function SettingsPage() {
 
     try {
       // TODO: Implémenter la sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       setMessage('Profil mis à jour avec succès');
     } catch (error) {
       setMessage('Erreur lors de la mise à jour');
@@ -37,19 +47,68 @@ export default function SettingsPage() {
             <SettingsIcon className="h-8 w-8" />
             Paramètres
           </h1>
-          <p className="text-gray-600 mt-1">
-            Gérez vos préférences et votre compte
-          </p>
+          <p className="text-gray-600 mt-1">Gérez vos préférences et votre compte</p>
         </div>
 
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.includes('succès')
-            ? 'bg-green-50 text-green-800 border border-green-200'
-            : 'bg-red-50 text-red-800 border border-red-200'
-            }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.includes('succès')
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
             {message}
           </div>
         )}
+
+        {/* Quick Links to Configuration Pages */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push('/settings/prospecting-config')}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <Search className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                    Configuration Prospection
+                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Configurez les API pour la prospection : Pica, SERP, Firecrawl, et les
+                    paramètres de scraping
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push('/settings/llm-config')}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                    Configuration LLM / IA
+                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Configurez les modèles d'IA pour l'analyse automatique et l'optimisation SEO
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Profil */}
         <Card className="mb-6">
@@ -64,30 +123,17 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Prénom</Label>
-                  <Input
-                    id="firstName"
-                    defaultValue={user?.firstName}
-                    disabled={loading}
-                  />
+                  <Input id="firstName" defaultValue={user?.firstName} disabled={loading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Nom</Label>
-                  <Input
-                    id="lastName"
-                    defaultValue={user?.lastName}
-                    disabled={loading}
-                  />
+                  <Input id="lastName" defaultValue={user?.lastName} disabled={loading} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue={user?.email}
-                  disabled={loading}
-                />
+                <Input id="email" type="email" defaultValue={user?.email} disabled={loading} />
               </div>
 
               <Button type="submit" disabled={loading}>
@@ -146,29 +192,17 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="currentPassword" type="password" placeholder="••••••••" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="newPassword" type="password" placeholder="••••••••" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="confirmPassword" type="password" placeholder="••••••••" />
               </div>
 
               <Button>Changer le mot de passe</Button>

@@ -2,7 +2,9 @@ import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@ne
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { LLMProspectingService } from './llm-prospecting.service';
+import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
+import { WebDataService } from '../scraping/services/web-data.service';
 import axios from 'axios';
 
 interface LeadData {
@@ -43,6 +45,7 @@ export class ProspectingIntegrationService {
     private configService: ConfigService,
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
+    private llmRouter: LLMRouterService,
   ) {}
 
   // ============================================
@@ -184,12 +187,18 @@ export class ProspectingIntegrationService {
     userId: string,
     campaignId: string,
     items: RawScrapedItem[],
+    providerOverride?: string, // ✅ NOUVEAU: Support pour forcer un provider spécifique
   ): Promise<IngestResult> {
     this.logger.log(`Ingesting ${items.length} scraped items for campaign ${campaignId}`);
 
     // 1) Appeler le LLM pour structurer les items
     const leadsToCreate: ProspectingLeadCreateInput[] =
-      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(items);
+      await this.llmProspectingService.buildProspectingLeadsFromRawBatch(
+        items,
+        userId,
+        undefined, // config
+        providerOverride, // ✅ Passer le provider override au LLM service
+      );
 
     // 2) Filtrer les "rejete/spam"
     const validLeads = leadsToCreate.filter(
@@ -448,60 +457,93 @@ export class ProspectingIntegrationService {
   }
 
   // ============================================
-  // FIRECRAWL - Web Scraping avance
+  // FIRECRAWL - Web Scraping avance avec IA
   // ============================================
 
   async scrapeWithFirecrawl(userId: string, urls: string[], config?: any): Promise<any> {
-    this.logger.log(`Scraping with Firecrawl for user ${userId}`);
-
-    const apiConfig = await this.getApiConfig(userId, 'firecrawl');
-    if (!apiConfig) {
-      throw new BadRequestException('Firecrawl API non configuree');
-    }
+    this.logger.log(
+      `Scraping avec Firecrawl (via WebDataService) pour l'utilisateur ${userId}`,
+    );
 
     try {
       const allLeads: LeadData[] = [];
 
-      for (const url of urls) {
-        const response = await axios.post(
-          'https://api.firecrawl.dev/v0/scrape',
-          {
-            url,
-            pageOptions: {
-              onlyMainContent: true,
-              includeHtml: false,
-            },
-            extractorOptions: {
-              mode: 'llm-extraction',
-              extractionPrompt: `Extraire les informations de contact et les details immobiliers:
-                - Nom complet
-                - Email
-                - Telephone
-                - Type de bien recherche ou a vendre
-                - Budget ou prix
-                - Localisation
-                - Type (acheteur/vendeur/locataire/bailleur)`,
-            },
-          },
-          {
-            headers: { Authorization: `Bearer ${apiConfig.apiKey}` },
-            timeout: 30000,
-          },
-        );
+      // Utiliser WebDataService avec le provider Firecrawl
+      const results = await this.webDataService.fetchMultipleUrls(urls, {
+        provider: 'firecrawl',
+        tenantId: userId,
+        extractionPrompt: `Extraire les informations de contact et les détails immobiliers:
+          - Nom complet
+          - Email
+          - Téléphone
+          - Type de bien recherché ou à vendre
+          - Budget ou prix
+          - Localisation
+          - Type (acheteur/vendeur/locataire/bailleur)`,
+      });
 
-        if (response.data?.data) {
-          const leads = this.parseFirecrawlResponse(response.data.data, url);
+      // Transformer les résultats en leads
+      for (const result of results) {
+        if (result.extractedData) {
+          // Si Firecrawl a extrait des données structurées
+          const lead = this.parseFirecrawlExtractedData(result.extractedData, result.url);
+          if (lead) {
+            allLeads.push(lead);
+          }
+        } else {
+          // Fallback sur l'extraction manuelle
+          const leads = this.extractLeadsFromScrapedData(result);
           allLeads.push(...leads);
         }
       }
 
+      this.logger.log(`Firecrawl scraping terminé: ${allLeads.length} leads extraits`);
+
       return { success: true, leads: allLeads, count: allLeads.length };
     } catch (error) {
-      this.logger.error(`Firecrawl error: ${error.message}`);
-      return this.generateMockLeads(config || {}, 'firecrawl');
+      this.logger.error(`Erreur Firecrawl: ${error.message}`);
+      
+      // Si Firecrawl n'est pas disponible, fallback sur les autres providers
+      this.logger.warn('Fallback sur scraping standard...');
+      return this.scrapeWebsites(userId, urls, config);
     }
   }
 
+  /**
+   * Parser les données extraites par Firecrawl (structurées avec IA)
+   */
+  private parseFirecrawlExtractedData(extractedData: any, sourceUrl: string): LeadData | null {
+    if (!extractedData) return null;
+
+    return {
+      firstName: extractedData.firstName || extractedData.nom?.split(' ')[0],
+      lastName: extractedData.lastName || extractedData.nom?.split(' ').slice(1).join(' '),
+      email: extractedData.email,
+      phone: extractedData.phone || extractedData.telephone,
+      city: extractedData.location || extractedData.localisation,
+      propertyType: extractedData.propertyType || extractedData.typeDeBien,
+      budget: extractedData.budget || extractedData.prix,
+      source: 'firecrawl',
+      sourceUrl,
+      leadType: this.detectLeadTypeFromExtractedData(extractedData),
+      metadata: {
+        extractedWithAI: true,
+        rawExtraction: extractedData,
+      },
+    };
+  }
+
+  private detectLeadTypeFromExtractedData(data: any): 'requete' | 'mandat' {
+    const type = (data.type || data.intention || '').toLowerCase();
+    
+    if (type.includes('vendeur') || type.includes('bailleur') || type.includes('vendre')) {
+      return 'mandat';
+    }
+    
+    return 'requete'; // Par défaut: acheteur/locataire
+  }
+
+  // Ancienne méthode parseFirecrawlResponse conservée pour compatibilité
   private parseFirecrawlResponse(data: any, sourceUrl: string): LeadData[] {
     const leads: LeadData[] = [];
 
@@ -601,66 +643,86 @@ export class ProspectingIntegrationService {
   // ============================================
 
   async scrapeWebsites(userId: string, urls: string[], selectors?: any): Promise<any> {
-    this.logger.log(`Scraping websites: ${urls.length} URLs`);
+    this.logger.log(`Scraping websites: ${urls.length} URLs avec WebDataService`);
 
-    const allLeads: LeadData[] = [];
-
-    for (const url of urls) {
-      try {
-        // Utiliser un service de scraping ou puppeteer
-        const leads = await this.scrapeWebsite(url, selectors);
-        allLeads.push(...leads);
-      } catch (error) {
-        this.logger.warn(`Failed to scrape ${url}: ${error.message}`);
-      }
-    }
-
-    return { success: true, leads: allLeads, count: allLeads.length };
-  }
-
-  private async scrapeWebsite(url: string, selectors?: any): Promise<LeadData[]> {
-    // Implementation basique - en production utiliser Puppeteer ou Playwright
     try {
-      const response = await axios.get(url, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; CRMBot/1.0)',
-        },
+      // Utiliser le WebDataService unifié qui sélectionne automatiquement
+      // le meilleur provider (Cheerio, Puppeteer, ou Firecrawl)
+      const results = await this.webDataService.fetchMultipleUrls(urls, {
+        tenantId: userId,
       });
 
-      const leads = this.extractLeadsFromHTML(response.data, url, selectors);
-      return leads;
-    } catch {
-      return [];
+      const allLeads: LeadData[] = [];
+
+      // Transformer les résultats en leads
+      for (const result of results) {
+        const leads = this.extractLeadsFromScrapedData(result, selectors);
+        allLeads.push(...leads);
+      }
+
+      this.logger.log(
+        `Scraping terminé: ${allLeads.length} leads extraits de ${results.length} pages`,
+      );
+
+      return { success: true, leads: allLeads, count: allLeads.length };
+    } catch (error) {
+      this.logger.error(`Erreur lors du scraping des sites: ${error.message}`);
+      return { success: false, leads: [], count: 0, error: error.message };
     }
   }
 
-  private extractLeadsFromHTML(html: string, sourceUrl: string, selectors?: any): LeadData[] {
+  /**
+   * Extraire les leads depuis les données scrappées par WebDataService
+   */
+  private extractLeadsFromScrapedData(scrapedData: any, selectors?: any): LeadData[] {
     const leads: LeadData[] = [];
+    const text = scrapedData.text || '';
 
-    // Extraire emails
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-    const emails = html.match(emailRegex) || [];
+    // Utiliser les métadonnées extraites par les services de scraping
+    // Valider les types pour éviter les erreurs runtime
+    const rawEmails = Array.isArray(scrapedData.metadata?.emails)
+      ? (scrapedData.metadata.emails as string[])
+      : this.extractEmailsFromText(text);
+    const emails: string[] = Array.isArray(rawEmails) ? (rawEmails as string[]) : [];
 
-    // Extraire telephones tunisiens
-    const phoneRegex = /(?:\+216|00216)?[\s.-]?[2579]\d[\s.-]?\d{3}[\s.-]?\d{3}/g;
-    const phones = html.match(phoneRegex) || [];
+    const rawPhones = Array.isArray(scrapedData.metadata?.phones)
+      ? (scrapedData.metadata.phones as string[])
+      : this.extractPhonesFromText(text);
+    const phones: string[] = Array.isArray(rawPhones) ? (rawPhones as string[]) : [];
 
-    // Creer des leads a partir des contacts trouves
+    // Créer des leads à partir des contacts trouvés
     const uniqueEmails = [...new Set(emails)].slice(0, 10);
     for (const email of uniqueEmails) {
-      if (!email.includes('example') && !email.includes('test')) {
+      if (typeof email === 'string' && !email.includes('example') && !email.includes('test')) {
         leads.push({
           email,
           source: 'webscrape',
-          sourceUrl,
-          leadType: this.detectLeadType(html.substring(0, 500)),
+          sourceUrl: scrapedData.url,
+          leadType: this.detectLeadType(text.substring(0, 500)),
+          metadata: {
+            scrapingProvider: scrapedData.provider,
+            title: scrapedData.title,
+          },
         });
       }
     }
 
     return leads;
   }
+
+  private extractEmailsFromText(text: string): string[] {
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    return text.match(emailRegex) || [];
+  }
+
+  private extractPhonesFromText(text: string): string[] {
+    const phoneRegex = /(?:\+216|00216)?[\s.-]?[2579]\d[\s.-]?\d{3}[\s.-]?\d{3}/g;
+    return text.match(phoneRegex) || [];
+  }
+
+  // Anciennes méthodes supprimées - maintenant géré par WebDataService
+  // private async scrapeWebsite() { ... }
+  // private extractLeadsFromHTML() { ... }
 
   // ============================================
   // AI DETECTION - Detection IA
@@ -696,12 +758,14 @@ export class ProspectingIntegrationService {
     };
   }
 
-  async analyzeContentForLeads(userId: string, content: string, source?: string): Promise<any> {
+  async analyzeContentForLeads(
+    userId: string,
+    content: string,
+    source?: string,
+    providerOverride?: string,
+  ): Promise<any> {
     this.logger.log(`Analyzing content for leads`);
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
-    // Utiliser l'IA pour extraire les informations
     const prompt = `Analyse ce texte et extrait les informations de contact et immobilieres:
 
     Texte: ${content}
@@ -712,12 +776,54 @@ export class ProspectingIntegrationService {
     - leadType: "requete" (cherche un bien) ou "mandat" (propose un bien)
     - score: 0-100 (qualite du lead)`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
-      return { success: true, analysis: result, method: 'llm' };
+      // ✅ Routing intelligent: qualification = équilibre qualité/coût
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify', // Gemini, Mistral, Qwen prioritaires
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // ✅ Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
+
+      return { success: true, analysis: result, method: 'llm', provider: providerName };
     } catch (error) {
-      // Log l'erreur pour le debugging
       this.logger.warn(`LLM analysis failed, falling back to regex: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
 
       // Fallback sur extraction regex
       const contact = this.extractContactFromText(content);
@@ -743,8 +849,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Classifie ce lead immobilier:
 
     Nom: ${lead.firstName} ${lead.lastName}
@@ -763,8 +867,35 @@ export class ProspectingIntegrationService {
     4. quality: 0-100
     5. reason: explication`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       // Mettre a jour le lead
       await this.prisma.prospecting_leads.update({
@@ -780,8 +911,22 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, classification: result, method: 'llm' };
+      return { success: true, classification: result, method: 'llm', provider: providerName };
     } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Log l'erreur pour le debugging
       this.logger.warn(
         `LLM classification failed for lead ${leadId}, using basic rules: ${error.message}`,
@@ -807,8 +952,6 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    const llmConfig = await this.getApiConfig(userId, 'llm');
-
     const prompt = `Qualifie ce lead immobilier sur 100:
 
     ${JSON.stringify(lead)}
@@ -822,8 +965,35 @@ export class ProspectingIntegrationService {
 
     Retourne: { score: number, reasons: string[], recommendations: string[] }`;
 
+    const startTime = Date.now();
+    let providerName: string;
+
     try {
-      const result = await this.callLLM(llmConfig, prompt);
+      // ✅ Routing intelligent
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_qualify',
+      );
+      providerName = provider.name.toLowerCase();
+
+      const response = await provider.generate(prompt, {
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+      const result = JSON.parse(response);
+
+      // Tracking
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_qualify',
+        Math.ceil(prompt.length / 4),
+        Math.ceil(response.length / 4),
+        latency,
+        true,
+      );
 
       await this.prisma.prospecting_leads.update({
         where: { id: leadId },
@@ -836,11 +1006,25 @@ export class ProspectingIntegrationService {
         },
       });
 
-      return { success: true, qualification: result };
-    } catch {
+      return { success: true, qualification: result, provider: providerName };
+    } catch (error) {
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_qualify',
+          Math.ceil(prompt.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Scoring basique
       const score = this.calculateBasicScore(lead);
-      return { success: true, qualification: { score, reasons: ['Scoring automatique'] } };
+      return { success: true, qualification: { score, reasons: ['Scoring automatique'] }, method: 'fallback' };
     }
   }
 
@@ -1026,27 +1210,6 @@ export class ProspectingIntegrationService {
     }));
   }
 
-  private async callLLM(config: any, prompt: string): Promise<any> {
-    if (!config?.apiKey) {
-      throw new Error('LLM non configure');
-    }
-
-    // Implementation simplifiee - en production utiliser OpenAI/Anthropic
-    const response = await axios.post(
-      config.endpoint || 'https://api.openai.com/v1/chat/completions',
-      {
-        model: config.model || 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      },
-      {
-        headers: { Authorization: `Bearer ${config.apiKey}` },
-        timeout: 30000,
-      },
-    );
-
-    return JSON.parse(response.data.choices[0].message.content);
-  }
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

@@ -27,10 +27,7 @@ export default function ProspectsGestionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ProspectManagementConnected
-        language="fr"
-        currency="TND"
-      />
+      <ProspectManagementConnected language="fr" currency="TND" />
     </div>
   );
 }

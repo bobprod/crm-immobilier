@@ -1,4 +1,5 @@
 import apiClient from './backend-api';
+import { BaseAPIClient } from './base-api-client';
 
 // Types
 export interface Document {
@@ -107,6 +108,9 @@ export interface OcrResult {
   createdAt: string;
 }
 
+// Create base client for documents
+const baseClient = new BaseAPIClient<Document>('/documents');
+
 export const documentsAPI = {
   // ============================================
   // DOCUMENTS
@@ -127,15 +131,9 @@ export const documentsAPI = {
     return response.data;
   },
 
-  getDocuments: async (filters?: any): Promise<Document[]> => {
-    const response = await apiClient.get('/documents', { params: filters });
-    return response.data;
-  },
+  getDocuments: (filters?: any): Promise<Document[]> => baseClient.list(filters),
 
-  getDocumentById: async (id: string): Promise<Document> => {
-    const response = await apiClient.get(`/documents/${id}`);
-    return response.data;
-  },
+  getDocumentById: (id: string): Promise<Document> => baseClient.getById(id),
 
   downloadDocument: async (id: string): Promise<Blob> => {
     const response = await apiClient.get(`/documents/${id}/download`, {
@@ -144,20 +142,11 @@ export const documentsAPI = {
     return response.data;
   },
 
-  updateDocument: async (id: string, data: any): Promise<Document> => {
-    const response = await apiClient.put(`/documents/${id}`, data);
-    return response.data;
-  },
+  updateDocument: (id: string, data: any): Promise<Document> => baseClient.update(id, data),
 
-  deleteDocument: async (id: string): Promise<any> => {
-    const response = await apiClient.delete(`/documents/${id}`);
-    return response.data;
-  },
+  deleteDocument: (id: string): Promise<any> => baseClient.delete(id),
 
-  getStats: async (): Promise<any> => {
-    const response = await apiClient.get('/documents/stats/overview');
-    return response.data;
-  },
+  getStats: (): Promise<any> => baseClient.get('stats/overview'),
 
   // ============================================
   // AI GENERATION

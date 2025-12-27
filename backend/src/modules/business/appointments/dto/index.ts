@@ -11,7 +11,10 @@ import {
   IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentAttendee, AppointmentRecurrence } from '../../../../shared/types/relation-summaries';
+import {
+  AppointmentAttendee,
+  AppointmentRecurrence,
+} from '../../../../shared/types/relation-summaries';
 
 // Enums
 export enum AppointmentType {

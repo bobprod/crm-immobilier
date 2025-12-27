@@ -27,7 +27,7 @@ export default function PageBuilderListPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">🎨 Page Builder</h1>
-      
+
       <Tabs defaultValue="pages">
         <TabsList>
           <TabsTrigger value="pages">Mes Pages</TabsTrigger>

@@ -39,7 +39,7 @@ export class AnalyticsService {
    * Stats Prospects
    */
   async getProspectsStats(userId: string) {
-    const [total, active, converted, thisMonth, byStatus] = await Promise.all([
+    const [total, active, converted, thisMonth] = await Promise.all([
       this.prisma.prospects.count({ where: { userId } }),
       this.prisma.prospects.count({
         where: { userId, status: { in: ['new', 'contacted', 'qualified'] } },
@@ -55,12 +55,20 @@ export class AnalyticsService {
           },
         },
       }),
-      this.prisma.prospects.groupBy({
-        by: ['status'],
-        where: { userId },
-        _count: true,
-      }),
     ]);
+
+    // Get status counts using raw query since groupBy is not available in wrapper
+    const byStatusResult = await this.prisma.$queryRaw<Array<{ status: string; count: bigint }>>`
+      SELECT status, COUNT(*)::int as count
+      FROM prospects
+      WHERE "userId" = ${userId}
+      GROUP BY status
+    `;
+
+    const byStatus = byStatusResult.map((s) => ({
+      status: s.status,
+      count: Number(s.count),
+    }));
 
     const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
 
@@ -70,10 +78,7 @@ export class AnalyticsService {
       converted,
       thisMonth,
       conversionRate,
-      byStatus: byStatus.map((s) => ({
-        status: s.status,
-        count: s._count,
-      })),
+      byStatus,
     };
   }
 
@@ -96,11 +101,15 @@ export class AnalyticsService {
         where: { userId },
         _avg: { price: true },
       }),
-      this.prisma.properties.groupBy({
-        by: ['type'],
-        where: { userId },
-        _count: true,
-      }),
+      (async () => {
+        const result = await this.prisma.$queryRaw<Array<{ type: string; count: bigint }>>`
+          SELECT type, COUNT(*)::int as count
+          FROM properties
+          WHERE "userId" = ${userId}
+          GROUP BY type
+        `;
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
+      })(),
     ]);
 
     return {
@@ -136,11 +145,15 @@ export class AnalyticsService {
           },
         },
       }),
-      this.prisma.communications.groupBy({
-        by: ['type'],
-        where: { userId },
-        _count: true,
-      }),
+      (async () => {
+        const result = await this.prisma.$queryRaw<Array<{ type: string; count: bigint }>>`
+          SELECT type, COUNT(*)::int as count
+          FROM communications
+          WHERE "userId" = ${userId}
+          GROUP BY type
+        `;
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
+      })(),
     ]);
 
     return {
@@ -187,11 +200,15 @@ export class AnalyticsService {
           },
         },
       }),
-      this.prisma.appointments.groupBy({
-        by: ['type'],
-        where: { userId },
-        _count: true,
-      }),
+      (async () => {
+        const result = await this.prisma.$queryRaw<Array<{ type: string; count: bigint }>>`
+          SELECT type, COUNT(*)::int as count
+          FROM appointments
+          WHERE "userId" = ${userId}
+          GROUP BY type
+        `;
+        return result.map((r) => ({ type: r.type, _count: Number(r.count) }));
+      })(),
     ]);
 
     return {

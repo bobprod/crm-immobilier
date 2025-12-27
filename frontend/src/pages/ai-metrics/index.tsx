@@ -232,11 +232,10 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Leads Traites</Typography>
-                    <Typography variant="h4">{prospecting.totalLeadsProcessed}</Typography>
-                    <Typography variant="body2" color="success.main">
-                      {formatPercent(prospecting.llmCoverageRate)} analyses IA
+                    <Typography color="text.secondary" variant="body2">
+                      Prédictions Totales
                     </Typography>
+                    <Typography variant="h4">{metrics.totalPredictions}</Typography>
                   </Box>
                   <Assessment sx={{ fontSize: 40, color: 'primary.main' }} />
                 </Box>
@@ -249,12 +248,11 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Taux Conversion</Typography>
-                    <Typography variant="h4" color={prospecting.conversionRate >= 10 ? 'success.main' : 'warning.main'}>
-                      {formatPercent(prospecting.conversionRate)}
+                    <Typography color="text.secondary" variant="body2">
+                      Taux de Précision
                     </Typography>
-                    <Typography variant="body2">
-                      {prospecting.convertedLeads} convertis
+                    <Typography variant="h4" color="success.main">
+                      {metrics.accuracyRate}%
                     </Typography>
                   </Box>
                   <TrendingUp sx={{ fontSize: 40, color: prospecting.conversionRate >= 10 ? 'success.main' : 'warning.main' }} />
@@ -268,10 +266,11 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Score Matching Moy.</Typography>
-                    <Typography variant="h4">{crmMatching.avgScore.toFixed(0)}</Typography>
-                    <Typography variant="body2">
-                      {crmMatching.totalMatches} matches
+                    <Typography color="text.secondary" variant="body2">
+                      Confiance Moyenne
+                    </Typography>
+                    <Typography variant="h4">
+                      {(metrics.averageConfidence * 100).toFixed(1)}%
                     </Typography>
                   </Box>
                   <Speed sx={{ fontSize: 40, color: 'info.main' }} />
@@ -300,101 +299,34 @@ export default function AiMetricsDashboard() {
           </Grid>
         </Grid>
 
-        {/* Tabs */}
-        <Paper sx={{ mb: 3 }}>
-          <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto">
-            <Tab label="Funnel de Vente" icon={<People />} iconPosition="start" />
-            <Tab label="Performance Matching" icon={<Psychology />} iconPosition="start" />
-            <Tab label="Proprietes" icon={<Home />} iconPosition="start" />
-            <Tab label="ROI & Couts" icon={<AttachMoney />} iconPosition="start" />
-          </Tabs>
-        </Paper>
-
-        {/* Tab Panels */}
-        <TabPanel value={tabValue} index={0}>
-          <Grid container spacing={3}>
-            {/* Sales Funnel */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>Funnel de Conversion</Typography>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <FunnelChart>
-                      <Tooltip formatter={(value: number) => [value, 'Nombre']} />
-                      <Funnel
-                        dataKey="value"
-                        data={funnelData}
-                        isAnimationActive
-                      >
-                        <LabelList position="right" fill="#000" stroke="none" dataKey="name" />
-                        <LabelList position="center" fill="#fff" stroke="none" dataKey="value" />
-                      </Funnel>
-                    </FunnelChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Conversion Rates */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>Taux de Conversion par Etape</Typography>
-                  <Box sx={{ mt: 2 }}>
-                    {[
-                      { label: 'Leads → Qualifies', value: salesFunnel.conversionRates.leadsToQualified },
-                      { label: 'Qualifies → Prospects', value: salesFunnel.conversionRates.qualifiedToProspects },
-                      { label: 'Prospects → RDVs', value: salesFunnel.conversionRates.prospectsToAppointments },
-                      { label: 'RDVs → Visites', value: salesFunnel.conversionRates.appointmentsToVisits },
-                      { label: 'Visites → Offres', value: salesFunnel.conversionRates.visitsToOffers },
-                      { label: 'Offres → Contrats', value: salesFunnel.conversionRates.offersToContracts },
-                    ].map((item, index) => (
-                      <Box key={index} sx={{ mb: 2 }}>
-                        <Box display="flex" justifyContent="space-between" mb={0.5}>
-                          <Typography variant="body2">{item.label}</Typography>
-                          <Typography variant="body2" fontWeight="bold">{formatPercent(item.value)}</Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={Math.min(item.value, 100)}
-                          color={item.value >= 50 ? 'success' : item.value >= 25 ? 'warning' : 'error'}
-                          sx={{ height: 8, borderRadius: 4 }}
-                        />
-                      </Box>
-                    ))}
-                    <Divider sx={{ my: 2 }} />
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="subtitle1" fontWeight="bold">Taux Global (Leads → Contrats)</Typography>
-                      <Chip
-                        label={formatPercent(salesFunnel.conversionRates.overallLeadsToContracts)}
-                        color={salesFunnel.conversionRates.overallLeadsToContracts >= 5 ? 'success' : 'warning'}
-                      />
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Time Series */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>Evolution Temporelle</Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={timeSeries}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="leadsCreated" stackId="1" stroke="#8884d8" fill="#8884d8" name="Leads" />
-                      <Area type="monotone" dataKey="matchesCreated" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="Matches" />
-                      <Area type="monotone" dataKey="conversions" stackId="1" stroke="#ffc658" fill="#ffc658" name="Conversions" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
+        {/* Charts */}
+        <Grid container spacing={3}>
+          {/* Accuracy Trend */}
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  <Timeline sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Évolution de la Précision
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={metrics.accuracyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[75, 95]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="accuracy"
+                      stroke="#8884d8"
+                      strokeWidth={2}
+                      name="Précision (%)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </Grid>
         </TabPanel>
 

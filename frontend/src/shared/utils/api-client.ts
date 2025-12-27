@@ -1,5 +1,5 @@
 // API Client for CRM Backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 interface ApiResponse<T> {
   data?: T;
@@ -26,10 +26,7 @@ class ApiClient {
     localStorage.removeItem('crm-token');
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const token = this.getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',

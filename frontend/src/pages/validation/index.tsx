@@ -155,12 +155,16 @@ export default function ValidationPage() {
     if (!newBlacklistValue.trim()) return;
 
     try {
-      await validationAPI.addToBlacklist(newBlacklistType, newBlacklistValue.trim(), newBlacklistReason);
+      await validationAPI.addToBlacklist(
+        newBlacklistType,
+        newBlacklistValue.trim(),
+        newBlacklistReason
+      );
       setNewBlacklistValue('');
       setNewBlacklistReason('');
       loadData();
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'ajout');
+      setError(err.message || "Erreur lors de l'ajout");
     }
   };
 
@@ -183,7 +187,7 @@ export default function ValidationPage() {
       setNewWhitelistValue('');
       loadData();
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'ajout');
+      setError(err.message || "Erreur lors de l'ajout");
     }
   };
 
@@ -241,9 +245,7 @@ export default function ValidationPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition ${
-                activeTab === tab.id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               {tab.icon}
@@ -318,8 +320,8 @@ export default function ValidationPage() {
                       emailResult.error
                         ? 'bg-red-50 border-red-200'
                         : emailResult.isValid
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-red-50 border-red-200'
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
                     }`}
                   >
                     {emailResult.error ? (
@@ -346,15 +348,11 @@ export default function ValidationPage() {
                               {emailResult.score}/100
                             </span>
                           </div>
-                          {emailResult.isSpam && (
-                            <div className="text-red-600">Spam detecte</div>
-                          )}
+                          {emailResult.isSpam && <div className="text-red-600">Spam detecte</div>}
                           {emailResult.isDisposable && (
                             <div className="text-yellow-600">Email jetable</div>
                           )}
-                          {emailResult.provider && (
-                            <div>Provider: {emailResult.provider}</div>
-                          )}
+                          {emailResult.provider && <div>Provider: {emailResult.provider}</div>}
                         </div>
                       </>
                     )}
@@ -400,8 +398,8 @@ export default function ValidationPage() {
                       phoneResult.error
                         ? 'bg-red-50 border-red-200'
                         : phoneResult.isValid
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-red-50 border-red-200'
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
                     }`}
                   >
                     {phoneResult.error ? (
@@ -425,9 +423,7 @@ export default function ValidationPage() {
                               {phoneResult.score}/100
                             </span>
                           </div>
-                          {phoneResult.country && (
-                            <div>Pays: {phoneResult.country}</div>
-                          )}
+                          {phoneResult.country && <div>Pays: {phoneResult.country}</div>}
                         </div>
                       </>
                     )}
@@ -467,17 +463,13 @@ export default function ValidationPage() {
                         <span className="font-mono text-sm">{item.contactValue}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={getScoreBadgeColor(item.score)}>
-                          {item.score}/100
-                        </Badge>
+                        <Badge className={getScoreBadgeColor(item.score)}>{item.score}/100</Badge>
                         {item.isValid ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
                           <XCircle className="h-4 w-4 text-red-600" />
                         )}
-                        {item.isSpam && (
-                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        )}
+                        {item.isSpam && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
                       </div>
                     </div>
                   ))}
@@ -602,7 +594,10 @@ export default function ValidationPage() {
                     placeholder="Valeur de confiance"
                     className="flex-1 px-3 py-2 border rounded-lg"
                   />
-                  <Button onClick={handleAddToWhitelist} className="bg-green-600 hover:bg-green-700">
+                  <Button
+                    onClick={handleAddToWhitelist}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     Ajouter
                   </Button>
@@ -664,7 +659,9 @@ export default function ValidationPage() {
                   <CardContent className="pt-6">
                     <div className="text-center">
                       <p className="text-3xl font-bold text-green-600">{stats.valid}</p>
-                      <p className="text-sm text-gray-500">Valides ({stats.validRate?.toFixed(1)}%)</p>
+                      <p className="text-sm text-gray-500">
+                        Valides ({stats.validRate?.toFixed(1)}%)
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -679,7 +676,9 @@ export default function ValidationPage() {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <p className="text-3xl font-bold text-blue-600">{stats.avgScore?.toFixed(0)}</p>
+                      <p className="text-3xl font-bold text-blue-600">
+                        {stats.avgScore?.toFixed(0)}
+                      </p>
                       <p className="text-sm text-gray-500">Score moyen</p>
                     </div>
                   </CardContent>

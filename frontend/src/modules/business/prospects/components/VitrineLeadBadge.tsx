@@ -27,7 +27,7 @@ export function VitrineLeadBadge({ vitrineData }: VitrineLeadBadgeProps) {
         };
       case 'estimation':
         return {
-          label: 'Demande d\'estimation',
+          label: "Demande d'estimation",
           icon: FileText,
           color: 'bg-purple-500',
         };
@@ -66,15 +66,17 @@ export function VitrineLeadDetails({ vitrineData }: VitrineLeadBadgeProps) {
 
       <div className="space-y-2 text-sm">
         <div>
-          <span className="font-medium">Type :</span>{' '}
-          <VitrineLeadBadge vitrineData={vitrineData} />
+          <span className="font-medium">Type :</span> <VitrineLeadBadge vitrineData={vitrineData} />
         </div>
 
         {vitrineData.propertyId && (
           <div className="flex items-center gap-2">
             <Home className="h-4 w-4 text-gray-600" />
             <span className="font-medium">Bien concerné :</span>
-            <a href={`/properties/${vitrineData.propertyId}`} className="text-blue-600 hover:underline">
+            <a
+              href={`/properties/${vitrineData.propertyId}`}
+              className="text-blue-600 hover:underline"
+            >
               Voir le bien
             </a>
           </div>
@@ -91,9 +93,7 @@ export function VitrineLeadDetails({ vitrineData }: VitrineLeadBadgeProps) {
         {vitrineData.message && (
           <div>
             <span className="font-medium">Message :</span>
-            <p className="mt-1 text-gray-700 bg-white p-2 rounded border">
-              {vitrineData.message}
-            </p>
+            <p className="mt-1 text-gray-700 bg-white p-2 rounded border">{vitrineData.message}</p>
           </div>
         )}
 

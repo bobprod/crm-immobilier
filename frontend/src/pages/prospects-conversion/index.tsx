@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Users, 
-  Target,
-  Activity,
-  Award
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Target, Activity, Award } from 'lucide-react';
 import {
   getAllConversions,
   getHighRoiProspects,
@@ -37,7 +29,7 @@ export default function ProspectsConversionPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Charger les conversions
       const conversionsData = await getAllConversions();
       setConversions(conversionsData);
@@ -48,7 +40,8 @@ export default function ProspectsConversionPage() {
 
       // Calculer les stats
       const totalValue = conversionsData.reduce((sum, c) => sum + (c.value || 0), 0);
-      const avgRate = highRoiData.reduce((sum, p) => sum + p.conversionRate, 0) / (highRoiData.length || 1);
+      const avgRate =
+        highRoiData.reduce((sum, p) => sum + p.conversionRate, 0) / (highRoiData.length || 1);
 
       setStats({
         totalConversions: conversionsData.length,
@@ -101,9 +94,7 @@ export default function ProspectsConversionPage() {
           <h1 className="text-3xl font-bold">Tracking des Conversions</h1>
           <p className="text-gray-500">Suivi en temps réel des conversions prospects</p>
         </div>
-        <Button onClick={() => router.push('/prospects')}>
-          Retour aux Prospects
-        </Button>
+        <Button onClick={() => router.push('/prospects')}>Retour aux Prospects</Button>
       </div>
 
       {/* Stats Cards */}
@@ -115,9 +106,7 @@ export default function ProspectsConversionPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalConversions}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% vs mois dernier
-            </p>
+            <p className="text-xs text-muted-foreground">+12% vs mois dernier</p>
           </CardContent>
         </Card>
 
@@ -127,9 +116,7 @@ export default function ProspectsConversionPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalValue.toLocaleString()} TND
-            </div>
+            <div className="text-2xl font-bold">{stats.totalValue.toLocaleString()} TND</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 text-green-500" /> +18% vs mois dernier
             </p>
@@ -142,9 +129,7 @@ export default function ProspectsConversionPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.avgConversionRate.toFixed(1)}%
-            </div>
+            <div className="text-2xl font-bold">{stats.avgConversionRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
               <TrendingDown className="inline h-3 w-3 text-red-500" /> -2% vs mois dernier
             </p>
@@ -158,9 +143,7 @@ export default function ProspectsConversionPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold truncate">{stats.topPerformer}</div>
-            <p className="text-xs text-muted-foreground">
-              Meilleur ROI ce mois
-            </p>
+            <p className="text-xs text-muted-foreground">Meilleur ROI ce mois</p>
           </CardContent>
         </Card>
       </div>
@@ -180,7 +163,9 @@ export default function ProspectsConversionPage() {
                   onClick={() => router.push(`/prospects-conversion/${conversion.prospectId}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${getEventColor(conversion.eventType)}`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${getEventColor(conversion.eventType)}`}
+                    />
                     <div>
                       <p className="font-medium">{getEventLabel(conversion.eventType)}</p>
                       <p className="text-sm text-gray-500">
@@ -229,9 +214,7 @@ export default function ProspectsConversionPage() {
                     <p className="font-bold text-green-600">
                       {prospect.totalValue.toLocaleString()} TND
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Score: {prospect.score}
-                    </p>
+                    <p className="text-xs text-gray-500">Score: {prospect.score}</p>
                   </div>
                 </div>
               ))}

@@ -1,0 +1,113 @@
+{
+    "project": "CRM Immobilier",
+    "lastUpdate": "2025-12-08T17:30:00Z",
+    "lastModifiedBy": "GitHub Copilot (Claude Sonnet 4.5)",
+    "services": {
+        "postgresql": {
+            "status": "running",
+            "port": 5432,
+            "database": "crm_immobilier",
+            "user": "postgres",
+            "connectionString": "postgresql://postgres:postgres@localhost:5432/crm_immobilier"
+        },
+        "backend": {
+            "status": "running",
+            "port": 3001,
+            "framework": "NestJS",
+            "processId": 1688,
+            "startCommand": "npm run start:dev",
+            "apiUrl": "http://localhost:3001/api",
+            "docsUrl": "http://localhost:3001/api/docs"
+        },
+        "frontend": {
+            "status": "running",
+            "port": 3000,
+            "framework": "Next.js 14.2.5",
+            "startCommand": "npm run dev",
+            "url": "http://localhost:3000",
+            "loginUrl": "http://localhost:3000/auth/login",
+            "startedBy": "Kilocode"
+        }
+    },
+    "configuration": {
+        "backend": {
+            "env": {
+                "NODE_ENV": "development",
+                "PORT": 3001,
+                "FRONTEND_URL": "http://localhost:3000",
+                "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/crm_immobilier"
+            },
+            "cors": {
+                "allowedOrigins": [
+                    "http://localhost:3003",
+                    "http://localhost:3000",
+                    "http://localhost:3005"
+                ]
+            }
+        },
+        "frontend": {
+            "env": {
+                "NEXT_PUBLIC_API_URL": "http://localhost:3001/api",
+                "NEXT_PUBLIC_APP_URL": "http://localhost:3000",
+                "NODE_ENV": "development"
+            }
+        }
+    },
+    "locks": {
+        "description": "Fichiers actuellement en modification (pour éviter conflits)",
+        "lockedFiles": []
+    },
+    "pendingTasks": [
+        {
+            "id": 1,
+            "task": "Tester page login et connexion backend",
+            "assignedTo": "next-available",
+            "priority": "high"
+        },
+        {
+            "id": 2,
+            "task": "Vérifier tables PostgreSQL et appliquer migrations Prisma",
+            "assignedTo": "next-available",
+            "priority": "medium"
+        },
+        {
+            "id": 3,
+            "task": "Configurer synchronisation Neon PostgreSQL (cloud)",
+            "assignedTo": "next-available",
+            "priority": "low"
+        }
+    ],
+    "recentChanges": [
+        {
+            "timestamp": "2025-12-08T17:30:00Z",
+            "agent": "GitHub Copilot",
+            "action": "Port synchronization (3003 → 3000)",
+            "files": [
+                "backend/.env",
+                "frontend/.env.local",
+                "frontend/package.json",
+                "frontend/src/shared/utils/backend-api.ts",
+                "frontend/src/shared/utils/api-client.ts",
+                "frontend/src/shared/utils/api-client-backend.ts"
+            ]
+        }
+    ],
+    "coordinationRules": {
+        "beforeModifying": [
+            "Read AGENT_LOG.md for recent changes",
+            "Check this file for current state",
+            "Add your name to locks.lockedFiles if working on critical files"
+        ],
+        "afterModifying": [
+            "Update AGENT_LOG.md with your changes",
+            "Update this file (lastUpdate, lastModifiedBy, recentChanges)",
+            "Remove your locks from locks.lockedFiles",
+            "Test your changes before moving to next task"
+        ],
+        "conflictResolution": [
+            "If file is locked, wait or coordinate with other agent",
+            "Document conflicts in AGENT_LOG.md",
+            "Prefer merge over overwrite when possible"
+        ]
+    }
+}

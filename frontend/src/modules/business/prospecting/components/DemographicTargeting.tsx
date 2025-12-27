@@ -101,15 +101,10 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
     onChange(criteria);
   }, [criteria, onChange]);
 
-  const toggleArrayItem = <K extends keyof DemographicCriteria>(
-    key: K,
-    value: string
-  ) => {
-    setCriteria(prev => {
+  const toggleArrayItem = <K extends keyof DemographicCriteria>(key: K, value: string) => {
+    setCriteria((prev) => {
       const arr = prev[key] as string[];
-      const newArr = arr.includes(value)
-        ? arr.filter(v => v !== value)
-        : [...arr, value];
+      const newArr = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
       return { ...prev, [key]: newArr };
     });
   };
@@ -169,10 +164,12 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 min="18"
                 max="80"
                 value={criteria.ageRange.min}
-                onChange={(e) => setCriteria(prev => ({
-                  ...prev,
-                  ageRange: { ...prev.ageRange, min: Number(e.target.value) }
-                }))}
+                onChange={(e) =>
+                  setCriteria((prev) => ({
+                    ...prev,
+                    ageRange: { ...prev.ageRange, min: Number(e.target.value) },
+                  }))
+                }
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
               />
             </div>
@@ -183,10 +180,12 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 min="18"
                 max="80"
                 value={criteria.ageRange.max}
-                onChange={(e) => setCriteria(prev => ({
-                  ...prev,
-                  ageRange: { ...prev.ageRange, max: Number(e.target.value) }
-                }))}
+                onChange={(e) =>
+                  setCriteria((prev) => ({
+                    ...prev,
+                    ageRange: { ...prev.ageRange, max: Number(e.target.value) },
+                  }))
+                }
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
               />
             </div>
@@ -204,7 +203,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>🎯</span> Intention immobiliere
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {PROPERTY_INTENTS.map(intent => (
+            {PROPERTY_INTENTS.map((intent) => (
               <button
                 key={intent.id}
                 onClick={() => toggleArrayItem('propertyIntent', intent.id)}
@@ -227,7 +226,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>🏠</span> Types de biens recherches
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {PROPERTY_TYPES.map(type => (
+            {PROPERTY_TYPES.map((type) => (
               <button
                 key={type.id}
                 onClick={() => toggleArrayItem('propertyTypes', type.id)}
@@ -256,10 +255,12 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 <input
                   type="number"
                   value={criteria.budgetRange.min}
-                  onChange={(e) => setCriteria(prev => ({
-                    ...prev,
-                    budgetRange: { ...prev.budgetRange, min: Number(e.target.value) }
-                  }))}
+                  onChange={(e) =>
+                    setCriteria((prev) => ({
+                      ...prev,
+                      budgetRange: { ...prev.budgetRange, min: Number(e.target.value) },
+                    }))
+                  }
                   className="w-full px-4 py-2 border rounded-lg pr-16"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">TND</span>
@@ -271,10 +272,12 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 <input
                   type="number"
                   value={criteria.budgetRange.max}
-                  onChange={(e) => setCriteria(prev => ({
-                    ...prev,
-                    budgetRange: { ...prev.budgetRange, max: Number(e.target.value) }
-                  }))}
+                  onChange={(e) =>
+                    setCriteria((prev) => ({
+                      ...prev,
+                      budgetRange: { ...prev.budgetRange, max: Number(e.target.value) },
+                    }))
+                  }
                   className="w-full px-4 py-2 border rounded-lg pr-16"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">TND</span>
@@ -305,7 +308,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>👨‍👩‍👧‍👦</span> Situation familiale
           </h3>
           <div className="flex flex-wrap gap-2">
-            {FAMILY_STATUS.map(status => (
+            {FAMILY_STATUS.map((status) => (
               <button
                 key={status.id}
                 onClick={() => toggleArrayItem('familyStatus', status.id)}
@@ -328,7 +331,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>⏰</span> Urgence du projet
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {URGENCY_LEVELS.map(level => (
+            {URGENCY_LEVELS.map((level) => (
               <button
                 key={level.id}
                 onClick={() => toggleArrayItem('urgency', level.id)}
@@ -351,7 +354,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>💼</span> Professions cibles
           </h3>
           <div className="flex flex-wrap gap-2">
-            {PROFESSIONS.map(prof => (
+            {PROFESSIONS.map((prof) => (
               <button
                 key={prof}
                 onClick={() => toggleArrayItem('professions', prof)}
@@ -373,7 +376,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
             <span>❤️</span> Criteres et interets
           </h3>
           <div className="flex flex-wrap gap-2">
-            {INTERESTS.map(interest => (
+            {INTERESTS.map((interest) => (
               <button
                 key={interest}
                 onClick={() => toggleArrayItem('interests', interest)}
@@ -402,13 +405,17 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 max="50000"
                 step="500"
                 value={criteria.incomeRange.min}
-                onChange={(e) => setCriteria(prev => ({
-                  ...prev,
-                  incomeRange: { ...prev.incomeRange, min: Number(e.target.value) }
-                }))}
+                onChange={(e) =>
+                  setCriteria((prev) => ({
+                    ...prev,
+                    incomeRange: { ...prev.incomeRange, min: Number(e.target.value) },
+                  }))
+                }
                 className="w-full"
               />
-              <div className="text-center text-sm text-gray-600">{criteria.incomeRange.min} TND</div>
+              <div className="text-center text-sm text-gray-600">
+                {criteria.incomeRange.min} TND
+              </div>
             </div>
             <span className="text-gray-400">-</span>
             <div className="flex-1">
@@ -418,13 +425,17 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 max="50000"
                 step="500"
                 value={criteria.incomeRange.max}
-                onChange={(e) => setCriteria(prev => ({
-                  ...prev,
-                  incomeRange: { ...prev.incomeRange, max: Number(e.target.value) }
-                }))}
+                onChange={(e) =>
+                  setCriteria((prev) => ({
+                    ...prev,
+                    incomeRange: { ...prev.incomeRange, max: Number(e.target.value) },
+                  }))
+                }
                 className="w-full"
               />
-              <div className="text-center text-sm text-gray-600">{criteria.incomeRange.max} TND</div>
+              <div className="text-center text-sm text-gray-600">
+                {criteria.incomeRange.max} TND
+              </div>
             </div>
           </div>
         </div>
@@ -436,9 +447,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
           <div>
             <h4 className="font-medium text-gray-900">Resume du ciblage</h4>
             <p className="text-sm text-gray-600 mt-1">
-              {criteria.propertyIntent.length} intention(s) •
-              {criteria.propertyTypes.length} type(s) de bien •
-              {criteria.familyStatus.length} profil(s) familial
+              {criteria.propertyIntent.length} intention(s) •{criteria.propertyTypes.length} type(s)
+              de bien •{criteria.familyStatus.length} profil(s) familial
             </p>
           </div>
           <div className="text-right">
