@@ -63,7 +63,7 @@ class WordPressAPI {
   private getAuthHeaders(): HeadersInit {
     const credentials = btoa(`${this.config.username}:${this.config.applicationPassword}`);
     return {
-      'Authorization': `Basic ${credentials}`,
+      Authorization: `Basic ${credentials}`,
       'Content-Type': 'application/json',
     };
   }
@@ -79,7 +79,7 @@ class WordPressAPI {
   }): Promise<RealHomesProperty[]> {
     const queryParams = new URLSearchParams(params as any).toString();
     const url = `${this.baseUrl}/wp/v2/property${queryParams ? `?${queryParams}` : ''}`;
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: this.getAuthHeaders(),
@@ -94,7 +94,7 @@ class WordPressAPI {
 
   async createRealHomesProperty(property: Partial<RealHomesProperty>): Promise<RealHomesProperty> {
     const url = `${this.baseUrl}/wp/v2/property`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -126,9 +126,12 @@ class WordPressAPI {
     return response.json();
   }
 
-  async updateRealHomesProperty(id: number, property: Partial<RealHomesProperty>): Promise<RealHomesProperty> {
+  async updateRealHomesProperty(
+    id: number,
+    property: Partial<RealHomesProperty>
+  ): Promise<RealHomesProperty> {
     const url = `${this.baseUrl}/wp/v2/property/${id}`;
-    
+
     const response = await fetch(url, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
@@ -162,7 +165,7 @@ class WordPressAPI {
 
   async deleteRealHomesProperty(id: number): Promise<void> {
     const url = `${this.baseUrl}/wp/v2/property/${id}`;
-    
+
     const response = await fetch(url, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
@@ -185,7 +188,7 @@ class WordPressAPI {
   }): Promise<FluentCRMContact[]> {
     const queryParams = new URLSearchParams(params as any).toString();
     const url = `${this.baseUrl}/fluent-crm/v2/contacts${queryParams ? `?${queryParams}` : ''}`;
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: this.getAuthHeaders(),
@@ -201,7 +204,7 @@ class WordPressAPI {
 
   async createFluentCRMContact(contact: FluentCRMContact): Promise<FluentCRMContact> {
     const url = `${this.baseUrl}/fluent-crm/v2/contacts`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -215,9 +218,12 @@ class WordPressAPI {
     return response.json();
   }
 
-  async updateFluentCRMContact(id: number, contact: Partial<FluentCRMContact>): Promise<FluentCRMContact> {
+  async updateFluentCRMContact(
+    id: number,
+    contact: Partial<FluentCRMContact>
+  ): Promise<FluentCRMContact> {
     const url = `${this.baseUrl}/fluent-crm/v2/contacts/${id}`;
-    
+
     const response = await fetch(url, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
@@ -233,7 +239,7 @@ class WordPressAPI {
 
   async deleteFluentCRMContact(id: number): Promise<void> {
     const url = `${this.baseUrl}/fluent-crm/v2/contacts/${id}`;
-    
+
     const response = await fetch(url, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
@@ -246,7 +252,7 @@ class WordPressAPI {
 
   async addTagToContact(contactId: number, tagName: string): Promise<void> {
     const url = `${this.baseUrl}/fluent-crm/v2/contacts/${contactId}/tags`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: this.getAuthHeaders(),
@@ -260,7 +266,7 @@ class WordPressAPI {
 
   async addContactToList(contactId: number, listId: number): Promise<void> {
     const url = `${this.baseUrl}/fluent-crm/v2/contacts/${contactId}/lists`;
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: this.getAuthHeaders(),

@@ -6,7 +6,12 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName?: string
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const register = async (email: string, password: string, firstName: string, lastName?: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName?: string
+  ) => {
     try {
       const response = await authAPI.register({ email, password, firstName, lastName });
       setUser(response.user);
@@ -75,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
 
 export default AuthProvider;
 

@@ -70,7 +70,7 @@ export default function SeoAiPage() {
       console.error('Error optimizing property:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'optimiser la propriété',
+        description: "Impossible d'optimiser la propriété",
         variant: 'destructive',
       });
     } finally {
@@ -85,25 +85,23 @@ export default function SeoAiPage() {
 
     try {
       setLoading(true);
-      const unoptimizedProperties = properties
-        .filter(p => !p.seoOptimized)
-        .map(p => p.id);
-      
+      const unoptimizedProperties = properties.filter((p) => !p.seoOptimized).map((p) => p.id);
+
       await api.post('/seo-ai/optimize/batch', {
         propertyIds: unoptimizedProperties,
       });
-      
+
       toast({
         title: 'Succès',
         description: `${unoptimizedProperties.length} propriétés optimisées`,
       });
-      
+
       loadProperties();
     } catch (error) {
       console.error('Error batch optimizing:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'optimiser en masse',
+        description: "Impossible d'optimiser en masse",
         variant: 'destructive',
       });
     } finally {
@@ -111,16 +109,18 @@ export default function SeoAiPage() {
     }
   };
 
-  const filteredProperties = properties.filter(p =>
-    p.title?.toLowerCase().includes(search.toLowerCase()) ||
-    p.city?.toLowerCase().includes(search.toLowerCase()) ||
-    p.address?.toLowerCase().includes(search.toLowerCase())
+  const filteredProperties = properties.filter(
+    (p) =>
+      p.title?.toLowerCase().includes(search.toLowerCase()) ||
+      p.city?.toLowerCase().includes(search.toLowerCase()) ||
+      p.address?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const optimizedCount = properties.filter(p => p.seoOptimized).length;
-  const averageScore = properties.length > 0
-    ? properties.reduce((sum, p) => sum + (p.seoScore || 0), 0) / properties.length
-    : 0;
+  const optimizedCount = properties.filter((p) => p.seoOptimized).length;
+  const averageScore =
+    properties.length > 0
+      ? properties.reduce((sum, p) => sum + (p.seoScore || 0), 0) / properties.length
+      : 0;
 
   if (loading) {
     return (
@@ -172,7 +172,8 @@ export default function SeoAiPage() {
                   <p className="text-xs text-gray-500">
                     {properties.length > 0
                       ? ((optimizedCount / properties.length) * 100).toFixed(0)
-                      : 0}%
+                      : 0}
+                    %
                   </p>
                 </div>
                 <Sparkles className="h-8 w-8 text-green-600" />
@@ -197,9 +198,7 @@ export default function SeoAiPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">À optimiser</p>
-                  <p className="text-2xl font-bold">
-                    {properties.length - optimizedCount}
-                  </p>
+                  <p className="text-2xl font-bold">{properties.length - optimizedCount}</p>
                 </div>
                 <Eye className="h-8 w-8 text-orange-600" />
               </div>
@@ -244,14 +243,10 @@ export default function SeoAiPage() {
                             Optimisé
                           </Badge>
                         ) : (
-                          <Badge className="bg-gray-100 text-gray-800">
-                            Non optimisé
-                          </Badge>
+                          <Badge className="bg-gray-100 text-gray-800">Non optimisé</Badge>
                         )}
                         {property.seoScore && (
-                          <Badge variant="outline">
-                            Score: {property.seoScore}/100
-                          </Badge>
+                          <Badge variant="outline">Score: {property.seoScore}/100</Badge>
                         )}
                       </div>
                       <p className="text-gray-600 text-sm mb-2 line-clamp-2">

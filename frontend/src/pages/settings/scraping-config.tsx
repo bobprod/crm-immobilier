@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -17,7 +23,7 @@ import {
   Globe,
   Database,
   Key,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,7 +51,9 @@ export default function ScrapingConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
+  const [testResults, setTestResults] = useState<
+    Record<string, { success: boolean; message: string }>
+  >({});
 
   useEffect(() => {
     loadConfig();
@@ -56,7 +64,7 @@ export default function ScrapingConfigPage() {
       setLoading(true);
       const response = await apiClient.get('/settings/scraping');
       if (response.data) {
-        setConfig(prev => ({ ...prev, ...response.data }));
+        setConfig((prev) => ({ ...prev, ...response.data }));
       }
     } catch (error) {
       console.error('Erreur chargement config scraping:', error);
@@ -81,16 +89,19 @@ export default function ScrapingConfigPage() {
   const handleTest = async (provider: string) => {
     try {
       setTestingProvider(provider);
-      setTestResults(prev => ({ ...prev, [provider]: undefined as any }));
+      setTestResults((prev) => ({ ...prev, [provider]: undefined as any }));
       const response = await apiClient.post(`/settings/scraping/test`, { provider });
-      setTestResults(prev => ({
+      setTestResults((prev) => ({
         ...prev,
-        [provider]: { success: response.data.success, message: response.data.message }
+        [provider]: { success: response.data.success, message: response.data.message },
       }));
     } catch (error: any) {
-      setTestResults(prev => ({
+      setTestResults((prev) => ({
         ...prev,
-        [provider]: { success: false, message: error.response?.data?.message || 'Erreur de connexion' }
+        [provider]: {
+          success: false,
+          message: error.response?.data?.message || 'Erreur de connexion',
+        },
       }));
     } finally {
       setTestingProvider(null);
@@ -98,12 +109,12 @@ export default function ScrapingConfigPage() {
   };
 
   const updateConfig = (provider: keyof ScrapingConfig, field: keyof ApiConfig, value: any) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       [provider]: {
         ...prev[provider],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -114,7 +125,7 @@ export default function ScrapingConfigPage() {
       description: 'API de scraping pour les annonces immobilières',
       website: 'https://pica.dev',
       keyFormat: 'pica_xxxxxxxxxxxx',
-      features: ['Scraping annonces', 'Extraction données', 'Parsing HTML']
+      features: ['Scraping annonces', 'Extraction données', 'Parsing HTML'],
     },
     {
       id: 'serpApi',
@@ -122,7 +133,7 @@ export default function ScrapingConfigPage() {
       description: 'API pour les résultats de recherche Google',
       website: 'https://serpapi.com',
       keyFormat: 'xxxxxxxxxxxxxxxxxxxxx',
-      features: ['Recherche Google', 'Google Maps', 'Google Images']
+      features: ['Recherche Google', 'Google Maps', 'Google Images'],
     },
     {
       id: 'scrapingBee',
@@ -130,7 +141,7 @@ export default function ScrapingConfigPage() {
       description: 'API de scraping web avec proxy rotatif',
       website: 'https://scrapingbee.com',
       keyFormat: 'xxxxxxxxxxxxxxxxxxxx',
-      features: ['Proxy rotatif', 'JavaScript rendering', 'Anti-bot bypass']
+      features: ['Proxy rotatif', 'JavaScript rendering', 'Anti-bot bypass'],
     },
     {
       id: 'browserless',
@@ -138,8 +149,8 @@ export default function ScrapingConfigPage() {
       description: 'Chrome headless dans le cloud',
       website: 'https://browserless.io',
       keyFormat: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-      features: ['Chrome headless', 'Screenshots', 'PDF generation']
-    }
+      features: ['Chrome headless', 'Screenshots', 'PDF generation'],
+    },
   ];
 
   if (loading) {
@@ -154,7 +165,10 @@ export default function ScrapingConfigPage() {
     <div className="container mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/settings" className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 mb-4">
+        <Link
+          href="/settings"
+          className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 mb-4"
+        >
           <ArrowLeft className="h-4 w-4" />
           Retour aux paramètres
         </Link>
@@ -183,7 +197,9 @@ export default function ScrapingConfigPage() {
                   </CardTitle>
                   <Switch
                     checked={providerConfig?.enabled || false}
-                    onCheckedChange={(checked) => updateConfig(provider.id as keyof ScrapingConfig, 'enabled', checked)}
+                    onCheckedChange={(checked) =>
+                      updateConfig(provider.id as keyof ScrapingConfig, 'enabled', checked)
+                    }
                   />
                 </div>
                 <CardDescription>{provider.description}</CardDescription>
@@ -208,7 +224,9 @@ export default function ScrapingConfigPage() {
                     type="password"
                     placeholder={provider.keyFormat}
                     value={providerConfig?.apiKey || ''}
-                    onChange={(e) => updateConfig(provider.id as keyof ScrapingConfig, 'apiKey', e.target.value)}
+                    onChange={(e) =>
+                      updateConfig(provider.id as keyof ScrapingConfig, 'apiKey', e.target.value)
+                    }
                   />
                 </div>
 
@@ -219,7 +237,13 @@ export default function ScrapingConfigPage() {
                     <Input
                       placeholder="https://chrome.browserless.io"
                       value={providerConfig?.endpoint || ''}
-                      onChange={(e) => updateConfig(provider.id as keyof ScrapingConfig, 'endpoint', e.target.value)}
+                      onChange={(e) =>
+                        updateConfig(
+                          provider.id as keyof ScrapingConfig,
+                          'endpoint',
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                 )}
@@ -231,7 +255,13 @@ export default function ScrapingConfigPage() {
                     type="number"
                     placeholder="100"
                     value={providerConfig?.rateLimit || ''}
-                    onChange={(e) => updateConfig(provider.id as keyof ScrapingConfig, 'rateLimit', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      updateConfig(
+                        provider.id as keyof ScrapingConfig,
+                        'rateLimit',
+                        parseInt(e.target.value)
+                      )
+                    }
                   />
                 </div>
 
@@ -264,7 +294,13 @@ export default function ScrapingConfigPage() {
 
                 {/* Test Result */}
                 {testResult && (
-                  <Alert className={testResult.success ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}>
+                  <Alert
+                    className={
+                      testResult.success
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-red-500 bg-red-50'
+                    }
+                  >
                     <AlertDescription className="flex items-center gap-2">
                       {testResult.success ? (
                         <>

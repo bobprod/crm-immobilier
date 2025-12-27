@@ -87,11 +87,7 @@ export const usersAPI = {
   /**
    * Changer le mot de passe d'un utilisateur
    */
-  changePassword: async (
-    id: string,
-    oldPassword: string,
-    newPassword: string
-  ): Promise<void> => {
+  changePassword: async (id: string, oldPassword: string, newPassword: string): Promise<void> => {
     await apiClient.post(`/users/${id}/change-password`, {
       oldPassword,
       newPassword,

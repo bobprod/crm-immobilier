@@ -4,7 +4,16 @@ import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
-import { ArrowLeft, MapPin, Home, DollarSign, Tag, AlertCircle, FileText, User } from 'lucide-react';
+import {
+  ArrowLeft,
+  MapPin,
+  Home,
+  DollarSign,
+  Tag,
+  AlertCircle,
+  FileText,
+  User,
+} from 'lucide-react';
 import { propertiesAPI } from '@/shared/utils/properties-api';
 
 interface Property {
@@ -63,29 +72,34 @@ export default function PropertyDetailPage() {
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-blue-100 text-blue-800';
-      case 'low': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'medium':
+        return 'bg-blue-100 text-blue-800';
+      case 'low':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (loading) return (
-    <Layout>
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    </Layout>
-  );
+  if (loading)
+    return (
+      <Layout>
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
 
-  if (!property) return (
-    <Layout>
-      <div className="flex items-center justify-center p-8 text-red-500">
-        Bien non trouvé
-      </div>
-    </Layout>
-  );
+  if (!property)
+    return (
+      <Layout>
+        <div className="flex items-center justify-center p-8 text-red-500">Bien non trouvé</div>
+      </Layout>
+    );
 
   return (
     <Layout>
@@ -158,7 +172,9 @@ export default function PropertyDetailPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-3 text-2xl font-bold text-primary">
                   <DollarSign className="h-6 w-6" />
-                  {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.price)}
+                  {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(
+                    property.price
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -182,7 +198,9 @@ export default function PropertyDetailPage() {
                   <MapPin className="h-5 w-5 text-gray-500" />
                   <div>
                     <p className="text-sm text-gray-500">Localisation</p>
-                    <p className="font-medium">{property.address}, {property.city}</p>
+                    <p className="font-medium">
+                      {property.address}, {property.city}
+                    </p>
                   </div>
                 </div>
 
@@ -212,60 +230,75 @@ export default function PropertyDetailPage() {
               </CardContent>
             </Card>
 
-          {/* Propriétaire */}
-          {property.owner && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Propriétaire
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="font-medium">{property.owner.firstName} {property.owner.lastName}</p>
-                <div className="text-sm text-gray-500 space-y-1">
-                  <p>{property.owner.email}</p>
-                  <p>{property.owner.phone}</p>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => router.push(`/prospects/${property.ownerId}`)}>
-                  Voir le profil
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+            {/* Propriétaire */}
+            {property.owner && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Propriétaire
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="font-medium">
+                    {property.owner.firstName} {property.owner.lastName}
+                  </p>
+                  <div className="text-sm text-gray-500 space-y-1">
+                    <p>{property.owner.email}</p>
+                    <p>{property.owner.phone}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => router.push(`/prospects/${property.ownerId}`)}
+                  >
+                    Voir le profil
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Financier */}
-          {(property.netPrice || property.fees) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Financier
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {property.netPrice && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Net Vendeur</span>
-                    <span className="font-medium">
-                      {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.netPrice)}
-                    </span>
-                  </div>
-                )}
-                {property.fees && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">Honoraires {property.feesPercentage ? `(${property.feesPercentage}%)` : ''}</span>
-                    <span className="font-medium text-green-600">
-                      {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(property.fees)}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+            {/* Financier */}
+            {(property.netPrice || property.fees) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2" />
+                    Financier
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {property.netPrice && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">Net Vendeur</span>
+                      <span className="font-medium">
+                        {new Intl.NumberFormat('fr-TN', {
+                          style: 'currency',
+                          currency: 'TND',
+                        }).format(property.netPrice)}
+                      </span>
+                    </div>
+                  )}
+                  {property.fees && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">
+                        Honoraires {property.feesPercentage ? `(${property.feesPercentage}%)` : ''}
+                      </span>
+                      <span className="font-medium text-green-600">
+                        {new Intl.NumberFormat('fr-TN', {
+                          style: 'currency',
+                          currency: 'TND',
+                        }).format(property.fees)}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-    </Layout >
+    </Layout>
   );
 }

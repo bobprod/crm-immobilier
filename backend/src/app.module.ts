@@ -28,13 +28,21 @@ import { PropertiesModule } from './modules/business/properties/properties.modul
 import { ProspectsModule } from './modules/business/prospects/prospects.module';
 import { AppointmentsModule } from './modules/business/appointments/appointments.module';
 import { TasksModule } from './modules/business/tasks/tasks.module';
+import { OwnersModule } from './modules/business/owners/owners.module';
+import { MandatesModule } from './modules/business/mandates/mandates.module';
+import { TransactionsModule } from './modules/business/transactions/transactions.module';
+import { FinanceModule } from './modules/business/finance/finance.module';
 
 // INTELLIGENCE MODULES
 import { AIMetricsModule } from './modules/intelligence/ai-metrics/ai-metrics.module';
+import { AIMetricsProspectingModule } from './modules/intelligence/ai-metrics-prospecting/ai-metrics-prospecting.module';
 import { LLMConfigModule } from './modules/intelligence/llm-config/llm-config.module';
 import { MatchingModule } from './modules/intelligence/matching/matching.module';
 import { ValidationModule } from './modules/intelligence/validation/validation.module';
 import { AnalyticsModule } from './modules/intelligence/analytics/analytics.module';
+import { AiOrchestratorModule } from './modules/intelligence/ai-orchestrator/ai-orchestrator.module';
+import { ProspectingAiModule } from './modules/prospecting-ai/prospecting-ai.module';
+import { InvestmentIntelligenceModule } from './modules/investment-intelligence/investment-intelligence.module';
 
 // QUICK WINS MODULES
 import { SmartFormsModule } from './modules/intelligence/smart-forms/smart-forms.module';
@@ -42,6 +50,9 @@ import { SemanticSearchModule } from './modules/intelligence/semantic-search/sem
 import { PriorityInboxModule } from './modules/intelligence/priority-inbox/priority-inbox.module';
 import { AutoReportsModule } from './modules/intelligence/auto-reports/auto-reports.module';
 import { AIChatAssistantModule } from './modules/intelligence/ai-chat-assistant/ai-chat-assistant.module';
+
+// AI BILLING MODULE
+import { AiBillingModule } from './modules/ai-billing/ai-billing.module';
 
 // PROSPECTING MODULE
 import { ProspectingModule } from './modules/prospecting/prospecting.module';
@@ -104,14 +115,19 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // NOTIFICATIONS - 1 module
     NotificationsModule,
 
-    // BUSINESS - 4 modules
+    // BUSINESS - 8 modules
     PropertiesModule,
     ProspectsModule,
     AppointmentsModule,
     TasksModule,
+    OwnersModule,
+    MandatesModule,
+    TransactionsModule,
+    FinanceModule,
 
-    // INTELLIGENCE - 10 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant)
+    // INTELLIGENCE - 11 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant + 1 AI Billing)
     AIMetricsModule,
+    AIMetricsProspectingModule,
     LLMConfigModule,
     MatchingModule,
     ValidationModule,
@@ -121,9 +137,11 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     PriorityInboxModule,
     AutoReportsModule,
     AIChatAssistantModule,
+    AiBillingModule,
 
-    // PROSPECTING - 1 module
+    // PROSPECTING - 2 modules
     ProspectingModule,
+    ProspectingAiModule,
 
     // SCRAPING - 1 module (Web Data Services)
     ScrapingModule,

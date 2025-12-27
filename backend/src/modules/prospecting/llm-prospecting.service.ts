@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/database/prisma.service';
-import axios from 'axios';
+import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import {
   RawScrapedItem,
   LLMAnalyzedLead,
@@ -57,6 +57,7 @@ TYPES DE BIENS:
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private llmRouter: LLMRouterService,
   ) {}
 
   // ============================================
@@ -65,27 +66,267 @@ TYPES DE BIENS:
 
   /**
    * Analyse un element brut scrappe et retourne les infos extraites par le LLM
+   * @param raw - Element brut à analyser
+   * @param userId - ID utilisateur pour récupérer la config LLM personnalisée
+   * @param providerOverride - Provider manuel (optionnel, 'auto' par défaut)
    */
-  async analyzeRawItem(raw: RawScrapedItem): Promise<LLMAnalyzedLead> {
-    this.logger.log(`Analyzing raw item from source: ${raw.source}`);
+  async analyzeRawItem(
+    raw: RawScrapedItem,
+    userId: string,
+    providerOverride?: string,
+  ): Promise<LLMAnalyzedLead> {
+    this.logger.log(`Analyzing raw item from source: ${raw.source} for user ${userId}`);
+
+    const startTime = Date.now();
+    let providerName: string;
 
     try {
-      const llmConfig = await this.getLLMConfig();
-
-      if (!llmConfig?.apiKey) {
-        this.logger.warn('LLM not configured, using rule-based extraction');
-        return this.analyzeWithRules(raw);
-      }
+      // ✅ Sélection intelligente : prospecting en masse = coût minimal
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_mass', // DeepSeek, Qwen prioritaires
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
 
       const userPrompt = this.buildAnalysisPrompt(raw);
-      const response = await this.callLLM(llmConfig, userPrompt);
 
-      return this.parseAnalysisResponse(response, raw);
+      // Utiliser provider.generate()
+      const response = await provider.generate(userPrompt, {
+        systemPrompt: this.ANALYSIS_SYSTEM_PROMPT,
+        maxTokens: 1000,
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+
+      // Parser la réponse JSON
+      const parsed = JSON.parse(response);
+      const result = this.parseAnalysisResponse(parsed, raw);
+
+      // ✅ Tracking automatique des métriques
+      const tokensInput = Math.ceil(userPrompt.length / 4);
+      const tokensOutput = Math.ceil(response.length / 4);
+
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_mass',
+        tokensInput,
+        tokensOutput,
+        latency,
+        true,
+      );
+
+      return result;
     } catch (error) {
       this.logger.error(`LLM analysis failed: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_mass',
+          Math.ceil(raw.text.length / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
       // Fallback sur l'extraction par regles
       return this.analyzeWithRules(raw);
     }
+  }
+
+  /**
+   * ⚡ OPTIMISATION: Analyse PLUSIEURS items en un SEUL appel LLM
+   * Économie: 10x moins d'appels API = 90% de réduction des coûts
+   *
+   * @param raws - Tableau d'items à analyser ensemble (recommandé: 10-15 items max)
+   * @param userId - ID utilisateur
+   * @param providerOverride - Provider manuel (optionnel)
+   * @returns Tableau de résultats analysés (même ordre que l'input)
+   */
+  async analyzeRawItemsBatch(
+    raws: RawScrapedItem[],
+    userId: string,
+    providerOverride?: string,
+  ): Promise<LLMAnalyzedLead[]> {
+    if (raws.length === 0) return [];
+
+    // Pour 1 seul item, utiliser la méthode classique
+    if (raws.length === 1) {
+      return [await this.analyzeRawItem(raws[0], userId, providerOverride)];
+    }
+
+    this.logger.log(`Batch analyzing ${raws.length} items in a SINGLE LLM call for user ${userId}`);
+
+    const startTime = Date.now();
+    let providerName: string;
+
+    try {
+      // Sélection intelligente du provider
+      const provider = await this.llmRouter.selectBestProvider(
+        userId,
+        'prospecting_mass',
+        providerOverride,
+      );
+      providerName = provider.name.toLowerCase();
+
+      // Construire le prompt batch avec tous les items numérotés
+      const batchPrompt = this.buildBatchAnalysisPrompt(raws);
+
+      // ✅ UN SEUL appel LLM pour tous les items
+      const response = await provider.generate(batchPrompt, {
+        systemPrompt: this.ANALYSIS_SYSTEM_PROMPT + `
+
+IMPORTANT: Tu dois retourner un tableau JSON avec exactement ${raws.length} résultats, dans le MÊME ORDRE que les items reçus.
+Format de réponse attendu:
+{
+  "results": [
+    { /* résultat pour item 0 */ },
+    { /* résultat pour item 1 */ },
+    ...
+  ]
+}`,
+        maxTokens: 2000 + raws.length * 500, // Allouer suffisamment de tokens
+        temperature: 0.3,
+      });
+
+      const latency = Date.now() - startTime;
+
+      // Parser la réponse JSON batch
+      const parsed = JSON.parse(response);
+      const results: LLMAnalyzedLead[] = [];
+
+      // Vérifier que nous avons reçu le bon nombre de résultats
+      if (!parsed.results || !Array.isArray(parsed.results)) {
+        throw new Error('Invalid batch response format: missing results array');
+      }
+
+      if (parsed.results.length !== raws.length) {
+        this.logger.warn(
+          `Batch response mismatch: expected ${raws.length} results, got ${parsed.results.length}`,
+        );
+      }
+
+      // Associer chaque résultat à son raw item correspondant
+      for (let i = 0; i < raws.length; i++) {
+        const rawItem = raws[i];
+        const analysisResult = parsed.results[i] || {};
+
+        try {
+          const analyzed = this.parseAnalysisResponse(analysisResult, rawItem);
+          results.push(analyzed);
+        } catch (error) {
+          this.logger.warn(`Failed to parse batch result ${i}: ${error.message}`);
+          // Fallback sur extraction par règles pour cet item
+          results.push(this.analyzeWithRules(rawItem));
+        }
+      }
+
+      // ✅ Tracking: 1 seul appel pour tous les items
+      const tokensInput = Math.ceil(batchPrompt.length / 4);
+      const tokensOutput = Math.ceil(response.length / 4);
+
+      await this.llmRouter.trackUsage(
+        userId,
+        providerName,
+        'prospecting_mass',
+        tokensInput,
+        tokensOutput,
+        latency,
+        true,
+        `batch:${raws.length}`, // Note dans errorMessage pour tracking
+      );
+
+      this.logger.log(
+        `✅ Batch analysis complete: ${raws.length} items in ${latency}ms (${Math.round(latency / raws.length)}ms/item avg)`,
+      );
+
+      return results;
+    } catch (error) {
+      this.logger.error(`Batch LLM analysis failed: ${error.message}`);
+
+      // Tracking de l'échec
+      if (providerName) {
+        const totalTextLength = raws.reduce((sum, raw) => sum + raw.text.length, 0);
+        await this.llmRouter.trackUsage(
+          userId,
+          providerName,
+          'prospecting_mass',
+          Math.ceil(totalTextLength / 4),
+          0,
+          Date.now() - startTime,
+          false,
+          error.message,
+        );
+      }
+
+      // Fallback: analyser individuellement chaque item
+      this.logger.warn(`Falling back to individual analysis for ${raws.length} items`);
+      const fallbackResults: LLMAnalyzedLead[] = [];
+      for (const raw of raws) {
+        try {
+          fallbackResults.push(await this.analyzeRawItem(raw, userId, providerOverride));
+        } catch (itemError) {
+          fallbackResults.push(this.analyzeWithRules(raw));
+        }
+      }
+      return fallbackResults;
+    }
+  }
+
+  /**
+   * Construit un prompt pour analyser plusieurs items en batch
+   */
+  private buildBatchAnalysisPrompt(raws: RawScrapedItem[]): string {
+    const itemsJson = raws.map((raw, index) => ({
+      index,
+      source: raw.source,
+      title: raw.title || '',
+      text: raw.text,
+      url: raw.url || '',
+      date: raw.publishedAt || '',
+    }));
+
+    return `Analyse les ${raws.length} items immobiliers suivants et retourne un tableau de résultats structurés.
+
+ITEMS À ANALYSER:
+${JSON.stringify(itemsJson, null, 2)}
+
+Pour CHAQUE item, extrais les informations selon le format suivant:
+{
+  "isLead": boolean,
+  "leadType": "requete" | "mandat" | "inconnu",
+  "firstName": string | null,
+  "lastName": string | null,
+  "email": string | null,
+  "phone": string | null,
+  "city": string | null,
+  "propertyTypes": string[],
+  "budgetMin": number | null,
+  "budgetMax": number | null,
+  "budgetCurrency": "TND" | "EUR" | "USD",
+  "surfaceM2": { min: number | null, max: number | null },
+  "rooms": number | null,
+  "intention": "achat" | "location" | "vente" | "mise_en_location" | null,
+  "urgency": "immediate" | "1_mois" | "3_mois" | "6_mois" | null,
+  "seriousnessScore": number (0-100),
+  "confidence": number (0-100)
+}
+
+Retourne au format:
+{
+  "results": [
+    { /* résultat pour index 0 */ },
+    { /* résultat pour index 1 */ },
+    ...
+  ]
+}`;
   }
 
   // ============================================
@@ -94,10 +335,17 @@ TYPES DE BIENS:
 
   /**
    * Transforme un RawScrapedItem directement en ProspectingLead pret a etre insere en BDD
+   * @param raw - Element brut à transformer
+   * @param userId - ID utilisateur pour l'analyse LLM
+   * @param providerOverride - Provider manuel (optionnel)
    */
-  async buildProspectingLeadFromRaw(raw: RawScrapedItem): Promise<ProspectingLeadCreateInput> {
-    // 1. Analyser avec le LLM
-    const analyzed = await this.analyzeRawItem(raw);
+  async buildProspectingLeadFromRaw(
+    raw: RawScrapedItem,
+    userId: string,
+    providerOverride?: string,
+  ): Promise<ProspectingLeadCreateInput> {
+    // 1. Analyser avec le LLM (avec routing intelligent)
+    const analyzed = await this.analyzeRawItem(raw, userId, providerOverride);
 
     // 2. Valider les donnees
     const validation = this.validateLead(analyzed);
@@ -157,38 +405,95 @@ TYPES DE BIENS:
 
   /**
    * Variante batch pour traiter plusieurs items d'un coup
+   * @param raws - Liste d'éléments bruts à traiter
+   * @param userId - ID utilisateur pour l'analyse LLM
+   * @param config - Configuration optionnelle du batch
    */
   async buildProspectingLeadsFromRawBatch(
     raws: RawScrapedItem[],
+    userId: string,
     config?: AnalysisConfig,
+    providerOverride?: string,
   ): Promise<ProspectingLeadCreateInput[]> {
-    const batchSize = config?.batchSize || 5;
+    // ⚡ OPTIMISATION: Batch de 10 items = 10x moins d'appels LLM
+    const batchSize = config?.batchSize || 10;
     const results: ProspectingLeadCreateInput[] = [];
 
-    this.logger.log(`Processing batch of ${raws.length} items (batch size: ${batchSize})`);
+    this.logger.log(
+      `⚡ Processing ${raws.length} items with OPTIMIZED batching (${batchSize} items/LLM call) for user ${userId}`,
+    );
 
-    // Traiter par lots pour eviter de surcharger l'API
+    // Traiter par lots de 10 avec UN SEUL appel LLM par batch
     for (let i = 0; i < raws.length; i += batchSize) {
       const batch = raws.slice(i, i + batchSize);
 
-      const batchPromises = batch.map(async (raw) => {
-        try {
-          return await this.buildProspectingLeadFromRaw(raw);
-        } catch (error) {
-          this.logger.error(`Failed to process item: ${error.message}`);
-          // Retourner un lead minimal en cas d'erreur
-          return this.createMinimalLead(raw, error.message);
+      try {
+        // ✅ NOUVEAU: Analyser tout le batch en 1 seul appel LLM
+        const analyzedBatch = await this.analyzeRawItemsBatch(batch, userId, providerOverride);
+
+        // Transformer chaque résultat analysé en ProspectingLead
+        for (let j = 0; j < batch.length; j++) {
+          const raw = batch[j];
+          const analyzed = analyzedBatch[j];
+
+          try {
+            // Valider et enrichir
+            const validation = await this.validateLead(analyzed);
+            const score = this.calculateGlobalScore(analyzed, validation);
+
+            const lead: ProspectingLeadCreateInput = {
+              source: raw.source,
+              rawText: raw.text,
+              url: raw.url,
+              title: raw.title,
+              firstName: analyzed.firstName,
+              lastName: analyzed.lastName,
+              email: analyzed.email,
+              phone: this.normalizePhone(analyzed.phone),
+              city: analyzed.city,
+              propertyTypes: analyzed.propertyTypes,
+              budgetMin: analyzed.budgetMin,
+              budgetMax: analyzed.budgetMax,
+              budgetCurrency: analyzed.budgetCurrency || 'TND',
+              surfaceM2: analyzed.surfaceM2,
+              rooms: analyzed.rooms,
+              leadType: analyzed.leadType,
+              intention: analyzed.intention,
+              urgency: analyzed.urgency,
+              validationStatus: validation.status,
+              score,
+              status: validation.status === 'valid' ? 'new' : 'rejected',
+              metadata: {
+                analyzedAt: new Date().toISOString(),
+                confidence: analyzed.confidence,
+                seriousnessScore: analyzed.seriousnessScore,
+                validationDetails: validation.details,
+              },
+            };
+
+            results.push(lead);
+          } catch (error) {
+            this.logger.warn(`Failed to transform batch item ${j}: ${error.message}`);
+            results.push(this.createMinimalLead(raw, error.message));
+          }
         }
-      });
 
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
+        this.logger.log(`✅ Batch ${Math.floor(i / batchSize) + 1}: ${batch.length} items processed`);
+      } catch (error) {
+        this.logger.error(`Batch processing failed: ${error.message}`);
+        // Fallback: créer des leads minimaux pour tout le batch
+        for (const raw of batch) {
+          results.push(this.createMinimalLead(raw, error.message));
+        }
+      }
 
-      // Petit delai entre les batches
+      // Petit délai entre les batches pour éviter rate limiting
       if (i + batchSize < raws.length) {
-        await this.sleep(500);
+        await this.sleep(300); // Réduit de 500ms à 300ms car on fait moins d'appels
       }
     }
+
+    this.logger.log(`🎯 Total processed: ${results.length} leads with ${Math.ceil(raws.length / batchSize)} LLM calls`);
 
     return results;
   }
@@ -198,7 +503,9 @@ TYPES DE BIENS:
    */
   async analyzeBatch(
     raws: RawScrapedItem[],
+    userId: string,
     config?: AnalysisConfig,
+    providerOverride?: string,
   ): Promise<BatchAnalysisResult> {
     const items: BatchAnalysisResult['items'] = [];
     let leads = 0;
@@ -207,7 +514,7 @@ TYPES DE BIENS:
 
     for (const raw of raws) {
       try {
-        const analyzed = await this.analyzeRawItem(raw);
+        const analyzed = await this.analyzeRawItem(raw, userId, providerOverride);
         items.push({ raw, analyzed });
 
         if (analyzed.isLead) {
@@ -234,46 +541,6 @@ TYPES DE BIENS:
   // ============================================
   // PRIVATE: LLM INTERACTION
   // ============================================
-
-  /**
-   * Recuperer la configuration LLM depuis les settings
-   */
-  private async getLLMConfig(): Promise<any> {
-    // D'abord essayer les variables d'environnement
-    const openaiKey = this.configService.get('OPENAI_API_KEY');
-    if (openaiKey) {
-      return {
-        provider: 'openai',
-        apiKey: openaiKey,
-        model: this.configService.get('OPENAI_MODEL') || 'gpt-4o-mini',
-        endpoint: 'https://api.openai.com/v1/chat/completions',
-      };
-    }
-
-    const anthropicKey = this.configService.get('ANTHROPIC_API_KEY');
-    if (anthropicKey) {
-      return {
-        provider: 'anthropic',
-        apiKey: anthropicKey,
-        model: this.configService.get('ANTHROPIC_MODEL') || 'claude-3-haiku-20240307',
-        endpoint: 'https://api.anthropic.com/v1/messages',
-      };
-    }
-
-    // Essayer de recuperer depuis la base de donnees
-    try {
-      const settings = await this.prisma.settings.findFirst({
-        where: { key: 'llm_config' },
-      });
-      if (settings?.value) {
-        return typeof settings.value === 'string' ? JSON.parse(settings.value) : settings.value;
-      }
-    } catch {
-      // Ignore
-    }
-
-    return null;
-  }
 
   /**
    * Construire le prompt d'analyse pour le LLM
@@ -314,70 +581,6 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
   "seriousnessScore": number (0-100),
   "notes": string
 }`;
-  }
-
-  /**
-   * Appeler le LLM (OpenAI ou Anthropic)
-   */
-  private async callLLM(config: any, userPrompt: string): Promise<any> {
-    if (config.provider === 'anthropic') {
-      return this.callAnthropic(config, userPrompt);
-    }
-    return this.callOpenAI(config, userPrompt);
-  }
-
-  private async callOpenAI(config: any, userPrompt: string): Promise<any> {
-    const response = await axios.post(
-      config.endpoint,
-      {
-        model: config.model,
-        messages: [
-          { role: 'system', content: this.ANALYSIS_SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3,
-        max_tokens: 1000,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      },
-    );
-
-    const content = response.data.choices[0].message.content;
-    return JSON.parse(content);
-  }
-
-  private async callAnthropic(config: any, userPrompt: string): Promise<any> {
-    const response = await axios.post(
-      config.endpoint,
-      {
-        model: config.model,
-        max_tokens: 1000,
-        system: this.ANALYSIS_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      },
-      {
-        headers: {
-          'x-api-key': config.apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      },
-    );
-
-    const content = response.data.content[0].text;
-    // Extraire le JSON du texte
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    throw new Error('No JSON found in response');
   }
 
   /**

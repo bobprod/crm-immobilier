@@ -37,9 +37,11 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401) {
       // Only redirect if not already on login page, not on home page
-      if (typeof window !== 'undefined' &&
+      if (
+        typeof window !== 'undefined' &&
         !window.location.pathname.includes('/login') &&
-        window.location.pathname !== '/') {
+        window.location.pathname !== '/'
+      ) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');

@@ -19,11 +19,7 @@ interface CardHeaderProps {
 }
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
-  return (
-    <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>;
 }
 
 interface CardTitleProps {
@@ -45,11 +41,7 @@ interface CardContentProps {
 }
 
 export function CardContent({ children, className = '' }: CardContentProps) {
-  return (
-    <div className={`p-6 pt-0 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`p-6 pt-0 ${className}`}>{children}</div>;
 }
 
 interface CardDescriptionProps {
@@ -58,9 +50,14 @@ interface CardDescriptionProps {
 }
 
 export function CardDescription({ children, className = '' }: CardDescriptionProps) {
-  return (
-    <p className={`text-sm text-muted-foreground ${className}`}>
-      {children}
-    </p>
-  );
+  return <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>;
+}
+
+interface CardFooterProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardFooter({ children, className = '' }: CardFooterProps) {
+  return <div className={`flex items-center p-6 pt-0 ${className}`}>{children}</div>;
 }

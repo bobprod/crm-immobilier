@@ -8,11 +8,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // Export buttonVariants function for use in other components
-export const buttonVariants = (opts?: { variant?: ButtonProps['variant']; size?: ButtonProps['size'] }) => {
+export const buttonVariants = (opts?: {
+  variant?: ButtonProps['variant'];
+  size?: ButtonProps['size'];
+}) => {
   const variant = opts?.variant || 'default';
   const size = opts?.size || 'default';
 
-  const baseClasses = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
+  const baseClasses =
+    'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
 
   const variantClasses = {
     default: 'bg-primary text-primary-foreground hover:bg-primary/90',
