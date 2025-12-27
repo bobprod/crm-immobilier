@@ -442,13 +442,23 @@ model user_integrations {
   @@unique([userId, type])
 }
 
+// ════════════════════════════════════════════════════════════
+// USER ROLES ENUM - SAAS CORE OS
+// ════════════════════════════════════════════════════════════
+enum UserRole {
+  USER          // Utilisateur simple (ex: freelance, client final)
+  AGENT         // Agent métier (immo, voyage, recruteur)
+  ADMIN         // Admin agence
+  SUPER_ADMIN   // Admin plateforme
+}
+
 model users {
   id                       String                    @id @default(cuid())
   email                    String                    @unique
   password                 String
   firstName                String?
   lastName                 String?
-  role                     String                    @default("agent")
+  role                     UserRole                  @default(AGENT)
   agencyId                 String?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
@@ -706,11 +716,22 @@ model ai_settings {
   userId            String   @unique
   defaultProvider   String   @default("openai")
   preferredProvider String?  @default("openai")
+  // ── LLM Providers ──
   openaiApiKey      String?
   geminiApiKey      String?
-  claudeApiKey      String?
+  claudeApiKey      String?       // Anthropic
   deepseekApiKey    String?
   openrouterApiKey  String?
+
+  // ── Scraping & Data Providers ──
+  serpApiKey          String?     // Google SERP API
+  firecrawlApiKey     String?     // Firecrawl web scraping
+  picaApiKey          String?     // Pica real estate data
+  jinaReaderApiKey    String?     // Jina Reader (URL → Markdown)
+  scrapingBeeApiKey   String?     // ScrapingBee
+  browserlessApiKey   String?     // Browserless headless browser
+  rapidApiKey         String?     // RapidAPI
+
   customApiKeys     Json?
   defaultModel      String?
   temperature       Float    @default(0.7)
