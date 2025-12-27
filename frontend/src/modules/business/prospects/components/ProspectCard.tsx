@@ -121,7 +121,13 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
     } else if (days < 7) {
       return `${d.toLocaleDateString('fr-FR', { weekday: 'long' })} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
     } else {
-      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     }
   };
 
@@ -150,7 +156,8 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                {prospect.firstName?.[0]}{prospect.lastName?.[0]}
+                {prospect.firstName?.[0]}
+                {prospect.lastName?.[0]}
               </div>
               <div>
                 <CardTitle className="text-2xl">
@@ -160,9 +167,7 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                   <Badge className="bg-blue-100 text-blue-800">
                     {getProspectTypeLabel(prospect.prospectType)}
                   </Badge>
-                  <Badge className={getStatusColor(prospect.status)}>
-                    {prospect.status}
-                  </Badge>
+                  <Badge className={getStatusColor(prospect.status)}>{prospect.status}</Badge>
                 </div>
               </div>
             </div>
@@ -223,11 +228,11 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                 </div>
                 <div>
                   <div className="font-semibold text-orange-900">
-                    {nextAction.type === 'appointment' ? '📅 Prochain Rendez-vous' : '➡️ Prochaine Action'}
+                    {nextAction.type === 'appointment'
+                      ? '📅 Prochain Rendez-vous'
+                      : '➡️ Prochaine Action'}
                   </div>
-                  <div className="text-sm text-orange-700">
-                    {nextAction.title}
-                  </div>
+                  <div className="text-sm text-orange-700">{nextAction.title}</div>
                   <div className="text-xs text-orange-600 mt-1 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {formatNextActionDate(nextAction.date)}
@@ -257,7 +262,8 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {budget.min?.toLocaleString()} - {budget.max?.toLocaleString()} {budget.currency || 'TND'}
+                {budget.min?.toLocaleString()} - {budget.max?.toLocaleString()}{' '}
+                {budget.currency || 'TND'}
               </div>
             </CardContent>
           </Card>
@@ -273,10 +279,18 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                <div><strong>Type:</strong> {criteria.propertyType}</div>
-                {criteria.rooms && <div><strong>Pièces:</strong> {criteria.rooms}</div>}
+                <div>
+                  <strong>Type:</strong> {criteria.propertyType}
+                </div>
+                {criteria.rooms && (
+                  <div>
+                    <strong>Pièces:</strong> {criteria.rooms}
+                  </div>
+                )}
                 {criteria.zones && (
-                  <div><strong>Zones:</strong> {criteria.zones.join(', ')}</div>
+                  <div>
+                    <strong>Zones:</strong> {criteria.zones.join(', ')}
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -300,7 +314,11 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                   .flatMap((p: any) => p.liked || [])
                   .slice(0, 10)
                   .map((item: string, index: number) => (
-                    <Badge key={index} variant="outline" className="text-green-700 border-green-300">
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="text-green-700 border-green-300"
+                    >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       {item}
                     </Badge>
@@ -355,20 +373,25 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                 })}
                 <Badge variant="outline">{prospect.interactions[0].channel}</Badge>
                 {prospect.interactions[0].sentiment && (
-                  <Badge className={
-                    prospect.interactions[0].sentiment === 'positive' ? 'bg-green-100 text-green-800' :
-                    prospect.interactions[0].sentiment === 'negative' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }>
-                    {prospect.interactions[0].sentiment === 'positive' ? '😊' :
-                     prospect.interactions[0].sentiment === 'negative' ? '😞' : '😐'}
+                  <Badge
+                    className={
+                      prospect.interactions[0].sentiment === 'positive'
+                        ? 'bg-green-100 text-green-800'
+                        : prospect.interactions[0].sentiment === 'negative'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                    }
+                  >
+                    {prospect.interactions[0].sentiment === 'positive'
+                      ? '😊'
+                      : prospect.interactions[0].sentiment === 'negative'
+                        ? '😞'
+                        : '😐'}
                   </Badge>
                 )}
               </div>
               <div className="font-semibold">{prospect.interactions[0].subject}</div>
-              <div className="text-sm text-gray-600 italic">
-                "{prospect.interactions[0].notes}"
-              </div>
+              <div className="text-sm text-gray-600 italic">"{prospect.interactions[0].notes}"</div>
             </div>
           </CardContent>
         </Card>
@@ -396,9 +419,7 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                       {new Date(shown.shownDate).toLocaleDateString('fr-FR')}
                     </div>
                     {shown.feedback && (
-                      <div className="text-sm text-gray-600 italic mt-1">
-                        "{shown.feedback}"
-                      </div>
+                      <div className="text-sm text-gray-600 italic mt-1">"{shown.feedback}"</div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -408,13 +429,20 @@ export default function ProspectCard({ prospectId }: ProspectCardProps) {
                         {shown.interestLevel}/10
                       </Badge>
                     )}
-                    <Badge className={
-                      shown.outcome === 'interested' ? 'bg-green-100 text-green-800' :
-                      shown.outcome === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }>
-                      {shown.outcome === 'interested' ? '✅ Intéressé' :
-                       shown.outcome === 'rejected' ? '❌ Refusé' : '⏳ Peut-être'}
+                    <Badge
+                      className={
+                        shown.outcome === 'interested'
+                          ? 'bg-green-100 text-green-800'
+                          : shown.outcome === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                      }
+                    >
+                      {shown.outcome === 'interested'
+                        ? '✅ Intéressé'
+                        : shown.outcome === 'rejected'
+                          ? '❌ Refusé'
+                          : '⏳ Peut-être'}
                     </Badge>
                   </div>
                 </div>

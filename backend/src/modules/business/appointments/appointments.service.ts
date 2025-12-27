@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class AppointmentsService {
@@ -157,11 +158,7 @@ export class AppointmentsService {
       },
     });
 
-    if (!appointment) {
-      throw new NotFoundException('Rendez-vous non trouvé');
-    }
-
-    return appointment;
+    return ErrorHandler.ensureExists(appointment, 'Appointment', id);
   }
 
   /**
@@ -322,37 +319,43 @@ export class AppointmentsService {
    * Obtenir les rendez-vous à venir
    */
   async getUpcoming(userId: string, limit: number = 10) {
-    return this.prisma.appointments.findMany({
-      where: {
-        userId,
-        startTime: {
-          gte: new Date(),
-        },
-        status: {
-          in: ['scheduled', 'confirmed'],
-        },
-      },
-      include: {
-        prospects: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
+    try {
+      return await this.prisma.appointments.findMany({
+        where: {
+          userId,
+          startTime: {
+            gte: new Date(),
+          },
+          status: {
+            in: ['scheduled', 'confirmed'],
           },
         },
-        properties: {
-          select: {
-            id: true,
-            title: true,
-            address: true,
+        include: {
+          prospects: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          properties: {
+            select: {
+              id: true,
+              title: true,
+              address: true,
+            },
           },
         },
-      },
-      orderBy: { startTime: 'asc' },
-      take: limit,
-    });
+        orderBy: { startTime: 'asc' },
+        take: limit,
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching upcoming appointments: ${error.message}`);
+      // Retourner un tableau vide en cas d'erreur au lieu de crasher
+      return [];
+    }
   }
 
   /**

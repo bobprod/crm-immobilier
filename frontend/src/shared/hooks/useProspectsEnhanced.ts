@@ -68,9 +68,24 @@ export interface ProspectEnhanced {
   currency: string;
   preferences?: any;
   source?: string;
-  status: 'active' | 'inactive' | 'converted' | 'lost' | 'archived' | 'lead' | 'contacted' | 'qualified' | 'negotiation' | 'closing';
+  status:
+    | 'active'
+    | 'inactive'
+    | 'converted'
+    | 'lost'
+    | 'archived'
+    | 'lead'
+    | 'contacted'
+    | 'qualified'
+    | 'negotiation'
+    | 'closing';
   score: number;
-  prospectType?: 'requete_location' | 'requete_achat' | 'mandat_location' | 'mandat_vente' | 'promoteur';
+  prospectType?:
+    | 'requete_location'
+    | 'requete_achat'
+    | 'mandat_location'
+    | 'mandat_vente'
+    | 'promoteur';
   subType?: string;
   searchCriteria?: SearchCriteria;
   mandatInfo?: any;
@@ -146,7 +161,7 @@ export function useProspectsEnhanced() {
       setLoading(true);
       setError(null);
       const newProspect = await prospectsEnhancedAPI.createProspectEnhanced(data);
-      setProspects(prev => [newProspect, ...prev]);
+      setProspects((prev) => [newProspect, ...prev]);
       return newProspect;
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création');
@@ -171,37 +186,45 @@ export function useProspectsEnhanced() {
   }, []);
 
   // Ajouter une interaction
-  const addInteraction = useCallback(async (prospectId: string, data: Partial<ProspectInteraction>) => {
-    try {
-      setError(null);
-      const interaction = await prospectsEnhancedAPI.addInteraction(prospectId, data);
-      // Mettre à jour le prospect dans la liste
-      setProspects(prev => prev.map(p => {
-        if (p.id === prospectId) {
-          return {
-            ...p,
-            interactions: [interaction, ...(p.interactions || [])],
-          };
-        }
-        return p;
-      }));
-      return interaction;
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'ajout de l\'interaction');
-      throw err;
-    }
-  }, []);
+  const addInteraction = useCallback(
+    async (prospectId: string, data: Partial<ProspectInteraction>) => {
+      try {
+        setError(null);
+        const interaction = await prospectsEnhancedAPI.addInteraction(prospectId, data);
+        // Mettre à jour le prospect dans la liste
+        setProspects((prev) =>
+          prev.map((p) => {
+            if (p.id === prospectId) {
+              return {
+                ...p,
+                interactions: [interaction, ...(p.interactions || [])],
+              };
+            }
+            return p;
+          })
+        );
+        return interaction;
+      } catch (err: any) {
+        setError(err.message || "Erreur lors de l'ajout de l'interaction");
+        throw err;
+      }
+    },
+    []
+  );
 
   // Définir une préférence
-  const setPreference = useCallback(async (prospectId: string, data: Partial<ProspectPreference>) => {
-    try {
-      setError(null);
-      return await prospectsEnhancedAPI.setPreference(prospectId, data);
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors de la définition de la préférence');
-      throw err;
-    }
-  }, []);
+  const setPreference = useCallback(
+    async (prospectId: string, data: Partial<ProspectPreference>) => {
+      try {
+        setError(null);
+        return await prospectsEnhancedAPI.setPreference(prospectId, data);
+      } catch (err: any) {
+        setError(err.message || 'Erreur lors de la définition de la préférence');
+        throw err;
+      }
+    },
+    []
+  );
 
   // Récupérer les préférences
   const getPreferences = useCallback(async (prospectId: string) => {
@@ -220,18 +243,20 @@ export function useProspectsEnhanced() {
       setError(null);
       const propertyShown = await prospectsEnhancedAPI.recordPropertyShown(prospectId, data);
       // Mettre à jour le prospect
-      setProspects(prev => prev.map(p => {
-        if (p.id === prospectId) {
-          return {
-            ...p,
-            propertiesShown: [propertyShown, ...(p.propertiesShown || [])],
-          };
-        }
-        return p;
-      }));
+      setProspects((prev) =>
+        prev.map((p) => {
+          if (p.id === prospectId) {
+            return {
+              ...p,
+              propertiesShown: [propertyShown, ...(p.propertiesShown || [])],
+            };
+          }
+          return p;
+        })
+      );
       return propertyShown;
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'enregistrement');
+      setError(err.message || "Erreur lors de l'enregistrement");
       throw err;
     }
   }, []);
@@ -241,10 +266,10 @@ export function useProspectsEnhanced() {
     try {
       setError(null);
       const updated = await prospectsEnhancedAPI.changeStage(prospectId, stage);
-      setProspects(prev => prev.map(p => p.id === prospectId ? { ...p, status: stage } : p));
+      setProspects((prev) => prev.map((p) => (p.id === prospectId ? { ...p, status: stage } : p)));
       return updated;
     } catch (err: any) {
-      setError(err.message || 'Erreur lors du changement d\'étape');
+      setError(err.message || "Erreur lors du changement d'étape");
       throw err;
     }
   }, []);

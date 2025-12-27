@@ -96,21 +96,21 @@ export default function ProspectConversionDetail() {
 
   const getStageColor = (stage: string) => {
     const colors: Record<string, string> = {
-      'lead': 'default',
-      'contacted': 'info',
-      'qualified': 'primary',
-      'negotiation': 'warning',
-      'converted': 'success',
-      'lost': 'error',
+      lead: 'default',
+      contacted: 'info',
+      qualified: 'primary',
+      negotiation: 'warning',
+      converted: 'success',
+      lost: 'error',
     };
     return colors[stage] || 'default';
   };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, 'error' | 'warning' | 'default'> = {
-      'high': 'error',
-      'medium': 'warning',
-      'low': 'default',
+      high: 'error',
+      medium: 'warning',
+      low: 'default',
     };
     return colors[priority.toLowerCase()] || 'default';
   };
@@ -138,10 +138,7 @@ export default function ProspectConversionDetail() {
       <Box sx={{ p: 3 }}>
         {/* Header */}
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={() => router.push('/prospects-conversion')}
-          >
+          <Button startIcon={<ArrowBack />} onClick={() => router.push('/prospects-conversion')}>
             Retour
           </Button>
           <Typography variant="h4" sx={{ flexGrow: 1 }}>
@@ -170,28 +167,36 @@ export default function ProspectConversionDetail() {
                   <Grid item xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Email fontSize="small" />
-                      <Typography variant="body2" color="text.secondary">Email:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Email:
+                      </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.prospectEmail}</Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Phone fontSize="small" />
-                      <Typography variant="body2" color="text.secondary">Téléphone:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Téléphone:
+                      </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.prospectPhone}</Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Business fontSize="small" />
-                      <Typography variant="body2" color="text.secondary">Agent Assigné:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Agent Assigné:
+                      </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.assignedAgent}</Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <CalendarToday fontSize="small" />
-                      <Typography variant="body2" color="text.secondary">Premier Contact:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Premier Contact:
+                      </Typography>
                     </Box>
                     <Typography variant="body1">
                       {new Date(prospect.firstContactDate).toLocaleDateString()}
@@ -212,10 +217,7 @@ export default function ProspectConversionDetail() {
                 <List>
                   {prospect.aiRecommendations.map((rec, index) => (
                     <ListItem key={index}>
-                      <ListItemText
-                        primary={rec}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
+                      <ListItemText primary={rec} primaryTypographyProps={{ variant: 'body2' }} />
                     </ListItem>
                   ))}
                 </List>
@@ -265,7 +267,9 @@ export default function ProspectConversionDetail() {
             {/* Statut et Probabilité */}
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Statut de Conversion</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Statut de Conversion
+                </Typography>
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ mb: 3 }}>
                   <Chip
@@ -307,14 +311,20 @@ export default function ProspectConversionDetail() {
             {/* Intérêts et Budget */}
             <Card sx={{ mt: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Critères de Recherche</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Critères de Recherche
+                </Typography>
                 <Divider sx={{ my: 2 }} />
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Budget</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Budget
+                  </Typography>
                   <Typography variant="h6">{prospect.budget.toLocaleString()} €</Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Timeline</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Timeline
+                  </Typography>
                   <Typography variant="body1">{prospect.timeline}</Typography>
                 </Box>
                 <Box>
@@ -333,7 +343,9 @@ export default function ProspectConversionDetail() {
             {/* Prochaines Actions */}
             <Card sx={{ mt: 3 }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Prochaines Actions</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Prochaines Actions
+                </Typography>
                 <Divider sx={{ my: 2 }} />
                 <List dense>
                   {prospect.nextActions.map((action, index) => (

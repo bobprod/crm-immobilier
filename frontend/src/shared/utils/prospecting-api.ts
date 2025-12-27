@@ -9,7 +9,13 @@ import { Property } from './properties-api';
 // ENUMS - Aligned with backend types
 // ============================================
 
-export type CampaignType = 'geographic' | 'demographic' | 'behavioral' | 'custom' | 'requete' | 'mandat';
+export type CampaignType =
+  | 'geographic'
+  | 'demographic'
+  | 'behavioral'
+  | 'custom'
+  | 'requete'
+  | 'mandat';
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed';
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'rejected';
 export type LeadType = 'requete' | 'mandat' | 'inconnu'; // requete = cherche bien, mandat = a un bien
@@ -93,7 +99,7 @@ export interface ProspectingLead {
   // Lead classification
   leadType: LeadType;
   intention?: Intention; // Typed enum instead of string
-  urgency?: Urgency;     // Typed enum instead of string
+  urgency?: Urgency; // Typed enum instead of string
   source: ScrapingSource | string;
   sourceUrl?: string;
   rawText?: string;
@@ -154,7 +160,12 @@ export interface Prospect {
 // ============================================
 
 export type BudgetRelation = 'below_range' | 'within_range' | 'above_range' | 'no_budget';
-export type LocationRelation = 'same_city' | 'same_region' | 'same_country' | 'different' | 'unknown';
+export type LocationRelation =
+  | 'same_city'
+  | 'same_region'
+  | 'same_country'
+  | 'different'
+  | 'unknown';
 export type TypeRelation = 'exact' | 'compatible' | 'unknown' | 'mismatch';
 
 export interface BudgetMatchReason {
@@ -185,10 +196,10 @@ export interface TypeMatchReason {
 
 export interface MetaMatchReason {
   urgency: string | null;
-  urgencyBonus: number;    // 0-5
+  urgencyBonus: number; // 0-5
   seriousnessScore: number | null;
   seriousnessBonus: number; // 0-5
-  totalBonus: number;       // 0-10 (capped)
+  totalBonus: number; // 0-10 (capped)
 }
 
 export interface MatchReason {
@@ -388,7 +399,10 @@ export const prospectingAPI = {
     return response.data;
   },
 
-  updateCampaign: async (id: string, data: Partial<ProspectingCampaign>): Promise<ProspectingCampaign> => {
+  updateCampaign: async (
+    id: string,
+    data: Partial<ProspectingCampaign>
+  ): Promise<ProspectingCampaign> => {
     const response = await apiClient.put(`/prospecting/campaigns/${id}`, data);
     return response.data;
   },
@@ -422,12 +436,15 @@ export const prospectingAPI = {
   // LEADS - Leads generes par la prospection
   // ============================================
 
-  getLeads: async (campaignId: string, filters?: {
-    status?: LeadStatus;
-    minScore?: number;
-    leadType?: LeadType;
-    limit?: number;
-  }): Promise<ProspectingLead[]> => {
+  getLeads: async (
+    campaignId: string,
+    filters?: {
+      status?: LeadStatus;
+      minScore?: number;
+      leadType?: LeadType;
+      limit?: number;
+    }
+  ): Promise<ProspectingLead[]> => {
     const response = await apiClient.get(`/prospecting/campaigns/${campaignId}/leads`, {
       params: filters,
     });
@@ -506,27 +523,45 @@ export const prospectingAPI = {
   // SCRAPING - Extraction de donnees
   // ============================================
 
-  scrapeSERP: async (config: ScrapingConfig): Promise<{ leads: ProspectingLead[]; count: number }> => {
+  scrapeSERP: async (
+    config: ScrapingConfig
+  ): Promise<{ leads: ProspectingLead[]; count: number }> => {
     const response = await apiClient.post('/prospecting/scrape/serp', config);
     return response.data;
   },
 
-  scrapeFirecrawl: async (urls: string[], config?: any): Promise<{ leads: ProspectingLead[]; count: number }> => {
+  scrapeFirecrawl: async (
+    urls: string[],
+    config?: any
+  ): Promise<{ leads: ProspectingLead[]; count: number }> => {
     const response = await apiClient.post('/prospecting/scrape/firecrawl', { urls, config });
     return response.data;
   },
 
-  scrapePica: async (config: ScrapingConfig): Promise<{ leads: ProspectingLead[]; count: number }> => {
+  scrapePica: async (
+    config: ScrapingConfig
+  ): Promise<{ leads: ProspectingLead[]; count: number }> => {
     const response = await apiClient.post('/prospecting/scrape/pica', config);
     return response.data;
   },
 
-  scrapeSocial: async (platform: 'meta' | 'linkedin', query: string, config?: any): Promise<{ leads: ProspectingLead[]; count: number }> => {
-    const response = await apiClient.post('/prospecting/scrape/social', { platform, query, config });
+  scrapeSocial: async (
+    platform: 'meta' | 'linkedin',
+    query: string,
+    config?: any
+  ): Promise<{ leads: ProspectingLead[]; count: number }> => {
+    const response = await apiClient.post('/prospecting/scrape/social', {
+      platform,
+      query,
+      config,
+    });
     return response.data;
   },
 
-  scrapeWebsites: async (urls: string[], selectors?: any): Promise<{ leads: ProspectingLead[]; count: number }> => {
+  scrapeWebsites: async (
+    urls: string[],
+    selectors?: any
+  ): Promise<{ leads: ProspectingLead[]; count: number }> => {
     const response = await apiClient.post('/prospecting/scrape/websites', { urls, selectors });
     return response.data;
   },
@@ -535,17 +570,24 @@ export const prospectingAPI = {
   // AI DETECTION - Detection IA d opportunites
   // ============================================
 
-  detectOpportunities: async (config: AIDetectionConfig): Promise<{ opportunities: ProspectingLead[]; count: number }> => {
+  detectOpportunities: async (
+    config: AIDetectionConfig
+  ): Promise<{ opportunities: ProspectingLead[]; count: number }> => {
     const response = await apiClient.post('/prospecting/ai/detect-opportunities', config);
     return response.data;
   },
 
-  analyzeContent: async (content: string, source?: string): Promise<{ leads: ProspectingLead[]; analysis: any }> => {
+  analyzeContent: async (
+    content: string,
+    source?: string
+  ): Promise<{ leads: ProspectingLead[]; analysis: any }> => {
     const response = await apiClient.post('/prospecting/ai/analyze-content', { content, source });
     return response.data;
   },
 
-  classifyLead: async (leadId: string): Promise<{ leadId: string; type: LeadType; confidence: number; reasoning: string }> => {
+  classifyLead: async (
+    leadId: string
+  ): Promise<{ leadId: string; type: LeadType; confidence: number; reasoning: string }> => {
     const response = await apiClient.post('/prospecting/ai/classify-lead', { leadId });
     return response.data;
   },
@@ -573,7 +615,9 @@ export const prospectingAPI = {
   /**
    * Analyser un batch d'elements scrappes
    */
-  llmAnalyzeBatch: async (items: RawScrapedItem[]): Promise<{ results: LLMAnalysisResult[]; processed: number }> => {
+  llmAnalyzeBatch: async (
+    items: RawScrapedItem[]
+  ): Promise<{ results: LLMAnalysisResult[]; processed: number }> => {
     const response = await apiClient.post('/prospecting/llm/analyze-batch', { items });
     return response.data;
   },
@@ -597,10 +641,13 @@ export const prospectingAPI = {
     source: string,
     config: any
   ): Promise<{ scraped: number; ingested: number; leads: ProspectingLead[] }> => {
-    const response = await apiClient.post(`/prospecting/campaigns/${campaignId}/scrape-and-ingest`, {
-      source,
-      config,
-    });
+    const response = await apiClient.post(
+      `/prospecting/campaigns/${campaignId}/scrape-and-ingest`,
+      {
+        source,
+        config,
+      }
+    );
     return response.data;
   },
 
@@ -649,7 +696,9 @@ export const prospectingAPI = {
     return response.data;
   },
 
-  deduplicateLeads: async (campaignId?: string): Promise<{ removed: number; remaining: number }> => {
+  deduplicateLeads: async (
+    campaignId?: string
+  ): Promise<{ removed: number; remaining: number }> => {
     const response = await apiClient.post('/prospecting/deduplicate', { campaignId });
     return response.data;
   },
@@ -658,7 +707,10 @@ export const prospectingAPI = {
   // EXPORT/IMPORT
   // ============================================
 
-  exportLeads: async (campaignId: string, format: 'csv' | 'xlsx' | 'json' = 'csv'): Promise<Blob> => {
+  exportLeads: async (
+    campaignId: string,
+    format: 'csv' | 'xlsx' | 'json' = 'csv'
+  ): Promise<Blob> => {
     const response = await apiClient.get(`/prospecting/export/${campaignId}`, {
       params: { format },
       responseType: 'blob',
@@ -666,7 +718,10 @@ export const prospectingAPI = {
     return response.data;
   },
 
-  importLeads: async (campaignId: string, leads: Partial<ProspectingLead>[]): Promise<{ imported: number; errors: any[] }> => {
+  importLeads: async (
+    campaignId: string,
+    leads: Partial<ProspectingLead>[]
+  ): Promise<{ imported: number; errors: any[] }> => {
     const response = await apiClient.post('/prospecting/import', { campaignId, leads });
     return response.data;
   },

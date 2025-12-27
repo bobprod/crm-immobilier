@@ -16,8 +16,8 @@ export class CreateTaskDto {
   @IsEnum(['todo', 'in_progress', 'done'])
   status: string;
 
-  @ApiProperty({ enum: ['low', 'medium', 'high', 'urgent'] })
-  @IsEnum(['low', 'medium', 'high', 'urgent'])
+  @ApiProperty({ enum: ['low', 'medium', 'high'] })
+  @IsEnum(['low', 'medium', 'high'])
   priority: string;
 
   @ApiPropertyOptional()

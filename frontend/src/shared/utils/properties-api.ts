@@ -41,12 +41,23 @@ export interface Property {
   feesPercentage?: number;
   viewsCount?: number;
   reference?: string;
+  deletedAt?: string; // Soft delete timestamp
   createdAt: string;
   updatedAt: string;
 }
 
 // Type definitions aligned with backend
-export type PropertyType = 'house' | 'apartment' | 'villa' | 'studio' | 'land' | 'commercial' | 'office' | 'terrain' | 'appartement' | 'maison';
+export type PropertyType =
+  | 'house'
+  | 'apartment'
+  | 'villa'
+  | 'studio'
+  | 'land'
+  | 'commercial'
+  | 'office'
+  | 'terrain'
+  | 'appartement'
+  | 'maison';
 export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending';
 export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -109,16 +120,20 @@ export const propertiesAPI = {
    * Créer un nouveau bien immobilier
    */
   create: async (propertyData: CreatePropertyDTO): Promise<Property> => {
-    const response = await apiClient.post('/properties', propertyData);
+    // Filter out unsupported fields (rooms is not supported by backend)
+    const { rooms, ...backendCompatibleData } = propertyData;
+    console.log(
+      '[Properties API] Creating property with data:',
+      JSON.stringify(backendCompatibleData, null, 2)
+    );
+    const response = await apiClient.post('/properties', backendCompatibleData);
     return response.data;
   },
 
   /**
    * Liste tous les biens avec filtres
    */
-  list: async (
-    filters?: PropertyFilters
-  ): Promise<{ properties: Property[]; total: number }> => {
+  list: async (filters?: PropertyFilters): Promise<{ properties: Property[]; total: number }> => {
     const response = await apiClient.get('/properties', { params: filters });
     return response.data;
   },
@@ -134,11 +149,14 @@ export const propertiesAPI = {
   /**
    * Mettre à jour un bien
    */
-  update: async (
-    id: string,
-    updates: Partial<CreatePropertyDTO>
-  ): Promise<Property> => {
-    const response = await apiClient.put(`/properties/${id}`, updates);
+  update: async (id: string, updates: Partial<CreatePropertyDTO>): Promise<Property> => {
+    // Filtrer le champ 'rooms' non supporté par le backend
+    const { rooms, ...backendCompatibleData } = updates;
+    console.log(
+      '[Properties API] Updating property with data:',
+      JSON.stringify(backendCompatibleData, null, 2)
+    );
+    const response = await apiClient.put(`/properties/${id}`, backendCompatibleData);
     return response.data;
   },
 
@@ -166,15 +184,11 @@ export const propertiesAPI = {
       formData.append('images', image);
     });
 
-    const response = await apiClient.post(
-      `/properties/${id}/images`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    const response = await apiClient.post(`/properties/${id}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data.urls;
   },
 
@@ -221,11 +235,7 @@ export const propertiesAPI = {
   /**
    * Obtenir les biens à proximité
    */
-  getNearby: async (
-    latitude: number,
-    longitude: number,
-    radiusKm = 5
-  ): Promise<Property[]> => {
+  getNearby: async (latitude: number, longitude: number, radiusKm = 5): Promise<Property[]> => {
     const response = await apiClient.get('/properties/nearby', {
       params: { latitude, longitude, radiusKm },
     });
@@ -273,7 +283,10 @@ export const propertiesAPI = {
   /**
    * Mise à jour en masse de la priorité
    */
-  bulkUpdatePriority: async (ids: string[], priority: PropertyPriority): Promise<{ updated: number }> => {
+  bulkUpdatePriority: async (
+    ids: string[],
+    priority: PropertyPriority
+  ): Promise<{ updated: number }> => {
     const response = await apiClient.patch('/properties/bulk/priority', { ids, priority });
     return response.data;
   },
@@ -319,6 +332,92 @@ export const propertiesAPI = {
    */
   getAssigned: async (userId: string): Promise<Property[]> => {
     const response = await apiClient.get(`/properties/assigned/${userId}`);
+    return response.data;
+  },
+
+  // ============================================
+  // NEW: SOFT DELETE & HISTORY
+  // ============================================
+
+  /**
+   * Get all trashed (soft-deleted) properties
+   */
+  getTrashed: async (): Promise<Property[]> => {
+    const response = await apiClient.get('/properties/trashed');
+    return response.data;
+  },
+
+  /**
+   * Restore a soft-deleted property
+   */
+  restore: async (id: string): Promise<Property> => {
+    const response = await apiClient.post(`/properties/${id}/restore`);
+    return response.data;
+  },
+
+  /**
+   * Permanently delete a property (cannot be undone)
+   */
+  permanentDelete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/properties/${id}/permanent`);
+  },
+
+  /**
+   * Get property change history
+   */
+  getHistory: async (id: string, limit = 50): Promise<any[]> => {
+    const response = await apiClient.get(`/properties/${id}/history`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get user activity across all properties
+   */
+  getUserActivity: async (userId: string, limit = 50): Promise<any[]> => {
+    const response = await apiClient.get(`/properties/user/${userId}/activity`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  // ============================================
+  // NEW: CURSOR-BASED PAGINATION
+  // ============================================
+
+  /**
+   * Get paginated properties with cursor-based pagination for infinite scroll
+   */
+  getPaginated: async (
+    cursor?: string,
+    limit = 20,
+    filters?: PropertyFilters
+  ): Promise<{
+    items: Property[];
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    total: number;
+  }> => {
+    const params: any = { limit, ...filters };
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    const response = await apiClient.get('/properties/paginated', { params });
+    return response.data;
+  },
+
+  /**
+   * Find nearby properties by geolocation (with distance sorting)
+   */
+  findNearby: async (
+    lat: number,
+    lng: number,
+    radius = 5
+  ): Promise<Array<Property & { distance: number }>> => {
+    const response = await apiClient.get('/properties/nearby', {
+      params: { lat, lng, radius },
+    });
     return response.data;
   },
 };

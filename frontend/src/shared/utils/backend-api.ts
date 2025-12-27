@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -37,9 +37,11 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401) {
       // Only redirect if not already on login page, not on home page
-      if (typeof window !== 'undefined' &&
+      if (
+        typeof window !== 'undefined' &&
         !window.location.pathname.includes('/login') &&
-        window.location.pathname !== '/') {
+        window.location.pathname !== '/'
+      ) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');

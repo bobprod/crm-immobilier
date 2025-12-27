@@ -319,6 +319,64 @@ class ProspectsAPIService {
   }
 
   /**
+   * Get paginated prospects with cursor-based pagination
+   */
+  async getPaginated(cursor?: string | null, limit = 20, filters?: any) {
+    const response = await apiClient.get('/prospects/paginated', {
+      params: { cursor, limit, ...filters },
+    });
+    return response.data;
+  }
+
+  /**
+   * Get trashed prospects
+   */
+  async getTrashed(): Promise<Prospect[]> {
+    return apiClient.get<Prospect[]>('/prospects/trashed');
+  }
+
+  /**
+   * Restore a prospect from trash
+   */
+  async restore(id: string): Promise<Prospect> {
+    return apiClient.patch<Prospect>(`/prospects/${id}/restore`);
+  }
+
+  /**
+   * Permanently delete a prospect
+   */
+  async permanentDelete(id: string): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/prospects/${id}/permanent`);
+  }
+
+  /**
+   * Search prospects
+   */
+  async search(query: string): Promise<Prospect[]> {
+    return apiClient.get<Prospect[]>('/prospects/search', {
+      params: { q: query },
+    });
+  }
+
+  /**
+   * Get prospect statistics
+   */
+  async getStats(): Promise<ProspectStats> {
+    return apiClient.get<ProspectStats>('/prospects/stats');
+  }
+
+  /**
+   * Export prospects to CSV
+   */
+  async exportCSV(filters?: any): Promise<Blob> {
+    const response = await apiClient.get('/prospects/export/csv', {
+      params: filters,
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  /**
    * Importer des prospects depuis un fichier
    */
   async importProspects(file: File): Promise<{

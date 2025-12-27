@@ -71,6 +71,11 @@ export class UpdateProspectDto {
   @IsNumber()
   budget?: number;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  score?: number;
+
   @ApiPropertyOptional({ description: 'Préférences de recherche du prospect' })
   @IsOptional()
   @IsObject()
@@ -81,3 +86,5 @@ export class UpdateProspectDto {
   @IsString()
   notes?: string;
 }
+
+export { PaginationQueryDto } from './pagination-query.dto';

@@ -37,16 +37,16 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
 
   // Combine all activities into one list for simplicity
   const allActivities = [
-    ...(activities.recentProspects || []).map(p => ({
+    ...(activities.recentProspects || []).map((p) => ({
       id: p.id,
       type: 'prospect' as const,
       title: `${p.firstName} ${p.lastName}`,
       date: p.createdAt,
       status: p.status,
       icon: User,
-      color: 'text-green-600'
+      color: 'text-green-600',
     })),
-    ...(activities.recentProperties || []).map(p => ({
+    ...(activities.recentProperties || []).map((p) => ({
       id: p.id,
       type: 'property' as const,
       title: p.title,
@@ -54,18 +54,18 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
       status: p.status,
       icon: Building2,
       color: 'text-blue-600',
-      extra: `${p.price.toLocaleString()} €`
+      extra: `${p.price.toLocaleString()} €`,
     })),
-    ...(activities.recentAppointments || []).map(a => ({
+    ...(activities.recentAppointments || []).map((a) => ({
       id: a.id,
       type: 'appointment' as const,
       title: a.title,
       date: a.startTime,
       status: a.status,
       icon: Calendar,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
     })),
-    ...(activities.recentCommunications || []).map(c => ({
+    ...(activities.recentCommunications || []).map((c) => ({
       id: c.id,
       type: 'communication' as const,
       title: c.subject || c.type,
@@ -73,9 +73,11 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
       status: c.status,
       icon: MessageSquare,
       color: 'text-indigo-600',
-      extra: c.to
-    }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+      extra: c.to,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
 
   return (
     <Card>
@@ -90,7 +92,10 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
             allActivities.map((activity) => {
               const Icon = activity.icon;
               return (
-                <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                >
                   <div className="flex items-center space-x-3">
                     <Icon className={`h-5 w-5 ${activity.color}`} />
                     <div>
@@ -101,7 +106,9 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
                       </p>
                     </div>
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded ${getStatusColor(activity.status)}`}>
+                  <span
+                    className={`text-xs font-semibold px-2 py-1 rounded ${getStatusColor(activity.status)}`}
+                  >
                     {activity.status}
                   </span>
                 </div>

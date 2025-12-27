@@ -3,8 +3,9 @@ import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus } from 'lucide-react';
 import { apiClient } from '../../src/shared/utils/api-client-backend';
+import { useRouter } from 'next/router';
 
 interface Appointment {
   id: string;
@@ -20,6 +21,7 @@ interface Appointment {
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     loadAppointments();
@@ -55,7 +57,10 @@ export default function AppointmentsPage() {
     <Layout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Rendez-vous</h1>
-        <Button>Nouveau RDV</Button>
+        <Button onClick={() => router.push('/appointments/new')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nouveau RDV
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

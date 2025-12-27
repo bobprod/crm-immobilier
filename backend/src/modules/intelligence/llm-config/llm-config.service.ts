@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { LLMProviderFactory } from './providers/llm-provider.factory';
 import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker.service';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 /**
  * Service de gestion de la configuration LLM
@@ -12,7 +13,7 @@ export class LLMConfigService {
     private readonly prisma: PrismaService,
     private readonly llmFactory: LLMProviderFactory,
     private readonly costTracker: ApiCostTrackerService,
-  ) { }
+  ) {}
 
   /**
    * Récupérer la configuration LLM d'un utilisateur
@@ -73,7 +74,7 @@ export class LLMConfigService {
     });
 
     if (!config || !config.apiKey) {
-      throw new NotFoundException('Configuration LLM non trouvée');
+      ErrorHandler.notFound('Configuration LLM');
     }
 
     const isValid = await this.llmFactory.testProvider(config as any);
@@ -144,6 +145,33 @@ export class LLMConfigService {
         pricing: 'Variable selon le modèle',
         keyFormat: 'sk-or-...',
         website: 'https://openrouter.ai',
+      },
+      {
+        id: 'qwen',
+        name: 'Qwen (Alibaba)',
+        models: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
+        description: 'Qwen de Alibaba Cloud - Rapide et économique',
+        pricing: '~$0.50 / 1M tokens',
+        keyFormat: 'sk-...',
+        website: 'https://dashscope.aliyun.com',
+      },
+      {
+        id: 'kimi',
+        name: 'Kimi (Moonshot)',
+        models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+        description: 'Kimi de Moonshot AI - Long contexte disponible',
+        pricing: '~$1.00 / 1M tokens',
+        keyFormat: 'sk-...',
+        website: 'https://platform.moonshot.cn',
+      },
+      {
+        id: 'mistral',
+        name: 'Mistral AI',
+        models: ['mistral-tiny', 'mistral-small-latest', 'mistral-medium', 'mistral-large-latest'],
+        description: 'Mistral AI - Open source et performant',
+        pricing: '~$2.00 / 1M tokens (small)',
+        keyFormat: 'Bearer token',
+        website: 'https://mistral.ai',
       },
     ];
   }

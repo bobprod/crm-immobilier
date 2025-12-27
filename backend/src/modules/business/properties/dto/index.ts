@@ -8,8 +8,23 @@ import { ProspectSummary, UserSummary } from '../../../../shared/types/relation-
 
 export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending';
 export type PropertyCategory = 'sale' | 'rent';
+
+export enum PropertyCategoryEnum {
+  SALE = 'sale',
+  RENT = 'rent',
+}
 export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type PropertyType = 'apartment' | 'house' | 'villa' | 'studio' | 'office' | 'land' | 'commercial' | 'appartement' | 'maison' | 'terrain';
+export type PropertyType =
+  | 'apartment'
+  | 'house'
+  | 'villa'
+  | 'studio'
+  | 'office'
+  | 'land'
+  | 'commercial'
+  | 'appartement'
+  | 'maison'
+  | 'terrain';
 
 // ============================================
 // CREATE DTO
@@ -26,14 +41,25 @@ export class CreatePropertyDto {
   description?: string;
 
   @ApiProperty({
-    enum: ['apartment', 'house', 'villa', 'studio', 'office', 'land', 'commercial', 'appartement', 'maison', 'terrain'],
-    description: 'Type de bien'
+    enum: [
+      'apartment',
+      'house',
+      'villa',
+      'studio',
+      'office',
+      'land',
+      'commercial',
+      'appartement',
+      'maison',
+      'terrain',
+    ],
+    description: 'Type de bien',
   })
   @IsString()
   type: string;
 
-  @ApiProperty({ enum: ['sale', 'rent'], description: 'Catégorie (vente/location)' })
-  @IsEnum(['sale', 'rent'])
+  @ApiProperty({ enum: PropertyCategoryEnum, description: 'Catégorie (vente/location)' })
+  @IsEnum(PropertyCategoryEnum)
   category: PropertyCategory;
 
   @ApiProperty({ description: 'Prix du bien' })
@@ -174,9 +200,9 @@ export class UpdatePropertyDto {
   @IsString()
   type?: string;
 
-  @ApiPropertyOptional({ enum: ['sale', 'rent'], description: 'Catégorie' })
+  @ApiPropertyOptional({ enum: PropertyCategoryEnum, description: 'Catégorie' })
   @IsOptional()
-  @IsEnum(['sale', 'rent'])
+  @IsEnum(PropertyCategoryEnum)
   category?: PropertyCategory;
 
   @ApiPropertyOptional({ description: 'Prix du bien' })
@@ -194,7 +220,10 @@ export class UpdatePropertyDto {
   @IsNumber()
   area?: number;
 
-  @ApiPropertyOptional({ enum: ['available', 'reserved', 'sold', 'rented', 'pending'], description: 'Statut' })
+  @ApiPropertyOptional({
+    enum: ['available', 'reserved', 'sold', 'rented', 'pending'],
+    description: 'Statut',
+  })
   @IsOptional()
   @IsEnum(['available', 'reserved', 'sold', 'rented', 'pending'])
   status?: PropertyStatus;
@@ -515,3 +544,6 @@ export class PropertyFiltersDto {
   @IsNumber()
   limit?: number;
 }
+
+// Export pagination DTO
+export * from './pagination.dto';

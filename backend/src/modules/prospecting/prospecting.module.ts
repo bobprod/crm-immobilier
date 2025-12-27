@@ -11,6 +11,8 @@ import { BehavioralSignalsService } from './behavioral-signals.service';
 import { ScrapingQueueService } from './scraping-queue.service';
 import { BehavioralProspectingController } from './behavioral-prospecting.controller';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { SeoAiModule } from '../content/seo-ai/seo-ai.module';
+import { LLMConfigModule } from '../intelligence/llm-config/llm-config.module';
 
 @Module({
   imports: [

@@ -50,11 +50,7 @@ const SPAM_PATTERNS = {
     /^[a-z]{1,2}$/i,
     /^(mr|mme|monsieur|madame)$/i,
   ],
-  phonePatterns: [
-    /^0{6,}/,
-    /^1234567/,
-    /^(\d)\1{6,}/,
-  ],
+  phonePatterns: [/^0{6,}/, /^1234567/, /^(\d)\1{6,}/],
 };
 
 export const LeadValidator: React.FC<LeadValidatorProps> = ({
@@ -62,7 +58,9 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
   onValidate,
   onUpdateLead,
 }) => {
-  const [validationResults, setValidationResults] = useState<Map<string, ValidationResult>>(new Map());
+  const [validationResults, setValidationResults] = useState<Map<string, ValidationResult>>(
+    new Map()
+  );
   const [isValidating, setIsValidating] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'valid' | 'suspicious' | 'spam'>('all');
@@ -74,7 +72,9 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
 
     // Validation email
     const emailValid = lead.email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email) : false;
-    const emailDisposable = lead.email ? SPAM_PATTERNS.emailPatterns.some(p => p.test(lead.email!)) : false;
+    const emailDisposable = lead.email
+      ? SPAM_PATTERNS.emailPatterns.some((p) => p.test(lead.email!))
+      : false;
 
     if (!lead.email) {
       issues.push('Email manquant');
@@ -90,8 +90,8 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
     // Validation nom
     const hasFirstName = lead.firstName && lead.firstName.length > 1;
     const hasLastName = lead.lastName && lead.lastName.length > 1;
-    const nameSpam = SPAM_PATTERNS.namePatterns.some(p =>
-      p.test(lead.firstName || '') || p.test(lead.lastName || '')
+    const nameSpam = SPAM_PATTERNS.namePatterns.some(
+      (p) => p.test(lead.firstName || '') || p.test(lead.lastName || '')
     );
 
     if (!hasFirstName || !hasLastName) {
@@ -104,8 +104,14 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
     }
 
     // Validation telephone
-    const phoneValid = lead.phone ? /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(lead.phone.replace(/\s/g, '')) : false;
-    const phoneSpam = lead.phone ? SPAM_PATTERNS.phonePatterns.some(p => p.test(lead.phone!)) : false;
+    const phoneValid = lead.phone
+      ? /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(
+          lead.phone.replace(/\s/g, '')
+        )
+      : false;
+    const phoneSpam = lead.phone
+      ? SPAM_PATTERNS.phonePatterns.some((p) => p.test(lead.phone!))
+      : false;
 
     if (!lead.phone) {
       issues.push('Telephone manquant');
@@ -131,7 +137,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
         disposable: emailDisposable,
         role: false,
         score: emailValid ? (emailDisposable ? 40 : 90) : 0,
-        suggestion: emailValid ? undefined : 'Verifiez le format de l\'email',
+        suggestion: emailValid ? undefined : "Verifiez le format de l'email",
       },
       phone: {
         valid: phoneValid,
@@ -140,7 +146,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
       },
       name: {
         valid: hasFirstName && hasLastName && !nameSpam,
-        confidence: nameSpam ? 20 : (hasFirstName && hasLastName ? 90 : 50),
+        confidence: nameSpam ? 20 : hasFirstName && hasLastName ? 90 : 50,
         issues: nameSpam ? ['Nom potentiellement faux'] : [],
       },
       overall: {
@@ -159,13 +165,11 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
 
     try {
       // D'abord validation locale rapide
-      const localResults = leads
-        .filter(l => selectedLeads.has(l.id))
-        .map(quickValidate);
+      const localResults = leads.filter((l) => selectedLeads.has(l.id)).map(quickValidate);
 
       // Mettre a jour les resultats
       const newResults = new Map(validationResults);
-      localResults.forEach(result => {
+      localResults.forEach((result) => {
         newResults.set(result.leadId, result);
       });
       setValidationResults(newResults);
@@ -173,7 +177,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
       // Puis appeler l'API pour validation approfondie
       try {
         const apiResults = await onValidate(Array.from(selectedLeads));
-        apiResults.forEach(result => {
+        apiResults.forEach((result) => {
           newResults.set(result.leadId, result);
         });
         setValidationResults(new Map(newResults));
@@ -187,7 +191,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
 
   // Valider tous les leads
   const handleValidateAll = async () => {
-    const allLeadIds = leads.map(l => l.id);
+    const allLeadIds = leads.map((l) => l.id);
     setSelectedLeads(new Set(allLeadIds));
     setIsValidating(true);
 
@@ -195,7 +199,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
       // D'abord validation locale rapide
       const localResults = leads.map(quickValidate);
       const newResults = new Map<string, ValidationResult>();
-      localResults.forEach(result => {
+      localResults.forEach((result) => {
         newResults.set(result.leadId, result);
       });
       setValidationResults(newResults);
@@ -203,7 +207,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
       // Puis appeler l'API pour validation approfondie
       try {
         const apiResults = await onValidate(allLeadIds);
-        apiResults.forEach(result => {
+        apiResults.forEach((result) => {
           newResults.set(result.leadId, result);
         });
         setValidationResults(new Map(newResults));
@@ -217,7 +221,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
   };
 
   // Filtrer les leads
-  const filteredLeads = leads.filter(lead => {
+  const filteredLeads = leads.filter((lead) => {
     const result = validationResults.get(lead.id);
     if (filter === 'all') return true;
     if (!result) return filter === 'all';
@@ -228,21 +232,40 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
   const stats = {
     total: leads.length,
     validated: validationResults.size,
-    valid: Array.from(validationResults.values()).filter(r => r.overall.status === 'valid').length,
-    suspicious: Array.from(validationResults.values()).filter(r => r.overall.status === 'suspicious').length,
-    spam: Array.from(validationResults.values()).filter(r => r.overall.status === 'spam').length,
+    valid: Array.from(validationResults.values()).filter((r) => r.overall.status === 'valid')
+      .length,
+    suspicious: Array.from(validationResults.values()).filter(
+      (r) => r.overall.status === 'suspicious'
+    ).length,
+    spam: Array.from(validationResults.values()).filter((r) => r.overall.status === 'spam').length,
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'valid':
-        return <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">✓ Valide</span>;
+        return (
+          <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+            ✓ Valide
+          </span>
+        );
       case 'suspicious':
-        return <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">⚠ Suspect</span>;
+        return (
+          <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">
+            ⚠ Suspect
+          </span>
+        );
       case 'spam':
-        return <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">🚫 Spam</span>;
+        return (
+          <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+            🚫 Spam
+          </span>
+        );
       default:
-        return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">? Non valide</span>;
+        return (
+          <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+            ? Non valide
+          </span>
+        );
     }
   };
 
@@ -305,7 +328,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
       {/* Filters */}
       <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
         <div className="flex gap-2">
-          {(['all', 'valid', 'suspicious', 'spam'] as const).map(f => (
+          {(['all', 'valid', 'suspicious', 'spam'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -315,18 +338,22 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                   : 'bg-white border text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {f === 'all' ? 'Tous' : f === 'valid' ? '✓ Valides' : f === 'suspicious' ? '⚠ Suspects' : '🚫 Spam'}
+              {f === 'all'
+                ? 'Tous'
+                : f === 'valid'
+                  ? '✓ Valides'
+                  : f === 'suspicious'
+                    ? '⚠ Suspects'
+                    : '🚫 Spam'}
             </button>
           ))}
         </div>
-        <div className="text-sm text-gray-500">
-          {filteredLeads.length} lead(s) affiche(s)
-        </div>
+        <div className="text-sm text-gray-500">{filteredLeads.length} lead(s) affiche(s)</div>
       </div>
 
       {/* Leads List */}
       <div className="divide-y max-h-[500px] overflow-y-auto">
-        {filteredLeads.map(lead => {
+        {filteredLeads.map((lead) => {
           const result = validationResults.get(lead.id);
           const isSelected = selectedLeads.has(lead.id);
 
@@ -369,20 +396,22 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 mt-0.5">
                         <span className="flex items-center gap-1">
-                          📧 {lead.email || 'Pas d\'email'}
-                          {result && (
-                            result.email.valid
-                              ? <span className="text-green-500">✓</span>
-                              : <span className="text-red-500">✗</span>
-                          )}
+                          📧 {lead.email || "Pas d'email"}
+                          {result &&
+                            (result.email.valid ? (
+                              <span className="text-green-500">✓</span>
+                            ) : (
+                              <span className="text-red-500">✗</span>
+                            ))}
                         </span>
                         <span className="flex items-center gap-1">
                           📞 {lead.phone || 'Pas de tel'}
-                          {result && (
-                            result.phone.valid
-                              ? <span className="text-green-500">✓</span>
-                              : <span className="text-red-500">✗</span>
-                          )}
+                          {result &&
+                            (result.phone.valid ? (
+                              <span className="text-green-500">✓</span>
+                            ) : (
+                              <span className="text-red-500">✗</span>
+                            ))}
                         </span>
                       </div>
                     </div>
@@ -397,8 +426,11 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all ${
-                              result.overall.score >= 70 ? 'bg-green-500' :
-                              result.overall.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                              result.overall.score >= 70
+                                ? 'bg-green-500'
+                                : result.overall.score >= 40
+                                  ? 'bg-yellow-500'
+                                  : 'bg-red-500'
                             }`}
                             style={{ width: `${result.overall.score}%` }}
                           />

@@ -1,25 +1,25 @@
-import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
-import { Skeleton } from "@/shared/components/ui/skeleton";
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
+import { Skeleton } from '@/shared/components/ui/skeleton';
 
 interface LoadingStateProps {
-  variant?: "spinner" | "skeleton" | "card" | "inline";
+  variant?: 'spinner' | 'skeleton' | 'card' | 'inline';
   message?: string;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function LoadingState({ 
-  variant = "spinner", 
-  message = "Chargement en cours...",
-  size = "md" 
+export function LoadingState({
+  variant = 'spinner',
+  message = 'Chargement en cours...',
+  size = 'md',
 }: LoadingStateProps) {
   const sizeClasses = {
-    sm: "h-4 w-4",
-    md: "h-8 w-8",
-    lg: "h-12 w-12"
+    sm: 'h-4 w-4',
+    md: 'h-8 w-8',
+    lg: 'h-12 w-12',
   };
 
-  if (variant === "spinner") {
+  if (variant === 'spinner') {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
         <Loader2 className={`${sizeClasses[size]} animate-spin text-primary`} />
@@ -28,7 +28,7 @@ export function LoadingState({
     );
   }
 
-  if (variant === "inline") {
+  if (variant === 'inline') {
     return (
       <div className="flex items-center space-x-2">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -37,7 +37,7 @@ export function LoadingState({
     );
   }
 
-  if (variant === "skeleton") {
+  if (variant === 'skeleton') {
     return (
       <div className="space-y-4 p-4">
         <Skeleton className="h-12 w-full" />
@@ -52,7 +52,7 @@ export function LoadingState({
     );
   }
 
-  if (variant === "card") {
+  if (variant === 'card') {
     return (
       <Card className="w-full">
         <CardHeader>

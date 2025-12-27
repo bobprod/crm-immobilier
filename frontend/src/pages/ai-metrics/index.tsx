@@ -28,13 +28,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import {
-  TrendingUp,
-  Assessment,
-  Psychology,
-  Speed,
-  Timeline,
-} from '@mui/icons-material';
+import { TrendingUp, Assessment, Psychology, Speed, Timeline } from '@mui/icons-material';
 
 interface AiMetrics {
   totalPredictions: number;
@@ -166,7 +160,9 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Prédictions Totales</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Prédictions Totales
+                    </Typography>
                     <Typography variant="h4">{metrics.totalPredictions}</Typography>
                   </Box>
                   <Assessment sx={{ fontSize: 40, color: 'primary.main' }} />
@@ -180,8 +176,12 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Taux de Précision</Typography>
-                    <Typography variant="h4" color="success.main">{metrics.accuracyRate}%</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Taux de Précision
+                    </Typography>
+                    <Typography variant="h4" color="success.main">
+                      {metrics.accuracyRate}%
+                    </Typography>
                   </Box>
                   <TrendingUp sx={{ fontSize: 40, color: 'success.main' }} />
                 </Box>
@@ -194,8 +194,12 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Confiance Moyenne</Typography>
-                    <Typography variant="h4">{(metrics.averageConfidence * 100).toFixed(1)}%</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Confiance Moyenne
+                    </Typography>
+                    <Typography variant="h4">
+                      {(metrics.averageConfidence * 100).toFixed(1)}%
+                    </Typography>
                   </Box>
                   <Psychology sx={{ fontSize: 40, color: 'info.main' }} />
                 </Box>
@@ -208,8 +212,12 @@ export default function AiMetricsDashboard() {
               <CardContent>
                 <Box display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography color="text.secondary" variant="body2">Temps de Réponse</Typography>
-                    <Typography variant="h4">{metrics.performanceMetrics.avgResponseTime}ms</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Temps de Réponse
+                    </Typography>
+                    <Typography variant="h4">
+                      {metrics.performanceMetrics.avgResponseTime}ms
+                    </Typography>
                   </Box>
                   <Speed sx={{ fontSize: 40, color: 'warning.main' }} />
                 </Box>
@@ -235,7 +243,13 @@ export default function AiMetricsDashboard() {
                     <YAxis domain={[75, 95]} />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="accuracy" stroke="#8884d8" strokeWidth={2} name="Précision (%)" />
+                    <Line
+                      type="monotone"
+                      dataKey="accuracy"
+                      stroke="#8884d8"
+                      strokeWidth={2}
+                      name="Précision (%)"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -246,7 +260,9 @@ export default function AiMetricsDashboard() {
           <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Distribution des Prédictions</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Distribution des Prédictions
+                </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -273,7 +289,9 @@ export default function AiMetricsDashboard() {
           <Grid item xs={12}>
             <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>Performance par Modèle IA</Typography>
+                <Typography variant="h6" gutterBottom>
+                  Performance par Modèle IA
+                </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={metrics.predictionsByModel}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -282,7 +300,12 @@ export default function AiMetricsDashboard() {
                     <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                     <Tooltip />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="count" fill="#8884d8" name="Nombre de Prédictions" />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="count"
+                      fill="#8884d8"
+                      name="Nombre de Prédictions"
+                    />
                     <Bar yAxisId="right" dataKey="accuracy" fill="#82ca9d" name="Précision (%)" />
                   </BarChart>
                 </ResponsiveContainer>

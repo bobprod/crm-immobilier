@@ -5,6 +5,7 @@ import {
   getPriceRangeForSearch,
   MATCH_WEIGHTS,
 } from '../../../shared/utils/matching.utils';
+import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 
 @Injectable()
 export class MatchingService {
@@ -25,7 +26,9 @@ export class MatchingService {
       where: { userId, status: 'active' },
     });
 
-    this.logger.log(`Generating matches for ${prospects.length} prospects and ${properties.length} properties`);
+    this.logger.log(
+      `Generating matches for ${prospects.length} prospects and ${properties.length} properties`,
+    );
 
     const matches = [];
 
@@ -52,7 +55,8 @@ export class MatchingService {
             budgetMax: budget.max || preferences.budgetMax || null,
             city: prospect.city || preferences.city || null,
             country: preferences.country || 'Tunisie',
-            propertyTypes: preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
+            propertyTypes:
+              preferences.propertyTypes || (preferences.type ? [preferences.type] : []),
             urgency: preferences.urgency || null,
             seriousnessScore: prospect.score || null,
           },
@@ -122,18 +126,38 @@ export class MatchingService {
       });
     }
 
-    this.logger.log(`Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`);
+    this.logger.log(
+      `Synced ${prospectingMatches.length} prospecting matches for prospect ${prospectId}`,
+    );
   }
 
   async findAll(userId: string, filters?: any) {
-    const where: any = { properties: { userId } };
+    // First get all properties for this user
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
+    const propertyIds = userProperties.map((p) => p.id);
+
+    // If user has no properties, return empty array
+    if (propertyIds.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      propertyId: { in: propertyIds },
+    };
 
     if (filters?.minScore) where.score = { gte: parseFloat(filters.minScore) };
     if (filters?.status) where.status = filters.status;
 
     return this.prisma.matches.findMany({
       where,
-      include: { properties: true, prospects: true },
+      include: {
+        properties: true,
+        prospects: true,
+      },
       orderBy: { score: 'desc' },
     });
   }
@@ -146,12 +170,15 @@ export class MatchingService {
   }
 
   async performAction(matchId: string, userId: string, action: any) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id: matchId, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id: matchId },
       include: { properties: true, prospects: true },
     });
 
-    if (!match) throw new Error('Match not found');
+    // Verify the property belongs to the user
+    if (!match || match.properties.userId !== userId) {
+      ErrorHandler.notFound('Match');
+    }
 
     let result;
     if (action.type === 'appointment') {
@@ -182,8 +209,21 @@ export class MatchingService {
   }
 
   async getInteractions(userId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return { interactions: [] };
+    }
+
     const matches = await this.prisma.matches.findMany({
-      where: { properties: { userId }, status: 'contacted' },
+      where: {
+        propertyId: { in: propertyIds },
+        status: 'contacted',
+      },
       include: { properties: true, prospects: true },
       orderBy: { updatedAt: 'desc' },
       take: 50,
@@ -193,21 +233,38 @@ export class MatchingService {
   }
 
   async getStats(userId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return {
+        total: 0,
+        excellent: 0,
+        good: 0,
+        average: 0,
+        avgScore: 0,
+        byStatus: [],
+      };
+    }
+
     const [total, byScore, avgScore] = await Promise.all([
-      this.prisma.matches.count({ where: { properties: { userId } } }),
+      this.prisma.matches.count({ where: { propertyId: { in: propertyIds } } }),
       this.prisma.matches.groupBy({
         by: ['status'],
-        where: { properties: { userId } },
+        where: { propertyId: { in: propertyIds } },
         _count: true,
       }),
       this.prisma.matches.aggregate({
-        where: { properties: { userId } },
+        where: { propertyId: { in: propertyIds } },
         _avg: { score: true },
       }),
     ]);
 
     const matches = await this.prisma.matches.findMany({
-      where: { properties: { userId } },
+      where: { propertyId: { in: propertyIds } },
       select: { score: true },
     });
 
@@ -226,16 +283,40 @@ export class MatchingService {
   }
 
   async getProspectMatches(userId: string, prospectId: string) {
+    const userProperties = await this.prisma.properties.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const propertyIds = userProperties.map((p) => p.id);
+
+    if (propertyIds.length === 0) {
+      return [];
+    }
+
     return this.prisma.matches.findMany({
-      where: { prospectId, properties: { userId } },
+      where: {
+        prospectId,
+        propertyId: { in: propertyIds },
+      },
       include: { properties: true },
       orderBy: { score: 'desc' },
     });
   }
 
   async getPropertyMatches(userId: string, propertyId: string) {
+    // Verify the property belongs to the user
+    const property = await this.prisma.properties.findFirst({
+      where: { id: propertyId, userId },
+    });
+
+    if (!property) {
+      ErrorHandler.notFound('Property');
+    }
+
     return this.prisma.matches.findMany({
-      where: { propertyId, properties: { userId } },
+      where: {
+        propertyId,
+      },
       include: { prospects: true },
       orderBy: { score: 'desc' },
     });
@@ -251,7 +332,7 @@ export class MatchingService {
     });
 
     if (!property || !prospect) {
-      throw new Error('Property or prospect not found');
+      ErrorHandler.notFound('Property or prospect');
     }
 
     // Calculate score using unified algorithm
@@ -264,7 +345,9 @@ export class MatchingService {
         budgetMax: budget.max || (preferences.budgetMax as number) || null,
         city: prospect.city || (preferences.city as string) || null,
         country: (preferences.country as string) || 'Tunisie',
-        propertyTypes: (preferences.propertyTypes as string[]) || (preferences.type ? [preferences.type as string] : []),
+        propertyTypes:
+          (preferences.propertyTypes as string[]) ||
+          (preferences.type ? [preferences.type as string] : []),
         urgency: (preferences.urgency as string) || null,
         seriousnessScore: prospect.score || null,
       },
@@ -357,7 +440,7 @@ export class MatchingService {
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      ErrorHandler.notFound('Property');
     }
 
     const where: any = { userId, status: 'active' };
@@ -405,25 +488,26 @@ export class MatchingService {
   }
 
   async findOne(userId: string, id: string) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id },
       include: { properties: true, prospects: true },
     });
 
-    if (!match) {
-      throw new Error('Match not found');
+    if (!match || match.properties.userId !== userId) {
+      ErrorHandler.notFound('Match');
     }
 
     return match;
   }
 
   async deleteMatch(userId: string, id: string) {
-    const match = await this.prisma.matches.findFirst({
-      where: { id, properties: { userId } },
+    const match = await this.prisma.matches.findUnique({
+      where: { id },
+      include: { properties: true },
     });
 
-    if (!match) {
-      throw new Error('Match not found');
+    if (!match || match.properties.userId !== userId) {
+      ErrorHandler.notFound('Match');
     }
 
     await this.prisma.matches.delete({ where: { id } });

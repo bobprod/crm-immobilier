@@ -20,12 +20,7 @@ import { FacebookStrategy } from './strategies/facebook.strategy';
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    FacebookStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, FacebookStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

@@ -1,15 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
-import {
-  LLMProvider,
-  LLMConfig,
-  PRICING_PER_1M_TOKENS,
-} from './llm-provider.interface';
+import { LLMProvider, LLMConfig, PRICING_PER_1M_TOKENS } from './llm-provider.interface';
 import { AnthropicProvider } from './anthropic.provider';
 import { OpenAIProvider } from './openai.provider';
 import { GeminiProvider } from './gemini.provider';
 import { OpenRouterProvider } from './openrouter.provider';
 import { DeepSeekProvider } from './deepseek.provider';
+import { QwenProvider } from './qwen.provider';
+import { KimiProvider } from './kimi.provider';
+import { MistralProvider } from './mistral.provider';
 
 /**
  * Factory pour créer des instances de providers LLM
@@ -77,6 +76,18 @@ export class LLMProviderFactory {
 
       case 'deepseek':
         provider = new DeepSeekProvider(config.apiKey, config.model);
+        break;
+
+      case 'qwen':
+        provider = new QwenProvider(config.apiKey, config.model);
+        break;
+
+      case 'kimi':
+        provider = new KimiProvider(config.apiKey, config.model);
+        break;
+
+      case 'mistral':
+        provider = new MistralProvider(config.apiKey, config.model);
         break;
 
       default:

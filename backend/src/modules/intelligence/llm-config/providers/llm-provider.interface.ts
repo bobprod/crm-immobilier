@@ -33,7 +33,7 @@ export interface GenerateOptions {
 }
 
 export interface LLMConfig {
-  provider: 'anthropic' | 'openai' | 'gemini' | 'openrouter' | 'deepseek';
+  provider: 'anthropic' | 'openai' | 'gemini' | 'openrouter' | 'deepseek' | 'qwen' | 'kimi' | 'mistral';
   apiKey: string;
   model?: string;
   defaultMaxTokens?: number;
@@ -46,6 +46,9 @@ export const DEFAULT_MODELS: Record<string, string> = {
   gemini: 'gemini-1.5-pro',
   openrouter: 'anthropic/claude-3.5-sonnet',
   deepseek: 'deepseek-chat',
+  qwen: 'qwen-turbo',
+  kimi: 'moonshot-v1-8k',
+  mistral: 'mistral-small-latest',
 };
 
 export const PRICING_PER_1M_TOKENS: Record<string, { input: number; output: number }> = {
@@ -54,6 +57,9 @@ export const PRICING_PER_1M_TOKENS: Record<string, { input: number; output: numb
   gemini: { input: 1.25, output: 5.0 },
   openrouter: { input: 3.0, output: 15.0 },
   deepseek: { input: 0.14, output: 0.28 },
+  qwen: { input: 0.5, output: 1.5 },
+  kimi: { input: 1.0, output: 2.0 },
+  mistral: { input: 2.0, output: 6.0 },
 };
 
 export const MAX_TOKENS_DEFAULTS: Record<string, number> = {
