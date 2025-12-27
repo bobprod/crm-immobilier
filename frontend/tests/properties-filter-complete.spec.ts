@@ -6,6 +6,10 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('Property Filters - E2E Testing with Real Backend', () => {
     test.beforeEach(async ({ page }) => {
+        // Get credentials from environment variables
+        const testEmail = process.env.TEST_USER_EMAIL || 'amine@example.com';
+        const testPassword = process.env.TEST_USER_PASSWORD || 'Test1234';
+        
         // Login first using real credentials that should exist on the backend
         console.log('📝 Attempting login...');
         await page.goto('http://localhost:3000/login', { waitUntil: 'networkidle' });
@@ -17,14 +21,14 @@ test.describe('Property Filters - E2E Testing with Real Backend', () => {
 
         // Try to fill the form
         try {
-            await emailInput.fill('amine@example.com', { timeout: 5000 });
+            await emailInput.fill(testEmail, { timeout: 5000 });
             console.log('✅ Entered email');
         } catch (e) {
             console.log('⚠️ Could not fill email - form may be pre-filled');
         }
 
         try {
-            await passwordInput.fill('Test1234', { timeout: 5000 });
+            await passwordInput.fill(testPassword, { timeout: 5000 });
             console.log('✅ Entered password');
         } catch (e) {
             console.log('⚠️ Could not fill password');
