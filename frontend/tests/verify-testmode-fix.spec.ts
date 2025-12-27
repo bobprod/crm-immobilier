@@ -14,8 +14,8 @@ test('VERIFY: testMode=true prevents auth redirect', async ({ page, context }) =
     // Go to properties page with testMode=true
     await page.goto('http://localhost:3000/properties?testMode=true', { waitUntil: 'domcontentloaded' });
 
-    // Wait a bit for any redirects to happen
-    await page.waitForTimeout(2000);
+    // Wait for any redirects/network activity to settle
+    await page.waitForLoadState('networkidle');
 
     // Final URL check
     const finalUrl = page.url();
