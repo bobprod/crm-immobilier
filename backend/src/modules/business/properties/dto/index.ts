@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsArray, IsBoolean, IsIn } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, IsBoolean, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProspectSummary, UserSummary } from '../../../../shared/types/relation-summaries';
 
