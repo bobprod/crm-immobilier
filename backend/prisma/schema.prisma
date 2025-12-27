@@ -96,6 +96,69 @@ enum CampaignStatus {
   completed
 }
 
+enum MandateType {
+  simple
+  exclusive
+  semi_exclusive
+}
+
+enum MandateCategory {
+  sale
+  rental
+}
+
+enum MandateStatus {
+  active
+  expired
+  cancelled
+  completed
+}
+
+enum TransactionType {
+  sale
+  rental
+}
+
+enum TransactionStatus {
+  offer_received
+  offer_accepted
+  promise_signed
+  compromis_signed
+  final_deed_signed
+  cancelled
+}
+
+enum CommissionStatus {
+  pending
+  partially_paid
+  paid
+  cancelled
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  partially_paid
+  overdue
+  cancelled
+}
+
+enum PaymentMethod {
+  cash
+  check
+  bank_transfer
+  credit_card
+  other
+}
+
+enum ClientType {
+  buyer
+  seller
+  tenant
+  landlord
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -284,9 +347,17 @@ model properties {
   lastContactAt       DateTime?
   assignedUser        users?                      @relation("AssignedProperties", fields: [assignedTo], references: [id])
 
-  // Owner/Vendor
+  // Owner/Vendor (deprecated - use ownerNew)
   ownerId             String?
   owner               prospects?                  @relation("PropertyOwner", fields: [ownerId], references: [id])
+
+  // New Owner relation
+  ownerNewId          String?
+  ownerNew            Owner?                      @relation("OwnerProperties", fields: [ownerNewId], references: [id])
+
+  // Business relations
+  mandates            Mandate[]                   @relation("PropertyMandates")
+  transactions        Transaction[]               @relation("PropertyTransactions")
 
   // Financials
   netPrice            Float?
@@ -297,6 +368,7 @@ model properties {
   @@index([isFeatured])
   @@index([assignedTo])
   @@index([ownerId])
+  @@index([ownerNewId])
   // Indexes for matching performance
   @@index([price])
   @@index([city])
@@ -346,29 +418,7 @@ model prospects {
   users                users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
-  history              ProspectHistory[]           @relation("ProspectHistory")
-  email_ai_analyses    EmailAIAnalysis[]           @relation("EmailAIProspect")
-
-  @@index([deletedAt])
-}
-
-model ProspectHistory {
-  id         String    @id @default(cuid())
-  prospectId String
-  userId     String
-  action     String    // created, updated, deleted, restored, status_changed, score_updated, etc.
-  changes    Json      // Avant/après
-  metadata   Json?     // Info additionnelle
-  createdAt  DateTime  @default(now())
-
-  prospect prospects @relation("ProspectHistory", fields: [prospectId], references: [id], onDelete: Cascade)
-  user     users     @relation("UserProspectHistory", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([prospectId])
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-  @@map("prospect_history")
+  transactions         Transaction[]               @relation("ProspectTransactions")
 }
 
 model user_integrations {
@@ -438,9 +488,13 @@ model users {
   notificationPreferences  NotificationPreference?   @relation("UserNotificationPreferences")
   userIntegrations         UserIntegration[]         @relation("UserIntegrations")
   activities               Activity[]                @relation("UserActivities")
-  email_ai_analyses        EmailAIAnalysis[]         @relation("EmailAIAnalyses")
-  email_ai_drafts          EmailAIDraft[]            @relation("EmailAIDrafts")
-  ai_chat_conversations    AIChatConversation[]      @relation("AIChatConversations")
+  owners                   Owner[]                   @relation("UserOwners")
+  mandates                 Mandate[]                 @relation("UserMandates")
+  transactions             Transaction[]             @relation("UserTransactions")
+  commissions              Commission[]              @relation("UserCommissions")
+  agentCommissions         Commission[]              @relation("AgentCommissions")
+  invoices                 Invoice[]                 @relation("UserInvoices")
+  payments                 Payment[]                 @relation("UserPayments")
   wordpressUrl             String?
   wordpressUsername        String?
   wordpressPassword        String?
@@ -1591,74 +1645,256 @@ model Activity {
 }
 
 // ============================================
-// AI ORCHESTRATOR MODULE
+// 🆕 OWNERS MODULE (Propriétaires)
 // ============================================
 
-// Orchestrations IA (tracking des demandes d'orchestration)
-model AiOrchestration {
-  id            String    @id @default(cuid())
-  userId        String
-  tenantId      String
-  objective     String    // prospection, investment_benchmark, property_analysis, etc.
-  context       Json      // Contexte métier de la demande
-  status        String    // pending, planning, executing, completed, failed, partial
-  plan          Json?     // ExecutionPlan généré
-  results       Json?     // Résultats des ToolCalls
-  finalResult   Json?     // Résultat final synthétisé
-  metrics       Json?     // { totalDurationMs, totalTokensUsed, totalCost, ... }
-  errors        String[]  // Messages d'erreur
-  createdAt     DateTime  @default(now())
-  completedAt   DateTime?
-  
-  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+model Owner {
+  id          String    @id @default(cuid())
+  userId      String
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  zipCode     String?
+  country     String?   @default("Tunisie")
+  taxId       String?   // Numéro fiscal
+  idCard      String?   // CIN ou autre
+  notes       String?   @db.Text
+  metadata    Json?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now)
+  updatedAt   DateTime  @updatedAt
+
+  user        users       @relation("UserOwners", fields: [userId], references: [id], onDelete: Cascade)
+  mandates    Mandate[]
+  properties  properties[] @relation("OwnerProperties")
+  invoices    Invoice[]
+
   @@index([userId])
-  @@index([tenantId])
-  @@index([status])
-  @@index([objective])
-  @@index([createdAt])
-  @@map("ai_orchestrations")
+  @@index([email])
+  @@index([phone])
+  @@map("owners")
 }
 
-// Logs des appels d'outils individuels
-model ToolCallLog {
-  id                String    @id @default(cuid())
-  orchestrationId   String?   // Lien vers AiOrchestration (optionnel)
+// ============================================
+// 🆕 MANDATES MODULE (Mandats)
+// ============================================
+
+model Mandate {
+  id                String          @id @default(cuid())
   userId            String
-  tenantId          String
-  tool              String    // serpapi, firecrawl, llm
-  action            String    // search, scrape, generate, etc.
-  params            Json      // Paramètres de l'appel
-  result            Json?     // Résultat de l'appel
-  success           Boolean
-  error             String?
-  durationMs        Int?
-  tokensUsed        Int?
-  cost              Float?
-  createdAt         DateTime  @default(now())
-  
-  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([orchestrationId])
+  ownerId           String
+  propertyId        String?
+  reference         String          @unique
+  type              MandateType
+  category          MandateCategory
+  status            MandateStatus   @default(active)
+  startDate         DateTime
+  endDate           DateTime
+  price             Float
+  currency          String          @default("TND")
+  commission        Float
+  commissionType    String          @default("percentage") // percentage, fixed
+  exclusivityBonus  Float?
+  terms             String?         @db.Text
+  notes             String?         @db.Text
+  documentUrl       String?
+  signedAt          DateTime?
+  cancelledAt       DateTime?
+  cancellationReason String?       @db.Text
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user              users           @relation("UserMandates", fields: [userId], references: [id], onDelete: Cascade)
+  owner             Owner           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  property          properties?     @relation("PropertyMandates", fields: [propertyId], references: [id], onDelete: SetNull)
+  transactions      Transaction[]
+
   @@index([userId])
-  @@index([tenantId])
-  @@index([tool])
-  @@index([createdAt])
-  @@map("tool_call_logs")
+  @@index([ownerId])
+  @@index([propertyId])
+  @@index([status])
+  @@index([endDate])
+  @@index([reference])
+  @@map("mandates")
 }
 
-// Clés d'intégration pour les outils externes (SerpAPI, Firecrawl, etc.)
-model IntegrationKeys {
-  id            String    @id @default(cuid())
-  tenantId      String    @unique
-  serpApiKey    String?   @db.Text // Encrypted
-  firecrawlKey  String?   @db.Text // Encrypted
-  picaAiKey     String?   @db.Text
-  googleApiKey  String?   @db.Text
-  customKeys    Json?     // Pour d'autres intégrations futures
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  @@index([tenantId])
-  @@map("integration_keys")
+// ============================================
+// 🆕 TRANSACTIONS MODULE (Transactions de vente/location)
+// ============================================
+
+model Transaction {
+  id                  String              @id @default(cuid())
+  userId              String
+  propertyId          String
+  prospectId          String?
+  mandateId           String?
+  reference           String              @unique
+  type                TransactionType
+  status              TransactionStatus   @default(offer_received)
+  offerPrice          Float?
+  negotiatedPrice     Float?
+  finalPrice          Float?
+  currency            String              @default("TND")
+  depositAmount       Float?
+  depositPaidAt       DateTime?
+  offerDate           DateTime?
+  promiseDate         DateTime?
+  compromisDate       DateTime?
+  finalDeedDate       DateTime?
+  estimatedClosing    DateTime?
+  actualClosing       DateTime?
+  buyerName           String?
+  buyerEmail          String?
+  buyerPhone          String?
+  notes               String?             @db.Text
+  notaryName          String?
+  notaryContact       String?
+  loanAmount          Float?
+  loanApproved        Boolean             @default(false)
+  conditions          Json?               // Conditions suspensives
+  metadata            Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  user                users               @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  property            properties          @relation("PropertyTransactions", fields: [propertyId], references: [id], onDelete: Restrict)
+  prospect            prospects?          @relation("ProspectTransactions", fields: [prospectId], references: [id], onDelete: SetNull)
+  mandate             Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  steps               TransactionStep[]
+  commissions         Commission[]
+  invoices            Invoice[]
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([prospectId])
+  @@index([mandateId])
+  @@index([status])
+  @@index([type])
+  @@index([estimatedClosing])
+  @@index([reference])
+  @@map("transactions")
+}
+
+model TransactionStep {
+  id              String      @id @default(cuid())
+  transactionId   String
+  stage           String      // offer_received, offer_accepted, etc.
+  completedAt     DateTime    @default(now())
+  completedBy     String?
+  notes           String?     @db.Text
+  documents       Json?       // Array of document URLs
+  metadata        Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([stage])
+  @@map("transaction_steps")
+}
+
+// ============================================
+// 🆕 FINANCE MODULE (Commissions, Factures, Paiements)
+// ============================================
+
+model Commission {
+  id              String            @id @default(cuid())
+  userId          String
+  transactionId   String
+  agentId         String
+  type            String            @default("agent") // agent, agency, referral
+  amount          Float
+  percentage      Float?
+  currency        String            @default("TND")
+  status          CommissionStatus  @default(pending)
+  dueDate         DateTime?
+  paidAt          DateTime?
+  notes           String?           @db.Text
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  user            users             @relation("UserCommissions", fields: [userId], references: [id], onDelete: Cascade)
+  transaction     Transaction       @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  agent           users             @relation("AgentCommissions", fields: [agentId], references: [id], onDelete: Restrict)
+  payments        Payment[]
+
+  @@index([userId])
+  @@index([transactionId])
+  @@index([agentId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("commissions")
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  userId          String
+  transactionId   String?
+  ownerId         String?
+  number          String        @unique
+  clientType      ClientType
+  clientName      String
+  clientEmail     String?
+  clientPhone     String?
+  clientAddress   String?       @db.Text
+  amount          Float
+  vat             Float         @default(0)
+  totalAmount     Float
+  currency        String        @default("TND")
+  status          InvoiceStatus @default(draft)
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime
+  paidAt          DateTime?
+  description     String?       @db.Text
+  items           Json?         // Line items
+  notes           String?       @db.Text
+  pdfUrl          String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            users         @relation("UserInvoices", fields: [userId], references: [id], onDelete: Cascade)
+  transaction     Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  owner           Owner?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  payments        Payment[]
+
+  @@index([userId])
+  @@index([transactionId])
+  @@index([ownerId])
+  @@index([number])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  userId          String
+  invoiceId       String?
+  commissionId    String?
+  amount          Float
+  currency        String        @default("TND")
+  method          PaymentMethod
+  reference       String?
+  paidAt          DateTime      @default(now())
+  notes           String?       @db.Text
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user            users         @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  invoice         Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  commission      Commission?   @relation(fields: [commissionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([invoiceId])
+  @@index([commissionId])
+  @@index([paidAt])
+  @@map("payments")
 }

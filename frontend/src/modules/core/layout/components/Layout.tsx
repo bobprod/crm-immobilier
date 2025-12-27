@@ -3,24 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import {
-  Home,
-  Users,
-  Building2,
-  Calendar,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Bell,
-  Target,
-  MessageSquare,
-  Sparkles,
-  CheckSquare,
-  Zap,
-  Shield,
-} from 'lucide-react';
+import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, FileText, TrendingUp, Wallet } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 
 interface LayoutProps {
@@ -77,6 +60,9 @@ export default function Layout({
     if (path.startsWith('/prospecting')) return 'prospecting';
     if (path.startsWith('/properties')) return 'properties';
     if (path.startsWith('/prospects')) return 'prospects';
+    if (path.startsWith('/mandates')) return 'mandates';
+    if (path.startsWith('/transactions')) return 'transactions';
+    if (path.startsWith('/finance')) return 'finance';
     if (path.startsWith('/matching')) return 'matching';
     if (path.startsWith('/appointments')) return 'appointments';
     if (path.startsWith('/tasks')) return 'tasks';
@@ -100,50 +86,37 @@ export default function Layout({
   }
 }
 
-const menuItems = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
-  { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
-  { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
-  { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
-  { id: 'matching', label: 'Matching', icon: Target, href: '/matching' },
-  { id: 'appointments', label: 'Rendez-vous', icon: Calendar, href: '/appointments' },
-  { id: 'tasks', label: 'Tâches', icon: CheckSquare, href: '/tasks' },
-  { id: 'communications', label: 'Communications', icon: MessageSquare, href: '/communications' },
-  { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
-  { id: 'validation', label: 'Validation', icon: Shield, href: '/validation' },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/analytics' },
-  { id: 'settings', label: 'Paramètres', icon: Settings, href: '/settings' },
-];
+  const menuItems = [
+    { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
+    { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
+    { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
+    { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
+    { id: 'mandates', label: 'Mandats', icon: FileText, href: '/mandates' },
+    { id: 'transactions', label: 'Transactions', icon: TrendingUp, href: '/transactions' },
+    { id: 'finance', label: 'Finance', icon: Wallet, href: '/finance' },
+    { id: 'matching', label: 'Matching', icon: Target, href: '/matching' },
+    { id: 'appointments', label: 'Rendez-vous', icon: Calendar, href: '/appointments' },
+    { id: 'tasks', label: 'Tâches', icon: CheckSquare, href: '/tasks' },
+    { id: 'communications', label: 'Communications', icon: MessageSquare, href: '/communications' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
+    { id: 'validation', label: 'Validation', icon: Shield, href: '/validation' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/analytics' },
+    { id: 'settings', label: 'Paramètres', icon: Settings, href: '/settings' },
+  ];
 
-const handleNavigation = (tabId: string, href: string) => {
-  if (mounted) {
-    router.push(href);
-    // ✅ FIX: Fermer la sidebar sur mobile après navigation
-    setSidebarOpen(false);
-  }
-};
+  const handleNavigation = (tabId: string, href: string) => {
+    if (mounted) {
+      router.push(href);
+      // ✅ FIX: Fermer la sidebar sur mobile après navigation
+      setSidebarOpen(false);
+    }
+  };
 
-const handleLogout = async () => {
-  await logout();
-  // Redirect to login page after logout
-  router.push('/login');
-};
-
-return (
-  <div className="flex h-screen bg-gray-50">
-    {/* Mobile overlay */}
-    {sidebarOpen && (
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-        onClick={() => setSidebarOpen(false)}
-      />
-    )}
-
-    {/* Sidebar */}
-    <div className={`fixed lg:static inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:z-auto w-64 bg-white shadow-lg flex flex-col`}>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-gray-800">CRM Immobilier</h1>
-      </div>
+  const handleLogout = async () => {
+    await logout();
+    // Redirect to login page after logout
+    router.push('/login');
+  };
 
       <nav className="mt-6 flex-1 overflow-y-auto">
         {menuItems.map((item) => (
