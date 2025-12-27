@@ -62,15 +62,6 @@ const sourceBgClasses: Record<string, string> = {
   gray: 'bg-gray-100',
 };
 
-const sourceTextClasses: Record<string, string> = {
-  purple: 'text-purple-700',
-  blue: 'text-blue-700',
-  indigo: 'text-indigo-700',
-  cyan: 'text-cyan-700',
-  orange: 'text-orange-700',
-  gray: 'text-gray-700',
-};
-
 const sourceButtonClasses: Record<string, string> = {
   purple: 'bg-purple-100 text-purple-700 hover:bg-purple-200',
   blue: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
