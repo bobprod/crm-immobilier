@@ -66,7 +66,10 @@ export const matchingAPI = {
   },
 
   // Trouver des matchings pour une propriété avec filtres
-  findMatchesForProperty: async (propertyId: string, filters?: MatchingFilters): Promise<MatchingResult[]> => {
+  findMatchesForProperty: async (
+    propertyId: string,
+    filters?: MatchingFilters
+  ): Promise<MatchingResult[]> => {
     const response = await apiClient.post(`/matching/find-property/${propertyId}`, filters);
     return response.data;
   },

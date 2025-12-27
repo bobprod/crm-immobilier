@@ -55,7 +55,7 @@ export default function CampaignDetailPage() {
       // Charger la campagne d'abord
       const campaignData = await campaignsAPI.getById(id as string);
       setCampaign(campaignData);
-      
+
       // Essayer de charger les stats, mais ne pas échouer si elles n'existent pas
       try {
         const statsData = await campaignsAPI.getStats(id as string);
@@ -87,10 +87,10 @@ export default function CampaignDetailPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'draft': 'bg-gray-100 text-gray-800',
-      'active': 'bg-green-100 text-green-800',
-      'paused': 'bg-yellow-100 text-yellow-800',
-      'completed': 'bg-blue-100 text-blue-800',
+      draft: 'bg-gray-100 text-gray-800',
+      active: 'bg-green-100 text-green-800',
+      paused: 'bg-yellow-100 text-yellow-800',
+      completed: 'bg-blue-100 text-blue-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -143,9 +143,7 @@ export default function CampaignDetailPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{campaign.name}</h1>
               <div className="flex items-center gap-3 mt-2">
-                <Badge className={getStatusColor(campaign.status)}>
-                  {campaign.status}
-                </Badge>
+                <Badge className={getStatusColor(campaign.status)}>{campaign.status}</Badge>
                 <span className="text-gray-600">Type: {campaign.type}</span>
                 <span className="text-gray-600">
                   Créée le {new Date(campaign.createdAt).toLocaleDateString('fr-FR')}

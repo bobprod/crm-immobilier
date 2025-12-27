@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../core/database/prisma.service';
+import { PrismaService } from '../../../shared/database/prisma.service';
 import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
 import {
   SendMessageDto,
@@ -17,7 +17,7 @@ export class AIChatAssistantService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly llmService: QuickWinsLLMService,
-  ) {}
+  ) { }
 
   /**
    * Create a new conversation
@@ -444,7 +444,6 @@ export class AIChatAssistantService {
       const response = await this.llmService.analyzeText(
         userId,
         fullPrompt,
-        'ai_chat_assistant',
       );
 
       return {
@@ -466,7 +465,7 @@ export class AIChatAssistantService {
    * Build system prompt based on intent
    */
   private buildSystemPrompt(intentType: CommandType, context: any): string {
-    const basePrompt = `Tu es "Copilot Immobilier", un assistant IA intelligent pour agents immobiliers. 
+    const basePrompt = `Tu es "Copilot Immobilier", un assistant IA intelligent pour agents immobiliers.
 Tu aides les agents dans leur travail quotidien en fournissant des informations précises et des conseils stratégiques.
 
 Règles:
@@ -501,7 +500,7 @@ Règles:
       case 'draft_email':
         return (
           basePrompt +
-          '\nContexte: L'agent veut rédiger un email. Aide-le à écrire un email professionnel et personnalisé.'
+          "\nContexte: L'agent veut rédiger un email. Aide-le à écrire un email professionnel et personnalisé."
         );
 
       case 'schedule_planning':
@@ -513,7 +512,7 @@ Règles:
       case 'strategic_advice':
         return (
           basePrompt +
-          '\nContexte: L'agent demande des conseils stratégiques. Fournis des conseils professionnels basés sur les meilleures pratiques.'
+          "\nContexte: L'agent demande des conseils stratégiques. Fournis des conseils professionnels basés sur les meilleures pratiques."
         );
 
       default:

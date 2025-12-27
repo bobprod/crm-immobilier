@@ -21,46 +21,195 @@ interface GeographicTargetingProps {
 
 // Donnees des zones tunisiennes
 const TUNISIAN_REGIONS: Zone[] = [
-  { id: 'tunis', name: 'Tunis', type: 'city', coordinates: { lat: 36.8065, lng: 10.1815 }, population: 1056247, avgPrice: 350000, selected: false },
-  { id: 'ariana', name: 'Ariana', type: 'city', coordinates: { lat: 36.8663, lng: 10.1647 }, population: 576088, avgPrice: 280000, selected: false },
-  { id: 'ben-arous', name: 'Ben Arous', type: 'city', coordinates: { lat: 36.7531, lng: 10.2189 }, population: 631842, avgPrice: 220000, selected: false },
-  { id: 'manouba', name: 'Manouba', type: 'city', coordinates: { lat: 36.8101, lng: 10.0863 }, population: 379518, avgPrice: 180000, selected: false },
-  { id: 'la-marsa', name: 'La Marsa', type: 'city', coordinates: { lat: 36.8783, lng: 10.3242 }, population: 92987, avgPrice: 550000, selected: false },
-  { id: 'carthage', name: 'Carthage', type: 'city', coordinates: { lat: 36.8528, lng: 10.3233 }, population: 21276, avgPrice: 650000, selected: false },
-  { id: 'sousse', name: 'Sousse', type: 'city', coordinates: { lat: 35.8288, lng: 10.6405 }, population: 271428, avgPrice: 200000, selected: false },
-  { id: 'sfax', name: 'Sfax', type: 'city', coordinates: { lat: 34.7406, lng: 10.7603 }, population: 330440, avgPrice: 180000, selected: false },
-  { id: 'hammamet', name: 'Hammamet', type: 'city', coordinates: { lat: 36.4000, lng: 10.6167 }, population: 97579, avgPrice: 320000, selected: false },
-  { id: 'nabeul', name: 'Nabeul', type: 'city', coordinates: { lat: 36.4561, lng: 10.7376 }, population: 79628, avgPrice: 190000, selected: false },
-  { id: 'bizerte', name: 'Bizerte', type: 'city', coordinates: { lat: 37.2744, lng: 9.8739 }, population: 142966, avgPrice: 150000, selected: false },
-  { id: 'monastir', name: 'Monastir', type: 'city', coordinates: { lat: 35.7643, lng: 10.8113 }, population: 104535, avgPrice: 210000, selected: false },
+  {
+    id: 'tunis',
+    name: 'Tunis',
+    type: 'city',
+    coordinates: { lat: 36.8065, lng: 10.1815 },
+    population: 1056247,
+    avgPrice: 350000,
+    selected: false,
+  },
+  {
+    id: 'ariana',
+    name: 'Ariana',
+    type: 'city',
+    coordinates: { lat: 36.8663, lng: 10.1647 },
+    population: 576088,
+    avgPrice: 280000,
+    selected: false,
+  },
+  {
+    id: 'ben-arous',
+    name: 'Ben Arous',
+    type: 'city',
+    coordinates: { lat: 36.7531, lng: 10.2189 },
+    population: 631842,
+    avgPrice: 220000,
+    selected: false,
+  },
+  {
+    id: 'manouba',
+    name: 'Manouba',
+    type: 'city',
+    coordinates: { lat: 36.8101, lng: 10.0863 },
+    population: 379518,
+    avgPrice: 180000,
+    selected: false,
+  },
+  {
+    id: 'la-marsa',
+    name: 'La Marsa',
+    type: 'city',
+    coordinates: { lat: 36.8783, lng: 10.3242 },
+    population: 92987,
+    avgPrice: 550000,
+    selected: false,
+  },
+  {
+    id: 'carthage',
+    name: 'Carthage',
+    type: 'city',
+    coordinates: { lat: 36.8528, lng: 10.3233 },
+    population: 21276,
+    avgPrice: 650000,
+    selected: false,
+  },
+  {
+    id: 'sousse',
+    name: 'Sousse',
+    type: 'city',
+    coordinates: { lat: 35.8288, lng: 10.6405 },
+    population: 271428,
+    avgPrice: 200000,
+    selected: false,
+  },
+  {
+    id: 'sfax',
+    name: 'Sfax',
+    type: 'city',
+    coordinates: { lat: 34.7406, lng: 10.7603 },
+    population: 330440,
+    avgPrice: 180000,
+    selected: false,
+  },
+  {
+    id: 'hammamet',
+    name: 'Hammamet',
+    type: 'city',
+    coordinates: { lat: 36.4, lng: 10.6167 },
+    population: 97579,
+    avgPrice: 320000,
+    selected: false,
+  },
+  {
+    id: 'nabeul',
+    name: 'Nabeul',
+    type: 'city',
+    coordinates: { lat: 36.4561, lng: 10.7376 },
+    population: 79628,
+    avgPrice: 190000,
+    selected: false,
+  },
+  {
+    id: 'bizerte',
+    name: 'Bizerte',
+    type: 'city',
+    coordinates: { lat: 37.2744, lng: 9.8739 },
+    population: 142966,
+    avgPrice: 150000,
+    selected: false,
+  },
+  {
+    id: 'monastir',
+    name: 'Monastir',
+    type: 'city',
+    coordinates: { lat: 35.7643, lng: 10.8113 },
+    population: 104535,
+    avgPrice: 210000,
+    selected: false,
+  },
 ];
 
 const QUARTIERS_TUNIS: Zone[] = [
-  { id: 'lac1', name: 'Les Berges du Lac 1', type: 'city', coordinates: { lat: 36.8350, lng: 10.2350 }, avgPrice: 450000, selected: false },
-  { id: 'lac2', name: 'Les Berges du Lac 2', type: 'city', coordinates: { lat: 36.8450, lng: 10.2550 }, avgPrice: 380000, selected: false },
-  { id: 'ennasr', name: 'Ennasr', type: 'city', coordinates: { lat: 36.8550, lng: 10.1750 }, avgPrice: 320000, selected: false },
-  { id: 'menzah', name: 'El Menzah', type: 'city', coordinates: { lat: 36.8350, lng: 10.1450 }, avgPrice: 280000, selected: false },
-  { id: 'manar', name: 'El Manar', type: 'city', coordinates: { lat: 36.8450, lng: 10.1350 }, avgPrice: 300000, selected: false },
-  { id: 'centre-ville', name: 'Centre Ville', type: 'city', coordinates: { lat: 36.8000, lng: 10.1800 }, avgPrice: 250000, selected: false },
-  { id: 'bardo', name: 'Le Bardo', type: 'city', coordinates: { lat: 36.8089, lng: 10.1347 }, avgPrice: 200000, selected: false },
-  { id: 'soukra', name: 'La Soukra', type: 'city', coordinates: { lat: 36.8650, lng: 10.1950 }, avgPrice: 350000, selected: false },
+  {
+    id: 'lac1',
+    name: 'Les Berges du Lac 1',
+    type: 'city',
+    coordinates: { lat: 36.835, lng: 10.235 },
+    avgPrice: 450000,
+    selected: false,
+  },
+  {
+    id: 'lac2',
+    name: 'Les Berges du Lac 2',
+    type: 'city',
+    coordinates: { lat: 36.845, lng: 10.255 },
+    avgPrice: 380000,
+    selected: false,
+  },
+  {
+    id: 'ennasr',
+    name: 'Ennasr',
+    type: 'city',
+    coordinates: { lat: 36.855, lng: 10.175 },
+    avgPrice: 320000,
+    selected: false,
+  },
+  {
+    id: 'menzah',
+    name: 'El Menzah',
+    type: 'city',
+    coordinates: { lat: 36.835, lng: 10.145 },
+    avgPrice: 280000,
+    selected: false,
+  },
+  {
+    id: 'manar',
+    name: 'El Manar',
+    type: 'city',
+    coordinates: { lat: 36.845, lng: 10.135 },
+    avgPrice: 300000,
+    selected: false,
+  },
+  {
+    id: 'centre-ville',
+    name: 'Centre Ville',
+    type: 'city',
+    coordinates: { lat: 36.8, lng: 10.18 },
+    avgPrice: 250000,
+    selected: false,
+  },
+  {
+    id: 'bardo',
+    name: 'Le Bardo',
+    type: 'city',
+    coordinates: { lat: 36.8089, lng: 10.1347 },
+    avgPrice: 200000,
+    selected: false,
+  },
+  {
+    id: 'soukra',
+    name: 'La Soukra',
+    type: 'city',
+    coordinates: { lat: 36.865, lng: 10.195 },
+    avgPrice: 350000,
+    selected: false,
+  },
 ];
 
 // Composant carte Leaflet charge dynamiquement (SSR safe)
-const LeafletMap = dynamic(
-  () => import('./LeafletMapComponent'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin text-4xl mb-2">🗺️</div>
-          <p className="text-gray-600">Chargement de la carte...</p>
-        </div>
+const LeafletMap = dynamic(() => import('./LeafletMapComponent'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin text-4xl mb-2">🗺️</div>
+        <p className="text-gray-600">Chargement de la carte...</p>
       </div>
-    )
-  }
-);
+    </div>
+  ),
+});
 
 export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   onZonesChange,
@@ -73,82 +222,95 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   const [customRadius, setCustomRadius] = useState(5);
   const [centerPoint, setCenterPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
-  const [priceFilter, setPriceFilter] = useState<{ min: number; max: number }>({ min: 0, max: 1000000 });
+  const [priceFilter, setPriceFilter] = useState<{ min: number; max: number }>({
+    min: 0,
+    max: 1000000,
+  });
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
 
   // Filtrer les zones par recherche
-  const filteredZones = useMemo(() => zones.filter(zone =>
-    zone.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    (!zone.avgPrice || (zone.avgPrice >= priceFilter.min && zone.avgPrice <= priceFilter.max))
-  ), [zones, searchQuery, priceFilter]);
+  const filteredZones = useMemo(
+    () =>
+      zones.filter(
+        (zone) =>
+          zone.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          (!zone.avgPrice || (zone.avgPrice >= priceFilter.min && zone.avgPrice <= priceFilter.max))
+      ),
+    [zones, searchQuery, priceFilter]
+  );
 
   // Toggle selection d'une zone
   const toggleZone = useCallback((zoneId: string) => {
-    setZones(prev => prev.map(z =>
-      z.id === zoneId ? { ...z, selected: !z.selected } : z
-    ));
+    setZones((prev) => prev.map((z) => (z.id === zoneId ? { ...z, selected: !z.selected } : z)));
   }, []);
 
   // Mettre a jour les zones selectionnees
   useEffect(() => {
-    const selected = zones.filter(z => z.selected);
+    const selected = zones.filter((z) => z.selected);
     setSelectedZones(selected);
     onZonesChange(selected);
   }, [zones, onZonesChange]);
 
   // Ajouter une zone de rayon personnalise
-  const addRadiusZone = useCallback((lat: number, lng: number, radius?: number) => {
-    const actualRadius = radius || customRadius;
-    const newZone: Zone = {
-      id: `radius-${Date.now()}`,
-      name: `Zone ${actualRadius}km`,
-      type: 'radius',
-      coordinates: { lat, lng },
-      radius: actualRadius,
-      selected: true,
-      population: Math.round(actualRadius * actualRadius * 1000), // Estimation
-    };
+  const addRadiusZone = useCallback(
+    (lat: number, lng: number, radius?: number) => {
+      const actualRadius = radius || customRadius;
+      const newZone: Zone = {
+        id: `radius-${Date.now()}`,
+        name: `Zone ${actualRadius}km`,
+        type: 'radius',
+        coordinates: { lat, lng },
+        radius: actualRadius,
+        selected: true,
+        population: Math.round(actualRadius * actualRadius * 1000), // Estimation
+      };
 
-    setZones(prev => [...prev, newZone]);
-    setRadiusMode(false);
-    setCenterPoint(null);
-  }, [customRadius]);
+      setZones((prev) => [...prev, newZone]);
+      setRadiusMode(false);
+      setCenterPoint(null);
+    },
+    [customRadius]
+  );
 
   // Gestion du clic sur la carte
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    if (radiusMode) {
-      addRadiusZone(lat, lng);
-    }
-  }, [radiusMode, addRadiusZone]);
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      if (radiusMode) {
+        addRadiusZone(lat, lng);
+      }
+    },
+    [radiusMode, addRadiusZone]
+  );
 
   // Supprimer une zone
   const removeZone = useCallback((zoneId: string) => {
-    setZones(prev => {
+    setZones((prev) => {
       // Pour les zones radius (créées par l'utilisateur), les supprimer complètement
       if (zoneId.startsWith('radius-')) {
-        return prev.filter(z => z.id !== zoneId);
+        return prev.filter((z) => z.id !== zoneId);
       }
       // Pour les zones prédéfinies, juste les désélectionner
-      return prev.map(z => z.id === zoneId ? { ...z, selected: false } : z);
+      return prev.map((z) => (z.id === zoneId ? { ...z, selected: false } : z));
     });
   }, []);
 
   // Estimation du reach
-  const estimatedReach = useMemo(() =>
-    selectedZones.reduce((sum, z) => sum + (z.population || 50000), 0),
+  const estimatedReach = useMemo(
+    () => selectedZones.reduce((sum, z) => sum + (z.population || 50000), 0),
     [selectedZones]
   );
 
   // Stats des zones selectionnees
   const zoneStats = useMemo(() => {
-    const withPrice = selectedZones.filter(z => z.avgPrice);
+    const withPrice = selectedZones.filter((z) => z.avgPrice);
     return {
-      avgPrice: withPrice.length > 0
-        ? Math.round(withPrice.reduce((sum, z) => sum + (z.avgPrice || 0), 0) / withPrice.length)
-        : 0,
+      avgPrice:
+        withPrice.length > 0
+          ? Math.round(withPrice.reduce((sum, z) => sum + (z.avgPrice || 0), 0) / withPrice.length)
+          : 0,
       totalPop: selectedZones.reduce((sum, z) => sum + (z.population || 0), 0),
-      radiusZones: selectedZones.filter(z => z.type === 'radius').length,
-      cityZones: selectedZones.filter(z => z.type === 'city').length,
+      radiusZones: selectedZones.filter((z) => z.type === 'radius').length,
+      cityZones: selectedZones.filter((z) => z.type === 'city').length,
     };
   }, [selectedZones]);
 
@@ -200,7 +362,9 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
               📋 Liste
@@ -208,7 +372,9 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             <button
               onClick={() => setViewMode('map')}
               className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'map' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                viewMode === 'map'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
               }`}
             >
               🗺️ Carte
@@ -256,9 +422,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
                 />
                 <span className="text-lg font-bold text-orange-900">{customRadius} km</span>
               </div>
-              <p className="text-sm text-orange-700">
-                Cliquez sur la carte pour placer la zone
-              </p>
+              <p className="text-sm text-orange-700">Cliquez sur la carte pour placer la zone</p>
             </div>
           </div>
         )}
@@ -270,7 +434,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             type="number"
             placeholder="Min"
             value={priceFilter.min || ''}
-            onChange={(e) => setPriceFilter(prev => ({ ...prev, min: Number(e.target.value) }))}
+            onChange={(e) => setPriceFilter((prev) => ({ ...prev, min: Number(e.target.value) }))}
             className="w-24 px-2 py-1 border rounded text-sm"
           />
           <span className="text-gray-400">-</span>
@@ -278,7 +442,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             type="number"
             placeholder="Max"
             value={priceFilter.max || ''}
-            onChange={(e) => setPriceFilter(prev => ({ ...prev, max: Number(e.target.value) }))}
+            onChange={(e) => setPriceFilter((prev) => ({ ...prev, max: Number(e.target.value) }))}
             className="w-24 px-2 py-1 border rounded text-sm"
           />
           <span className="text-sm text-gray-500">TND</span>
@@ -301,7 +465,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
         ) : (
           /* List View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
-            {filteredZones.map(zone => (
+            {filteredZones.map((zone) => (
               <div
                 key={zone.id}
                 onClick={() => toggleZone(zone.id)}
@@ -322,9 +486,11 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    zone.selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
-                  }`}>
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      zone.selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                    }`}
+                  >
                     {zone.selected && <span className="text-white text-sm">✓</span>}
                   </div>
                 </div>
@@ -351,10 +517,11 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
         <div className="p-4 bg-gray-50 border-t">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-medium text-gray-900">
-              {selectedZones.length} zone{selectedZones.length > 1 ? 's' : ''} selectionnee{selectedZones.length > 1 ? 's' : ''}
+              {selectedZones.length} zone{selectedZones.length > 1 ? 's' : ''} selectionnee
+              {selectedZones.length > 1 ? 's' : ''}
             </h4>
             <button
-              onClick={() => setZones(prev => prev.map(z => ({ ...z, selected: false })))}
+              onClick={() => setZones((prev) => prev.map((z) => ({ ...z, selected: false })))}
               className="text-sm text-red-600 hover:text-red-700"
             >
               Tout deselectionner
@@ -362,7 +529,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
-            {selectedZones.map(zone => (
+            {selectedZones.map((zone) => (
               <span
                 key={zone.id}
                 className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
@@ -372,10 +539,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
                 }`}
               >
                 {zone.type === 'radius' ? '⭕' : '📍'} {zone.name}
-                <button
-                  onClick={() => removeZone(zone.id)}
-                  className="ml-1 hover:opacity-70"
-                >
+                <button onClick={() => removeZone(zone.id)} className="ml-1 hover:opacity-70">
                   ×
                 </button>
               </span>

@@ -28,6 +28,6 @@ import { LLMProviderFactory } from './providers/llm-provider.factory';
   imports: [PrismaModule],
   controllers: [SeoAiController],
   providers: [SeoAiService, LLMProviderFactory],
-  exports: [SeoAiService],
+  exports: [SeoAiService, LLMProviderFactory], // Export LLMProviderFactory pour réutilisation
 })
 export class SeoAiModule {}

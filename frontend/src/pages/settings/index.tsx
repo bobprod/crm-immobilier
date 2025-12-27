@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -30,7 +36,7 @@ export default function SettingsPage() {
     setMessage('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       setMessage('Profil mis à jour avec succès');
     } catch (error) {
       setMessage('Erreur lors de la mise à jour');
@@ -42,17 +48,18 @@ export default function SettingsPage() {
   const apiModules = [
     {
       title: 'Configuration LLM / IA',
-      description: 'OpenAI, Claude, Gemini - Configurez vos clés API pour l\'intelligence artificielle',
+      description:
+        "OpenAI, Claude, Gemini - Configurez vos clés API pour l'intelligence artificielle",
       icon: Brain,
       href: '/settings/llm-config',
-      color: 'bg-purple-500'
+      color: 'bg-purple-500',
     },
     {
       title: 'APIs de Scraping',
       description: 'Pica, SerpAPI - Configuration des APIs de recherche et scraping',
       icon: Search,
       href: '/settings/scraping-config',
-      color: 'bg-blue-500'
+      color: 'bg-blue-500',
     },
     {
       title: 'Intégrations',
@@ -86,16 +93,17 @@ export default function SettingsPage() {
             <SettingsIcon className="h-8 w-8" />
             Paramètres
           </h1>
-          <p className="text-gray-600 mt-1">
-            Gérez vos préférences, APIs et intégrations
-          </p>
+          <p className="text-gray-600 mt-1">Gérez vos préférences, APIs et intégrations</p>
         </div>
 
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.includes('succès')
-              ? 'bg-green-50 text-green-800 border border-green-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
-            }`}>
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.includes('succès')
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
             {message}
           </div>
         )}
@@ -111,7 +119,9 @@ export default function SettingsPage() {
               <Link key={module.href} href={module.href}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardContent className="pt-6">
-                    <div className={`w-12 h-12 ${module.color} rounded-lg flex items-center justify-center mb-4`}>
+                    <div
+                      className={`w-12 h-12 ${module.color} rounded-lg flex items-center justify-center mb-4`}
+                    >
                       <module.icon className="h-6 w-6 text-white" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{module.title}</h3>
@@ -139,30 +149,17 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Prénom</Label>
-                  <Input
-                    id="firstName"
-                    defaultValue={user?.firstName}
-                    disabled={loading}
-                  />
+                  <Input id="firstName" defaultValue={user?.firstName} disabled={loading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Nom</Label>
-                  <Input
-                    id="lastName"
-                    defaultValue={user?.lastName}
-                    disabled={loading}
-                  />
+                  <Input id="lastName" defaultValue={user?.lastName} disabled={loading} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  defaultValue={user?.email}
-                  disabled={loading}
-                />
+                <Input id="email" type="email" defaultValue={user?.email} disabled={loading} />
               </div>
 
               <Button type="submit" disabled={loading}>
@@ -221,29 +218,17 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="currentPassword" type="password" placeholder="••••••••" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="newPassword" type="password" placeholder="••••••••" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                />
+                <Input id="confirmPassword" type="password" placeholder="••••••••" />
               </div>
 
               <Button>Changer le mot de passe</Button>

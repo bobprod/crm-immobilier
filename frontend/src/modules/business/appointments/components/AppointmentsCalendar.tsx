@@ -5,10 +5,47 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
-import { Calendar, Clock, MapPin, User, Phone, Home, Plus, Edit, Trash2, Check, X, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { appointmentsAPI, getAppointmentTypeLabel, getAppointmentStatusLabel, getAppointmentStatusColor, formatAppointmentTime, formatAppointmentDate, Appointment } from '@/shared/utils/appointments-api';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog';
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Phone,
+  Home,
+  Plus,
+  Edit,
+  Trash2,
+  Check,
+  X,
+  RefreshCw,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  appointmentsAPI,
+  getAppointmentTypeLabel,
+  getAppointmentStatusLabel,
+  getAppointmentStatusColor,
+  formatAppointmentTime,
+  formatAppointmentDate,
+  Appointment,
+} from '@/shared/utils/appointments-api';
 import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function AppointmentsCalendar() {
@@ -121,7 +158,7 @@ export default function AppointmentsCalendar() {
   };
 
   const handleCancel = async (id: string) => {
-    const reason = prompt('Raison de l\'annulation (optionnel):');
+    const reason = prompt("Raison de l'annulation (optionnel):");
     try {
       await appointmentsAPI.cancel(id, reason || undefined);
       toast({
@@ -144,9 +181,7 @@ export default function AppointmentsCalendar() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Agenda</h1>
-          <p className="text-gray-500 mt-1">
-            Gérez vos rendez-vous immobiliers
-          </p>
+          <p className="text-gray-500 mt-1">Gérez vos rendez-vous immobiliers</p>
         </div>
 
         <Button onClick={() => setCreateOpen(true)}>
@@ -178,13 +213,22 @@ export default function AppointmentsCalendar() {
             </div>
 
             <div className="flex gap-2">
-              <Button variant={view === 'day' ? 'default' : 'outline'} onClick={() => setView('day')}>
+              <Button
+                variant={view === 'day' ? 'default' : 'outline'}
+                onClick={() => setView('day')}
+              >
                 Jour
               </Button>
-              <Button variant={view === 'week' ? 'default' : 'outline'} onClick={() => setView('week')}>
+              <Button
+                variant={view === 'week' ? 'default' : 'outline'}
+                onClick={() => setView('week')}
+              >
                 Semaine
               </Button>
-              <Button variant={view === 'month' ? 'default' : 'outline'} onClick={() => setView('month')}>
+              <Button
+                variant={view === 'month' ? 'default' : 'outline'}
+                onClick={() => setView('month')}
+              >
                 Mois
               </Button>
             </div>
@@ -195,9 +239,7 @@ export default function AppointmentsCalendar() {
       {/* Appointments List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-3 text-center py-12 text-gray-500">
-            Chargement...
-          </div>
+          <div className="col-span-3 text-center py-12 text-gray-500">Chargement...</div>
         ) : appointments.length === 0 ? (
           <div className="col-span-3 text-center py-12 text-gray-500">
             <Calendar className="h-12 w-12 mx-auto mb-2 opacity-20" />
@@ -262,18 +304,41 @@ export default function AppointmentsCalendar() {
                   <div className="flex gap-2 pt-2 border-t mt-3">
                     {apt.status === 'scheduled' || apt.status === 'confirmed' ? (
                       <>
-                        <Button size="sm" variant="outline" className="flex-1" onClick={() => handleComplete(apt.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleComplete(apt.id)}
+                        >
                           <Check className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline" className="flex-1" onClick={() => { setSelectedAppointment(apt); setEditOpen(true); }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedAppointment(apt);
+                            setEditOpen(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline" className="flex-1 text-red-600" onClick={() => handleCancel(apt.id)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 text-red-600"
+                          onClick={() => handleCancel(apt.id)}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </>
                     ) : (
-                      <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDelete(apt.id)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleDelete(apt.id)}
+                      >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     )}
@@ -286,15 +351,15 @@ export default function AppointmentsCalendar() {
       </div>
 
       {/* Create Dialog */}
-      <CreateAppointmentDialog 
-        open={createOpen} 
+      <CreateAppointmentDialog
+        open={createOpen}
         onOpenChange={setCreateOpen}
         onSuccess={loadAppointments}
       />
 
       {/* Edit Dialog */}
       {selectedAppointment && (
-        <EditAppointmentDialog 
+        <EditAppointmentDialog
           open={editOpen}
           onOpenChange={setEditOpen}
           appointment={selectedAppointment}
@@ -371,9 +436,7 @@ function CreateAppointmentDialog({ open, onOpenChange, onSuccess }: any) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nouveau Rendez-vous</DialogTitle>
-          <DialogDescription>
-            Créer un nouveau rendez-vous dans votre agenda
-          </DialogDescription>
+          <DialogDescription>Créer un nouveau rendez-vous dans votre agenda</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

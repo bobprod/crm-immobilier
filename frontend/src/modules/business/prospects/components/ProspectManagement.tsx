@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Badge } from "@/shared/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
+import { Input } from '@/shared/components/ui/input';
+import { Badge } from '@/shared/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/shared/components/ui/dialog";
+} from '@/shared/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { Label } from "@/shared/components/ui/label";
-import { Textarea } from "@/shared/components/ui/textarea";
-import { Checkbox } from "@/shared/components/ui/checkbox";
-import { useToast } from "@/shared/components/ui/use-toast";
+} from '@/shared/components/ui/select';
+import { Label } from '@/shared/components/ui/label';
+import { Textarea } from '@/shared/components/ui/textarea';
+import { Checkbox } from '@/shared/components/ui/checkbox';
+import { useToast } from '@/shared/components/ui/use-toast';
 import {
   Plus,
   Search,
@@ -46,8 +46,8 @@ import {
   ArrowRight,
   User,
   Building2,
-} from "lucide-react";
-import CalendarIntegrationService from "@/shared/utils/calendar-integration";
+} from 'lucide-react';
+import CalendarIntegrationService from '@/shared/utils/calendar-integration';
 
 interface Requete {
   id: string;
@@ -101,7 +101,7 @@ interface Mandat {
 interface Appointment {
   id: string;
   title: string;
-  type: "viewing" | "signing" | "meeting" | "call";
+  type: 'viewing' | 'signing' | 'meeting' | 'call';
   date: string;
   time: string;
   duration: number;
@@ -111,7 +111,7 @@ interface Appointment {
   clientPhone: string;
   propertyTitle?: string;
   notes: string;
-  status: "scheduled" | "confirmed" | "completed" | "cancelled";
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
 }
 
 interface Interaction {
@@ -138,65 +138,65 @@ interface ProspectManagementProps {
 }
 
 export default function ProspectManagement({
-  language = "fr",
-  currency = "TND",
+  language = 'fr',
+  currency = 'TND',
 }: ProspectManagementProps) {
   const { toast } = useToast();
-  
+
   const [requetes, setRequetes] = useState<Requete[]>([
     {
-      id: "1",
-      client: "Sophie Martin",
-      email: "sophie.martin@example.com",
-      phone: "+216 55 123 456",
+      id: '1',
+      client: 'Sophie Martin',
+      email: 'sophie.martin@example.com',
+      phone: '+216 55 123 456',
       budget: 900000,
-      currency: "EUR",
-      localisation: "La Marsa, Tunis",
-      typePropriete: "Villa",
-      sousType: "S+4",
+      currency: 'EUR',
+      localisation: 'La Marsa, Tunis',
+      typePropriete: 'Villa',
+      sousType: 'S+4',
       nombreChambres: 4,
       metresCarres: 250,
-      status: "Requête chaude",
-      typeFinancement: "Achat 100% avec crédit",
-      destination: "Investissement",
-      besoinsExigences: "Vue sur mer, parking",
-      notes: "Cliente sérieuse, budget confirmé",
-      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=sophie",
-      createdAt: "2024-01-15",
+      status: 'Requête chaude',
+      typeFinancement: 'Achat 100% avec crédit',
+      destination: 'Investissement',
+      besoinsExigences: 'Vue sur mer, parking',
+      notes: 'Cliente sérieuse, budget confirmé',
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sophie',
+      createdAt: '2024-01-15',
       negotiation: 5,
-      classeEnergetique: "B",
+      classeEnergetique: 'B',
       construction: false,
       meuble: false,
       neuf: true,
       gratuit: false,
-      responsable: "Agent Commercial",
+      responsable: 'Agent Commercial',
     },
     {
-      id: "2",
-      client: "Ahmed Ben Ali",
-      email: "ahmed.benali@example.com",
-      phone: "+216 99 876 543",
+      id: '2',
+      client: 'Ahmed Ben Ali',
+      email: 'ahmed.benali@example.com',
+      phone: '+216 99 876 543',
       budget: 500000,
-      currency: "EUR",
-      localisation: "Lac 2, Tunis",
-      typePropriete: "Appartement",
-      sousType: "S+2",
+      currency: 'EUR',
+      localisation: 'Lac 2, Tunis',
+      typePropriete: 'Appartement',
+      sousType: 'S+2',
       nombreChambres: 2,
       metresCarres: 120,
-      status: "En négociation",
-      typeFinancement: "Achat comptant",
-      destination: "Résidence principale",
-      besoinsExigences: "Moderne, ascenseur, parking",
+      status: 'En négociation',
+      typeFinancement: 'Achat comptant',
+      destination: 'Résidence principale',
+      besoinsExigences: 'Moderne, ascenseur, parking',
       notes: "Première acquisition, besoin d'accompagnement",
-      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=ahmed",
-      createdAt: "2024-01-20",
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ahmed',
+      createdAt: '2024-01-20',
       negotiation: 8,
-      classeEnergetique: "A",
+      classeEnergetique: 'A',
       construction: false,
       meuble: true,
       neuf: false,
       gratuit: false,
-      responsable: "Agent Commercial",
+      responsable: 'Agent Commercial',
     },
   ]);
 
@@ -204,20 +204,18 @@ export default function ProspectManagement({
   useEffect(() => {
     const loadProspects = () => {
       try {
-        const savedProspects = localStorage.getItem("crm-prospects");
+        const savedProspects = localStorage.getItem('crm-prospects');
         if (savedProspects) {
           const prospects = JSON.parse(savedProspects);
           // Merge with existing default prospects, avoiding duplicates
           const existingIds = requetes.map((r) => r.id);
-          const newProspects = prospects.filter(
-            (p: Requete) => !existingIds.includes(p.id),
-          );
+          const newProspects = prospects.filter((p: Requete) => !existingIds.includes(p.id));
           if (newProspects.length > 0) {
             setRequetes((prev) => [...prev, ...newProspects]);
           }
         }
       } catch (error) {
-        console.error("Error loading prospects:", error);
+        console.error('Error loading prospects:', error);
       }
     };
 
@@ -225,181 +223,182 @@ export default function ProspectManagement({
 
     // Listen for storage changes to update prospects in real-time
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "crm-prospects") {
+      if (e.key === 'crm-prospects') {
         loadProspects();
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const [mandats, setMandats] = useState<Mandat[]>([
     {
-      id: "1",
-      proprietaire: "Mohamed Trabelsi",
-      email: "m.trabelsi@example.com",
-      phone: "+216 98 765 432",
+      id: '1',
+      proprietaire: 'Mohamed Trabelsi',
+      email: 'm.trabelsi@example.com',
+      phone: '+216 98 765 432',
       prix: 850000,
-      currency: "EUR",
-      localisation: "Sidi Bou Said, Tunis",
-      typePropriete: "Villa",
-      sousType: "S+5",
+      currency: 'EUR',
+      localisation: 'Sidi Bou Said, Tunis',
+      typePropriete: 'Villa',
+      sousType: 'S+5',
       nombreChambres: 5,
       metresCarres: 300,
-      status: "Mandat exclusif",
-      notes: "Villa avec vue mer, jardin 500m²",
-      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=mohamed",
-      createdAt: "2024-01-10",
-      propertyId: "MANDAT-001",
-      propertyImage:
-        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-      propertyTitle: "Villa Moderne avec Piscine",
+      status: 'Mandat exclusif',
+      notes: 'Villa avec vue mer, jardin 500m²',
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mohamed',
+      createdAt: '2024-01-10',
+      propertyId: 'MANDAT-001',
+      propertyImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
+      propertyTitle: 'Villa Moderne avec Piscine',
     },
   ]);
 
-  const [activeTab, setActiveTab] = useState("requetes");
+  const [activeTab, setActiveTab] = useState('requetes');
   const [isAddRequeteDialogOpen, setIsAddRequeteDialogOpen] = useState(false);
   const [isAddMandatDialogOpen, setIsAddMandatDialogOpen] = useState(false);
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedContact, setSelectedContact] = useState<{
     name: string;
-    type: "requete" | "mandat";
+    type: 'requete' | 'mandat';
   } | null>(null);
   const [appointmentData, setAppointmentData] = useState({
-    date: "",
-    time: "",
-    clientName: "",
-    clientEmail: "",
-    clientPhone: "",
-    notes: "",
-    type: "viewing" as "viewing" | "meeting" | "call" | "signing",
+    date: '',
+    time: '',
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    notes: '',
+    type: 'viewing' as 'viewing' | 'meeting' | 'call' | 'signing',
   });
   const [newRequete, setNewRequete] = useState<Partial<Requete>>({
-    client: "",
-    email: "",
-    phone: "",
+    client: '',
+    email: '',
+    phone: '',
     budget: 0,
     currency: currency,
-    localisation: "",
-    typePropriete: "",
-    sousType: "",
+    localisation: '',
+    typePropriete: '',
+    sousType: '',
     nombreChambres: 0,
     metresCarres: 0,
-    status: "Requête chaude",
-    typeFinancement: "",
-    destination: "",
-    besoinsExigences: "",
-    notes: "",
+    status: 'Requête chaude',
+    typeFinancement: '',
+    destination: '',
+    besoinsExigences: '',
+    notes: '',
     negotiation: 0,
-    classeEnergetique: "",
+    classeEnergetique: '',
     construction: false,
     meuble: false,
     neuf: false,
     gratuit: false,
-    responsable: "",
+    responsable: '',
   });
   const [newMandat, setNewMandat] = useState<Partial<Mandat>>({
-    proprietaire: "",
-    email: "",
-    phone: "",
+    proprietaire: '',
+    email: '',
+    phone: '',
     prix: 0,
     currency: currency,
-    localisation: "",
-    typePropriete: "",
-    sousType: "",
+    localisation: '',
+    typePropriete: '',
+    sousType: '',
     nombreChambres: 0,
     metresCarres: 0,
-    status: "Mandat simple",
-    notes: "",
+    status: 'Mandat simple',
+    notes: '',
   });
 
   const [selectedProspect, setSelectedProspect] = useState<ProspectWithFunnel | null>(null);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
-  const [interactionType, setInteractionType] = useState<'call' | 'email' | 'sms' | 'whatsapp'>('call');
-  const [interactionNotes, setInteractionNotes] = useState("");
-  const [interactionOutcome, setInteractionOutcome] = useState("");
-  const [nextAction, setNextAction] = useState("");
+  const [interactionType, setInteractionType] = useState<'call' | 'email' | 'sms' | 'whatsapp'>(
+    'call'
+  );
+  const [interactionNotes, setInteractionNotes] = useState('');
+  const [interactionOutcome, setInteractionOutcome] = useState('');
+  const [nextAction, setNextAction] = useState('');
 
   // Enhanced requetes with funnel stages
   const [requetesWithFunnel, setRequetesWithFunnel] = useState<ProspectWithFunnel[]>([
     {
-      id: "1",
-      client: "Sophie Martin",
-      email: "sophie.martin@example.com",
-      phone: "+216 55 123 456",
+      id: '1',
+      client: 'Sophie Martin',
+      email: 'sophie.martin@example.com',
+      phone: '+216 55 123 456',
       budget: 900000,
-      currency: "EUR",
-      localisation: "La Marsa, Tunis",
-      typePropriete: "Villa",
-      sousType: "S+4",
+      currency: 'EUR',
+      localisation: 'La Marsa, Tunis',
+      typePropriete: 'Villa',
+      sousType: 'S+4',
       nombreChambres: 4,
       metresCarres: 250,
-      status: "Requête chaude",
-      typeFinancement: "Achat 100% avec crédit",
-      destination: "Investissement",
-      besoinsExigences: "Vue sur mer, parking",
-      notes: "Cliente sérieuse, budget confirmé",
-      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=sophie",
-      createdAt: "2024-01-15",
+      status: 'Requête chaude',
+      typeFinancement: 'Achat 100% avec crédit',
+      destination: 'Investissement',
+      besoinsExigences: 'Vue sur mer, parking',
+      notes: 'Cliente sérieuse, budget confirmé',
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sophie',
+      createdAt: '2024-01-15',
       negotiation: 5,
-      classeEnergetique: "B",
+      classeEnergetique: 'B',
       construction: false,
       meuble: false,
       neuf: true,
       gratuit: false,
-      responsable: "Agent Commercial",
+      responsable: 'Agent Commercial',
       funnelStage: 'qualified',
       interactions: [
         {
-          id: "int-1",
+          id: 'int-1',
           type: 'call',
-          date: "2024-01-15",
-          time: "10:30",
-          notes: "Premier contact, très intéressée par une villa avec vue mer",
-          outcome: "Positif - Budget confirmé",
-          nextAction: "Envoyer 3 propositions de villas"
+          date: '2024-01-15',
+          time: '10:30',
+          notes: 'Premier contact, très intéressée par une villa avec vue mer',
+          outcome: 'Positif - Budget confirmé',
+          nextAction: 'Envoyer 3 propositions de villas',
         },
         {
-          id: "int-2",
+          id: 'int-2',
           type: 'email',
-          date: "2024-01-16",
-          time: "14:00",
-          notes: "Envoyé 3 propositions de villas à La Marsa",
-          outcome: "En attente de retour",
-          nextAction: "Relance téléphonique dans 2 jours"
-        }
+          date: '2024-01-16',
+          time: '14:00',
+          notes: 'Envoyé 3 propositions de villas à La Marsa',
+          outcome: 'En attente de retour',
+          nextAction: 'Relance téléphonique dans 2 jours',
+        },
       ],
-      lastContact: "2024-01-16",
-      nextFollowUp: "2024-01-18"
+      lastContact: '2024-01-16',
+      nextFollowUp: '2024-01-18',
     },
   ]);
 
   const formatCurrency = (amount: number, curr: string) => {
-    return new Intl.NumberFormat("fr-TN", {
-      style: "currency",
+    return new Intl.NumberFormat('fr-TN', {
+      style: 'currency',
       currency: curr,
     }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Requête chaude":
-        return "bg-red-500";
-      case "En négociation":
-        return "bg-orange-500";
-      case "Requête froide":
-        return "bg-blue-500";
-      case "Convertie":
-        return "bg-green-500";
-      case "Mandat exclusif":
-        return "bg-purple-500";
-      case "Mandat simple":
-        return "bg-blue-500";
+      case 'Requête chaude':
+        return 'bg-red-500';
+      case 'En négociation':
+        return 'bg-orange-500';
+      case 'Requête froide':
+        return 'bg-blue-500';
+      case 'Convertie':
+        return 'bg-green-500';
+      case 'Mandat exclusif':
+        return 'bg-purple-500';
+      case 'Mandat simple':
+        return 'bg-blue-500';
       default:
-        return "bg-gray-500";
+        return 'bg-gray-500';
     }
   };
 
@@ -411,32 +410,38 @@ export default function ProspectManagement({
       negotiation: 'bg-purple-500',
       closing: 'bg-orange-500',
       won: 'bg-green-500',
-      lost: 'bg-red-500'
+      lost: 'bg-red-500',
     };
     return colors[stage] || 'bg-gray-500';
   };
 
   const getFunnelStageLabel = (stage: string) => {
     const labels: Record<string, string> = {
-      lead: language === "fr" ? "Lead" : "Lead",
-      contacted: language === "fr" ? "Contacté" : "Contacted",
-      qualified: language === "fr" ? "Qualifié" : "Qualified",
-      negotiation: language === "fr" ? "Négociation" : "Negotiation",
-      closing: language === "fr" ? "Closing" : "Closing",
-      won: language === "fr" ? "Gagné" : "Won",
-      lost: language === "fr" ? "Perdu" : "Lost"
+      lead: language === 'fr' ? 'Lead' : 'Lead',
+      contacted: language === 'fr' ? 'Contacté' : 'Contacted',
+      qualified: language === 'fr' ? 'Qualifié' : 'Qualified',
+      negotiation: language === 'fr' ? 'Négociation' : 'Negotiation',
+      closing: language === 'fr' ? 'Closing' : 'Closing',
+      won: language === 'fr' ? 'Gagné' : 'Won',
+      lost: language === 'fr' ? 'Perdu' : 'Lost',
     };
     return labels[stage] || stage;
   };
 
   const getInteractionIcon = (type: string) => {
     switch (type) {
-      case 'call': return <Phone className="h-4 w-4" />;
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'sms': return <MessageSquare className="h-4 w-4" />;
-      case 'whatsapp': return <MessageSquare className="h-4 w-4" />;
-      case 'meeting': return <Calendar className="h-4 w-4" />;
-      default: return <Circle className="h-4 w-4" />;
+      case 'call':
+        return <Phone className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'sms':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'whatsapp':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'meeting':
+        return <Calendar className="h-4 w-4" />;
+      default:
+        return <Circle className="h-4 w-4" />;
     }
   };
 
@@ -445,33 +450,33 @@ export default function ProspectManagement({
       ...newRequete,
       id: Date.now().toString(),
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newRequete.client}`,
-      createdAt: new Date().toISOString().split("T")[0],
+      createdAt: new Date().toISOString().split('T')[0],
     } as Requete;
 
     setRequetes([...requetes, requete]);
     setNewRequete({
-      client: "",
-      email: "",
-      phone: "",
+      client: '',
+      email: '',
+      phone: '',
       budget: 0,
       currency: currency,
-      localisation: "",
-      typePropriete: "",
-      sousType: "",
+      localisation: '',
+      typePropriete: '',
+      sousType: '',
       nombreChambres: 0,
       metresCarres: 0,
-      status: "Requête chaude",
-      typeFinancement: "",
-      destination: "",
-      besoinsExigences: "",
-      notes: "",
+      status: 'Requête chaude',
+      typeFinancement: '',
+      destination: '',
+      besoinsExigences: '',
+      notes: '',
       negotiation: 0,
-      classeEnergetique: "",
+      classeEnergetique: '',
       construction: false,
       meuble: false,
       neuf: false,
       gratuit: false,
-      responsable: "",
+      responsable: '',
     });
     setIsAddRequeteDialogOpen(false);
   };
@@ -481,42 +486,36 @@ export default function ProspectManagement({
       ...newMandat,
       id: Date.now().toString(),
       avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newMandat.proprietaire}`,
-      createdAt: new Date().toISOString().split("T")[0],
+      createdAt: new Date().toISOString().split('T')[0],
     } as Mandat;
 
     setMandats([...mandats, mandat]);
     setNewMandat({
-      proprietaire: "",
-      email: "",
-      phone: "",
+      proprietaire: '',
+      email: '',
+      phone: '',
       prix: 0,
       currency: currency,
-      localisation: "",
-      typePropriete: "",
-      sousType: "",
+      localisation: '',
+      typePropriete: '',
+      sousType: '',
       nombreChambres: 0,
       metresCarres: 0,
-      status: "Mandat simple",
-      notes: "",
+      status: 'Mandat simple',
+      notes: '',
     });
     setIsAddMandatDialogOpen(false);
   };
 
   const filteredRequetes = requetes.filter((requete) => {
-    const matchesSearch = requete.client
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || requete.status === statusFilter;
+    const matchesSearch = requete.client.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || requete.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const filteredMandats = mandats.filter((mandat) => {
-    const matchesSearch = mandat.proprietaire
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || mandat.status === statusFilter;
+    const matchesSearch = mandat.proprietaire.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || mandat.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -531,37 +530,35 @@ export default function ProspectManagement({
       time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       notes: interactionNotes,
       outcome: interactionOutcome,
-      nextAction: nextAction
+      nextAction: nextAction,
     };
 
-    setRequetesWithFunnel(prev =>
-      prev.map(req =>
+    setRequetesWithFunnel((prev) =>
+      prev.map((req) =>
         req.id === selectedProspect.id
           ? {
               ...req,
               interactions: [...req.interactions, newInteraction],
               lastContact: newInteraction.date,
-              nextFollowUp: nextAction ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : req.nextFollowUp
+              nextFollowUp: nextAction
+                ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                : req.nextFollowUp,
             }
           : req
       )
     );
 
     // Reset form
-    setInteractionNotes("");
-    setInteractionOutcome("");
-    setNextAction("");
+    setInteractionNotes('');
+    setInteractionOutcome('');
+    setNextAction('');
     setIsInteractionDialogOpen(false);
   };
 
   // Update funnel stage
   const updateFunnelStage = (prospectId: string, newStage: ProspectWithFunnel['funnelStage']) => {
-    setRequetesWithFunnel(prev =>
-      prev.map(req =>
-        req.id === prospectId
-          ? { ...req, funnelStage: newStage }
-          : req
-      )
+    setRequetesWithFunnel((prev) =>
+      prev.map((req) => (req.id === prospectId ? { ...req, funnelStage: newStage } : req))
     );
   };
 
@@ -569,13 +566,13 @@ export default function ProspectManagement({
   const handleCreateAppointmentFromProspect = (prospect: ProspectWithFunnel) => {
     setSelectedProspect(prospect);
     setAppointmentData({
-      date: "",
-      time: "",
+      date: '',
+      time: '',
       clientName: prospect.client,
       clientEmail: prospect.email,
       clientPhone: prospect.phone,
       notes: `Rendez-vous avec ${prospect.client} - ${prospect.typePropriete} ${prospect.sousType}`,
-      type: "viewing",
+      type: 'viewing',
     });
     setIsAppointmentDialogOpen(true);
   };
@@ -601,57 +598,58 @@ export default function ProspectManagement({
       date: appointmentData.date,
       time: appointmentData.time,
       notes: `Rendez-vous planifié: ${appointmentData.notes}`,
-      outcome: "Planifié",
-      nextAction: "Confirmer 24h avant"
+      outcome: 'Planifié',
+      nextAction: 'Confirmer 24h avant',
     };
 
-    setRequetesWithFunnel(prev =>
-      prev.map(req =>
+    setRequetesWithFunnel((prev) =>
+      prev.map((req) =>
         req.id === selectedProspect.id
           ? {
               ...req,
               interactions: [...req.interactions, newInteraction],
-              nextFollowUp: appointmentData.date
+              nextFollowUp: appointmentData.date,
             }
           : req
       )
     );
 
     toast({
-      title: language === "fr" ? "Rendez-vous créé avec succès!" : "Appointment created successfully!",
+      title:
+        language === 'fr' ? 'Rendez-vous créé avec succès!' : 'Appointment created successfully!',
       description:
-        language === "fr"
-          ? "Le rendez-vous a été ajouté au calendrier."
-          : "The appointment has been added to the calendar.",
+        language === 'fr'
+          ? 'Le rendez-vous a été ajouté au calendrier.'
+          : 'The appointment has been added to the calendar.',
     });
 
     setIsAppointmentDialogOpen(false);
     setAppointmentData({
-      date: "",
-      time: "",
-      clientName: "",
-      clientEmail: "",
-      clientPhone: "",
-      notes: "",
-      type: "viewing",
+      date: '',
+      time: '',
+      clientName: '',
+      clientEmail: '',
+      clientPhone: '',
+      notes: '',
+      type: 'viewing',
     });
   };
 
   const handleConvertMandatToProperty = (mandat: Mandat) => {
-    if (mandat.status !== "Mandat exclusif") {
+    if (mandat.status !== 'Mandat exclusif') {
       toast({
-        title: language === "fr" ? "Conversion impossible" : "Cannot convert",
+        title: language === 'fr' ? 'Conversion impossible' : 'Cannot convert',
         description:
-          language === "fr"
-            ? "Seuls les mandats exclusifs peuvent être convertis en biens immobiliers"
-            : "Only exclusive mandates can be converted to properties",
-        variant: "destructive",
+          language === 'fr'
+            ? 'Seuls les mandats exclusifs peuvent être convertis en biens immobiliers'
+            : 'Only exclusive mandates can be converted to properties',
+        variant: 'destructive',
       });
       return;
     }
 
     const confirmMessage =
-      language === "fr"
+      language === 'fr'
         ? `Convertir ce mandat exclusif en bien immobilier?\n\nPropriétaire: ${mandat.proprietaire}\nMandat: ${mandat.id}\nType: ${mandat.typePropriete} ${mandat.sousType}\nPrix: ${formatCurrency(mandat.prix, mandat.currency)}`
         : `Convert this exclusive mandate to property?\n\nOwner: ${mandat.proprietaire}\nMandat: ${mandat.id}\nType: ${mandat.typePropriete} ${mandat.sousType}\nPrice: ${formatCurrency(mandat.prix, mandat.currency)}`;
 
@@ -668,8 +666,10 @@ export default function ProspectManagement({
         bathrooms: Math.floor(mandat.nombreChambres / 2) || 1,
         area: mandat.metresCarres,
         type: mandat.typePropriete,
-        status: language === "fr" ? "À Vendre" : "For Sale",
-        image: mandat.propertyImage || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+        status: language === 'fr' ? 'À Vendre' : 'For Sale',
+        image:
+          mandat.propertyImage ||
+          'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80',
         featured: true,
         documents: mandat.propertyImage ? [mandat.propertyImage] : [],
         ownerId: mandat.id,
@@ -677,28 +677,23 @@ export default function ProspectManagement({
       };
 
       // Save to localStorage
-      const existingProperties = JSON.parse(
-        localStorage.getItem("crm-properties") || "[]",
-      );
+      const existingProperties = JSON.parse(localStorage.getItem('crm-properties') || '[]');
       existingProperties.push(newProperty);
-      localStorage.setItem(
-        "crm-properties",
-        JSON.stringify(existingProperties),
-      );
+      localStorage.setItem('crm-properties', JSON.stringify(existingProperties));
 
       // Trigger storage event
       window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: "crm-properties",
+        new StorageEvent('storage', {
+          key: 'crm-properties',
           newValue: JSON.stringify(existingProperties),
           storageArea: localStorage,
-        }),
+        })
       );
 
       toast({
-        title: language === "fr" ? "Bien créé avec succès" : "Property created successfully",
+        title: language === 'fr' ? 'Bien créé avec succès' : 'Property created successfully',
         description:
-          language === "fr"
+          language === 'fr'
             ? `Le mandat ${mandat.id} a été converti en bien immobilier`
             : `Mandate ${mandat.id} has been converted to property`,
       });
@@ -711,9 +706,7 @@ export default function ProspectManagement({
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">
-            {language === "fr"
-              ? "Gestion Requêtes & Mandats"
-              : "Requests & Mandates Management"}
+            {language === 'fr' ? 'Gestion Requêtes & Mandats' : 'Requests & Mandates Management'}
           </h1>
         </div>
 
@@ -723,37 +716,32 @@ export default function ProspectManagement({
             <TabsList>
               <TabsTrigger value="requetes" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                {language === "fr" ? "Requêtes" : "Requests"}
+                {language === 'fr' ? 'Requêtes' : 'Requests'}
               </TabsTrigger>
               <TabsTrigger value="mandats" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                {language === "fr" ? "Mandats" : "Mandates"}
+                {language === 'fr' ? 'Mandats' : 'Mandates'}
               </TabsTrigger>
             </TabsList>
 
             <div className="flex space-x-2">
-              {activeTab === "requetes" && (
-                <Dialog
-                  open={isAddRequeteDialogOpen}
-                  onOpenChange={setIsAddRequeteDialogOpen}
-                >
+              {activeTab === 'requetes' && (
+                <Dialog open={isAddRequeteDialogOpen} onOpenChange={setIsAddRequeteDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
-                      {language === "fr" ? "Nouvelle Requête" : "New Request"}
+                      {language === 'fr' ? 'Nouvelle Requête' : 'New Request'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
-                        {language === "fr" ? "Nouvelle Requête" : "New Request"}
+                        {language === 'fr' ? 'Nouvelle Requête' : 'New Request'}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-3 gap-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="client">
-                          {language === "fr" ? "Client" : "Client"}
-                        </Label>
+                        <Label htmlFor="client">{language === 'fr' ? 'Client' : 'Client'}</Label>
                         <Input
                           id="client"
                           value={newRequete.client}
@@ -763,9 +751,7 @@ export default function ProspectManagement({
                               client: e.target.value,
                             })
                           }
-                          placeholder={
-                            language === "fr" ? "Nom du client" : "Client name"
-                          }
+                          placeholder={language === 'fr' ? 'Nom du client' : 'Client name'}
                         />
                       </div>
                       <div className="space-y-2">
@@ -784,9 +770,7 @@ export default function ProspectManagement({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">
-                          {language === "fr" ? "Téléphone" : "Phone"}
-                        </Label>
+                        <Label htmlFor="phone">{language === 'fr' ? 'Téléphone' : 'Phone'}</Label>
                         <Input
                           id="phone"
                           value={newRequete.phone}
@@ -800,9 +784,7 @@ export default function ProspectManagement({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="budget">
-                          {language === "fr" ? "Budget" : "Budget"}
-                        </Label>
+                        <Label htmlFor="budget">{language === 'fr' ? 'Budget' : 'Budget'}</Label>
                         <Input
                           id="budget"
                           type="number"
@@ -818,7 +800,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="localisation">
-                          {language === "fr" ? "Localisation" : "Location"}
+                          {language === 'fr' ? 'Localisation' : 'Location'}
                         </Label>
                         <Input
                           id="localisation"
@@ -834,9 +816,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="typePropriete">
-                          {language === "fr"
-                            ? "Type de propriété"
-                            : "Property Type"}
+                          {language === 'fr' ? 'Type de propriété' : 'Property Type'}
                         </Label>
                         <Select
                           value={newRequete.typePropriete}
@@ -849,30 +829,22 @@ export default function ProspectManagement({
                         >
                           <SelectTrigger>
                             <SelectValue
-                              placeholder={
-                                language === "fr"
-                                  ? "Sélectionner type"
-                                  : "Select type"
-                              }
+                              placeholder={language === 'fr' ? 'Sélectionner type' : 'Select type'}
                             />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Villa">Villa</SelectItem>
-                            <SelectItem value="Appartement">
-                              Appartement
-                            </SelectItem>
+                            <SelectItem value="Appartement">Appartement</SelectItem>
                             <SelectItem value="Maison">Maison</SelectItem>
                             <SelectItem value="Studio">Studio</SelectItem>
-                            <SelectItem value="Commercial">
-                              Commercial
-                            </SelectItem>
+                            <SelectItem value="Commercial">Commercial</SelectItem>
                             <SelectItem value="Terrain">Terrain</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="sousType">
-                          {language === "fr" ? "Sous-type" : "Sub-type"}
+                          {language === 'fr' ? 'Sous-type' : 'Sub-type'}
                         </Label>
                         <Select
                           value={newRequete.sousType}
@@ -896,9 +868,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="nombreChambres">
-                          {language === "fr"
-                            ? "Nombre de chambres"
-                            : "Number of rooms"}
+                          {language === 'fr' ? 'Nombre de chambres' : 'Number of rooms'}
                         </Label>
                         <Input
                           id="nombreChambres"
@@ -915,9 +885,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="metresCarres">
-                          {language === "fr"
-                            ? "Mètres carrés"
-                            : "Square meters"}
+                          {language === 'fr' ? 'Mètres carrés' : 'Square meters'}
                         </Label>
                         <Input
                           id="metresCarres"
@@ -934,9 +902,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="typeFinancement">
-                          {language === "fr"
-                            ? "Type de financement"
-                            : "Financing type"}
+                          {language === 'fr' ? 'Type de financement' : 'Financing type'}
                         </Label>
                         <Select
                           value={newRequete.typeFinancement}
@@ -949,28 +915,22 @@ export default function ProspectManagement({
                         >
                           <SelectTrigger>
                             <SelectValue
-                              placeholder={
-                                language === "fr" ? "Sélectionner" : "Select"
-                              }
+                              placeholder={language === 'fr' ? 'Sélectionner' : 'Select'}
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Achat comptant">
-                              Achat comptant
-                            </SelectItem>
+                            <SelectItem value="Achat comptant">Achat comptant</SelectItem>
                             <SelectItem value="Achat 100% avec crédit">
                               Achat 100% avec crédit
                             </SelectItem>
-                            <SelectItem value="Achat avec apport">
-                              Achat avec apport
-                            </SelectItem>
+                            <SelectItem value="Achat avec apport">Achat avec apport</SelectItem>
                             <SelectItem value="Location">Location</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="destination">
-                          {language === "fr" ? "Destination" : "Purpose"}
+                          {language === 'fr' ? 'Destination' : 'Purpose'}
                         </Label>
                         <Select
                           value={newRequete.destination}
@@ -980,9 +940,7 @@ export default function ProspectManagement({
                         >
                           <SelectTrigger>
                             <SelectValue
-                              placeholder={
-                                language === "fr" ? "Sélectionner" : "Select"
-                              }
+                              placeholder={language === 'fr' ? 'Sélectionner' : 'Select'}
                             />
                           </SelectTrigger>
                           <SelectContent>
@@ -992,9 +950,7 @@ export default function ProspectManagement({
                             <SelectItem value="Résidence secondaire">
                               Résidence secondaire
                             </SelectItem>
-                            <SelectItem value="Investissement">
-                              Investissement
-                            </SelectItem>
+                            <SelectItem value="Investissement">Investissement</SelectItem>
                             <SelectItem value="Location saisonnière">
                               Location saisonnière
                             </SelectItem>
@@ -1003,9 +959,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="classeEnergetique">
-                          {language === "fr"
-                            ? "Classe énergétique"
-                            : "Energy class"}
+                          {language === 'fr' ? 'Classe énergétique' : 'Energy class'}
                         </Label>
                         <Select
                           value={newRequete.classeEnergetique}
@@ -1043,9 +997,7 @@ export default function ProspectManagement({
                             }
                           />
                           <Label htmlFor="construction">
-                            {language === "fr"
-                              ? "Construction"
-                              : "Construction"}
+                            {language === 'fr' ? 'Construction' : 'Construction'}
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1060,7 +1012,7 @@ export default function ProspectManagement({
                             }
                           />
                           <Label htmlFor="meuble">
-                            {language === "fr" ? "Meublé" : "Furnished"}
+                            {language === 'fr' ? 'Meublé' : 'Furnished'}
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1072,7 +1024,7 @@ export default function ProspectManagement({
                             }
                           />
                           <Label htmlFor="neuf">
-                            {language === "fr" ? "Neuf/Récent" : "New/Recent"}
+                            {language === 'fr' ? 'Neuf/Récent' : 'New/Recent'}
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1087,15 +1039,13 @@ export default function ProspectManagement({
                             }
                           />
                           <Label htmlFor="gratuit">
-                            {language === "fr" ? "Gratuit/Libre" : "Free"}
+                            {language === 'fr' ? 'Gratuit/Libre' : 'Free'}
                           </Label>
                         </div>
                       </div>
                       <div className="col-span-3 space-y-2">
                         <Label htmlFor="besoinsExigences">
-                          {language === "fr"
-                            ? "Besoins/Exigences"
-                            : "Needs/Requirements"}
+                          {language === 'fr' ? 'Besoins/Exigences' : 'Needs/Requirements'}
                         </Label>
                         <Textarea
                           id="besoinsExigences"
@@ -1107,16 +1057,14 @@ export default function ProspectManagement({
                             })
                           }
                           placeholder={
-                            language === "fr"
-                              ? "Détails des besoins et exigences du client..."
-                              : "Client needs and requirements details..."
+                            language === 'fr'
+                              ? 'Détails des besoins et exigences du client...'
+                              : 'Client needs and requirements details...'
                           }
                         />
                       </div>
                       <div className="col-span-3 space-y-2">
-                        <Label htmlFor="notes">
-                          {language === "fr" ? "Notes" : "Notes"}
-                        </Label>
+                        <Label htmlFor="notes">{language === 'fr' ? 'Notes' : 'Notes'}</Label>
                         <Textarea
                           id="notes"
                           value={newRequete.notes}
@@ -1127,49 +1075,41 @@ export default function ProspectManagement({
                             })
                           }
                           placeholder={
-                            language === "fr"
-                              ? "Notes additionnelles..."
-                              : "Additional notes..."
+                            language === 'fr' ? 'Notes additionnelles...' : 'Additional notes...'
                           }
                         />
                       </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsAddRequeteDialogOpen(false)}
-                      >
-                        {language === "fr" ? "Annuler" : "Cancel"}
+                      <Button variant="outline" onClick={() => setIsAddRequeteDialogOpen(false)}>
+                        {language === 'fr' ? 'Annuler' : 'Cancel'}
                       </Button>
                       <Button onClick={handleAddRequete}>
-                        {language === "fr" ? "Ajouter" : "Add"}
+                        {language === 'fr' ? 'Ajouter' : 'Add'}
                       </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               )}
 
-              {activeTab === "mandats" && (
-                <Dialog
-                  open={isAddMandatDialogOpen}
-                  onOpenChange={setIsAddMandatDialogOpen}
-                >
+              {activeTab === 'mandats' && (
+                <Dialog open={isAddMandatDialogOpen} onOpenChange={setIsAddMandatDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
-                      {language === "fr" ? "Nouveau Mandat" : "New Mandate"}
+                      {language === 'fr' ? 'Nouveau Mandat' : 'New Mandate'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>
-                        {language === "fr" ? "Nouveau Mandat" : "New Mandate"}
+                        {language === 'fr' ? 'Nouveau Mandat' : 'New Mandate'}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4 py-4">
                       <div className="space-y-2">
                         <Label htmlFor="proprietaire">
-                          {language === "fr" ? "Propriétaire" : "Owner"}
+                          {language === 'fr' ? 'Propriétaire' : 'Owner'}
                         </Label>
                         <Input
                           id="proprietaire"
@@ -1180,11 +1120,7 @@ export default function ProspectManagement({
                               proprietaire: e.target.value,
                             })
                           }
-                          placeholder={
-                            language === "fr"
-                              ? "Nom du propriétaire"
-                              : "Owner name"
-                          }
+                          placeholder={language === 'fr' ? 'Nom du propriétaire' : 'Owner name'}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1203,9 +1139,7 @@ export default function ProspectManagement({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">
-                          {language === "fr" ? "Téléphone" : "Phone"}
-                        </Label>
+                        <Label htmlFor="phone">{language === 'fr' ? 'Téléphone' : 'Phone'}</Label>
                         <Input
                           id="phone"
                           value={newMandat.phone}
@@ -1219,9 +1153,7 @@ export default function ProspectManagement({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="prix">
-                          {language === "fr" ? "Prix" : "Price"}
-                        </Label>
+                        <Label htmlFor="prix">{language === 'fr' ? 'Prix' : 'Price'}</Label>
                         <Input
                           id="prix"
                           type="number"
@@ -1237,7 +1169,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="localisation">
-                          {language === "fr" ? "Localisation" : "Location"}
+                          {language === 'fr' ? 'Localisation' : 'Location'}
                         </Label>
                         <Input
                           id="localisation"
@@ -1253,9 +1185,7 @@ export default function ProspectManagement({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="typePropriete">
-                          {language === "fr"
-                            ? "Type de propriété"
-                            : "Property Type"}
+                          {language === 'fr' ? 'Type de propriété' : 'Property Type'}
                         </Label>
                         <Select
                           value={newMandat.typePropriete}
@@ -1265,53 +1195,35 @@ export default function ProspectManagement({
                         >
                           <SelectTrigger>
                             <SelectValue
-                              placeholder={
-                                language === "fr"
-                                  ? "Sélectionner type"
-                                  : "Select type"
-                              }
+                              placeholder={language === 'fr' ? 'Sélectionner type' : 'Select type'}
                             />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Villa">Villa</SelectItem>
-                            <SelectItem value="Appartement">
-                              Appartement
-                            </SelectItem>
+                            <SelectItem value="Appartement">Appartement</SelectItem>
                             <SelectItem value="Maison">Maison</SelectItem>
                             <SelectItem value="Studio">Studio</SelectItem>
-                            <SelectItem value="Commercial">
-                              Commercial
-                            </SelectItem>
+                            <SelectItem value="Commercial">Commercial</SelectItem>
                             <SelectItem value="Terrain">Terrain</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="status">
-                          {language === "fr"
-                            ? "Type de mandat"
-                            : "Mandate type"}
+                          {language === 'fr' ? 'Type de mandat' : 'Mandate type'}
                         </Label>
                         <Select
                           value={newMandat.status}
-                          onValueChange={(value) =>
-                            setNewMandat({ ...newMandat, status: value })
-                          }
+                          onValueChange={(value) => setNewMandat({ ...newMandat, status: value })}
                         >
                           <SelectTrigger>
                             <SelectValue
-                              placeholder={
-                                language === "fr" ? "Sélectionner" : "Select"
-                              }
+                              placeholder={language === 'fr' ? 'Sélectionner' : 'Select'}
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Mandat simple">
-                              Mandat simple
-                            </SelectItem>
-                            <SelectItem value="Mandat exclusif">
-                              Mandat exclusif
-                            </SelectItem>
+                            <SelectItem value="Mandat simple">Mandat simple</SelectItem>
+                            <SelectItem value="Mandat exclusif">Mandat exclusif</SelectItem>
                             <SelectItem value="Mandat semi-exclusif">
                               Mandat semi-exclusif
                             </SelectItem>
@@ -1319,9 +1231,7 @@ export default function ProspectManagement({
                         </Select>
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <Label htmlFor="notes">
-                          {language === "fr" ? "Notes" : "Notes"}
-                        </Label>
+                        <Label htmlFor="notes">{language === 'fr' ? 'Notes' : 'Notes'}</Label>
                         <Textarea
                           id="notes"
                           value={newMandat.notes}
@@ -1332,22 +1242,19 @@ export default function ProspectManagement({
                             })
                           }
                           placeholder={
-                            language === "fr"
-                              ? "Description du bien, particularités..."
-                              : "Property description, particularities..."
+                            language === 'fr'
+                              ? 'Description du bien, particularités...'
+                              : 'Property description, particularities...'
                           }
                         />
                       </div>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsAddMandatDialogOpen(false)}
-                      >
-                        {language === "fr" ? "Annuler" : "Cancel"}
+                      <Button variant="outline" onClick={() => setIsAddMandatDialogOpen(false)}>
+                        {language === 'fr' ? 'Annuler' : 'Cancel'}
                       </Button>
                       <Button onClick={handleAddMandat}>
-                        {language === "fr" ? "Ajouter" : "Add"}
+                        {language === 'fr' ? 'Ajouter' : 'Add'}
                       </Button>
                     </div>
                   </DialogContent>
@@ -1361,7 +1268,7 @@ export default function ProspectManagement({
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={language === "fr" ? "Rechercher..." : "Search..."}
+                placeholder={language === 'fr' ? 'Rechercher...' : 'Search...'}
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1370,40 +1277,24 @@ export default function ProspectManagement({
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue
-                  placeholder={
-                    language === "fr"
-                      ? "Filtrer par statut"
-                      : "Filter by status"
-                  }
+                  placeholder={language === 'fr' ? 'Filtrer par statut' : 'Filter by status'}
                 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  {language === "fr" ? "Tous" : "All"}
-                </SelectItem>
-                {activeTab === "requetes" && (
+                <SelectItem value="all">{language === 'fr' ? 'Tous' : 'All'}</SelectItem>
+                {activeTab === 'requetes' && (
                   <>
-                    <SelectItem value="Requête chaude">
-                      Requête chaude
-                    </SelectItem>
-                    <SelectItem value="En négociation">
-                      En négociation
-                    </SelectItem>
-                    <SelectItem value="Requête froide">
-                      Requête froide
-                    </SelectItem>
+                    <SelectItem value="Requête chaude">Requête chaude</SelectItem>
+                    <SelectItem value="En négociation">En négociation</SelectItem>
+                    <SelectItem value="Requête froide">Requête froide</SelectItem>
                     <SelectItem value="Convertie">Convertie</SelectItem>
                   </>
                 )}
-                {activeTab === "mandats" && (
+                {activeTab === 'mandats' && (
                   <>
                     <SelectItem value="Mandat simple">Mandat simple</SelectItem>
-                    <SelectItem value="Mandat exclusif">
-                      Mandat exclusif
-                    </SelectItem>
-                    <SelectItem value="Mandat semi-exclusif">
-                      Mandat semi-exclusif
-                    </SelectItem>
+                    <SelectItem value="Mandat exclusif">Mandat exclusif</SelectItem>
+                    <SelectItem value="Mandat semi-exclusif">Mandat semi-exclusif</SelectItem>
                   </>
                 )}
               </SelectContent>
@@ -1414,22 +1305,20 @@ export default function ProspectManagement({
           <TabsContent value="requetes" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {requetesWithFunnel.map((requete) => (
-                <Card key={requete.id} className="overflow-hidden bg-white hover:shadow-xl transition-shadow">
+                <Card
+                  key={requete.id}
+                  className="overflow-hidden bg-white hover:shadow-xl transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={requete.avatarUrl}
-                          alt={requete.client}
-                        />
+                        <AvatarImage src={requete.avatarUrl} alt={requete.client} />
                         <AvatarFallback>
                           {requete.client.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          {requete.client}
-                        </CardTitle>
+                        <CardTitle className="text-lg">{requete.client}</CardTitle>
                         <div className="flex items-center space-x-2 mt-1">
                           <Badge
                             className={`${getFunnelStageColor(requete.funnelStage)} text-white text-xs`}
@@ -1437,7 +1326,8 @@ export default function ProspectManagement({
                             {getFunnelStageLabel(requete.funnelStage)}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            {requete.interactions.length} {language === "fr" ? "interactions" : "interactions"}
+                            {requete.interactions.length}{' '}
+                            {language === 'fr' ? 'interactions' : 'interactions'}
                           </Badge>
                         </div>
                       </div>
@@ -1456,10 +1346,10 @@ export default function ProspectManagement({
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                       <span className="truncate">{requete.localisation}</span>
                     </div>
-                    
+
                     <div className="pt-2 space-y-1 border-t">
                       <div className="text-sm font-medium">
-                        {language === "fr" ? "Budget:" : "Budget:"}{" "}
+                        {language === 'fr' ? 'Budget:' : 'Budget:'}{' '}
                         {formatCurrency(requete.budget, requete.currency)}
                       </div>
                       <div className="text-sm text-muted-foreground">
@@ -1472,13 +1362,20 @@ export default function ProspectManagement({
                       <div className="bg-blue-50 p-2 rounded text-xs border border-blue-200">
                         <div className="flex items-center space-x-1 text-blue-900 font-semibold mb-1">
                           <History className="h-3 w-3" />
-                          <span>{language === "fr" ? "Dernière interaction:" : "Last interaction:"}</span>
+                          <span>
+                            {language === 'fr' ? 'Dernière interaction:' : 'Last interaction:'}
+                          </span>
                         </div>
                         <div className="text-blue-800">
-                          {requete.interactions[requete.interactions.length - 1].notes.substring(0, 60)}...
+                          {requete.interactions[requete.interactions.length - 1].notes.substring(
+                            0,
+                            60
+                          )}
+                          ...
                         </div>
                         <div className="text-blue-600 mt-1">
-                          {requete.interactions[requete.interactions.length - 1].date} • {requete.interactions[requete.interactions.length - 1].time}
+                          {requete.interactions[requete.interactions.length - 1].date} •{' '}
+                          {requete.interactions[requete.interactions.length - 1].time}
                         </div>
                       </div>
                     )}
@@ -1488,7 +1385,10 @@ export default function ProspectManagement({
                       <div className="bg-orange-50 p-2 rounded text-xs border border-orange-200">
                         <div className="flex items-center space-x-1 text-orange-900 font-semibold">
                           <Clock className="h-3 w-3" />
-                          <span>{language === "fr" ? "Prochain suivi:" : "Next follow-up:"} {requete.nextFollowUp}</span>
+                          <span>
+                            {language === 'fr' ? 'Prochain suivi:' : 'Next follow-up:'}{' '}
+                            {requete.nextFollowUp}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -1504,7 +1404,7 @@ export default function ProspectManagement({
                             setInteractionType('call');
                             setIsInteractionDialogOpen(true);
                           }}
-                          title={language === "fr" ? "Appel" : "Call"}
+                          title={language === 'fr' ? 'Appel' : 'Call'}
                         >
                           <Phone className="h-4 w-4" />
                         </Button>
@@ -1550,7 +1450,7 @@ export default function ProspectManagement({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleCreateAppointmentFromProspect(requete)}
-                          title={language === "fr" ? "Planifier RDV" : "Schedule"}
+                          title={language === 'fr' ? 'Planifier RDV' : 'Schedule'}
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
                           <Calendar className="h-4 w-4" />
@@ -1562,7 +1462,7 @@ export default function ProspectManagement({
                             setSelectedProspect(requete);
                             // Show full history dialog
                           }}
-                          title={language === "fr" ? "Historique" : "History"}
+                          title={language === 'fr' ? 'Historique' : 'History'}
                         >
                           <History className="h-4 w-4" />
                         </Button>
@@ -1572,7 +1472,7 @@ export default function ProspectManagement({
                     {/* Funnel Stage Selector */}
                     <div className="pt-2 border-t">
                       <Label className="text-xs text-muted-foreground mb-2 block">
-                        {language === "fr" ? "Étape du funnel:" : "Funnel stage:"}
+                        {language === 'fr' ? 'Étape du funnel:' : 'Funnel stage:'}
                       </Label>
                       <Select
                         value={requete.funnelStage}
@@ -1583,12 +1483,20 @@ export default function ProspectManagement({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="lead">Lead</SelectItem>
-                          <SelectItem value="contacted">{language === "fr" ? "Contacté" : "Contacted"}</SelectItem>
-                          <SelectItem value="qualified">{language === "fr" ? "Qualifié" : "Qualified"}</SelectItem>
-                          <SelectItem value="negotiation">{language === "fr" ? "Négociation" : "Negotiation"}</SelectItem>
+                          <SelectItem value="contacted">
+                            {language === 'fr' ? 'Contacté' : 'Contacted'}
+                          </SelectItem>
+                          <SelectItem value="qualified">
+                            {language === 'fr' ? 'Qualifié' : 'Qualified'}
+                          </SelectItem>
+                          <SelectItem value="negotiation">
+                            {language === 'fr' ? 'Négociation' : 'Negotiation'}
+                          </SelectItem>
                           <SelectItem value="closing">Closing</SelectItem>
-                          <SelectItem value="won">{language === "fr" ? "Gagné" : "Won"}</SelectItem>
-                          <SelectItem value="lost">{language === "fr" ? "Perdu" : "Lost"}</SelectItem>
+                          <SelectItem value="won">{language === 'fr' ? 'Gagné' : 'Won'}</SelectItem>
+                          <SelectItem value="lost">
+                            {language === 'fr' ? 'Perdu' : 'Lost'}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1606,22 +1514,15 @@ export default function ProspectManagement({
                   <CardHeader className="pb-3">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={mandat.avatarUrl}
-                          alt={mandat.proprietaire}
-                        />
+                        <AvatarImage src={mandat.avatarUrl} alt={mandat.proprietaire} />
                         <AvatarFallback>
                           {mandat.proprietaire.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          {mandat.proprietaire}
-                        </CardTitle>
+                        <CardTitle className="text-lg">{mandat.proprietaire}</CardTitle>
                         <div className="flex items-center space-x-2">
-                          <Badge
-                            className={`${getStatusColor(mandat.status)} text-white`}
-                          >
+                          <Badge className={`${getStatusColor(mandat.status)} text-white`}>
                             {mandat.status}
                           </Badge>
                         </div>
@@ -1643,16 +1544,16 @@ export default function ProspectManagement({
                     </div>
                     <div className="pt-2 space-y-1">
                       <div className="text-sm font-medium">
-                        {language === "fr" ? "Prix:" : "Price:"}{" "}
+                        {language === 'fr' ? 'Prix:' : 'Price:'}{' '}
                         {formatCurrency(mandat.prix, mandat.currency)}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {language === "fr" ? "Bien:" : "Property:"}{" "}
-                        {mandat.typePropriete} {mandat.sousType}
+                        {language === 'fr' ? 'Bien:' : 'Property:'} {mandat.typePropriete}{' '}
+                        {mandat.sousType}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {mandat.metresCarres}m² • {mandat.nombreChambres}{" "}
-                        {language === "fr" ? "ch." : "beds"}
+                        {mandat.metresCarres}m² • {mandat.nombreChambres}{' '}
+                        {language === 'fr' ? 'ch.' : 'beds'}
                       </div>
                       {mandat.propertyId && (
                         <div className="text-xs text-blue-600 font-medium">
@@ -1664,7 +1565,7 @@ export default function ProspectManagement({
                       <div className="mt-2">
                         <img
                           src={mandat.propertyImage}
-                          alt={mandat.propertyTitle || "Property"}
+                          alt={mandat.propertyTitle || 'Property'}
                           className="w-full h-32 object-cover rounded-md"
                         />
                         {mandat.propertyTitle && (
@@ -1686,16 +1587,14 @@ export default function ProspectManagement({
                           size="sm"
                           onClick={() => {
                             const choice = confirm(
-                              language === "fr"
-                                ? "Choisissez: OK pour appel téléphonique, Annuler pour WhatsApp"
-                                : "Choose: OK for phone call, Cancel for WhatsApp",
+                              language === 'fr'
+                                ? 'Choisissez: OK pour appel téléphonique, Annuler pour WhatsApp'
+                                : 'Choose: OK for phone call, Cancel for WhatsApp'
                             );
                             if (choice) {
                               window.open(`tel:${mandat.phone}`);
                             } else {
-                              window.open(
-                                `https://wa.me/${mandat.phone.replace(/[^0-9]/g, "")}`,
-                              );
+                              window.open(`https://wa.me/${mandat.phone.replace(/[^0-9]/g, '')}`);
                             }
                           }}
                         >
@@ -1706,7 +1605,7 @@ export default function ProspectManagement({
                           size="sm"
                           onClick={() => {
                             window.open(
-                              `mailto:${mandat.email}?subject=${encodeURIComponent(language === "fr" ? "Concernant votre mandat immobilier" : "Regarding your property mandate")}`,
+                              `mailto:${mandat.email}?subject=${encodeURIComponent(language === 'fr' ? 'Concernant votre mandat immobilier' : 'Regarding your property mandate')}`
                             );
                           }}
                         >
@@ -1718,7 +1617,7 @@ export default function ProspectManagement({
                           onClick={() => {
                             setSelectedContact({
                               name: mandat.proprietaire,
-                              type: "mandat",
+                              type: 'mandat',
                             });
                             setIsAppointmentDialogOpen(true);
                           }}
@@ -1730,14 +1629,10 @@ export default function ProspectManagement({
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                        >
+                        <Button variant="ghost" size="sm" className="text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        {mandat.status === "Mandat exclusif" && (
+                        {mandat.status === 'Mandat exclusif' && (
                           <Button
                             variant="default"
                             size="sm"
@@ -1745,7 +1640,7 @@ export default function ProspectManagement({
                             onClick={() => handleConvertMandatToProperty(mandat)}
                           >
                             <Building2 className="h-4 w-4 mr-2" />
-                            {language === "fr" ? "Ajouter au Biens" : "Add to Properties"}
+                            {language === 'fr' ? 'Ajouter au Biens' : 'Add to Properties'}
                           </Button>
                         )}
                       </div>
@@ -1758,23 +1653,21 @@ export default function ProspectManagement({
         </Tabs>
 
         {/* Interaction Dialog */}
-        <Dialog
-          open={isInteractionDialogOpen}
-          onOpenChange={setIsInteractionDialogOpen}
-        >
+        <Dialog open={isInteractionDialogOpen} onOpenChange={setIsInteractionDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 {getInteractionIcon(interactionType)}
                 <span>
-                  {language === "fr" ? "Nouvelle Interaction" : "New Interaction"} - {selectedProspect?.client}
+                  {language === 'fr' ? 'Nouvelle Interaction' : 'New Interaction'} -{' '}
+                  {selectedProspect?.client}
                 </span>
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="interaction-type">
-                  {language === "fr" ? "Type d'interaction" : "Interaction Type"}
+                  {language === 'fr' ? "Type d'interaction" : 'Interaction Type'}
                 </Label>
                 <Select
                   value={interactionType}
@@ -1787,7 +1680,7 @@ export default function ProspectManagement({
                     <SelectItem value="call">
                       <div className="flex items-center space-x-2">
                         <Phone className="h-4 w-4" />
-                        <span>{language === "fr" ? "Appel téléphonique" : "Phone Call"}</span>
+                        <span>{language === 'fr' ? 'Appel téléphonique' : 'Phone Call'}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="email">
@@ -1814,16 +1707,16 @@ export default function ProspectManagement({
 
               <div className="space-y-2">
                 <Label htmlFor="interaction-notes">
-                  {language === "fr" ? "Notes de la conversation" : "Conversation Notes"}
+                  {language === 'fr' ? 'Notes de la conversation' : 'Conversation Notes'}
                 </Label>
                 <Textarea
                   id="interaction-notes"
                   value={interactionNotes}
                   onChange={(e) => setInteractionNotes(e.target.value)}
                   placeholder={
-                    language === "fr"
+                    language === 'fr'
                       ? "Qu'avez-vous discuté? Quels sont les points importants?"
-                      : "What did you discuss? What are the key points?"
+                      : 'What did you discuss? What are the key points?'
                   }
                   rows={4}
                 />
@@ -1831,32 +1724,30 @@ export default function ProspectManagement({
 
               <div className="space-y-2">
                 <Label htmlFor="interaction-outcome">
-                  {language === "fr" ? "Résultat de l'interaction" : "Interaction Outcome"}
+                  {language === 'fr' ? "Résultat de l'interaction" : 'Interaction Outcome'}
                 </Label>
                 <Input
                   id="interaction-outcome"
                   value={interactionOutcome}
                   onChange={(e) => setInteractionOutcome(e.target.value)}
                   placeholder={
-                    language === "fr"
-                      ? "Ex: Positif, En attente, Besoin de relance..."
-                      : "Ex: Positive, Pending, Needs follow-up..."
+                    language === 'fr'
+                      ? 'Ex: Positif, En attente, Besoin de relance...'
+                      : 'Ex: Positive, Pending, Needs follow-up...'
                   }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="next-action">
-                  {language === "fr" ? "Prochaine action à faire" : "Next Action"}
+                  {language === 'fr' ? 'Prochaine action à faire' : 'Next Action'}
                 </Label>
                 <Textarea
                   id="next-action"
                   value={nextAction}
                   onChange={(e) => setNextAction(e.target.value)}
                   placeholder={
-                    language === "fr"
-                      ? "Que devez-vous faire ensuite?"
-                      : "What should you do next?"
+                    language === 'fr' ? 'Que devez-vous faire ensuite?' : 'What should you do next?'
                   }
                   rows={2}
                 />
@@ -1867,32 +1758,37 @@ export default function ProspectManagement({
                 <div className="border-t pt-4">
                   <h4 className="font-semibold text-sm mb-3 flex items-center space-x-2">
                     <History className="h-4 w-4" />
-                    <span>{language === "fr" ? "Historique des interactions" : "Interaction History"}</span>
+                    <span>
+                      {language === 'fr' ? 'Historique des interactions' : 'Interaction History'}
+                    </span>
                   </h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {selectedProspect.interactions.slice().reverse().map((interaction) => (
-                      <div key={interaction.id} className="bg-gray-50 p-3 rounded text-sm">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center space-x-2">
-                            {getInteractionIcon(interaction.type)}
-                            <span className="font-semibold capitalize">{interaction.type}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {interaction.date} • {interaction.time}
-                          </span>
-                        </div>
-                        <p className="text-gray-700 mb-1">{interaction.notes}</p>
-                        <div className="flex items-center space-x-2 text-xs">
-                          <Badge variant="outline">{interaction.outcome}</Badge>
-                          {interaction.nextAction && (
-                            <span className="text-muted-foreground">
-                              <ArrowRight className="h-3 w-3 inline mr-1" />
-                              {interaction.nextAction}
+                    {selectedProspect.interactions
+                      .slice()
+                      .reverse()
+                      .map((interaction) => (
+                        <div key={interaction.id} className="bg-gray-50 p-3 rounded text-sm">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-2">
+                              {getInteractionIcon(interaction.type)}
+                              <span className="font-semibold capitalize">{interaction.type}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {interaction.date} • {interaction.time}
                             </span>
-                          )}
+                          </div>
+                          <p className="text-gray-700 mb-1">{interaction.notes}</p>
+                          <div className="flex items-center space-x-2 text-xs">
+                            <Badge variant="outline">{interaction.outcome}</Badge>
+                            {interaction.nextAction && (
+                              <span className="text-muted-foreground">
+                                <ArrowRight className="h-3 w-3 inline mr-1" />
+                                {interaction.nextAction}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}
@@ -1902,12 +1798,12 @@ export default function ProspectManagement({
                 variant="outline"
                 onClick={() => {
                   setIsInteractionDialogOpen(false);
-                  setInteractionNotes("");
-                  setInteractionOutcome("");
-                  setNextAction("");
+                  setInteractionNotes('');
+                  setInteractionOutcome('');
+                  setNextAction('');
                 }}
               >
-                {language === "fr" ? "Annuler" : "Cancel"}
+                {language === 'fr' ? 'Annuler' : 'Cancel'}
               </Button>
               <Button
                 onClick={addInteraction}
@@ -1915,25 +1811,20 @@ export default function ProspectManagement({
                 className="bg-gradient-to-r from-blue-600 to-indigo-600"
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {language === "fr" ? "Enregistrer" : "Save"}
+                {language === 'fr' ? 'Enregistrer' : 'Save'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
         {/* ENHANCED Appointment Dialog with Calendar Integration */}
-        <Dialog
-          open={isAppointmentDialogOpen}
-          onOpenChange={setIsAppointmentDialogOpen}
-        >
+        <Dialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
                 <span>
-                  {language === "fr"
-                    ? "Planifier un rendez-vous"
-                    : "Schedule Appointment"}
+                  {language === 'fr' ? 'Planifier un rendez-vous' : 'Schedule Appointment'}
                 </span>
               </DialogTitle>
             </DialogHeader>
@@ -1949,9 +1840,7 @@ export default function ProspectManagement({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="appointment-date">
-                  {language === "fr" ? "Date" : "Date"}
-                </Label>
+                <Label htmlFor="appointment-date">{language === 'fr' ? 'Date' : 'Date'}</Label>
                 <Input
                   id="appointment-date"
                   type="date"
@@ -1966,9 +1855,7 @@ export default function ProspectManagement({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="appointment-time">
-                  {language === "fr" ? "Heure" : "Time"}
-                </Label>
+                <Label htmlFor="appointment-time">{language === 'fr' ? 'Heure' : 'Time'}</Label>
                 <Input
                   id="appointment-time"
                   type="time"
@@ -1985,9 +1872,7 @@ export default function ProspectManagement({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="appointment-notes">
-                  {language === "fr" ? "Notes" : "Notes"}
-                </Label>
+                <Label htmlFor="appointment-notes">{language === 'fr' ? 'Notes' : 'Notes'}</Label>
                 <Textarea
                   id="appointment-notes"
                   value={appointmentData.notes}
@@ -1998,9 +1883,7 @@ export default function ProspectManagement({
                     })
                   }
                   placeholder={
-                    language === "fr"
-                      ? "Objet du rendez-vous..."
-                      : "Appointment purpose..."
+                    language === 'fr' ? 'Objet du rendez-vous...' : 'Appointment purpose...'
                   }
                   rows={3}
                 />
@@ -2010,9 +1893,9 @@ export default function ProspectManagement({
                 <div className="flex items-center space-x-2 text-green-900 text-sm">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>
-                    {language === "fr"
-                      ? "Le rendez-vous sera automatiquement ajouté au calendrier"
-                      : "Appointment will be automatically added to calendar"}
+                    {language === 'fr'
+                      ? 'Le rendez-vous sera automatiquement ajouté au calendrier'
+                      : 'Appointment will be automatically added to calendar'}
                   </span>
                 </div>
               </div>
@@ -2023,17 +1906,17 @@ export default function ProspectManagement({
                 onClick={() => {
                   setIsAppointmentDialogOpen(false);
                   setAppointmentData({
-                    date: "",
-                    time: "",
-                    clientName: "",
-                    clientEmail: "",
-                    clientPhone: "",
-                    notes: "",
-                    type: "viewing",
+                    date: '',
+                    time: '',
+                    clientName: '',
+                    clientEmail: '',
+                    clientPhone: '',
+                    notes: '',
+                    type: 'viewing',
                   });
                 }}
               >
-                {language === "fr" ? "Annuler" : "Cancel"}
+                {language === 'fr' ? 'Annuler' : 'Cancel'}
               </Button>
               <Button
                 onClick={handleSaveAppointment}
@@ -2041,7 +1924,7 @@ export default function ProspectManagement({
                 className="bg-gradient-to-r from-blue-600 to-indigo-600"
               >
                 <Calendar className="h-4 w-4 mr-2" />
-                {language === "fr" ? "Créer Rendez-vous" : "Create Appointment"}
+                {language === 'fr' ? 'Créer Rendez-vous' : 'Create Appointment'}
               </Button>
             </div>
           </DialogContent>

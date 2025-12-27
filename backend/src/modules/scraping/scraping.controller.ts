@@ -1,56 +1,185 @@
+import { Controller, Post, Get, Body, Req, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { WebDataService, WebDataProvider } from './services/web-data.service';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { ScrapingService } from './scraping.service';
-import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
-import { UpdateScrapingConfigDto } from './dto';
+  ScrapeUrlDto,
+  ScrapeMultipleUrlsDto,
+  ExtractStructuredDataDto,
+  TestProviderDto,
+} from './dto';
 
+/**
+ * Valide si une chaîne de caractères est un provider valide
+ */
+function isValidProvider(provider: any): provider is WebDataProvider {
+  return ['firecrawl', 'cheerio', 'puppeteer'].includes(provider);
+}
+
+/**
+ * Contrôleur pour le scraping web unifié
+ * 
+ * Endpoints:
+ * - POST /scraping/scrape - Scraper une URL
+ * - POST /scraping/scrape-multiple - Scraper plusieurs URLs
+ * - POST /scraping/extract - Extraire des données structurées avec IA
+ * - POST /scraping/test-provider - Tester un provider
+ * - GET /scraping/providers - Liste des providers disponibles
+ */
 @ApiTags('scraping')
-@ApiBearerAuth()
 @Controller('scraping')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard) // Décommenter pour activer l'authentification
+@ApiBearerAuth()
 export class ScrapingController {
-  constructor(private readonly scrapingService: ScrapingService) {}
+  private readonly logger = new Logger(ScrapingController.name);
 
-  /**
-   * Get scraping configuration for the authenticated user
-   */
-  @Get('config')
-  @ApiOperation({ summary: 'Get scraping configuration' })
-  @ApiResponse({ status: 200, description: 'Returns the scraping configuration for the authenticated user' })
-  async getConfig(@Request() req) {
-    const userId = req.user.userId;
-    return this.scrapingService.getScrapingConfig(userId);
+  constructor(private readonly webDataService: WebDataService) {}
+
+  @Post('scrape')
+  @ApiOperation({
+    summary: 'Scraper une URL',
+    description:
+      'Récupère le contenu d\'une URL avec sélection automatique du meilleur provider de scraping',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scraping réussi',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Paramètres invalides',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erreur lors du scraping',
+  })
+  async scrapeUrl(@Body() dto: ScrapeUrlDto, @Req() req?: any) {
+    this.logger.log(`Requête de scraping pour: ${dto.url}`);
+
+    const tenantId = req?.user?.id; // Récupérer l'ID utilisateur depuis le token JWT
+
+    // Valider et convertir le provider de façon type-safe
+    const provider = dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined;
+
+    const result = await this.webDataService.fetchHtml(dto.url, {
+      provider: dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined,
+      tenantId,
+      waitFor: dto.waitFor,
+      screenshot: dto.screenshot,
+      extractionPrompt: dto.extractionPrompt,
+      forceProvider: dto.forceProvider,
+    });
+
+    return {
+      success: true,
+      data: result,
+    };
   }
 
-  /**
-   * Update scraping configuration
-   */
-  @Post('config')
-  @ApiOperation({ summary: 'Update scraping configuration' })
-  @ApiResponse({ status: 200, description: 'Scraping configuration updated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid configuration data' })
-  async updateConfig(@Request() req, @Body() config: UpdateScrapingConfigDto) {
-    const userId = req.user.userId;
-    return this.scrapingService.updateScrapingConfig(userId, config);
+  @Post('scrape-multiple')
+  @ApiOperation({
+    summary: 'Scraper plusieurs URLs',
+    description: 'Récupère le contenu de plusieurs URLs en parallèle',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scraping réussi',
+  })
+  async scrapeMultipleUrls(@Body() dto: ScrapeMultipleUrlsDto, @Req() req?: any) {
+    this.logger.log(`Requête de scraping multiple pour ${dto.urls.length} URLs`);
+
+    const tenantId = req?.user?.id;
+
+    const results = await this.webDataService.fetchMultipleUrls(dto.urls, {
+      provider: dto.provider && isValidProvider(dto.provider) ? dto.provider : undefined,
+      tenantId,
+      waitFor: dto.waitFor,
+    });
+
+    return {
+      success: true,
+      count: results.length,
+      data: results,
+    };
   }
 
-  /**
-   * Test a scraping provider connection
-   */
-  @Get('test/:provider')
-  @ApiOperation({ summary: 'Test a scraping provider connection' })
-  @ApiParam({ name: 'provider', description: 'Provider name (pica, serpApi, scrapingBee, browserless)', enum: ['pica', 'serpApi', 'scrapingBee', 'browserless'] })
-  @ApiResponse({ status: 200, description: 'Test result with success status and message' })
-  async testProvider(@Request() req, @Param('provider') provider: string) {
-    const userId = req.user.userId;
-    return this.scrapingService.testProvider(userId, provider);
+  @Post('extract')
+  @ApiOperation({
+    summary: 'Extraire des données structurées avec IA',
+    description:
+      'Utilise l\'IA (Firecrawl) pour extraire des données structurées depuis une URL',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Extraction réussie',
+  })
+  async extractStructuredData(@Body() dto: ExtractStructuredDataDto, @Req() req?: any) {
+    this.logger.log(`Extraction structurée pour: ${dto.url}`);
+
+    const tenantId = req?.user?.id;
+
+    const result = await this.webDataService.extractStructuredData(
+      dto.url,
+      dto.extractionPrompt,
+      tenantId,
+    );
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Post('test-provider')
+  @ApiOperation({
+    summary: 'Tester un provider de scraping',
+    description: 'Vérifie si un provider est disponible et configuré correctement',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Test réussi',
+  })
+  async testProvider(@Body() dto: TestProviderDto, @Req() req?: any) {
+    this.logger.log(`Test du provider: ${dto.provider}`);
+
+    const tenantId = req?.user?.id;
+
+    if (!isValidProvider(dto.provider)) {
+      return {
+        success: false,
+        provider: dto.provider,
+        available: false,
+        error: 'Invalid provider. Must be one of: firecrawl, cheerio, puppeteer',
+      };
+    }
+
+    const isAvailable = await this.webDataService.testProvider(dto.provider, tenantId);
+
+    return {
+      success: true,
+      provider: dto.provider,
+      available: isAvailable,
+    };
+  }
+
+  @Get('providers')
+  @ApiOperation({
+    summary: 'Liste des providers de scraping disponibles',
+    description: 'Retourne la liste des providers avec leur statut et description',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des providers',
+  })
+  async getProviders(@Req() req?: any) {
+    this.logger.log('Récupération de la liste des providers');
+
+    const tenantId = req?.user?.id;
+
+    const providers = await this.webDataService.getAvailableProviders(tenantId);
+
+    return {
+      success: true,
+      providers,
+    };
   }
 }

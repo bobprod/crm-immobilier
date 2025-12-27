@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -12,17 +13,21 @@ import {
   Logger,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { SmartNotificationsService } from './smart-notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('Notifications')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  private readonly logger = new Logger(NotificationsController.name);
-
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly smartNotificationsService: SmartNotificationsService,
+  ) {}
 
   /**
    * Créer une nouvelle notification
@@ -103,63 +108,105 @@ export class NotificationsController {
     return this.notificationsService.deleteNotification(id);
   }
 
-  /**
-   * Restaurer une notification supprimée
-   */
-  @Patch(':id/restore')
-  async restore(@Param('id') id: string) {
-    return this.notificationsService.restoreNotification(id);
-  }
+  // ============================================
+  // 🤖 SMART AI NOTIFICATION ENDPOINTS
+  // ============================================
 
   /**
-   * Obtenir les statistiques de lecture
-   */
-  @Get('stats/reading')
-  async getReadingStats(@Request() req) {
-    const userId = req.user.userId;
-    return this.notificationsService.getReadingStats(userId);
-  }
-
-  /**
-   * Obtenir les paramètres de notification de l'utilisateur
+   * Récupérer les préférences de notification de l'utilisateur
    */
   @Get('settings')
+  @ApiOperation({ summary: 'Récupérer les préférences de notification' })
   async getSettings(@Request() req) {
     const userId = req.user.userId;
-    // Return default settings for now, can be extended to store in DB
+    return this.smartNotificationsService.getUserPreferences(userId);
+  }
+
+  /**
+   * Mettre à jour les préférences de notification
+   */
+  @Put('settings')
+  @ApiOperation({ summary: 'Mettre à jour les préférences de notification' })
+  async updateSettings(@Request() req, @Body() data: any) {
+    const userId = req.user.userId;
+    return this.smartNotificationsService.updateUserPreferences(userId, data);
+  }
+
+  /**
+   * Récupérer les statistiques par canal
+   */
+  @Get('analytics/channels')
+  @ApiOperation({ summary: 'Statistiques par canal de notification' })
+  async getChannelAnalytics(@Request() req, @Query('days') days?: string) {
+    const userId = req.user.userId;
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.smartNotificationsService.getChannelStatistics(userId, daysNum);
+  }
+
+  /**
+   * Tester la configuration Smart AI pour l'utilisateur
+   */
+  @Get('analytics/test')
+  @ApiOperation({ summary: 'Tester la configuration Smart AI' })
+  async testSmartConfiguration(@Request() req) {
+    const userId = req.user.userId;
+
+    // Récupérer les préférences
+    const preferences = await this.smartNotificationsService.getUserPreferences(userId);
+
+    // Tester si on peut envoyer maintenant
+    const canSendNow = await this.smartNotificationsService.canSendNow(userId);
+    const withinRateLimit = await this.smartNotificationsService.isWithinRateLimit(userId);
+
+    // Tester le canal optimal pour différents types
+    const optimalChannels = {
+      appointment: await this.smartNotificationsService.selectOptimalChannel(userId, 'appointment'),
+      task: await this.smartNotificationsService.selectOptimalChannel(userId, 'task'),
+      lead: await this.smartNotificationsService.selectOptimalChannel(userId, 'lead'),
+      system: await this.smartNotificationsService.selectOptimalChannel(userId, 'system'),
+    };
+
     return {
-      preferredChannel: 'push',
-      optimalTimingEnabled: true,
-      preferredHours: [9, 10, 11, 14, 15, 16],
-      enablePush: true,
-      enableEmail: true,
-      enableSMS: false,
-      enableWhatsApp: false,
-      frequency: 'normal',
-      quietHoursEnabled: false,
-      quietHoursStart: '22:00',
-      quietHoursEnd: '08:00',
+      preferences,
+      status: {
+        canSendNow,
+        withinRateLimit,
+        aiOptimizationActive: preferences?.aiOptimization || false,
+      },
+      optimalChannels,
     };
   }
 
   /**
-   * Sauvegarder les paramètres de notification
+   * Récupérer les analytics globales
    */
-  @Post('settings')
-  async saveSettings(@Request() req, @Body() settings: any) {
+  @Get('analytics')
+  @ApiOperation({ summary: 'Analytics globales des notifications' })
+  async getAnalytics(@Request() req, @Query('days') days?: string) {
     const userId = req.user.userId;
-    // Save settings logic here (store in DB or cache)
-    this.logger.log(`Settings saved for user ${userId}`);
-    return { success: true, settings };
-  }
+    const daysNum = days ? parseInt(days, 10) : 30;
 
-  /**
-   * Obtenir les statistiques d'engagement
-   */
-  @Get('stats/engagement')
-  async getEngagementStats(@Request() req) {
-    const userId = req.user.userId;
-    const stats = await this.notificationsService.getEngagementStats(userId);
-    return stats;
+    // Stats par canal
+    const channelStats = await this.smartNotificationsService.getChannelStatistics(userId, daysNum);
+
+    // Compter les notifications totales
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysNum);
+
+    const totalNotifications = await this.notificationsService['prisma'].notification.count({
+      where: {
+        userId,
+        createdAt: { gte: startDate },
+      },
+    });
+
+    const unreadCount = await this.notificationsService.countUnreadNotifications(userId);
+
+    return {
+      period: `${daysNum} days`,
+      total: totalNotifications,
+      unread: unreadCount,
+      byChannel: channelStats,
+    };
   }
 }

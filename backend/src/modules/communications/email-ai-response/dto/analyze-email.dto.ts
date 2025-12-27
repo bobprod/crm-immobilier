@@ -80,5 +80,5 @@ export class ApproveAndSendDto {
     required: false,
   })
   @IsOptional()
-  attachments?: Array<{ filename: string; path: string }>;
+  attachments?: Array<{ name: string; url: string; mimeType: string }>;
 }

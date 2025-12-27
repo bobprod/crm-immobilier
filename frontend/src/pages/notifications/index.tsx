@@ -122,9 +122,7 @@ export default function NotificationsPage() {
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationsAPI.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     } catch (err) {
       console.error('Error marking notification as read:', err);
     }
@@ -196,10 +194,7 @@ export default function NotificationsPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <Link href="/dashboard" className="text-gray-500 hover:text-gray-700">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
               <div>
@@ -207,31 +202,15 @@ export default function NotificationsPage() {
                   <Bell className="h-6 w-6 text-purple-600" />
                   Notifications
                   {unreadCount > 0 && (
-                    <Badge className="bg-red-500 text-white ml-2" data-testid="unread-count">
-                      {unreadCount}
-                    </Badge>
+                    <Badge className="bg-red-500 text-white ml-2">{unreadCount}</Badge>
                   )}
                 </h1>
-                <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                  Restez informé de vos activités CRM
-                  {connected && (
-                    <span className="text-green-500 flex items-center gap-1" data-testid="ws-status">
-                      🟢 Live
-                    </span>
-                  )}
-                </p>
+                <p className="text-sm text-gray-500 mt-1">Restez informé de vos activités CRM</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadNotifications}
-                disabled={loading}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`}
-                />
+              <Button variant="outline" size="sm" onClick={loadNotifications} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
                 Actualiser
               </Button>
               {unreadCount > 0 && (
@@ -268,9 +247,7 @@ export default function NotificationsPage() {
             <button
               onClick={() => setFilter('all')}
               className={`px-3 py-1.5 text-sm font-medium rounded-l-lg transition ${
-                filter === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
+                filter === 'all' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               Toutes
@@ -278,9 +255,7 @@ export default function NotificationsPage() {
             <button
               onClick={() => setFilter('unread')}
               className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition ${
-                filter === 'unread'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:bg-gray-50'
+                filter === 'unread' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
               }`}
               data-testid="filter-unread"
             >
@@ -291,9 +266,7 @@ export default function NotificationsPage() {
           {/* Type filter */}
           <select
             value={typeFilter}
-            onChange={(e) =>
-              setTypeFilter(e.target.value as NotificationType | 'all')
-            }
+            onChange={(e) => setTypeFilter(e.target.value as NotificationType | 'all')}
             className="px-3 py-1.5 text-sm border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
           >
             <option value="all">Tous les types</option>
@@ -314,10 +287,7 @@ export default function NotificationsPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
             {error}
-            <button
-              onClick={loadNotifications}
-              className="ml-2 underline hover:no-underline"
-            >
+            <button onClick={loadNotifications} className="ml-2 underline hover:no-underline">
               Réessayer
             </button>
           </div>
@@ -331,13 +301,11 @@ export default function NotificationsPage() {
           <Card className="text-center py-12">
             <CardContent>
               <BellOff className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucune notification
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune notification</h3>
               <p className="text-gray-500">
                 {filter === 'unread'
                   ? 'Vous avez lu toutes vos notifications'
-                  : 'Vous n\'avez pas encore de notifications'}
+                  : "Vous n'avez pas encore de notifications"}
               </p>
             </CardContent>
           </Card>
@@ -365,11 +333,7 @@ interface NotificationCardProps {
   onDelete: (id: string) => void;
 }
 
-function NotificationCard({
-  notification,
-  onMarkAsRead,
-  onDelete,
-}: NotificationCardProps) {
+function NotificationCard({ notification, onMarkAsRead, onDelete }: NotificationCardProps) {
   const icon = getNotificationTypeIcon(notification.type);
   const colorClass = getNotificationTypeColor(notification.type);
   const typeLabel = getNotificationTypeLabel(notification.type);
@@ -402,9 +366,7 @@ function NotificationCard({
                 >
                   {notification.title}
                 </h4>
-                <p className="text-sm text-gray-600 mt-1">
-                  {notification.message}
-                </p>
+                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Badge variant="outline" className="text-xs">

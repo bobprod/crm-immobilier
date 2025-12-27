@@ -12,7 +12,7 @@ export function useProperties() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     return {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...(token && { Authorization: `Bearer ${token}` }),
     };
   };
 
@@ -80,7 +80,7 @@ export function useProperties() {
       }
 
       const updatedProperty = await response.json();
-      setProperties(properties.map(p => p.id === id ? updatedProperty : p));
+      setProperties(properties.map((p) => (p.id === id ? updatedProperty : p)));
       return updatedProperty;
     } catch (err: any) {
       setError(err.message);
@@ -99,7 +99,7 @@ export function useProperties() {
         throw new Error('Erreur lors de la suppression du bien');
       }
 
-      setProperties(properties.filter(p => p.id !== id));
+      setProperties(properties.filter((p) => p.id !== id));
     } catch (err: any) {
       setError(err.message);
       throw err;

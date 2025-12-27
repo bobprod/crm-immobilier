@@ -7,7 +7,12 @@ import { apiClient } from './api-client-backend';
 export interface ConversionEvent {
   id: string;
   prospectId: string;
-  eventType: 'lead_created' | 'prospect_qualified' | 'property_viewed' | 'appointment_scheduled' | 'deal_closed';
+  eventType:
+    | 'lead_created'
+    | 'prospect_qualified'
+    | 'property_viewed'
+    | 'appointment_scheduled'
+    | 'deal_closed';
   eventName?: string;
   propertyId?: string;
   appointmentId?: string;
@@ -68,10 +73,7 @@ export async function trackProspectQualified(
     metadata?: Record<string, any>;
   }
 ): Promise<ConversionEvent> {
-  const response = await apiClient.post(
-    `/prospects-conversion/${prospectId}/qualified`,
-    data
-  );
+  const response = await apiClient.post(`/prospects-conversion/${prospectId}/qualified`, data);
   return response.data;
 }
 
@@ -86,10 +88,7 @@ export async function trackMeetingBooked(
     source?: string;
   }
 ): Promise<ConversionEvent> {
-  const response = await apiClient.post(
-    `/prospects-conversion/${prospectId}/meeting-booked`,
-    data
-  );
+  const response = await apiClient.post(`/prospects-conversion/${prospectId}/meeting-booked`, data);
   return response.data;
 }
 
@@ -123,10 +122,7 @@ export async function trackOfferMade(
     currency?: string;
   }
 ): Promise<ConversionEvent> {
-  const response = await apiClient.post(
-    `/prospects-conversion/${prospectId}/offer-made`,
-    data
-  );
+  const response = await apiClient.post(`/prospects-conversion/${prospectId}/offer-made`, data);
   return response.data;
 }
 
@@ -153,9 +149,7 @@ export async function trackContractSigned(
  * Détecter automatiquement les conversions d'un prospect
  */
 export async function detectConversions(prospectId: string): Promise<ConversionEvent[]> {
-  const response = await apiClient.get(
-    `/prospects-conversion/${prospectId}/detect-conversions`
-  );
+  const response = await apiClient.get(`/prospects-conversion/${prospectId}/detect-conversions`);
   return response.data;
 }
 
@@ -163,22 +157,18 @@ export async function detectConversions(prospectId: string): Promise<ConversionE
  * Obtenir la contribution des agents IA pour un prospect
  */
 export async function getAgentContribution(prospectId: string): Promise<AgentContribution[]> {
-  const response = await apiClient.get(
-    `/prospects-conversion/${prospectId}/agent-contribution`
-  );
+  const response = await apiClient.get(`/prospects-conversion/${prospectId}/agent-contribution`);
   return response.data;
 }
 
 /**
  * Obtenir les prospects avec le meilleur ROI
  */
-export async function getHighRoiProspects(
-  filters?: {
-    minValue?: number;
-    minConversionRate?: number;
-    limit?: number;
-  }
-): Promise<HighRoiProspect[]> {
+export async function getHighRoiProspects(filters?: {
+  minValue?: number;
+  minConversionRate?: number;
+  limit?: number;
+}): Promise<HighRoiProspect[]> {
   const response = await apiClient.get('/prospects-conversion/high-roi', {
     params: filters,
   });
@@ -189,24 +179,20 @@ export async function getHighRoiProspects(
  * Obtenir le rapport de performance d'un prospect
  */
 export async function getPerformanceReport(prospectId: string): Promise<PerformanceReport> {
-  const response = await apiClient.get(
-    `/prospects-conversion/${prospectId}/performance-report`
-  );
+  const response = await apiClient.get(`/prospects-conversion/${prospectId}/performance-report`);
   return response.data;
 }
 
 /**
  * Obtenir toutes les conversions (filtrable)
  */
-export async function getAllConversions(
-  filters?: {
-    prospectId?: string;
-    eventType?: string;
-    startDate?: string;
-    endDate?: string;
-    minValue?: number;
-  }
-): Promise<ConversionEvent[]> {
+export async function getAllConversions(filters?: {
+  prospectId?: string;
+  eventType?: string;
+  startDate?: string;
+  endDate?: string;
+  minValue?: number;
+}): Promise<ConversionEvent[]> {
   const response = await apiClient.get('/prospects-conversion', {
     params: filters,
   });

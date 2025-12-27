@@ -3,11 +3,11 @@ import MatchingPanel from '@/modules/intelligence/matching/components/MatchingPa
 import Layout from '../../../src/modules/core/layout/components/Layout';
 
 export default function MatchingPage() {
-    return (
-        <Layout>
-            <div className="p-6">
-                <MatchingPanel />
-            </div>
-        </Layout>
-    );
+  return (
+    <Layout>
+      <div className="p-6">
+        <MatchingPanel />
+      </div>
+    </Layout>
+  );
 }

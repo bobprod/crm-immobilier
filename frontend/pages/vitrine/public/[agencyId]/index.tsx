@@ -53,7 +53,7 @@ interface Property {
 export default function PublicVitrinePage() {
   const router = useRouter();
   const { agencyId } = router.query;
-  
+
   const [config, setConfig] = useState<VitrineConfig | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,15 +69,15 @@ export default function PublicVitrinePage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Charger la vitrine publique
       const response = await api.get(`/vitrine/public/${agencyId}`);
-      
+
       setConfig(response.data.config);
       setProperties(response.data.properties || []);
     } catch (err: any) {
       console.error('Erreur chargement vitrine:', err);
-      setError('Cette vitrine n\'est pas disponible ou n\'existe pas.');
+      setError("Cette vitrine n'est pas disponible ou n'existe pas.");
     } finally {
       setLoading(false);
     }
@@ -99,23 +99,26 @@ export default function PublicVitrinePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Vitrine non disponible</h1>
-          <p className="text-gray-600">{error || 'Cette agence n\'a pas de vitrine active.'}</p>
+          <p className="text-gray-600">{error || "Cette agence n'a pas de vitrine active."}</p>
         </div>
       </div>
     );
   }
 
-  const saleProperties = properties.filter(p => p.category === 'sale');
-  const rentProperties = properties.filter(p => p.category === 'rent');
+  const saleProperties = properties.filter((p) => p.category === 'sale');
+  const rentProperties = properties.filter((p) => p.category === 'rent');
   const featuredProperties = properties.slice(0, 6);
 
   return (
     <>
       <Head>
         <title>{config.seoTitle || `${config.agencyName} - Agence Immobilière`}</title>
-        <meta 
-          name="description" 
-          content={config.seoDescription || `Découvrez les biens immobiliers de ${config.agencyName}. Achat, vente et location de maisons et appartements.`} 
+        <meta
+          name="description"
+          content={
+            config.seoDescription ||
+            `Découvrez les biens immobiliers de ${config.agencyName}. Achat, vente et location de maisons et appartements.`
+          }
         />
         {config.seoKeywords && config.seoKeywords.length > 0 && (
           <meta name="keywords" content={config.seoKeywords.join(', ')} />
@@ -132,14 +135,10 @@ export default function PublicVitrinePage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {config.logo && (
-                  <img src={config.logo} alt={config.agencyName} className="h-12" />
-                )}
+                {config.logo && <img src={config.logo} alt={config.agencyName} className="h-12" />}
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{config.agencyName}</h1>
-                  {config.slogan && (
-                    <p className="text-sm text-gray-600">{config.slogan}</p>
-                  )}
+                  {config.slogan && <p className="text-sm text-gray-600">{config.slogan}</p>}
                 </div>
               </div>
 
@@ -156,10 +155,10 @@ export default function PublicVitrinePage() {
               </nav>
 
               <Link href={`/vitrine/public/${agencyId}/contact`}>
-                <Button 
-                  style={{ 
+                <Button
+                  style={{
                     backgroundColor: config.primaryColor || '#3B82F6',
-                    color: 'white'
+                    color: 'white',
                   }}
                 >
                   Nous Contacter
@@ -170,12 +169,12 @@ export default function PublicVitrinePage() {
         </header>
 
         {/* Hero Section */}
-        <section 
+        <section
           className="relative h-[500px] bg-cover bg-center"
           style={{
-            backgroundImage: config.heroImage 
+            backgroundImage: config.heroImage
               ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${config.heroImage})`
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}
         >
           <div className="container mx-auto px-4 h-full flex items-center">
@@ -184,7 +183,8 @@ export default function PublicVitrinePage() {
                 {config.slogan || 'Trouvez votre bien idéal'}
               </h2>
               <p className="text-xl mb-8 text-gray-100">
-                {config.aboutText || `${config.agencyName} vous accompagne dans votre projet immobilier`}
+                {config.aboutText ||
+                  `${config.agencyName} vous accompagne dans votre projet immobilier`}
               </p>
               <div className="flex gap-4">
                 <Link href={`/vitrine/public/${agencyId}/offres?type=sale`}>
@@ -208,9 +208,7 @@ export default function PublicVitrinePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardContent className="pt-6 text-center">
-                  <div className="text-4xl font-bold text-blue-600 mb-2">
-                    {properties.length}
-                  </div>
+                  <div className="text-4xl font-bold text-blue-600 mb-2">{properties.length}</div>
                   <p className="text-gray-600">Biens disponibles</p>
                 </CardContent>
               </Card>
@@ -238,21 +236,20 @@ export default function PublicVitrinePage() {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                Biens en Vedette
-              </h2>
-              <p className="text-gray-600">
-                Découvrez notre sélection de biens immobiliers
-              </p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Biens en Vedette</h2>
+              <p className="text-gray-600">Découvrez notre sélection de biens immobiliers</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProperties.map((property) => (
-                <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card
+                  key={property.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                >
                   <div className="relative h-48 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
-                      <img 
-                        src={property.images[0]} 
+                      <img
+                        src={property.images[0]}
                         alt={property.seo?.metaTitle || property.title}
                         className="w-full h-full object-cover"
                       />
@@ -261,9 +258,11 @@ export default function PublicVitrinePage() {
                         <Home className="h-16 w-16 text-gray-400" />
                       </div>
                     )}
-                    <Badge 
+                    <Badge
                       className="absolute top-3 right-3"
-                      style={{ backgroundColor: property.category === 'sale' ? '#10B981' : '#3B82F6' }}
+                      style={{
+                        backgroundColor: property.category === 'sale' ? '#10B981' : '#3B82F6',
+                      }}
                     >
                       {property.category === 'sale' ? 'Vente' : 'Location'}
                     </Badge>
@@ -318,9 +317,7 @@ export default function PublicVitrinePage() {
 
             <div className="text-center mt-8">
               <Link href={`/vitrine/public/${agencyId}/offres`}>
-                <Button size="lg">
-                  Voir toutes nos offres →
-                </Button>
+                <Button size="lg">Voir toutes nos offres →</Button>
               </Link>
             </div>
           </div>
@@ -334,9 +331,7 @@ export default function PublicVitrinePage() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">
                   À propos de {config.agencyName}
                 </h2>
-                <p className="text-gray-700 text-lg leading-relaxed">
-                  {config.aboutText}
-                </p>
+                <p className="text-gray-700 text-lg leading-relaxed">{config.aboutText}</p>
               </div>
             </div>
           </section>
@@ -398,7 +393,9 @@ export default function PublicVitrinePage() {
             </div>
 
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-              <p>© {new Date().getFullYear()} {config.agencyName}. Tous droits réservés.</p>
+              <p>
+                © {new Date().getFullYear()} {config.agencyName}. Tous droits réservés.
+              </p>
             </div>
           </div>
         </footer>
