@@ -1,0 +1,220 @@
+{
+  "code": "real-estate",
+  "name": "Immobilier",
+  "version": "1.0.0",
+  "category": "BUSINESS",
+  "description": "Module métier pour la gestion immobilière : biens, prospects, mandats, transactions",
+
+  "menus": [
+    {
+      "label": "Biens",
+      "icon": "Home",
+      "path": "/properties",
+      "requiredRole": "AGENT",
+      "order": 10
+    },
+    {
+      "label": "Prospects",
+      "icon": "Users",
+      "path": "/prospects",
+      "requiredRole": "AGENT",
+      "order": 20
+    },
+    {
+      "label": "Rendez-vous",
+      "icon": "Calendar",
+      "path": "/appointments",
+      "requiredRole": "AGENT",
+      "order": 30
+    },
+    {
+      "label": "Mandats",
+      "icon": "FileText",
+      "path": "/mandates",
+      "requiredRole": "AGENT",
+      "order": 40
+    },
+    {
+      "label": "Transactions",
+      "icon": "DollarSign",
+      "path": "/transactions",
+      "requiredRole": "AGENT",
+      "order": 50
+    },
+    {
+      "label": "Prospecting",
+      "icon": "Search",
+      "path": "/prospecting",
+      "requiredRole": "AGENT",
+      "order": 60,
+      "children": [
+        {
+          "label": "Campagnes",
+          "path": "/prospecting/campaigns",
+          "icon": "Target"
+        },
+        {
+          "label": "Leads",
+          "path": "/prospecting/leads",
+          "icon": "UserPlus"
+        },
+        {
+          "label": "Web Scraping",
+          "path": "/prospecting/scraping",
+          "icon": "Globe"
+        }
+      ]
+    },
+    {
+      "label": "Matching IA",
+      "icon": "Sparkles",
+      "path": "/matching",
+      "requiredRole": "AGENT",
+      "order": 70
+    },
+    {
+      "label": "Analytique",
+      "icon": "BarChart",
+      "path": "/analytics",
+      "requiredRole": "AGENT",
+      "order": 80
+    }
+  ],
+
+  "permissions": [
+    "real_estate.properties.read",
+    "real_estate.properties.write",
+    "real_estate.properties.delete",
+    "real_estate.prospects.read",
+    "real_estate.prospects.write",
+    "real_estate.prospects.delete",
+    "real_estate.appointments.read",
+    "real_estate.appointments.write",
+    "real_estate.mandates.read",
+    "real_estate.mandates.write",
+    "real_estate.transactions.read",
+    "real_estate.transactions.write",
+    "real_estate.matching.use",
+    "real_estate.prospecting.use",
+    "real_estate.analytics.read"
+  ],
+
+  "aiActions": [
+    {
+      "code": "real_estate_matching",
+      "name": "Matching Bien-Prospect",
+      "description": "Analyse IA pour matcher un bien immobilier avec un prospect selon critères de recherche",
+      "creditsCost": 20,
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "systemPrompt": "Tu es un expert en immobilier. Analyse le bien et le prospect pour déterminer s'ils correspondent.",
+      "userPromptTpl": "Bien: {{property}}\nProspect: {{prospect}}\nCritères: {{criteria}}"
+    },
+    {
+      "code": "real_estate_property_description",
+      "name": "Génération Description Bien",
+      "description": "Génère une description commerciale attractive pour un bien immobilier",
+      "creditsCost": 10,
+      "provider": "openai",
+      "model": "gpt-4o",
+      "systemPrompt": "Tu es un rédacteur immobilier expert. Crée une description attractive et professionnelle.",
+      "userPromptTpl": "Bien: {{property}}"
+    },
+    {
+      "code": "real_estate_prospect_scoring",
+      "name": "Scoring Prospect",
+      "description": "Score le niveau de sérieux et la probabilité de conversion d'un prospect",
+      "creditsCost": 15,
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "systemPrompt": "Tu es un expert en qualification de leads immobiliers. Score le prospect de 0 à 100.",
+      "userPromptTpl": "Prospect: {{prospect}}\nHistorique: {{history}}"
+    },
+    {
+      "code": "real_estate_market_analysis",
+      "name": "Analyse de Marché",
+      "description": "Analyse le marché immobilier local pour un bien donné",
+      "creditsCost": 25,
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "systemPrompt": "Tu es un analyste du marché immobilier. Fournis une analyse complète.",
+      "userPromptTpl": "Bien: {{property}}\nZone: {{location}}"
+    },
+    {
+      "code": "real_estate_prospecting_search",
+      "name": "Recherche AI Prospecting",
+      "description": "Recherche intelligente de prospects via SERP et scraping",
+      "creditsCost": 30,
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    {
+      "code": "real_estate_document_generation",
+      "name": "Génération de Documents",
+      "description": "Génère des documents immobiliers (mandats, compromis, etc.)",
+      "creditsCost": 15,
+      "provider": "openai",
+      "model": "gpt-4o"
+    },
+    {
+      "code": "real_estate_email_response",
+      "name": "Réponse Email IA",
+      "description": "Génère une réponse personnalisée à un email prospect",
+      "creditsCost": 8,
+      "provider": "deepseek",
+      "model": "deepseek-chat"
+    },
+    {
+      "code": "real_estate_seo_content",
+      "name": "Contenu SEO",
+      "description": "Génère du contenu optimisé SEO pour la vitrine web",
+      "creditsCost": 12,
+      "provider": "openai",
+      "model": "gpt-4o"
+    }
+  ],
+
+  "schemas": [
+    {
+      "tableName": "properties",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "title", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "price", "type": "number" },
+        { "name": "surface", "type": "number" },
+        { "name": "rooms", "type": "number" },
+        { "name": "address", "type": "string" },
+        { "name": "city", "type": "string" },
+        { "name": "zipCode", "type": "string" },
+        { "name": "description", "type": "text" },
+        { "name": "status", "type": "enum" }
+      ]
+    },
+    {
+      "tableName": "prospects",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "firstName", "type": "string" },
+        { "name": "lastName", "type": "string" },
+        { "name": "email", "type": "string" },
+        { "name": "phone", "type": "string" },
+        { "name": "type", "type": "enum" },
+        { "name": "budget", "type": "number" },
+        { "name": "searchCriteria", "type": "json" },
+        { "name": "status", "type": "enum" }
+      ]
+    }
+  ],
+
+  "defaultConfig": {
+    "matchingThreshold": 0.75,
+    "autoProspectingEnabled": true,
+    "autoEmailResponseEnabled": false,
+    "seoOptimizationEnabled": true,
+    "marketAnalysisFrequency": "weekly"
+  },
+
+  "basePrice": 49.99,
+  "creditsIncluded": 500
+}
