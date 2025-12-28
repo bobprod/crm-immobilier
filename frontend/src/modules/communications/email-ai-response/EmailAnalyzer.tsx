@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Send, Sparkles } from 'lucide-react';
 import { emailAIResponseApi, EmailAnalysisResult, EmailDraft } from '../../../shared/utils/quick-wins-api';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface EmailAnalyzerProps {
   onDraftGenerated?: (draft: EmailDraft) => void;
@@ -14,6 +15,7 @@ export const EmailAnalyzer: React.FC<EmailAnalyzerProps> = ({ onDraftGenerated }
   const [generating, setGenerating] = useState(false);
   const [analysis, setAnalysis] = useState<EmailAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleAnalyze = async () => {
     if (!from || !subject || !body) {
@@ -33,8 +35,13 @@ export const EmailAnalyzer: React.FC<EmailAnalyzerProps> = ({ onDraftGenerated }
       });
       setAnalysis(result);
     } catch (err) {
-      setError('Erreur lors de l\'analyse de l\'email');
-      console.error('Failed to analyze email:', err);
+      const errorMsg = 'Erreur lors de l\'analyse de l\'email';
+      setError(errorMsg);
+      toast({
+        title: 'Erreur',
+        description: errorMsg,
+        variant: 'destructive',
+      });
     } finally {
       setAnalyzing(false);
     }
@@ -52,8 +59,13 @@ export const EmailAnalyzer: React.FC<EmailAnalyzerProps> = ({ onDraftGenerated }
       });
       onDraftGenerated?.(draft);
     } catch (err) {
-      setError('Erreur lors de la génération du brouillon');
-      console.error('Failed to generate draft:', err);
+      const errorMsg = 'Erreur lors de la génération du brouillon';
+      setError(errorMsg);
+      toast({
+        title: 'Erreur',
+        description: errorMsg,
+        variant: 'destructive',
+      });
     } finally {
       setGenerating(false);
     }

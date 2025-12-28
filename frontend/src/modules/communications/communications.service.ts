@@ -33,6 +33,25 @@ export interface SendWhatsAppDto {
   prospectId?: string;
 }
 
+export interface CreateTemplateDto {
+  name: string;
+  type: 'email' | 'sms' | 'whatsapp';
+  subject?: string;
+  body: string;
+  variables?: string[];
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  type: 'email' | 'sms' | 'whatsapp';
+  subject?: string;
+  body: string;
+  variables?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CommunicationFilters {
   type?: string;
   status?: string;
@@ -73,69 +92,20 @@ const communicationsService = {
     return response.data;
   },
 
-  // ========== AI-POWERED METHODS ==========
-
-  generateSmartEmail: async (context: {
-    prospectId?: string;
-    propertyId?: string;
-    purpose: 'follow_up' | 'appointment' | 'negotiation' | 'information' | 'custom';
-    tone?: 'formal' | 'friendly' | 'commercial';
-    additionalContext?: string;
-  }) => {
-    const response = await apiClient.post('/communications/ai/generate-email', context);
+  getTemplates: async (type?: string) => {
+    const response = await apiClient.get<Template[]>('/communications/templates', {
+      params: type ? { type } : {},
+    });
     return response.data;
   },
 
-  generateSmartSMS: async (context: {
-    prospectId?: string;
-    propertyId?: string;
-    purpose: 'appointment_reminder' | 'follow_up' | 'confirmation' | 'custom';
-    maxLength?: number;
-    additionalContext?: string;
-  }) => {
-    const response = await apiClient.post('/communications/ai/generate-sms', context);
+  createTemplate: async (data: CreateTemplateDto) => {
+    const response = await apiClient.post<Template>('/communications/templates', data);
     return response.data;
   },
 
-  suggestTemplates: async (context: {
-    type: 'email' | 'sms' | 'whatsapp';
-    prospectId?: string;
-    propertyId?: string;
-    purpose?: string;
-    keywords?: string[];
-  }) => {
-    const response = await apiClient.post('/communications/ai/suggest-templates', context);
-    return response.data;
-  },
-
-  generateTemplate: async (request: {
-    type: 'email' | 'sms' | 'whatsapp';
-    purpose: string;
-    tone?: 'formal' | 'friendly' | 'commercial';
-    includeVariables?: string[];
-    sampleContext?: string;
-  }) => {
-    const response = await apiClient.post('/communications/ai/generate-template', request);
-    return response.data;
-  },
-
-  autoComplete: async (data: {
-    partialText: string;
-    type: 'email' | 'sms';
-    prospectId?: string;
-    propertyId?: string;
-  }) => {
-    const response = await apiClient.post('/communications/ai/auto-complete', data);
-    return response.data;
-  },
-
-  improveText: async (text: string, improvements: ('grammar' | 'tone' | 'clarity' | 'professional' | 'concise')[]) => {
-    const response = await apiClient.post('/communications/ai/improve-text', { text, improvements });
-    return response.data;
-  },
-
-  translateMessage: async (text: string, targetLanguage: 'ar' | 'en' | 'fr') => {
-    const response = await apiClient.post('/communications/ai/translate', { text, targetLanguage });
+  sendTestEmail: async (to: string) => {
+    const response = await apiClient.post('/communications/smtp/test-email', { to });
     return response.data;
   },
 };

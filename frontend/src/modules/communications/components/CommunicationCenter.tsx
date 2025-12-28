@@ -17,12 +17,14 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '@/shared/components/ui/resizable';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function CommunicationCenter() {
   const [messages, setMessages] = useState<Communication[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Communication | null>(null);
   const [loading, setLoading] = useState(true);
   const [isComposing, setIsComposing] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadMessages();
@@ -34,7 +36,11 @@ export default function CommunicationCenter() {
       const data = await communicationsService.getHistory();
       setMessages(data);
     } catch (error) {
-      console.error('Erreur chargement messages:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les messages',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

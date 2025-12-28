@@ -882,7 +882,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Sources de Donnees</h2>
                 <a
-                  href="/settings/prospecting-config"
+                  href="/settings/ai-api-keys"
                   className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
                 >
                   ⚙️ Configurer les API

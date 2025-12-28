@@ -45,7 +45,7 @@ export class AudioNotificationService {
     try {
       await audio.play();
     } catch (error) {
-      console.warn('Failed to play notification sound:', error);
+      // Audio playback failed (autoplay policy, browser restrictions, etc.) - silently ignore
     }
   }
 }

@@ -66,7 +66,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push('/settings/prospecting-config')}
+            onClick={() => router.push('/settings/ai-api-keys')}
           >
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
@@ -75,12 +75,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-                    Configuration Prospection
+                    Clés API (BYOK)
                     <ExternalLink className="h-4 w-4 text-gray-400" />
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Configurez les API pour la prospection : Pica, SERP, Firecrawl, et les
-                    paramètres de scraping
+                    Configurez vos clés API pour LLM (Claude, GPT) et Scraping (Pica, SERP, Firecrawl)
                   </p>
                 </div>
               </div>

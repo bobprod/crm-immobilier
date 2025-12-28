@@ -192,6 +192,9 @@ model agencies {
   aiCredits    AiCredits?
   aiUsages     AiUsage[]
   aiErrorLogs  AiErrorLog[]
+
+  // ── Nouvelles relations Module Registry (Phase 1) ──
+  moduleSubscriptions ModuleAgencySubscription[]
 }
 
 model appointments {
@@ -442,13 +445,23 @@ model user_integrations {
   @@unique([userId, type])
 }
 
+// ════════════════════════════════════════════════════════════
+// USER ROLES ENUM - SAAS CORE OS
+// ════════════════════════════════════════════════════════════
+enum UserRole {
+  USER          // Utilisateur simple (ex: freelance, client final)
+  AGENT         // Agent métier (immo, voyage, recruteur)
+  ADMIN         // Admin agence
+  SUPER_ADMIN   // Admin plateforme
+}
+
 model users {
   id                       String                    @id @default(cuid())
   email                    String                    @unique
   password                 String
   firstName                String?
   lastName                 String?
-  role                     String                    @default("agent")
+  role                     UserRole                  @default(AGENT)
   agencyId                 String?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
@@ -706,11 +719,22 @@ model ai_settings {
   userId            String   @unique
   defaultProvider   String   @default("openai")
   preferredProvider String?  @default("openai")
+  // ── LLM Providers ──
   openaiApiKey      String?
   geminiApiKey      String?
-  claudeApiKey      String?
+  claudeApiKey      String?       // Anthropic
   deepseekApiKey    String?
   openrouterApiKey  String?
+
+  // ── Scraping & Data Providers ──
+  serpApiKey          String?     // Google SERP API
+  firecrawlApiKey     String?     // Firecrawl web scraping
+  picaApiKey          String?     // Pica real estate data
+  jinaReaderApiKey    String?     // Jina Reader (URL → Markdown)
+  scrapingBeeApiKey   String?     // ScrapingBee
+  browserlessApiKey   String?     // Browserless headless browser
+  rapidApiKey         String?     // RapidAPI
+
   customApiKeys     Json?
   defaultModel      String?
   temperature       Float    @default(0.7)
@@ -1965,6 +1989,9 @@ model AiPricing {
   enabled     Boolean  @default(true)
   category    String?  // "prospecting", "matching", "seo", "chat", "email"
 
+  // ── Nouvelles relations Module Registry (Phase 1) ──
+  moduleAiActions ModuleAiAction[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -2114,4 +2141,169 @@ model GlobalSettings {
   updatedAt DateTime @updatedAt
 
   @@map("global_settings")
+}
+
+// ════════════════════════════════════════════════════════════
+// MODULE REGISTRY - SAAS CORE OS (PHASE 1)
+// Système de "Plug & Play" pour modules métier
+// Architecture: Core OS agnostique + Modules Business enchufables
+// ════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────────────────────────────
+enum ModuleStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+}
+
+enum ModuleCategory {
+  BUSINESS      // Modules métier (Immo, Voyage, Casting, RH)
+  INTELLIGENCE  // Modules IA (Matching, Scoring, RAG)
+  INTEGRATION   // Intégrations externes (WordPress, Stripe, n8n)
+  COMMUNICATION // Email, SMS, Notifications
+  MARKETING     // SEO, Ads, Analytics
+}
+
+// ──────────────────────────────────────────────────────────────
+// 1. BUSINESS MODULES (Registre des modules métier)
+// ──────────────────────────────────────────────────────────────
+model BusinessModule {
+  id              String         @id @default(cuid())
+  code            String         @unique  // "real-estate", "travel", "casting"
+  name            String                  // "Immobilier", "Voyage", "Casting"
+  description     String?        @db.Text
+  version         String         @default("1.0.0")
+  status          ModuleStatus   @default(ACTIVE)
+  category        ModuleCategory @default(BUSINESS)
+
+  // Manifest JSON (déclaration des besoins du module)
+  manifest        Json           // { menus, permissions, schemas, aiActions }
+
+  // Pricing (coût d'activation du module)
+  basePrice       Float?         // Prix de base mensuel (EUR)
+  creditsIncluded Int?           // Crédits IA inclus par mois
+
+  // Relations
+  subscriptions   ModuleAgencySubscription[]
+  menuItems       DynamicMenuItem[]
+  aiActions       ModuleAiAction[]
+  schemas         DynamicSchema[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@map("business_modules")
+}
+
+// ──────────────────────────────────────────────────────────────
+// 2. SOUSCRIPTIONS AGENCES (qui a activé quoi)
+// ──────────────────────────────────────────────────────────────
+model ModuleAgencySubscription {
+  id             String         @id @default(cuid())
+
+  agencyId       String
+  agency         agencies       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  moduleId       String
+  module         BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  // Activation
+  isActive       Boolean        @default(true)
+  activatedAt    DateTime       @default(now())
+  expiresAt      DateTime?
+
+  // Configuration spécifique agence (override manifest)
+  config         Json?          // Configuration custom du module
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([agencyId, moduleId])
+  @@index([agencyId])
+  @@index([moduleId])
+  @@map("module_agency_subscriptions")
+}
+
+// ──────────────────────────────────────────────────────────────
+// 3. MENU ITEMS DYNAMIQUES (générés depuis le manifest)
+// ──────────────────────────────────────────────────────────────
+model DynamicMenuItem {
+  id           String         @id @default(cuid())
+
+  moduleId     String
+  module       BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  // Menu structure
+  label        String         // "Biens", "Prospects", "Voyages"
+  icon         String?        // "Home", "Users", "Plane"
+  path         String         // "/properties", "/prospects", "/trips"
+  parentId     String?        // Pour sous-menus hiérarchiques
+  order        Int            @default(0)
+
+  // Permissions
+  requiredRole UserRole?      // Minimum role required (null = tous)
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([moduleId, path])
+  @@index([moduleId])
+  @@map("dynamic_menu_items")
+}
+
+// ──────────────────────────────────────────────────────────────
+// 4. AI ACTIONS PAR MODULE (actions IA disponibles)
+// ──────────────────────────────────────────────────────────────
+model ModuleAiAction {
+  id              String         @id @default(cuid())
+
+  moduleId        String
+  module          BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  actionCode      String         @unique // "real_estate_matching", "travel_scoring"
+  actionName      String                 // "Matching Bien-Prospect", "Scoring Voyage"
+  description     String?        @db.Text
+
+  // Lien avec le pricing existant
+  pricingId       String?
+  pricing         AiPricing?     @relation(fields: [pricingId], references: [id])
+
+  // Configuration IA (prompts & modèles)
+  systemPrompt    String?        @db.Text
+  userPromptTpl   String?        @db.Text
+  provider        String?        // "anthropic", "openai", "deepseek"
+  model           String?        // "claude-3-5-sonnet", "gpt-4o"
+
+  enabled         Boolean        @default(true)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([moduleId])
+  @@index([actionCode])
+  @@map("module_ai_actions")
+}
+
+// ──────────────────────────────────────────────────────────────
+// 5. SCHEMAS MÉTIER DYNAMIQUES (optionnel, avancé)
+// ──────────────────────────────────────────────────────────────
+model DynamicSchema {
+  id          String         @id @default(cuid())
+
+  moduleId    String
+  module      BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  tableName   String         // "properties", "trips", "missions"
+  schema      Json           // JSON Schema du modèle métier
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([moduleId, tableName])
+  @@index([moduleId])
+  @@map("dynamic_schemas")
 }

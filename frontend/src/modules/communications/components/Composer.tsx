@@ -9,16 +9,9 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Loader2, Send, Sparkles } from 'lucide-react';
+import { Loader2, Send, FileText } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { AIAssistantPanel } from './AIAssistantPanel';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/components/ui/dialog';
+import { TemplateSelector } from './TemplateSelector';
 
 const emailSchema = z.object({
   to: z.string().email('Email invalide'),
@@ -40,7 +33,7 @@ interface ComposerProps {
 export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
   const [activeTab, setActiveTab] = useState('email');
   const [sending, setSending] = useState(false);
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   const emailForm = useForm<z.infer<typeof emailSchema>>({
@@ -79,16 +72,15 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
     }
   };
 
-  const handleAIContentGenerated = (content: { subject?: string; body: string }) => {
+  const handleTemplateSelect = (data: { subject?: string; body: string }) => {
     if (activeTab === 'email') {
-      if (content.subject) {
-        emailForm.setValue('subject', content.subject);
+      if (data.subject) {
+        emailForm.setValue('subject', data.subject);
       }
-      emailForm.setValue('body', content.body);
+      emailForm.setValue('body', data.body);
     } else {
-      smsForm.setValue('body', content.body);
+      smsForm.setValue('body', data.body);
     }
-    setShowAIAssistant(false);
   };
 
   return (
@@ -155,60 +147,107 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
               </form>
             </TabsContent>
 
-            <TabsContent value="sms">
-              <form onSubmit={smsForm.handleSubmit(onSendSms)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Numéro de téléphone</Label>
-                  <Input placeholder="+33 6 12 34 56 78" {...smsForm.register('to')} />
-                  {smsForm.formState.errors.to && (
-                    <p className="text-xs text-red-500">{smsForm.formState.errors.to.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Message</Label>
-                  <Textarea
-                    placeholder="Votre SMS..."
-                    className="min-h-[100px]"
-                    {...smsForm.register('body')}
-                  />
-                  {smsForm.formState.errors.body && (
-                    <p className="text-xs text-red-500">{smsForm.formState.errors.body.message}</p>
-                  )}
-                </div>
-                <Button type="submit" className="w-full" disabled={sending}>
-                  {sending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  Envoyer SMS
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+          <TabsContent value="email">
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTemplateSelectorOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Choisir un template
+              </Button>
+            </div>
+            <form onSubmit={emailForm.handleSubmit(onSendEmail)} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Destinataire</Label>
+                <Input placeholder="client@exemple.com" {...emailForm.register('to')} />
+                {emailForm.formState.errors.to && (
+                  <p className="text-xs text-red-500">{emailForm.formState.errors.to.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Sujet</Label>
+                <Input placeholder="Sujet du message" {...emailForm.register('subject')} />
+                {emailForm.formState.errors.subject && (
+                  <p className="text-xs text-red-500">
+                    {emailForm.formState.errors.subject.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  placeholder="Votre message..."
+                  className="min-h-[150px]"
+                  {...emailForm.register('body')}
+                />
+                {emailForm.formState.errors.body && (
+                  <p className="text-xs text-red-500">{emailForm.formState.errors.body.message}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={sending}>
+                {sending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Envoyer Email
+              </Button>
+            </form>
+          </TabsContent>
 
-      {/* AI Assistant Dialog */}
-      <Dialog open={showAIAssistant} onOpenChange={setShowAIAssistant}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              Assistant IA
-            </DialogTitle>
-            <DialogDescription>
-              Générez, améliorez et traduisez vos messages avec l'IA
-            </DialogDescription>
-          </DialogHeader>
-          <AIAssistantPanel
-            type={activeTab as 'email' | 'sms'}
-            prospectId={prospectId}
-            propertyId={propertyId}
-            onContentGenerated={handleAIContentGenerated}
-          />
-        </DialogContent>
-      </Dialog>
-    </>
+          <TabsContent value="sms">
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTemplateSelectorOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Choisir un template
+              </Button>
+            </div>
+            <form onSubmit={smsForm.handleSubmit(onSendSms)} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Numéro de téléphone</Label>
+                <Input placeholder="+33 6 12 34 56 78" {...smsForm.register('to')} />
+                {smsForm.formState.errors.to && (
+                  <p className="text-xs text-red-500">{smsForm.formState.errors.to.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  placeholder="Votre SMS..."
+                  className="min-h-[100px]"
+                  {...smsForm.register('body')}
+                />
+                {smsForm.formState.errors.body && (
+                  <p className="text-xs text-red-500">{smsForm.formState.errors.body.message}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={sending}>
+                {sending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Envoyer SMS
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+
+      <TemplateSelector
+        type={activeTab === 'email' ? 'email' : 'sms'}
+        onSelect={handleTemplateSelect}
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+      />
+    </Card>
   );
 }
