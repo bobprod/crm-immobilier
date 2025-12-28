@@ -54,16 +54,13 @@ export function TaskList() {
 
   const handleCreate = async (data: CreateTaskDto) => {
     try {
-      console.log('[TaskList] Creating/updating task with data:', data);
       if (selectedTask) {
-        console.log('[TaskList] Updating task:', selectedTask.id);
         await tasksService.update(selectedTask.id, data);
         toast({
           title: 'Succès',
           description: '✅ Tâche mise à jour avec succès',
         });
       } else {
-        console.log('[TaskList] Creating new task');
         await tasksService.create(data);
         toast({
           title: 'Succès',
@@ -120,8 +117,21 @@ export function TaskList() {
   );
 
   const handleComplete = async (id: string) => {
-    await tasksService.complete(id);
-    loadTasks();
+    try {
+      await tasksService.complete(id);
+      toast({
+        title: 'Succès',
+        description: '✅ Tâche marquée comme terminée',
+      });
+      loadTasks();
+    } catch (error: any) {
+      console.error('[TaskList] Error completing task:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de marquer la tâche comme terminée',
+        variant: 'destructive',
+      });
+    }
   };
 
   const filteredTasks = tasks.filter((task) => {
