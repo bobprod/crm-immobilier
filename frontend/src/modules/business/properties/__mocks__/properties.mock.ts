@@ -1,0 +1,62 @@
+import { Property } from '@/shared/utils/properties-api';
+
+/**
+ * Mock properties data for testing purposes
+ * Used in test mode (?testMode=true) to avoid real API calls
+ */
+export const mockProperties: Property[] = [
+  {
+    id: '1',
+    title: 'Appartement 3 pièces centre-ville',
+    description: 'Bel appartement rénové en centre-ville avec balcon',
+    type: 'apartment',
+    category: 'sale',
+    status: 'available',
+    price: 250000,
+    currency: 'TND',
+    area: 120,
+    bedrooms: 2,
+    bathrooms: 1,
+    address: '15 Avenue Habib Bourguiba',
+    city: 'Tunis',
+    priority: 'high',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Villa avec piscine',
+    description: 'Magnifique villa avec piscine et jardin',
+    type: 'villa',
+    category: 'sale',
+    status: 'reserved',
+    price: 550000,
+    currency: 'TND',
+    area: 350,
+    bedrooms: 4,
+    bathrooms: 3,
+    address: 'Route de la Marsa',
+    city: 'La Marsa',
+    priority: 'urgent',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Studio meublé',
+    description: 'Studio meublé proche métro',
+    type: 'studio',
+    category: 'rent',
+    status: 'rented',
+    price: 800,
+    currency: 'TND',
+    area: 45,
+    bedrooms: 0,
+    bathrooms: 1,
+    address: 'Rue de Marseille',
+    city: 'Tunis',
+    priority: 'low',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];

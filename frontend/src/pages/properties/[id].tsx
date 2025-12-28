@@ -14,44 +14,15 @@ import {
   FileText,
   User,
 } from 'lucide-react';
-import { propertiesAPI } from '@/shared/utils/properties-api';
-
-interface Property {
-  id: string;
-  title: string;
-  type: string;
-  price: number;
-  surface: number;
-  rooms: number;
-  bedrooms: number;
-  bathrooms: number;
-  address: string;
-  city: string;
-  description: string;
-  status: string;
-  images: string[];
-  priority?: string;
-  tags?: string[];
-  notes?: string;
-  ownerId?: string;
-  owner?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  };
-  netPrice?: number;
-  fees?: number;
-  feesPercentage?: number;
-  createdAt: string;
-}
+import { propertiesAPI, Property } from '@/shared/utils/properties-api';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function PropertyDetailPage() {
   const router = useRouter();
   const { id } = router.query;
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id) {
@@ -62,9 +33,15 @@ export default function PropertyDetailPage() {
   const loadProperty = async () => {
     try {
       const data = await propertiesAPI.getById(id as string);
-      setProperty(data as any);
+      setProperty(data);
     } catch (error) {
-      console.error('Erreur chargement bien:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger la propriété',
+        variant: 'destructive',
+      });
+      // Redirect to list on error
+      router.push('/properties');
     } finally {
       setLoading(false);
     }
@@ -178,20 +155,24 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Home className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Surface</p>
-                      <p className="font-medium">{property.surface} m²</p>
+                  {property.area && (
+                    <div className="flex items-center gap-2">
+                      <Home className="h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Surface</p>
+                        <p className="font-medium">{property.area} m²</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Home className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Pièces</p>
-                      <p className="font-medium">{property.rooms || '-'}</p>
+                  )}
+                  {property.bedrooms && property.bedrooms > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Home className="h-5 w-5 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Chambres</p>
+                        <p className="font-medium">{property.bedrooms}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
