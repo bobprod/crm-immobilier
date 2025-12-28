@@ -1,0 +1,56 @@
+{
+  "code": "business-tasks",
+  "name": "Gestion des Tâches",
+  "version": "1.0.0",
+  "category": "BUSINESS",
+  "description": "Module de gestion des tâches et rappels pour le suivi quotidien des activités",
+
+  "menus": [
+    {
+      "label": "Tâches",
+      "icon": "CheckSquare",
+      "path": "/tasks",
+      "requiredRole": "USER",
+      "order": 15
+    }
+  ],
+
+  "permissions": [
+    "tasks.read",
+    "tasks.write",
+    "tasks.delete",
+    "tasks.complete",
+    "tasks.stats"
+  ],
+
+  "aiActions": [],
+
+  "schemas": [
+    {
+      "tableName": "tasks",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "userId", "type": "string" },
+        { "name": "title", "type": "string" },
+        { "name": "description", "type": "text" },
+        { "name": "status", "type": "enum", "values": ["todo", "in_progress", "done"] },
+        { "name": "priority", "type": "enum", "values": ["low", "medium", "high"] },
+        { "name": "dueDate", "type": "datetime" },
+        { "name": "completedAt", "type": "datetime" },
+        { "name": "createdAt", "type": "datetime" },
+        { "name": "updatedAt", "type": "datetime" }
+      ]
+    }
+  ],
+
+  "defaultConfig": {
+    "enableNotifications": true,
+    "notifyBeforeDueDate": 24,
+    "defaultPriority": "medium",
+    "autoArchiveCompletedTasks": false,
+    "archiveAfterDays": 30
+  },
+
+  "basePrice": 0,
+  "creditsIncluded": 0
+}
