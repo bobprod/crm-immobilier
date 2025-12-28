@@ -3,7 +3,6 @@ export class DesktopNotificationService {
 
   static async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
-      console.warn('Browser does not support notifications');
       return false;
     }
 
@@ -38,12 +37,12 @@ export class DesktopNotificationService {
         try {
           const url = new URL(options.data.url, window.location.origin);
           // Only allow same-origin URLs with http/https protocols
-          if (url.origin === window.location.origin && 
+          if (url.origin === window.location.origin &&
               (url.protocol === 'http:' || url.protocol === 'https:')) {
             window.location.assign(url.href);
           }
         } catch (e) {
-          console.warn('Invalid notification URL:', options.data.url);
+          // Invalid URL - silently ignore
         }
       }
       notification.close();

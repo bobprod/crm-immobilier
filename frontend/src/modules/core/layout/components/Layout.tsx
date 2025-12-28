@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { Home, Users, Building2, Calendar, BarChart3, Settings, LogOut, Menu, X, Bell, Target, MessageSquare, Sparkles, CheckSquare, Zap, Shield, FileText, TrendingUp, Wallet } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
+import DynamicMenu from './DynamicMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -52,31 +52,6 @@ export default function Layout({
     setReadyToRender(true);
   }, [user, loading, mounted, disableAuthRedirect, isTestMode, router]);
 
-  // Determine active tab based on current route
-  const getActiveTab = () => {
-    const path = router.pathname;
-    if (path === '/dashboard' || path === '/') return 'dashboard';
-    if (path.startsWith('/ai-assistant')) return 'ai-assistant';
-    if (path.startsWith('/prospecting')) return 'prospecting';
-    if (path.startsWith('/properties')) return 'properties';
-    if (path.startsWith('/prospects')) return 'prospects';
-    if (path.startsWith('/mandates')) return 'mandates';
-    if (path.startsWith('/transactions')) return 'transactions';
-    if (path.startsWith('/finance')) return 'finance';
-    if (path.startsWith('/matching')) return 'matching';
-    if (path.startsWith('/appointments')) return 'appointments';
-    if (path.startsWith('/tasks')) return 'tasks';
-    if (path.startsWith('/communications')) return 'communications';
-    if (path.startsWith('/notifications')) return 'notifications';
-    if (path.startsWith('/ai-metrics')) return 'ai-metrics';
-    if (path.startsWith('/analytics')) return 'analytics';
-    if (path.startsWith('/validation')) return 'validation';
-    if (path.startsWith('/settings')) return 'settings';
-    return 'dashboard';
-  };
-
-  const activeTab = getActiveTab();
-
   // Show loading only while actually loading, or while checking test mode
   if (!readyToRender || (loading && !disableAuthRedirect && !isTestMode)) {
     return (
@@ -85,34 +60,6 @@ export default function Layout({
       </div>
     );
   }
-}
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: Home, href: '/dashboard' },
-    { id: 'prospecting', label: 'Prospection IA', icon: Sparkles, href: '/prospecting', highlight: true },
-    { id: 'properties', label: 'Propriétés', icon: Building2, href: '/properties' },
-    { id: 'prospects', label: 'Prospects', icon: Users, href: '/prospects' },
-    { id: 'mandates', label: 'Mandats', icon: FileText, href: '/mandates' },
-    { id: 'transactions', label: 'Transactions', icon: TrendingUp, href: '/transactions' },
-    { id: 'finance', label: 'Finance', icon: Wallet, href: '/finance' },
-    { id: 'matching', label: 'Matching', icon: Target, href: '/matching' },
-    { id: 'appointments', label: 'Rendez-vous', icon: Calendar, href: '/appointments' },
-    { id: 'tasks', label: 'Tâches', icon: CheckSquare, href: '/tasks' },
-    { id: 'communications', label: 'Communications', icon: MessageSquare, href: '/communications' },
-    { id: 'notifications', label: 'Notifications', icon: Bell, href: '/notifications' },
-    { id: 'validation', label: 'Validation', icon: Shield, href: '/validation' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/analytics' },
-    { id: 'ai-metrics', label: 'AI Metrics', icon: BrainCircuit, href: '/ai-metrics', highlight: true },
-    { id: 'settings', label: 'Paramètres', icon: Settings, href: '/settings' },
-  ];
-
-  const handleNavigation = (tabId: string, href: string) => {
-    if (mounted) {
-      router.push(href);
-      // ✅ FIX: Fermer la sidebar sur mobile après navigation
-      setSidebarOpen(false);
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -120,52 +67,56 @@ export default function Layout({
     router.push('/login');
   };
 
-      <nav className="mt-6 flex-1 overflow-y-auto">
-        {menuItems.map((item) => (
+  const handleMenuNavigation = () => {
+    // Fermer la sidebar sur mobile après navigation
+    setSidebarOpen(false);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div
+        className={`
+          fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0 lg:static lg:inset-auto
+          flex flex-col
+        `}
+      >
+        {/* Logo / Header */}
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-primary">CRM Immobilier</h1>
+        </div>
+
+        {/* Dynamic Menu - Replace hardcoded menu */}
+        <DynamicMenu onNavigate={handleMenuNavigation} />
+
+        {/* Logout button */}
+        <div className="border-t border-gray-200 p-6 mt-auto">
           <button
-            key={item.id}
-            onClick={() => handleNavigation(item.id, item.href)}
-            className={`w-full flex items-center px-6 py-3 text-left transition-colors ${activeTab === item.id
-              ? 'bg-primary-foreground text-primary border-r-2 border-primary'
-              : (item as any).highlight
-                ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 font-medium'
-                : 'text-gray-700 hover:bg-gray-100'
-              }`}
+            onClick={handleLogout}
+            className="flex items-center text-gray-700 hover:text-gray-900"
           >
-            <item.icon className={`w-5 h-5 mr-3 ${(item as any).highlight && activeTab !== item.id ? 'text-purple-600' : ''}`} />
-            {item.label}
-            {(item as any).highlight && activeTab !== item.id && (
-              <span className="ml-auto text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">IA</span>
-            )}
+            <LogOut className="w-5 h-5 mr-2" />
+            Déconnexion
           </button>
-        ))}
-      </nav>
+        </div>
+      </div>
 
-      <div className="border-t border-gray-200 p-6 mt-auto">
-        <button
-          onClick={handleLogout}
-          className="flex items-center text-gray-700 hover:text-gray-900"
-        >
-          <LogOut className="w-5 h-5 mr-2" />
-          Déconnexion
-        </button>
+      {/* Mobile menu button */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+      >
+        {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Main content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">
+          {children}
+        </div>
       </div>
     </div>
-
-    {/* Mobile menu button */}
-    <button
-      className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg"
-      onClick={() => setSidebarOpen(!sidebarOpen)}
-    >
-      {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-    </button>
-
-    {/* Main content */}
-    <div className="flex-1 overflow-auto">
-      <div className="p-6">
-        {children}
-      </div>
-    </div>
-  </div>
-);
+  );
 }

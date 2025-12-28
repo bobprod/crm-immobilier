@@ -18,6 +18,7 @@ import { PropertyBulkActions } from './PropertyBulkActions';
 import { PropertyFormModal } from './PropertyFormModal';
 import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog';
 import { Plus, Eye, Edit, Trash } from 'lucide-react';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface PropertyListProps {
   initialLoading?: boolean;
@@ -36,6 +37,7 @@ export function PropertyList({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<any>({});
   const router = useRouter();
+  const { toast } = useToast();
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,8 +65,13 @@ export function PropertyList({
       const data = Array.isArray(response) ? response : (response as any).properties || [];
       setProperties(data);
     } catch (err) {
-      setError('Failed to fetch properties');
-      console.error('Error fetching properties:', err);
+      const errorMessage = 'Impossible de charger les propriétés';
+      setError(errorMessage);
+      toast({
+        title: 'Erreur',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -110,8 +117,16 @@ export function PropertyList({
               await propertiesAPI.bulkDelete(selectedIds);
               await fetchProperties();
               setSelectedIds([]);
+              toast({
+                title: 'Succès',
+                description: `${selectedIds.length} propriété(s) supprimée(s)`,
+              });
             } catch (err) {
-              console.error('Delete failed:', err);
+              toast({
+                title: 'Erreur',
+                description: 'Impossible de supprimer les propriétés',
+                variant: 'destructive',
+              });
             }
           },
         });
@@ -125,8 +140,16 @@ export function PropertyList({
       // Refresh list and clear selection
       await fetchProperties();
       setSelectedIds([]);
+      toast({
+        title: 'Succès',
+        description: 'Propriétés mises à jour avec succès',
+      });
     } catch (err) {
-      console.error('Bulk action failed:', err);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour les propriétés',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -181,16 +204,30 @@ export function PropertyList({
       if (editingProperty) {
         // Update existing property
         await propertiesAPI.update(editingProperty.id, data);
+        toast({
+          title: 'Succès',
+          description: 'Propriété mise à jour avec succès',
+        });
       } else {
         // Create new property
         await propertiesAPI.create(data);
+        toast({
+          title: 'Succès',
+          description: 'Propriété créée avec succès',
+        });
       }
       // Close the modal
       handleCloseModal();
       // Refresh the list
       await fetchProperties();
     } catch (error) {
-      console.error('Error submitting property:', error);
+      toast({
+        title: 'Erreur',
+        description: editingProperty
+          ? 'Impossible de mettre à jour la propriété'
+          : 'Impossible de créer la propriété',
+        variant: 'destructive',
+      });
       // Don't close modal on error so user can fix issues
       throw error;
     }
@@ -205,12 +242,20 @@ export function PropertyList({
         try {
           await propertiesAPI.delete(property.id);
           await fetchProperties();
+          toast({
+            title: 'Succès',
+            description: 'Propriété supprimée avec succès',
+          });
         } catch (err) {
-          console.error('Delete failed:', err);
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de supprimer la propriété',
+            variant: 'destructive',
+          });
         }
       },
     });
-  }, []);
+  }, [toast]);
 
   if (loading && properties.length === 0) {
     return (
@@ -298,9 +343,7 @@ export function PropertyList({
                       }).format(property.price)}
                     </TableCell>
                     <TableCell>
-                      {property.area || property.surface
-                        ? `${property.area || property.surface} m²`
-                        : '-'}
+                      {property.area ? `${property.area} m²` : '-'}
                     </TableCell>
                     <TableCell>
                       <Badge className={getPriorityColor(property.priority)} variant="secondary">
