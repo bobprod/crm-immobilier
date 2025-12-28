@@ -90,6 +90,14 @@ function getDefaultMenu(): DynamicMenuItem[] {
       order: 0,
     },
     {
+      id: 'default-tasks',
+      moduleId: 'business-tasks',
+      label: 'Tâches',
+      icon: 'CheckSquare',
+      path: '/tasks',
+      order: 10,
+    },
+    {
       id: 'default-settings',
       moduleId: 'core',
       label: 'Paramètres',
