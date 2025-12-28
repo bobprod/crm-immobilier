@@ -26,9 +26,11 @@ const smsSchema = z.object({
 
 interface ComposerProps {
   onSent: () => void;
+  prospectId?: string;
+  propertyId?: string;
 }
 
-export function Composer({ onSent }: ComposerProps) {
+export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
   const [activeTab, setActiveTab] = useState('email');
   const [sending, setSending] = useState(false);
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
@@ -82,16 +84,68 @@ export function Composer({ onSent }: ComposerProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nouveau Message</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="sms">SMS / WhatsApp</TabsTrigger>
-          </TabsList>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Nouveau Message</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAIAssistant(true)}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4 text-purple-600" />
+              Assistant IA
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="email">Email</TabsTrigger>
+              <TabsTrigger value="sms">SMS / WhatsApp</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="email">
+              <form onSubmit={emailForm.handleSubmit(onSendEmail)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Destinataire</Label>
+                  <Input placeholder="client@exemple.com" {...emailForm.register('to')} />
+                  {emailForm.formState.errors.to && (
+                    <p className="text-xs text-red-500">{emailForm.formState.errors.to.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Sujet</Label>
+                  <Input placeholder="Sujet du message" {...emailForm.register('subject')} />
+                  {emailForm.formState.errors.subject && (
+                    <p className="text-xs text-red-500">
+                      {emailForm.formState.errors.subject.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Message</Label>
+                  <Textarea
+                    placeholder="Votre message..."
+                    className="min-h-[150px]"
+                    {...emailForm.register('body')}
+                  />
+                  {emailForm.formState.errors.body && (
+                    <p className="text-xs text-red-500">{emailForm.formState.errors.body.message}</p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={sending}>
+                  {sending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Envoyer Email
+                </Button>
+              </form>
+            </TabsContent>
 
           <TabsContent value="email">
             <div className="mb-4">

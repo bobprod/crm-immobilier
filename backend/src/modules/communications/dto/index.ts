@@ -135,3 +135,6 @@ export class UpdateTemplateDto {
   @IsOptional()
   variables?: string[];
 }
+
+// ========== AI-POWERED COMMUNICATIONS ==========
+export * from './communications-ai.dto';
