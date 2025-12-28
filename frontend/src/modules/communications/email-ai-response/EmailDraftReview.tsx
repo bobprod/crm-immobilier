@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send, X, Edit2, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { emailAIResponseApi, EmailDraft } from '../../../shared/utils/quick-wins-api';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface EmailDraftReviewProps {
   draft: EmailDraft;
@@ -18,6 +19,7 @@ export const EmailDraftReview: React.FC<EmailDraftReviewProps> = ({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { toast } = useToast();
 
   const handleSend = async () => {
     setSending(true);
@@ -30,12 +32,21 @@ export const EmailDraftReview: React.FC<EmailDraftReviewProps> = ({
         body,
       });
       setSuccess(true);
+      toast({
+        title: 'Succès',
+        description: 'Email envoyé avec succès',
+      });
       setTimeout(() => {
         onSent();
       }, 1500);
     } catch (err) {
-      setError('Erreur lors de l\'envoi de l\'email');
-      console.error('Failed to send email:', err);
+      const errorMsg = 'Erreur lors de l\'envoi de l\'email';
+      setError(errorMsg);
+      toast({
+        title: 'Erreur',
+        description: errorMsg,
+        variant: 'destructive',
+      });
     } finally {
       setSending(false);
     }

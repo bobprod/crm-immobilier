@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Mail, 
-  Send, 
-  Clock, 
-  CheckCircle, 
+import {
+  Mail,
+  Send,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Info,
   Calendar,
@@ -14,18 +14,20 @@ import {
   Zap
 } from 'lucide-react';
 import { emailAIResponseApi, EmailDraft, EmailAIStats } from '../../../shared/utils/quick-wins-api';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface EmailAIResponseDashboardProps {
   onDraftSelect?: (draft: EmailDraft) => void;
 }
 
-export const EmailAIResponseDashboard: React.FC<EmailAIResponseDashboardProps> = ({ 
-  onDraftSelect 
+export const EmailAIResponseDashboard: React.FC<EmailAIResponseDashboardProps> = ({
+  onDraftSelect
 }) => {
   const [drafts, setDrafts] = useState<EmailDraft[]>([]);
   const [stats, setStats] = useState<EmailAIStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'sent'>('pending');
+  const { toast } = useToast();
 
   useEffect(() => {
     loadData();
@@ -41,7 +43,11 @@ export const EmailAIResponseDashboard: React.FC<EmailAIResponseDashboardProps> =
       setDrafts(draftsData);
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to load email AI data:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les données IA',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
