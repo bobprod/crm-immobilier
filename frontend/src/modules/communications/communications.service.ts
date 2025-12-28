@@ -33,6 +33,25 @@ export interface SendWhatsAppDto {
   prospectId?: string;
 }
 
+export interface CreateTemplateDto {
+  name: string;
+  type: 'email' | 'sms' | 'whatsapp';
+  subject?: string;
+  body: string;
+  variables?: string[];
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  type: 'email' | 'sms' | 'whatsapp';
+  subject?: string;
+  body: string;
+  variables?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CommunicationFilters {
   type?: string;
   status?: string;
@@ -70,6 +89,23 @@ const communicationsService = {
 
   testSmtp: async () => {
     const response = await apiClient.post('/communications/smtp/test-connection');
+    return response.data;
+  },
+
+  getTemplates: async (type?: string) => {
+    const response = await apiClient.get<Template[]>('/communications/templates', {
+      params: type ? { type } : {},
+    });
+    return response.data;
+  },
+
+  createTemplate: async (data: CreateTemplateDto) => {
+    const response = await apiClient.post<Template>('/communications/templates', data);
+    return response.data;
+  },
+
+  sendTestEmail: async (to: string) => {
+    const response = await apiClient.post('/communications/smtp/test-email', { to });
     return response.data;
   },
 };
