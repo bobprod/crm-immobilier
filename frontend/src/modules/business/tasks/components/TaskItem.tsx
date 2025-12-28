@@ -3,6 +3,7 @@ import { Task } from '../tasks.service';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
+import { Checkbox } from '@/shared/components/ui/checkbox';
 import { CheckCircle2, Clock, MoreVertical, Pencil, Trash2, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
@@ -17,9 +18,18 @@ interface TaskItemProps {
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
   onComplete: (id: string) => void;
+  isSelected?: boolean;
+  onToggleSelection?: (taskId: string) => void;
 }
 
-export function TaskItem({ task, onEdit, onDelete, onComplete }: TaskItemProps) {
+const TaskItemComponent = ({
+  task,
+  onEdit,
+  onDelete,
+  onComplete,
+  isSelected = false,
+  onToggleSelection
+}: TaskItemProps) => {
   const priorityColors = {
     low: 'bg-blue-100 text-blue-800',
     medium: 'bg-yellow-100 text-yellow-800',
@@ -40,10 +50,22 @@ export function TaskItem({ task, onEdit, onDelete, onComplete }: TaskItemProps) 
 
   return (
     <Card
-      className={cn('mb-3 transition-all hover:shadow-md', task.status === 'done' && 'opacity-75')}
+      className={cn(
+        'mb-3 transition-all hover:shadow-md',
+        task.status === 'done' && 'opacity-75',
+        isSelected && 'ring-2 ring-blue-500'
+      )}
     >
       <CardContent className="p-4 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1">
+          {onToggleSelection && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelection(task.id)}
+              className="mt-1"
+            />
+          )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -111,4 +133,7 @@ export function TaskItem({ task, onEdit, onDelete, onComplete }: TaskItemProps) 
       </CardContent>
     </Card>
   );
-}
+};
+
+// Memoize to prevent unnecessary re-renders
+export const TaskItem = React.memo(TaskItemComponent);
