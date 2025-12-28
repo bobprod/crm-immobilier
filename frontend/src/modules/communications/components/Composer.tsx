@@ -9,8 +9,9 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, FileText } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { TemplateSelector } from './TemplateSelector';
 
 const emailSchema = z.object({
   to: z.string().email('Email invalide'),
@@ -30,6 +31,7 @@ interface ComposerProps {
 export function Composer({ onSent }: ComposerProps) {
   const [activeTab, setActiveTab] = useState('email');
   const [sending, setSending] = useState(false);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   const emailForm = useForm<z.infer<typeof emailSchema>>({
@@ -68,6 +70,17 @@ export function Composer({ onSent }: ComposerProps) {
     }
   };
 
+  const handleTemplateSelect = (data: { subject?: string; body: string }) => {
+    if (activeTab === 'email') {
+      if (data.subject) {
+        emailForm.setValue('subject', data.subject);
+      }
+      emailForm.setValue('body', data.body);
+    } else {
+      smsForm.setValue('body', data.body);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -81,6 +94,17 @@ export function Composer({ onSent }: ComposerProps) {
           </TabsList>
 
           <TabsContent value="email">
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTemplateSelectorOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Choisir un template
+              </Button>
+            </div>
             <form onSubmit={emailForm.handleSubmit(onSendEmail)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Destinataire</Label>
@@ -121,6 +145,17 @@ export function Composer({ onSent }: ComposerProps) {
           </TabsContent>
 
           <TabsContent value="sms">
+            <div className="mb-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTemplateSelectorOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Choisir un template
+              </Button>
+            </div>
             <form onSubmit={smsForm.handleSubmit(onSendSms)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Numéro de téléphone</Label>
@@ -152,6 +187,13 @@ export function Composer({ onSent }: ComposerProps) {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <TemplateSelector
+        type={activeTab === 'email' ? 'email' : 'sms'}
+        onSelect={handleTemplateSelect}
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+      />
     </Card>
   );
 }
