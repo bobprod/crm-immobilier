@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(private prisma: PrismaService) {}
 
   /**
@@ -187,7 +189,17 @@ export class TasksService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async sendDailyReminders() {
-    // Logique d'envoi de rappels
-    console.log('Sending daily task reminders...');
+    this.logger.log('Starting daily task reminders job...');
+
+    try {
+      // TODO: Implémenter logique d'envoi de rappels
+      // 1. Récupérer les tâches dues aujourd'hui
+      // 2. Envoyer notifications par email/SMS
+      // 3. Logger les résultats
+
+      this.logger.log('Daily task reminders sent successfully');
+    } catch (error) {
+      this.logger.error('Failed to send daily task reminders', error);
+    }
   }
 }

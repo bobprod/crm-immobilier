@@ -63,6 +63,7 @@ const TaskItemComponent = ({
               checked={isSelected}
               onCheckedChange={() => onToggleSelection(task.id)}
               className="mt-1"
+              aria-label={`Sélectionner la tâche "${task.title}"`}
             />
           )}
 
@@ -74,6 +75,11 @@ const TaskItemComponent = ({
               task.status === 'done' ? 'text-green-500' : 'text-gray-400'
             )}
             onClick={() => onComplete(task.id)}
+            aria-label={
+              task.status === 'done'
+                ? `Tâche "${task.title}" déjà terminée`
+                : `Marquer la tâche "${task.title}" comme terminée`
+            }
           >
             <CheckCircle2 className="h-5 w-5" />
           </Button>
@@ -117,15 +123,27 @@ const TaskItemComponent = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`Actions pour la tâche "${task.title}"`}
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(task)}>
+            <DropdownMenuItem
+              onClick={() => onEdit(task)}
+              aria-label={`Modifier la tâche "${task.title}"`}
+            >
               <Pencil className="mr-2 h-4 w-4" /> Modifier
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(task)} className="text-red-600">
+            <DropdownMenuItem
+              onClick={() => onDelete(task)}
+              className="text-red-600"
+              aria-label={`Supprimer la tâche "${task.title}"`}
+            >
               <Trash2 className="mr-2 h-4 w-4" /> Supprimer
             </DropdownMenuItem>
           </DropdownMenuContent>

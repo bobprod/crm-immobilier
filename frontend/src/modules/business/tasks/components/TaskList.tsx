@@ -288,12 +288,23 @@ export function TaskList() {
         </div>
       ) : (
         <>
+          {/* Live region pour annonces accessibilité */}
+          <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {selectedTaskIds.size > 0 &&
+              `${selectedTaskIds.size} tâche${selectedTaskIds.size > 1 ? 's' : ''} sélectionnée${selectedTaskIds.size > 1 ? 's' : ''}`}
+          </div>
+
           {selectedTaskIds.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+            <div
+              role="toolbar"
+              aria-label="Actions en masse sur les tâches"
+              className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between"
+            >
               <div className="flex items-center gap-4">
                 <Checkbox
                   checked={selectedTaskIds.size === paginatedTasks.length}
                   onCheckedChange={toggleAllTasksSelection}
+                  aria-label="Sélectionner toutes les tâches de la page"
                 />
                 <span className="text-sm font-medium">
                   {selectedTaskIds.size} tâche{selectedTaskIds.size > 1 ? 's' : ''} sélectionnée
@@ -302,15 +313,30 @@ export function TaskList() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleBulkComplete}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkComplete}
+                  aria-label={`Marquer ${selectedTaskIds.size} tâche${selectedTaskIds.size > 1 ? 's' : ''} comme terminée${selectedTaskIds.size > 1 ? 's' : ''}`}
+                >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme terminé
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleBulkDelete}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  aria-label={`Supprimer ${selectedTaskIds.size} tâche${selectedTaskIds.size > 1 ? 's' : ''}`}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Supprimer
                 </Button>
-                <Button variant="ghost" size="sm" onClick={clearSelection}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  aria-label="Annuler la sélection"
+                >
                   Annuler
                 </Button>
               </div>
