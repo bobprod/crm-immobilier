@@ -225,15 +225,15 @@ export interface FinanceStats {
 
 // ========== API ==========
 
-export const financeAPI = {
-  // ============================================
-  // COMMISSIONS
-  // ============================================
+// ============================================
+// COMMISSIONS API
+// ============================================
 
+export const commissionsAPI = {
   /**
    * Créer une nouvelle commission
    */
-  createCommission: async (data: CreateCommissionDTO): Promise<Commission> => {
+  create: async (data: CreateCommissionDTO): Promise<Commission> => {
     const response = await apiClient.post('/finance/commissions', data);
     return response.data;
   },
@@ -241,7 +241,7 @@ export const financeAPI = {
   /**
    * Liste toutes les commissions avec filtres
    */
-  listCommissions: async (filters?: CommissionFilters): Promise<Commission[]> => {
+  list: async (filters?: CommissionFilters): Promise<Commission[]> => {
     const response = await apiClient.get('/finance/commissions', { params: filters });
     return response.data;
   },
@@ -249,7 +249,7 @@ export const financeAPI = {
   /**
    * Obtenir une commission par ID
    */
-  getCommissionById: async (id: string): Promise<Commission> => {
+  getById: async (id: string): Promise<Commission> => {
     const response = await apiClient.get(`/finance/commissions/${id}`);
     return response.data;
   },
@@ -257,7 +257,7 @@ export const financeAPI = {
   /**
    * Mettre à jour une commission
    */
-  updateCommission: async (id: string, data: UpdateCommissionDTO): Promise<Commission> => {
+  update: async (id: string, data: UpdateCommissionDTO): Promise<Commission> => {
     const response = await apiClient.put(`/finance/commissions/${id}`, data);
     return response.data;
   },
@@ -265,18 +265,20 @@ export const financeAPI = {
   /**
    * Supprimer une commission
    */
-  deleteCommission: async (id: string): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/finance/commissions/${id}`);
   },
+};
 
-  // ============================================
-  // INVOICES
-  // ============================================
+// ============================================
+// INVOICES API
+// ============================================
 
+export const invoicesAPI = {
   /**
    * Créer une nouvelle facture
    */
-  createInvoice: async (data: CreateInvoiceDTO): Promise<Invoice> => {
+  create: async (data: CreateInvoiceDTO): Promise<Invoice> => {
     const response = await apiClient.post('/finance/invoices', data);
     return response.data;
   },
@@ -284,7 +286,7 @@ export const financeAPI = {
   /**
    * Liste toutes les factures avec filtres
    */
-  listInvoices: async (filters?: InvoiceFilters): Promise<Invoice[]> => {
+  list: async (filters?: InvoiceFilters): Promise<Invoice[]> => {
     const response = await apiClient.get('/finance/invoices', { params: filters });
     return response.data;
   },
@@ -292,7 +294,7 @@ export const financeAPI = {
   /**
    * Obtenir une facture par ID
    */
-  getInvoiceById: async (id: string): Promise<Invoice> => {
+  getById: async (id: string): Promise<Invoice> => {
     const response = await apiClient.get(`/finance/invoices/${id}`);
     return response.data;
   },
@@ -300,7 +302,7 @@ export const financeAPI = {
   /**
    * Mettre à jour une facture
    */
-  updateInvoice: async (id: string, data: UpdateInvoiceDTO): Promise<Invoice> => {
+  update: async (id: string, data: UpdateInvoiceDTO): Promise<Invoice> => {
     const response = await apiClient.put(`/finance/invoices/${id}`, data);
     return response.data;
   },
@@ -308,18 +310,20 @@ export const financeAPI = {
   /**
    * Supprimer une facture
    */
-  deleteInvoice: async (id: string): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/finance/invoices/${id}`);
   },
+};
 
-  // ============================================
-  // PAYMENTS
-  // ============================================
+// ============================================
+// PAYMENTS API
+// ============================================
 
+export const paymentsAPI = {
   /**
    * Créer un nouveau paiement
    */
-  createPayment: async (data: CreatePaymentDTO): Promise<Payment> => {
+  create: async (data: CreatePaymentDTO): Promise<Payment> => {
     const response = await apiClient.post('/finance/payments', data);
     return response.data;
   },
@@ -327,7 +331,7 @@ export const financeAPI = {
   /**
    * Liste tous les paiements avec filtres
    */
-  listPayments: async (filters?: PaymentFilters): Promise<Payment[]> => {
+  list: async (filters?: PaymentFilters): Promise<Payment[]> => {
     const response = await apiClient.get('/finance/payments', { params: filters });
     return response.data;
   },
@@ -335,7 +339,7 @@ export const financeAPI = {
   /**
    * Obtenir un paiement par ID
    */
-  getPaymentById: async (id: string): Promise<Payment> => {
+  getById: async (id: string): Promise<Payment> => {
     const response = await apiClient.get(`/finance/payments/${id}`);
     return response.data;
   },
@@ -343,7 +347,7 @@ export const financeAPI = {
   /**
    * Mettre à jour un paiement
    */
-  updatePayment: async (id: string, data: UpdatePaymentDTO): Promise<Payment> => {
+  update: async (id: string, data: UpdatePaymentDTO): Promise<Payment> => {
     const response = await apiClient.put(`/finance/payments/${id}`, data);
     return response.data;
   },
@@ -351,13 +355,19 @@ export const financeAPI = {
   /**
    * Supprimer un paiement
    */
-  deletePayment: async (id: string): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/finance/payments/${id}`);
   },
+};
 
-  // ============================================
-  // STATS
-  // ============================================
+// ============================================
+// COMBINED FINANCE API (for stats and global operations)
+// ============================================
+
+export const financeAPI = {
+  commissions: commissionsAPI,
+  invoices: invoicesAPI,
+  payments: paymentsAPI,
 
   /**
    * Obtenir les statistiques financières
