@@ -195,6 +195,9 @@ model agencies {
 
   // ── Nouvelles relations Module Registry (Phase 1) ──
   moduleSubscriptions ModuleAgencySubscription[]
+
+  // ── Nouvelles relations Provider Registry (Phase 1) ──
+  providerConfigs     ProviderConfig[] @relation("AgencyProviders")
 }
 
 model appointments {
@@ -522,6 +525,9 @@ model users {
   aiUsages                 AiUsage[]
   aiErrorLogs              AiErrorLog[]
   userAiCredits            UserAiCredits?
+
+  // ── Nouvelles relations Provider Registry (Phase 1) ──
+  providerConfigs          ProviderConfig[] @relation("UserProviders")
 }
 
 model communications {
@@ -2306,4 +2312,187 @@ model DynamicSchema {
   @@unique([moduleId, tableName])
   @@index([moduleId])
   @@map("dynamic_schemas")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROVIDER REGISTRY - UNIFIED PROVIDERS MANAGEMENT (Phase 1)
+// ═══════════════════════════════════════════════════════════════════
+
+// Type de provider (catégorie principale)
+enum ProviderType {
+  scraping      // Providers de scraping (Cheerio, Puppeteer, Firecrawl, Pica, SerpAPI)
+  llm           // Providers LLM (Anthropic, OpenAI, Gemini, etc.)
+  storage       // Providers de stockage (S3, Cloudinary, etc.)
+  email         // Providers d'email (SendGrid, Mailgun, etc.)
+  payment       // Providers de paiement (Stripe, PayPal, etc.)
+  communication // Providers de communication (Twilio, WhatsApp, etc.)
+  integration   // Providers d'intégration (Zapier, Make, etc.)
+}
+
+// Catégorie de provider (sous-type)
+enum ProviderCategory {
+  internal      // Provider interne (ex: Cheerio, Puppeteer)
+  external_api  // Provider API externe (ex: Firecrawl, OpenAI)
+  cloud_service // Provider cloud (ex: AWS, GCP)
+  saas          // Provider SaaS (ex: SendGrid, Stripe)
+}
+
+// Statut du provider
+enum ProviderStatus {
+  active        // Actif et disponible
+  inactive      // Désactivé temporairement
+  error         // En erreur (clé invalide, quota dépassé, etc.)
+  testing       // En phase de test
+}
+
+// ──────────────────────────────────────────────────────────────
+// PROVIDER CONFIG - Configuration unifiée de tous les providers
+// ──────────────────────────────────────────────────────────────
+model ProviderConfig {
+  id                    String           @id @default(cuid())
+
+  // Identification
+  type                  ProviderType     // Type de provider (scraping, llm, storage, etc.)
+  category              ProviderCategory // Catégorie (internal, external_api, etc.)
+  provider              String           // Nom du provider (ex: 'firecrawl', 'anthropic', 'cheerio')
+  name                  String           // Nom affiché (ex: 'Firecrawl API', 'Claude 3.5 Sonnet')
+  description           String?          @db.Text
+
+  // Multi-tenant
+  userId                String?          // User spécifique (null = provider global/système)
+  agencyId              String?          // Agency spécifique (pour facturation agence)
+
+  // Authentification & Configuration
+  apiKey                String?          // Clé API (cryptée)
+  apiSecret             String?          // Secret API (crypté)
+  endpoint              String?          // Endpoint personnalisé
+  config                Json?            // Configuration additionnelle (modèle, options, etc.)
+
+  // État & Priorité
+  status                ProviderStatus   @default(active)
+  isActive              Boolean          @default(true)
+  priority              Int              @default(0) // 0 = plus haute priorité
+
+  // Budget & Limites
+  monthlyBudget         Float?           // Budget mensuel (en $)
+  dailyBudget           Float?           // Budget journalier (en $)
+  rateLimit             Int?             // Limite de requêtes par minute
+  maxConcurrent         Int?             // Nombre max de requêtes simultanées
+
+  // Tracking Usage
+  monthlyUsage          Float            @default(0)  // Coût ce mois (en $)
+  dailyUsage            Float            @default(0)  // Coût aujourd'hui (en $)
+  totalCalls            Int              @default(0)  // Total d'appels API
+  successCalls          Int              @default(0)  // Appels réussis
+  failedCalls           Int              @default(0)  // Appels échoués
+  lastUsedAt            DateTime?        // Dernière utilisation
+
+  // Métriques Performance
+  avgLatency            Float            @default(0)  // Latence moyenne (ms)
+  successRate           Float            @default(100) // Taux de succès (0-100%)
+
+  // Metadata
+  metadata              Json?            // Données additionnelles
+  tags                  String[]         // Tags pour filtrage
+
+  // Timestamps
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  lastHealthCheckAt     DateTime?        // Dernier test de santé
+
+  // Relations
+  user                  users?           @relation("UserProviders", fields: [userId], references: [id], onDelete: Cascade)
+  agency                agencies?        @relation("AgencyProviders", fields: [agencyId], references: [id], onDelete: Cascade)
+  usageLogs             ProviderUsageLog[] @relation("ProviderUsageLogs")
+  metrics               ProviderMetrics[]  @relation("ProviderMetrics")
+
+  @@unique([userId, type, provider])
+  @@unique([agencyId, type, provider])
+  @@index([userId])
+  @@index([agencyId])
+  @@index([type])
+  @@index([provider])
+  @@index([status])
+  @@index([isActive])
+  @@index([userId, type])
+  @@index([agencyId, type])
+  @@map("provider_configs")
+}
+
+// ──────────────────────────────────────────────────────────────
+// PROVIDER USAGE LOG - Logs d'utilisation détaillés
+// ──────────────────────────────────────────────────────────────
+model ProviderUsageLog {
+  id                String         @id @default(cuid())
+
+  // Référence provider
+  providerConfigId  String
+  providerConfig    ProviderConfig @relation("ProviderUsageLogs", fields: [providerConfigId], references: [id], onDelete: Cascade)
+
+  // Context
+  userId            String?
+  agencyId          String?
+  operationType     String         // 'scraping', 'llm_generation', 'email_send', etc.
+  operationCode     String?        // Code spécifique (ex: 'prospecting_qualify', 'seo_generate')
+
+  // Métadonnées de l'appel
+  requestData       Json?          // Données de la requête
+  responseData      Json?          // Données de la réponse
+
+  // Métriques
+  tokensInput       Int?           // Tokens d'entrée (LLM)
+  tokensOutput      Int?           // Tokens de sortie (LLM)
+  latencyMs         Int?           // Latence en ms
+  cost              Float?         // Coût de l'opération
+
+  // Statut
+  success           Boolean        @default(true)
+  errorMessage      String?        @db.Text
+  errorCode         String?
+
+  // Timestamps
+  createdAt         DateTime       @default(now())
+
+  @@index([providerConfigId])
+  @@index([userId])
+  @@index([agencyId])
+  @@index([operationType])
+  @@index([createdAt])
+  @@index([success])
+  @@map("provider_usage_logs")
+}
+
+// ──────────────────────────────────────────────────────────────
+// PROVIDER METRICS - Métriques agrégées par provider
+// ──────────────────────────────────────────────────────────────
+model ProviderMetrics {
+  id                String         @id @default(cuid())
+
+  // Référence provider
+  providerConfigId  String
+  providerConfig    ProviderConfig @relation("ProviderMetrics", fields: [providerConfigId], references: [id], onDelete: Cascade)
+
+  // Période
+  date              DateTime       @db.Date // Date de la métrique (agrégation journalière)
+  operationType     String?        // Type d'opération spécifique (optionnel)
+
+  // Métriques agrégées
+  totalCalls        Int            @default(0)
+  successCalls      Int            @default(0)
+  failedCalls       Int            @default(0)
+  avgLatency        Float          @default(0)
+  minLatency        Float?
+  maxLatency        Float?
+  totalCost         Float          @default(0)
+  totalTokens       Int?           // Pour LLM
+
+  // Timestamps
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([providerConfigId, date, operationType])
+  @@index([providerConfigId])
+  @@index([date])
+  @@index([operationType])
+  @@map("provider_metrics")
 }
