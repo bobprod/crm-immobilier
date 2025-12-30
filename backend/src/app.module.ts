@@ -13,6 +13,8 @@ import { AuthModule } from './modules/core/auth/auth.module';
 import { UsersModule } from './modules/core/users/users.module';
 import { SettingsModule } from './modules/core/settings/settings.module';
 import { ModuleRegistryModule } from './modules/core/module-registry/module-registry.module';
+import { ProviderRegistryModule } from './modules/core/provider-registry/provider-registry.module';
+import { ScrapingQueueModule } from './modules/core/scraping-queue/scraping-queue.module';
 
 // NOTIFICATIONS MODULE
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -108,11 +110,13 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     SharedCacheModule, // New @nestjs/cache-manager for properties
     CacheModule, // Existing cache service
 
-    // CORE - 4 modules (+ Module Registry Phase 1)
+    // CORE - 6 modules (Auth, Users, Settings, Module Registry, Provider Registry, Scraping Queue)
     AuthModule,
     UsersModule,
     SettingsModule,
     ModuleRegistryModule,
+    ProviderRegistryModule,
+    ScrapingQueueModule,
 
     // NOTIFICATIONS - 1 module
     NotificationsModule,
