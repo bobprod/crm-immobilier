@@ -9,8 +9,14 @@ export interface Task {
   dueDate?: string;
   prospectId?: string;
   propertyId?: string;
+  completedAt?: string;
   createdAt: string;
   updatedAt: string;
+
+  // Relations optionnelles (incluses par le backend)
+  prospects?: { id: string; firstName: string; lastName: string };
+  properties?: { id: string; title: string; reference?: string };
+  appointments?: { id: string; title: string; startTime: string };
 }
 
 export interface CreateTaskDto {
@@ -65,6 +71,16 @@ const tasksService = {
 
   getStats: async () => {
     const response = await apiClient.get('/tasks/stats');
+    return response.data;
+  },
+
+  getToday: async () => {
+    const response = await apiClient.get<Task[]>('/tasks/today');
+    return response.data;
+  },
+
+  getOverdue: async () => {
+    const response = await apiClient.get<Task[]>('/tasks/overdue');
     return response.data;
   },
 };

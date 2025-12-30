@@ -79,9 +79,7 @@ export function TaskDialog({ open, onOpenChange, task, onSubmit }: TaskDialogPro
   const handleSubmit = async (values: TaskFormValues) => {
     try {
       setIsSubmitting(true);
-      console.log('[TaskDialog] Submitting task with values:', values);
       await onSubmit(values);
-      console.log('[TaskDialog] Task submitted successfully');
       onOpenChange(false);
       form.reset();
     } catch (error: any) {
