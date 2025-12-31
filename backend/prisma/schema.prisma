@@ -2592,6 +2592,7 @@ model WhatsAppConfig {
   agency            agencies? @relation("AgencyWhatsAppConfig", fields: [agencyId], references: [id], onDelete: Cascade)
   conversations     WhatsAppConversation[] @relation("ConfigConversations")
   templates         WhatsAppTemplate[] @relation("ConfigTemplates")
+  contacts          WhatsAppContact[] @relation("ConfigContacts")
 
   @@map("whatsapp_configs")
 }
@@ -2743,4 +2744,52 @@ model WhatsAppTemplate {
   @@index([status])
   @@index([category])
   @@map("whatsapp_templates")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP CONTACT - WhatsApp Contacts Management
+// ──────────────────────────────────────────────────────────────
+model WhatsAppContact {
+  id                String   @id @default(cuid())
+
+  // Configuration
+  configId          String
+  config            WhatsAppConfig @relation("ConfigContacts", fields: [configId], references: [id], onDelete: Cascade)
+
+  // Contact info
+  phoneNumber       String   // E.164 format: +33612345678
+  name              String?
+  email             String?
+  profilePicture    String?  @db.Text
+
+  // Organization
+  tags              String[] @default([])
+  groups            String[] @default([])
+  notes             String?  @db.Text
+  customFields      Json?    // Custom fields as JSON object
+
+  // Status
+  isBlocked         Boolean  @default(false)
+
+  // Stats (cached for performance)
+  totalMessages     Int      @default(0)
+  sentMessages      Int      @default(0)
+  receivedMessages  Int      @default(0)
+  totalConversations Int     @default(0)
+  activeConversations Int    @default(0)
+  avgResponseTime   Int      @default(0) // in minutes
+  lastInteractionAt DateTime?
+
+  // Timestamps
+  lastMessageAt     DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([configId, phoneNumber])
+  @@index([configId])
+  @@index([phoneNumber])
+  @@index([isBlocked])
+  @@index([tags])
+  @@index([groups])
+  @@map("whatsapp_contacts")
 }

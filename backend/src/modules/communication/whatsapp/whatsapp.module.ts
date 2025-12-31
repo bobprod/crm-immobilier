@@ -6,9 +6,10 @@ import { MetaCloudProvider } from './providers/meta-cloud.provider';
 import { TwilioProvider } from './providers/twilio.provider';
 import { PrismaModule } from '../../core/prisma/prisma.module';
 import { TemplatesModule } from './templates/templates.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 @Module({
-  imports: [PrismaModule, TemplatesModule],
+  imports: [PrismaModule, TemplatesModule, ContactsModule],
   controllers: [WhatsAppController, WhatsAppWebhookController],
   providers: [WhatsAppService, MetaCloudProvider, TwilioProvider],
   exports: [WhatsAppService],
