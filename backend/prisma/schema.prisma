@@ -144,6 +144,54 @@ enum InvoiceStatus {
   cancelled
 }
 
+// WhatsApp Enums
+enum WhatsAppProvider {
+  meta
+  twilio
+}
+
+enum ConversationStatus {
+  open
+  assigned
+  resolved
+  closed
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum MessageType {
+  text
+  image
+  document
+  video
+  audio
+  template
+  location
+  contacts
+}
+
+enum MessageStatus {
+  sent
+  delivered
+  read
+  failed
+}
+
+enum TemplateCategory {
+  utility
+  marketing
+  authentication
+}
+
+enum TemplateStatus {
+  pending
+  approved
+  rejected
+}
+
 enum PaymentMethod {
   cash
   check
@@ -2495,4 +2543,204 @@ model ProviderMetrics {
   @@index([date])
   @@index([operationType])
   @@map("provider_metrics")
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// WHATSAPP BOT - Communication via WhatsApp Business API
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP CONFIG - Configuration WhatsApp par utilisateur/agence
+// ──────────────────────────────────────────────────────────────
+model WhatsAppConfig {
+  id                String   @id @default(cuid())
+
+  // Owner
+  userId            String?  @unique
+  agencyId          String?  @unique
+
+  // Meta Cloud API
+  phoneNumberId     String?  // Meta phone number ID
+  businessAccountId String?  // Meta business account ID
+  accessToken       String?  @db.Text // Meta access token
+
+  // Twilio (alternative)
+  twilioAccountSid  String?
+  twilioAuthToken   String?  @db.Text
+  twilioPhoneNumber String?
+
+  // Configuration
+  provider          WhatsAppProvider @default(meta)
+  isActive          Boolean  @default(false)
+
+  // Webhooks
+  webhookUrl        String?
+  webhookSecret     String?
+
+  // Auto-reply settings
+  autoReplyEnabled  Boolean  @default(false)
+  businessHoursOnly Boolean  @default(false)
+  businessHoursStart String? // Format: "09:00"
+  businessHoursEnd  String?  // Format: "18:00"
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              users?   @relation("UserWhatsAppConfig", fields: [userId], references: [id], onDelete: Cascade)
+  agency            agencies? @relation("AgencyWhatsAppConfig", fields: [agencyId], references: [id], onDelete: Cascade)
+  conversations     WhatsAppConversation[] @relation("ConfigConversations")
+  templates         WhatsAppTemplate[] @relation("ConfigTemplates")
+
+  @@map("whatsapp_configs")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP CONVERSATION - Conversations WhatsApp
+// ──────────────────────────────────────────────────────────────
+model WhatsAppConversation {
+  id                String   @id @default(cuid())
+
+  // Configuration
+  configId          String
+  config            WhatsAppConfig @relation("ConfigConversations", fields: [configId], references: [id], onDelete: Cascade)
+
+  // Contact info
+  phoneNumber       String   // E.164 format: +33612345678
+  contactName       String?
+
+  // CRM links
+  leadId            String?
+  prospectId        String?
+  userId            String?
+  agencyId          String?
+
+  // Conversation metadata
+  status            ConversationStatus @default(open)
+  assignedTo        String?  // User ID
+  tags              String[] // ["hot_lead", "viewing_scheduled"]
+
+  // Counters
+  messageCount      Int      @default(0)
+  unreadCount       Int      @default(0)
+
+  // Timestamps
+  lastMessageAt     DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  lead              leads?   @relation("LeadWhatsAppConversations", fields: [leadId], references: [id], onDelete: SetNull)
+  user              users?   @relation("UserWhatsAppConversations", fields: [userId], references: [id], onDelete: Cascade)
+  agency            agencies? @relation("AgencyWhatsAppConversations", fields: [agencyId], references: [id], onDelete: Cascade)
+  messages          WhatsAppMessage[] @relation("ConversationMessages")
+
+  @@index([configId])
+  @@index([phoneNumber])
+  @@index([leadId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("whatsapp_conversations")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP MESSAGE - Messages WhatsApp
+// ──────────────────────────────────────────────────────────────
+model WhatsAppMessage {
+  id                String   @id @default(cuid())
+
+  // Conversation
+  conversationId    String
+  conversation      WhatsAppConversation @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Message info
+  messageId         String   @unique  // WhatsApp message ID
+  direction         MessageDirection  // inbound | outbound
+
+  // Content
+  type              MessageType  // text | image | document | template | location
+  content           String       @db.Text // Text content or media URL
+  caption           String?      @db.Text // For media messages
+
+  // Media
+  mediaUrl          String?
+  mimeType          String?
+  mediaSize         Int?         // Size in bytes
+
+  // Template (for outbound)
+  templateName      String?
+  templateParams    Json?
+
+  // Status
+  status            MessageStatus @default(sent)
+
+  // Metadata
+  sentBy            String?  // User ID (if outbound)
+  timestamp         DateTime @default(now())
+  deliveredAt       DateTime?
+  readAt            DateTime?
+
+  // Error tracking
+  errorCode         String?
+  errorMessage      String?  @db.Text
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  sender            users?   @relation("UserWhatsAppMessages", fields: [sentBy], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([direction])
+  @@index([timestamp])
+  @@map("whatsapp_messages")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP TEMPLATE - Templates de messages WhatsApp
+// ──────────────────────────────────────────────────────────────
+model WhatsAppTemplate {
+  id                String   @id @default(cuid())
+
+  // Configuration
+  configId          String
+  config            WhatsAppConfig @relation("ConfigTemplates", fields: [configId], references: [id], onDelete: Cascade)
+
+  // Template info
+  name              String
+  language          String   @default("fr")
+  category          TemplateCategory
+
+  // Template content
+  header            String?  @db.Text
+  body              String   @db.Text
+  footer            String?  @db.Text
+  buttons           Json?    // Array of button objects
+
+  // Variables
+  variables         String[] // ["{{1}}", "{{2}}"]
+
+  // Status
+  status            TemplateStatus @default(pending)
+  approvedAt        DateTime?
+  rejectedReason    String?  @db.Text
+
+  // Stats
+  sentCount         Int      @default(0)
+  deliveredCount    Int      @default(0)
+  readCount         Int      @default(0)
+  failedCount       Int      @default(0)
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([configId, name])
+  @@index([configId])
+  @@index([status])
+  @@index([category])
+  @@map("whatsapp_templates")
 }
