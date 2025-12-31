@@ -8,6 +8,7 @@ import { PrismaModule } from '../../core/prisma/prisma.module';
 import { TemplatesModule } from './templates/templates.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
     TemplatesModule,
     ContactsModule,
     forwardRef(() => CampaignsModule),
+    AnalyticsModule,
   ],
   controllers: [WhatsAppController, WhatsAppWebhookController],
   providers: [WhatsAppService, MetaCloudProvider, TwilioProvider],
