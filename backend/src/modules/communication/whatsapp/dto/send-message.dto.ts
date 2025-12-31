@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested, Matches, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +15,7 @@ export class SendTextMessageDto {
   @ApiProperty({ description: 'Phone number (E.164 format)', example: '+33612345678' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +33612345678)' })
   phoneNumber: string;
 
   @ApiProperty({ description: 'Message text content' })
@@ -37,6 +38,7 @@ export class SendMediaMessageDto {
   @ApiProperty({ description: 'Phone number (E.164 format)', example: '+33612345678' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +33612345678)' })
   phoneNumber: string;
 
   @ApiProperty({ description: 'Media URL' })
@@ -63,6 +65,7 @@ export class SendTemplateMessageDto {
   @ApiProperty({ description: 'Phone number (E.164 format)', example: '+33612345678' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\+[1-9]\d{1,14}$/, { message: 'Phone number must be in E.164 format (e.g., +33612345678)' })
   phoneNumber: string;
 
   @ApiProperty({ description: 'Template name' })
@@ -87,9 +90,10 @@ export class SendTemplateMessageDto {
 }
 
 export class SendBulkMessageDto {
-  @ApiProperty({ description: 'Phone numbers array', type: [String] })
+  @ApiProperty({ description: 'Phone numbers array (E.164 format)', type: [String], example: ['+33612345678', '+33698765432'] })
   @IsArray()
   @IsString({ each: true })
+  @Matches(/^\+[1-9]\d{1,14}$/, { each: true, message: 'Each phone number must be in E.164 format (e.g., +33612345678)' })
   phoneNumbers: string[];
 
   @ApiProperty({ description: 'Message text content' })
@@ -97,8 +101,11 @@ export class SendBulkMessageDto {
   @IsNotEmpty()
   message: string;
 
-  @ApiPropertyOptional({ description: 'Delay between messages (ms)', default: 1000 })
+  @ApiPropertyOptional({ description: 'Delay between messages (ms)', default: 1000, minimum: 100, maximum: 10000 })
   @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(10000)
   delayMs?: number;
 }
 

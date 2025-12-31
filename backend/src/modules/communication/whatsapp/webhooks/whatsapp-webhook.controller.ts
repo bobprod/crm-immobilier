@@ -9,17 +9,24 @@ import {
   HttpStatus,
   Logger,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { WhatsAppService } from '../whatsapp.service';
 import { MetaWebhookDto } from '../dto/webhook.dto';
+import { PrismaService } from '../../../core/prisma/prisma.service';
+import { TwilioProvider } from '../providers/twilio.provider';
 
 @ApiTags('WhatsApp Webhooks')
 @Controller('whatsapp/webhook')
 export class WhatsAppWebhookController {
   private readonly logger = new Logger(WhatsAppWebhookController.name);
 
-  constructor(private readonly whatsappService: WhatsAppService) {}
+  constructor(
+    private readonly whatsappService: WhatsAppService,
+    private readonly prisma: PrismaService,
+    private readonly twilioProvider: TwilioProvider,
+  ) {}
 
   /**
    * Meta Cloud API Webhook Verification
@@ -61,11 +68,17 @@ export class WhatsAppWebhookController {
   ) {
     this.logger.debug(`Webhook received: ${JSON.stringify(body)}`);
 
-    // TODO: Verify signature for security
-    // const verified = this.verifySignature(JSON.stringify(body), signature);
-    // if (!verified) {
-    //   throw new BadRequestException('Invalid signature');
-    // }
+    // ✅ FIXED: Verify signature for security
+    if (signature && process.env.WHATSAPP_META_APP_SECRET) {
+      const verified = this.verifySignature(JSON.stringify(body), signature);
+      if (!verified) {
+        this.logger.warn('Invalid webhook signature');
+        throw new BadRequestException('Invalid signature');
+      }
+      this.logger.debug('Webhook signature verified');
+    } else {
+      this.logger.warn('Webhook signature verification skipped (no signature or secret)');
+    }
 
     try {
       // Process webhook asynchronously
@@ -95,20 +108,98 @@ export class WhatsAppWebhookController {
   async handleTwilioWebhook(
     @Body() body: any,
     @Headers('x-twilio-signature') signature: string,
+    @Headers('host') host: string,
   ) {
     this.logger.debug(`Twilio webhook received: ${JSON.stringify(body)}`);
 
-    // TODO: Verify Twilio signature
-    // const verified = this.twilioProvider.verifyWebhookSignature(...);
+    // ✅ FIXED: Verify Twilio signature
+    const twilioPhoneNumber = body.To?.replace('whatsapp:', '');
+    if (twilioPhoneNumber && signature) {
+      try {
+        // Find config by Twilio phone number
+        const config = await this.prisma.whatsAppConfig.findFirst({
+          where: {
+            twilioPhoneNumber,
+            provider: 'twilio',
+          },
+        });
+
+        if (config && config.twilioAuthToken) {
+          const webhookUrl = `https://${host}/whatsapp/webhook/twilio`;
+          const verified = this.twilioProvider.verifyWebhookSignature(
+            webhookUrl,
+            body,
+            signature,
+            config.twilioAuthToken,
+          );
+
+          if (!verified) {
+            this.logger.warn('Invalid Twilio webhook signature');
+            throw new BadRequestException('Invalid signature');
+          }
+          this.logger.debug('Twilio webhook signature verified');
+        } else {
+          this.logger.warn('Twilio config not found, skipping signature verification');
+        }
+      } catch (error) {
+        this.logger.error(`Twilio signature verification failed: ${error.message}`);
+        throw new BadRequestException('Signature verification failed');
+      }
+    }
 
     try {
-      // Process Twilio webhook
-      // Convert to standard format and process
+      // Process Twilio webhook asynchronously
+      setImmediate(() => {
+        this.processTwilioWebhook(body).catch(error => {
+          this.logger.error(`Failed to process Twilio webhook: ${error.message}`, error.stack);
+        });
+      });
+
       return { status: 'ok' };
     } catch (error) {
       this.logger.error(`Twilio webhook error: ${error.message}`, error.stack);
       return { status: 'error' };
     }
+  }
+
+  /**
+   * Process Twilio webhook in background
+   */
+  private async processTwilioWebhook(body: any) {
+    const parsed = this.twilioProvider.parseInboundMessage(body);
+
+    // Find config by Twilio phone number
+    const twilioPhoneNumber = body.To?.replace('whatsapp:', '');
+    if (!twilioPhoneNumber) {
+      this.logger.warn('No Twilio phone number in webhook');
+      return;
+    }
+
+    const config = await this.prisma.whatsAppConfig.findFirst({
+      where: {
+        twilioPhoneNumber,
+        provider: 'twilio',
+      },
+    });
+
+    if (!config) {
+      this.logger.warn(`Config not found for Twilio phone: ${twilioPhoneNumber}`);
+      return;
+    }
+
+    // Process the message
+    await this.whatsappService.handleInboundMessage(config.id, {
+      object: 'whatsapp_business_account',
+      entry: [{
+        changes: [{
+          value: {
+            messages: [parsed],
+            statuses: [],
+            contacts: [],
+          },
+        }],
+      }],
+    } as any);
   }
 
   /**
@@ -150,12 +241,34 @@ export class WhatsAppWebhookController {
 
   /**
    * Find config by Meta phone number ID
+   * ✅ FIXED: Implemented Prisma lookup
    */
   private async findConfigByPhoneNumberId(phoneNumberId: string): Promise<string | null> {
-    // TODO: Implement proper lookup
-    // For now, return null (will need to query Prisma)
     this.logger.debug(`Looking up config for phone number ID: ${phoneNumberId}`);
-    return null;
+
+    try {
+      const config = await this.prisma.whatsAppConfig.findFirst({
+        where: {
+          phoneNumberId,
+          provider: 'meta',
+          isActive: true,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (config) {
+        this.logger.debug(`Found config ID: ${config.id} for phone number: ${phoneNumberId}`);
+        return config.id;
+      }
+
+      this.logger.warn(`No active config found for phone number ID: ${phoneNumberId}`);
+      return null;
+    } catch (error) {
+      this.logger.error(`Error finding config: ${error.message}`, error.stack);
+      return null;
+    }
   }
 
   /**

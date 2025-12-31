@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { WhatsAppService } from './whatsapp.service';
 import {
   SendTextMessageDto,
@@ -70,9 +71,11 @@ export class WhatsAppController {
 
   // ═══════════════════════════════════════════════════════════════
   // MESSAGES
+  // ✅ FIXED: Rate limiting added to prevent abuse
   // ═══════════════════════════════════════════════════════════════
 
   @Post('messages/text')
+  @Throttle({ default: { limit: 20, ttl: 60000 } }) // 20 messages per minute
   @ApiOperation({ summary: 'Send text message' })
   @ApiResponse({ status: 201, type: MessageResponseDto })
   async sendTextMessage(@Req() req: any, @Body() dto: SendTextMessageDto) {
@@ -80,6 +83,7 @@ export class WhatsAppController {
   }
 
   @Post('messages/media')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 media messages per minute
   @ApiOperation({ summary: 'Send media message (image, document, video, audio)' })
   @ApiResponse({ status: 201, type: MessageResponseDto })
   async sendMediaMessage(@Req() req: any, @Body() dto: SendMediaMessageDto) {
@@ -87,6 +91,7 @@ export class WhatsAppController {
   }
 
   @Post('messages/template')
+  @Throttle({ default: { limit: 15, ttl: 60000 } }) // 15 template messages per minute
   @ApiOperation({ summary: 'Send template message' })
   @ApiResponse({ status: 201, type: MessageResponseDto })
   async sendTemplateMessage(@Req() req: any, @Body() dto: SendTemplateMessageDto) {
@@ -94,6 +99,7 @@ export class WhatsAppController {
   }
 
   @Post('messages/bulk')
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 bulk operations per minute
   @ApiOperation({ summary: 'Send bulk messages' })
   async sendBulkMessage(@Req() req: any, @Body() dto: SendBulkMessageDto) {
     return this.whatsappService.sendBulkMessage(req.user.id, dto);
