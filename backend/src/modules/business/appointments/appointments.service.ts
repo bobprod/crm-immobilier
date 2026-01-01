@@ -2,12 +2,16 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
+import { CommunicationsService } from '../../communications/communications.service';
 
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private communicationsService: CommunicationsService,
+  ) {}
 
   /**
    * Créer un rendez-vous
@@ -544,9 +548,39 @@ export class AppointmentsService {
 
     for (const appointment of appointments) {
       try {
-        // TODO: Intégrer avec le module Communications pour envoyer Email/SMS
-        // await this.communicationsService.sendEmail(...)
-        // await this.communicationsService.sendSms(...)
+        const appointmentTime = new Date(appointment.startTime).toLocaleString('fr-FR', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+        });
+
+        // Envoyer email de rappel
+        if (appointment.prospects?.email) {
+          await this.communicationsService.sendEmail(appointment.userId, {
+            to: appointment.prospects.email,
+            subject: `Rappel: Rendez-vous ${appointment.title}`,
+            body: `
+              <h2>Rappel de rendez-vous</h2>
+              <p>Bonjour ${appointment.prospects.firstName || ''} ${appointment.prospects.lastName || ''},</p>
+              <p>Nous vous rappelons que vous avez un rendez-vous prévu:</p>
+              <ul>
+                <li><strong>Titre:</strong> ${appointment.title}</li>
+                <li><strong>Date et heure:</strong> ${appointmentTime}</li>
+                <li><strong>Lieu:</strong> ${appointment.location || 'À déterminer'}</li>
+                ${appointment.properties ? `<li><strong>Propriété:</strong> ${appointment.properties.title}</li>` : ''}
+              </ul>
+              <p>${appointment.notes || ''}</p>
+              <p>À bientôt!</p>
+            `,
+          });
+        }
+
+        // Envoyer SMS de rappel
+        if (appointment.prospects?.phone) {
+          await this.communicationsService.sendSms(appointment.userId, {
+            to: appointment.prospects.phone,
+            message: `Rappel: RDV "${appointment.title}" le ${appointmentTime}. Lieu: ${appointment.location || 'TBD'}`,
+          });
+        }
 
         // Marquer le rappel comme envoyé
         await this.prisma.appointments.update({

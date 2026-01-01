@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto, ConvertLeadDto } from './dto';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
+import { CommunicationsService } from '../../communications/communications.service';
 
 @Injectable()
 export class CampaignsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private communicationsService: CommunicationsService,
+  ) {}
 
   async create(userId: string, dto: CreateCampaignDto) {
     return this.prisma.campaigns.create({
@@ -154,12 +158,29 @@ export class CampaignsService {
   async test(id: string, testEmails: string[], userId: string) {
     const campaign = await this.findOne(id, userId);
 
-    // Logique de test de campagne - envoyer à quelques emails de test
-    // Pour l'instant, on retourne juste la campagne avec un message
+    // Envoyer des emails de test via le module communications
+    const sendResults = await Promise.allSettled(
+      testEmails.map(email =>
+        this.communicationsService.sendEmail(userId, {
+          to: email,
+          subject: `[TEST] ${campaign.name}`,
+          body: `
+            <h2>Test de campagne: ${campaign.name}</h2>
+            <p>${campaign.description || ''}</p>
+            <hr>
+            <p><em>Ceci est un email de test. Cette campagne n'est pas encore lancée.</em></p>
+          `,
+        }),
+      ),
+    );
+
+    const successCount = sendResults.filter(r => r.status === 'fulfilled').length;
+
     return {
       ...campaign,
-      testMessage: `Campaign test sent to ${testEmails.length} email(s)`,
+      testMessage: `Campaign test sent to ${successCount}/${testEmails.length} email(s)`,
       testEmails,
+      sendResults,
     };
   }
 
