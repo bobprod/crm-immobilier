@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../shared/database/prisma.module';
 import { LLMConfigModule } from '../llm-config/llm-config.module';
+import { CommunicationsModule } from '../../communications/communications.module';
 
 // Services d'outils
 import { LlmService } from './services/llm.service';
@@ -25,6 +26,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
   imports: [
     PrismaModule,
     LLMConfigModule, // Pour utiliser LLMProviderFactory
+    CommunicationsModule,
   ],
   providers: [
     // Guards
