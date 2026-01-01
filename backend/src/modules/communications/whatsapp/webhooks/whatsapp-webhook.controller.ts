@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { WhatsAppService } from '../whatsapp.service';
 import { MetaWebhookDto } from '../dto/webhook.dto';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { PrismaService } from '../../../../shared/database/prisma.service';
 import { TwilioProvider } from '../providers/twilio.provider';
 
 @ApiTags('WhatsApp Webhooks')

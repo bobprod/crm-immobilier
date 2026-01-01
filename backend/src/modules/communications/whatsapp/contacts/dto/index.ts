@@ -1,0 +1,4 @@
+export * from './create-contact.dto';
+export * from './update-contact.dto';
+export * from './contact-response.dto';
+export * from './contact-filters.dto';

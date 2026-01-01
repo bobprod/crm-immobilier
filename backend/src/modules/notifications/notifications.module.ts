@@ -11,6 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 @Module({
   imports: [
     PrismaModule,
+    CommunicationsModule, // ✅ Importe Email, SMS, WhatsApp et UnifiedCommunicationService
     CommunicationsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',

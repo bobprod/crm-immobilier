@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WhatsAppService } from './whatsapp.service';
-import { PrismaService } from '../../core/prisma/prisma.service';
+import { PrismaService } from '../../../shared/database/prisma.service';
 import { MetaCloudProvider } from './providers/meta-cloud.provider';
 import { TwilioProvider } from './providers/twilio.provider';
 import { BadRequestException, NotFoundException } from '@nestjs/common';

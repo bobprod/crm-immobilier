@@ -192,6 +192,29 @@ enum TemplateStatus {
   rejected
 }
 
+enum CampaignType {
+  immediate
+  scheduled
+  recurring
+}
+
+enum CampaignStatus {
+  draft
+  scheduled
+  running
+  completed
+  paused
+  cancelled
+}
+
+enum RecipientStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
 enum PaymentMethod {
   cash
   check
@@ -2592,6 +2615,8 @@ model WhatsAppConfig {
   agency            agencies? @relation("AgencyWhatsAppConfig", fields: [agencyId], references: [id], onDelete: Cascade)
   conversations     WhatsAppConversation[] @relation("ConfigConversations")
   templates         WhatsAppTemplate[] @relation("ConfigTemplates")
+  contacts          WhatsAppContact[] @relation("ConfigContacts")
+  campaigns         WhatsAppCampaign[] @relation("ConfigCampaigns")
 
   @@map("whatsapp_configs")
 }
@@ -2738,9 +2763,146 @@ model WhatsAppTemplate {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  // Relations
+  campaigns         WhatsAppCampaign[] @relation("TemplateCampaigns")
+
   @@unique([configId, name])
   @@index([configId])
   @@index([status])
   @@index([category])
   @@map("whatsapp_templates")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP CONTACT - WhatsApp Contacts Management
+// ──────────────────────────────────────────────────────────────
+model WhatsAppContact {
+  id                String   @id @default(cuid())
+
+  // Configuration
+  configId          String
+  config            WhatsAppConfig @relation("ConfigContacts", fields: [configId], references: [id], onDelete: Cascade)
+
+  // Contact info
+  phoneNumber       String   // E.164 format: +33612345678
+  name              String?
+  email             String?
+  profilePicture    String?  @db.Text
+
+  // Organization
+  tags              String[] @default([])
+  groups            String[] @default([])
+  notes             String?  @db.Text
+  customFields      Json?    // Custom fields as JSON object
+
+  // Status
+  isBlocked         Boolean  @default(false)
+
+  // Stats (cached for performance)
+  totalMessages     Int      @default(0)
+  sentMessages      Int      @default(0)
+  receivedMessages  Int      @default(0)
+  totalConversations Int     @default(0)
+  activeConversations Int    @default(0)
+  avgResponseTime   Int      @default(0) // in minutes
+  lastInteractionAt DateTime?
+
+  // Timestamps
+  lastMessageAt     DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([configId, phoneNumber])
+  @@index([configId])
+  @@index([phoneNumber])
+  @@index([isBlocked])
+  @@index([tags])
+  @@index([groups])
+  @@map("whatsapp_contacts")
+}
+
+// ──────────────────────────────────────────────────────────────
+// WHATSAPP CAMPAIGN - WhatsApp Campaign Management
+// ──────────────────────────────────────────────────────────────
+model WhatsAppCampaign {
+  id                String   @id @default(cuid())
+
+  // Configuration
+  configId          String
+  config            WhatsAppConfig @relation("ConfigCampaigns", fields: [configId], references: [id], onDelete: Cascade)
+
+  // Campaign info
+  name              String
+  description       String?  @db.Text
+  type              CampaignType
+  status            CampaignStatus @default(draft)
+
+  // Template
+  templateId        String
+  template          WhatsAppTemplate @relation("TemplateCampaigns", fields: [templateId], references: [id], onDelete: Restrict)
+  templateName      String   // Cached for display
+
+  // Scheduling
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  pausedAt          DateTime?
+  cancelledAt       DateTime?
+
+  // Stats
+  totalRecipients   Int      @default(0)
+  sentCount         Int      @default(0)
+  deliveredCount    Int      @default(0)
+  readCount         Int      @default(0)
+  failedCount       Int      @default(0)
+  pendingCount      Int      @default(0)
+
+  // Metadata
+  createdBy         String   // User ID
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  recipients        WhatsAppCampaignRecipient[] @relation("CampaignRecipients")
+
+  @@index([configId])
+  @@index([status])
+  @@index([type])
+  @@index([templateId])
+  @@index([scheduledAt])
+  @@map("whatsapp_campaigns")
+}
+
+model WhatsAppCampaignRecipient {
+  id                String   @id @default(cuid())
+
+  // Campaign
+  campaignId        String
+  campaign          WhatsAppCampaign @relation("CampaignRecipients", fields: [campaignId], references: [id], onDelete: Cascade)
+
+  // Recipient info
+  contactId         String?  // Optional link to WhatsAppContact
+  phoneNumber       String   // E.164 format
+  name              String?
+  variables         Json?    // Template variables as JSON object
+
+  // Status
+  status            RecipientStatus @default(pending)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  failedAt          DateTime?
+  errorMessage      String?  @db.Text
+
+  // WhatsApp message ID (for tracking)
+  messageId         String?
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([phoneNumber])
+  @@map("whatsapp_campaign_recipients")
 }

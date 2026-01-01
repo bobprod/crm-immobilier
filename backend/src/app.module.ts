@@ -66,6 +66,7 @@ import { ScrapingModule } from './modules/scraping/scraping.module';
 // COMMUNICATIONS MODULE
 import { CommunicationsModule } from './modules/communications/communications.module';
 import { EmailAIResponseModule } from './modules/communications/email-ai-response/email-ai-response.module';
+import { WhatsAppModule } from './modules/communications/whatsapp/whatsapp.module';
 
 // DASHBOARD MODULE
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -153,8 +154,10 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     ScrapingModule,
 
 
+    // COMMUNICATIONS - 3 modules (Email, Email-AI, WhatsApp)
     CommunicationsModule,
     EmailAIResponseModule,
+    WhatsAppModule,
 
     // DASHBOARD - 1 module
     DashboardModule,
