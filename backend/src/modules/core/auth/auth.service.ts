@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { CommunicationsService } from '../../communications/communications.service';
 import * as bcrypt from 'bcrypt';
 import { GoogleUser } from './strategies/google.strategy';
 import { FacebookUser } from './strategies/facebook.strategy';
@@ -19,6 +20,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private communicationsService: CommunicationsService,
   ) {}
 
   async register(registerDto: any) {
@@ -42,6 +44,32 @@ export class AuthService {
         role: registerDto.role || 'agent',
       },
     });
+
+    // Envoyer un email de bienvenue
+    try {
+      await this.communicationsService.sendEmail(user.id, {
+        to: user.email,
+        subject: 'Bienvenue sur CRM Immobilier!',
+        body: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Bienvenue ${user.firstName}!</h1>
+            <p>Nous sommes ravis de vous accueillir sur notre plateforme CRM Immobilier.</p>
+            <p>Votre compte a été créé avec succès. Vous pouvez maintenant:</p>
+            <ul>
+              <li>Gérer vos prospects et propriétés</li>
+              <li>Planifier vos rendez-vous</li>
+              <li>Utiliser l'IA pour optimiser votre travail</li>
+              <li>Générer des rapports automatiques</li>
+            </ul>
+            <p>Pour commencer, connectez-vous avec vos identifiants.</p>
+            <p>À bientôt,<br>L'équipe CRM Immobilier</p>
+          </div>
+        `,
+      });
+    } catch (error) {
+      // Ne pas bloquer l'inscription si l'email échoue
+      console.error('Failed to send welcome email:', error);
+    }
 
     const { password: _, ...result } = user;
     return result;
@@ -211,5 +239,88 @@ export class AuthService {
       user: userWithoutPassword,
       provider: userData.provider,
     };
+  }
+
+  /**
+   * Demander un reset de mot de passe
+   */
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        // Pour des raisons de sécurité, ne pas révéler si l'email existe
+        return { success: true, message: 'Si cet email existe, un lien de réinitialisation a été envoyé' };
+      }
+
+      // Générer un token de réinitialisation
+      const resetToken = this.jwtService.sign(
+        { sub: user.id, type: 'password_reset' },
+        { secret: process.env.JWT_SECRET, expiresIn: '1h' }
+      );
+
+      // Construire le lien de réinitialisation
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+      // Envoyer l'email de réinitialisation
+      await this.communicationsService.sendEmail(user.id, {
+        to: user.email,
+        subject: 'Réinitialisation de votre mot de passe - CRM Immobilier',
+        body: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
+            <p>Bonjour ${user.firstName},</p>
+            <p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.</p>
+            <p>Pour réinitialiser votre mot de passe, cliquez sur le bouton ci-dessous:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            <p style="color: #999; font-size: 12px;">Ce lien expire dans 1 heure.</p>
+            <p style="color: #999; font-size: 12px;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px;">L'équipe CRM Immobilier</p>
+          </div>
+        `,
+      });
+
+      return { success: true, message: 'Si cet email existe, un lien de réinitialisation a été envoyé' };
+    } catch (error) {
+      console.error('Error requesting password reset:', error);
+      return { success: false, message: 'Une erreur est survenue' };
+    }
+  }
+
+  /**
+   * Réinitialiser le mot de passe avec le token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Vérifier le token
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      if (payload.type !== 'password_reset') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
+      // Hasher le nouveau mot de passe
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Mettre à jour le mot de passe
+      await this.prisma.users.update({
+        where: { id: payload.sub },
+        data: { password: hashedPassword },
+      });
+
+      return { success: true, message: 'Mot de passe réinitialisé avec succès' };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return { success: false, message: 'Token invalide ou expiré' };
+    }
   }
 }

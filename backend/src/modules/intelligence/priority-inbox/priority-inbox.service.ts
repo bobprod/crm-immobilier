@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { CommunicationsService } from '../../communications/communications.service';
 import {
   PriorityInboxQueryDto,
   PriorityItem,
@@ -11,7 +12,10 @@ import { URGENT_KEYWORDS, PRIORITY_SCORE_THRESHOLDS } from './constants';
 export class PriorityInboxService {
   private readonly logger = new Logger(PriorityInboxService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private communicationsService: CommunicationsService,
+  ) {}
 
   /**
    * Obtenir la boîte de réception prioritaire
@@ -335,5 +339,106 @@ export class PriorityInboxService {
       this.logger.error(`Error getting priority stats: ${error.message}`);
       return null;
     }
+  }
+
+  /**
+   * Envoyer un résumé quotidien des priorités par email
+   */
+  async sendDailyPrioritySummary(userId: string, recipientEmail?: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.logger.log(`Sending daily priority summary for user ${userId}`);
+
+      const items = await this.getPriorityInbox(userId, { limit: 20 });
+      const stats = await this.getPriorityStats(userId);
+
+      if (!items || items.length === 0) {
+        return { success: false, error: 'No priority items to send' };
+      }
+
+      // Obtenir l'email de l'utilisateur si non fourni
+      let email = recipientEmail;
+      if (!email) {
+        const user = await this.prisma.users.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        });
+        email = user?.email;
+      }
+
+      if (!email) {
+        return { success: false, error: 'User email not found' };
+      }
+
+      const htmlBody = this.formatPrioritySummaryEmail(items, stats);
+
+      const result = await this.communicationsService.sendEmail(userId, {
+        to: email,
+        subject: `📋 Votre résumé prioritaire du jour - ${new Date().toLocaleDateString('fr-FR')}`,
+        body: htmlBody,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error sending daily priority summary: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Formater le résumé des priorités en HTML pour l'email
+   */
+  private formatPrioritySummaryEmail(items: PriorityItem[], stats: any): string {
+    const criticalItems = items.filter(i => i.urgencyLevel === 'critical');
+    const highItems = items.filter(i => i.urgencyLevel === 'high');
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">📋 Votre Boîte Prioritaire</h1>
+        <p style="color: #666;">Résumé du ${new Date().toLocaleDateString('fr-FR', { dateStyle: 'full' })}</p>
+
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📊 Résumé</h3>
+          <p><strong>${stats.total}</strong> éléments prioritaires au total</p>
+          <ul style="list-style: none; padding: 0;">
+            <li>🔴 <strong>${stats.critical}</strong> critiques</li>
+            <li>🟠 <strong>${stats.high}</strong> haute priorité</li>
+            <li>🟡 <strong>${stats.medium}</strong> moyenne priorité</li>
+          </ul>
+        </div>
+
+        ${criticalItems.length > 0 ? `
+          <h2 style="color: #d32f2f;">🔴 Éléments Critiques</h2>
+          <ul style="line-height: 1.8;">
+            ${criticalItems.map(item => `
+              <li style="margin-bottom: 15px;">
+                <strong>${item.title}</strong>
+                <br>
+                <span style="color: #666;">${item.description}</span>
+                <br>
+                <em style="color: #999; font-size: 12px;">${item.reasons.join(', ')}</em>
+              </li>
+            `).join('')}
+          </ul>
+        ` : ''}
+
+        ${highItems.length > 0 ? `
+          <h2 style="color: #f57c00;">🟠 Haute Priorité</h2>
+          <ul style="line-height: 1.8;">
+            ${highItems.slice(0, 5).map(item => `
+              <li style="margin-bottom: 15px;">
+                <strong>${item.title}</strong>
+                <br>
+                <span style="color: #666;">${item.description}</span>
+              </li>
+            `).join('')}
+          </ul>
+        ` : ''}
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          Ce résumé a été généré automatiquement par votre CRM Immobilier
+        </p>
+      </div>
+    `;
   }
 }

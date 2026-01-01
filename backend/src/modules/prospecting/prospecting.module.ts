@@ -13,11 +13,13 @@ import { BehavioralProspectingController } from './behavioral-prospecting.contro
 import { PrismaService } from '../../shared/database/prisma.service';
 import { SeoAiModule } from '../content/seo-ai/seo-ai.module';
 import { LLMConfigModule } from '../intelligence/llm-config/llm-config.module';
+import { CommunicationsModule } from '../communications/communications.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule,
+    CommunicationsModule,
     BullModule.registerQueue(
       { name: 'scraping' },
       { name: 'scoring' },

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
+import { CommunicationsService } from '../../communications/communications.service';
 import {
   SendMessageDto,
   CreateConversationDto,
@@ -17,6 +18,7 @@ export class AIChatAssistantService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly llmService: QuickWinsLLMService,
+    private readonly communicationsService: CommunicationsService,
   ) { }
 
   /**
@@ -653,8 +655,55 @@ Règles:
   }
 
   private async getRecentEmails(userId: string, limit: number): Promise<any[]> {
-    // Placeholder - implement based on your email system
-    return [];
+    try {
+      const emails = await this.prisma.communications.findMany({
+        where: {
+          userId,
+          type: 'email',
+        },
+        orderBy: { sentAt: 'desc' },
+        take: limit,
+        select: {
+          id: true,
+          to: true,
+          subject: true,
+          body: true,
+          sentAt: true,
+          status: true,
+        },
+      });
+      return emails;
+    } catch (error) {
+      this.logger.warn('Error fetching recent emails:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Envoyer un email rédigé par l'IA
+   */
+  async sendDraftedEmail(
+    userId: string,
+    to: string,
+    subject: string,
+    body: string,
+    metadata?: any,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      this.logger.log(`Sending AI-drafted email to ${to}`);
+
+      const result = await this.communicationsService.sendEmail(userId, {
+        to,
+        subject,
+        body,
+        ...metadata,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error sending AI-drafted email: ${error.message}`);
+      return { success: false, error: error.message };
+    }
   }
 
   private async getUpcomingAppointments(
