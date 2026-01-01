@@ -4,15 +4,14 @@ import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { SmartNotificationsService } from './smart-notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
-import { EmailService } from '../communications/email/email.service';
-import { SmsService } from '../communications/sms/sms.service';
+import { CommunicationsModule } from '../communications/communications.module';
 import { PrismaModule } from '../../shared/database/prisma.module';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     PrismaModule,
+    CommunicationsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '7d' },
@@ -23,8 +22,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     NotificationsService,
     SmartNotificationsService,
     NotificationsGateway,
-    EmailService,
-    SmsService,
   ],
   exports: [NotificationsService, SmartNotificationsService, NotificationsGateway],
 })

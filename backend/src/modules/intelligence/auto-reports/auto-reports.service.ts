@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
 import { GenerateReportDto, ReportData } from './dto/generate-report.dto';
+import { CommunicationsService } from '../../communications/communications.service';
 
 @Injectable()
 export class AutoReportsService {
@@ -10,6 +11,7 @@ export class AutoReportsService {
   constructor(
     private prisma: PrismaService,
     private llmService: QuickWinsLLMService,
+    private communicationsService: CommunicationsService,
   ) { }
 
   /**
@@ -318,5 +320,91 @@ Provide specific, actionable recommendations. Return as JSON array of strings.`;
       this.logger.error(`Error getting report history: ${error.message}`);
       return [];
     }
+  }
+
+  /**
+   * Envoyer un rapport par email
+   */
+  async sendReportByEmail(
+    userId: string,
+    reportData: ReportData,
+    recipientEmail: string,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      this.logger.log(`Sending report to ${recipientEmail}`);
+
+      const htmlBody = this.formatReportAsHtml(reportData);
+
+      const result = await this.communicationsService.sendEmail(userId, {
+        to: recipientEmail,
+        subject: `Rapport automatique - ${reportData.period.label}`,
+        body: htmlBody,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error sending report by email: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Formater le rapport en HTML pour l'email
+   */
+  private formatReportAsHtml(reportData: ReportData): string {
+    const { period, summary, insights, recommendations } = reportData;
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #333;">Rapport CRM - ${period.label}</h1>
+        <p style="color: #666;">
+          Période: ${new Date(period.startDate).toLocaleDateString('fr-FR')} -
+          ${new Date(period.endDate).toLocaleDateString('fr-FR')}
+        </p>
+
+        <h2 style="color: #444; margin-top: 30px;">📊 Résumé</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background-color: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Prospects totaux</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.totalProspects}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Nouveaux prospects</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.newProspects}</td>
+          </tr>
+          <tr style="background-color: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Prospects qualifiés</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.qualifiedProspects}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Propriétés totales</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.totalProperties}</td>
+          </tr>
+          <tr style="background-color: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Nouvelles propriétés</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.newProperties}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Rendez-vous complétés</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">${summary.completedAppointments} / ${summary.totalAppointments}</td>
+          </tr>
+        </table>
+
+        <h2 style="color: #444; margin-top: 30px;">💡 Insights</h2>
+        <ul style="line-height: 1.8;">
+          ${insights.map(insight => `<li>${insight}</li>`).join('')}
+        </ul>
+
+        <h2 style="color: #444; margin-top: 30px;">🎯 Recommandations</h2>
+        <ol style="line-height: 1.8;">
+          ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+        </ol>
+
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          Ce rapport a été généré automatiquement par votre CRM Immobilier
+        </p>
+      </div>
+    `;
   }
 }
