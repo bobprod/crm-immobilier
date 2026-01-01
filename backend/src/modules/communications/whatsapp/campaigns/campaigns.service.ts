@@ -5,7 +5,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../core/prisma/prisma.service';
+import { PrismaService } from '../../../../shared/database/prisma.service';
 import { WhatsAppService } from '../whatsapp.service';
 import {
   CreateCampaignDto,

@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../core/prisma/prisma.service';
+import { PrismaService } from '../../../shared/database/prisma.service';
 import { MetaCloudProvider } from './providers/meta-cloud.provider';
 import { TwilioProvider } from './providers/twilio.provider';
 import {

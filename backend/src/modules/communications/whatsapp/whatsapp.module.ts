@@ -4,7 +4,7 @@ import { WhatsAppWebhookController } from './webhooks/whatsapp-webhook.controlle
 import { WhatsAppService } from './whatsapp.service';
 import { MetaCloudProvider } from './providers/meta-cloud.provider';
 import { TwilioProvider } from './providers/twilio.provider';
-import { PrismaModule } from '../../core/prisma/prisma.module';
+import { PrismaModule } from '../../../shared/database/prisma.module';
 import { TemplatesModule } from './templates/templates.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
