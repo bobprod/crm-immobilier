@@ -46,6 +46,7 @@ Backend (NestJS)                  Frontend (Next.js/React)
 | Endpoint | Méthode | Description | Auth |
 |----------|---------|-------------|------|
 | `/communications/history` | GET | Historique complet | ✅ JWT |
+| `/communications/history/:id` | GET | Récupérer une communication | ✅ JWT |
 | `/communications/history?type=email` | GET | Filtrer par type | ✅ JWT |
 | `/communications/history?prospectId=xxx` | GET | Filtrer par prospect | ✅ JWT |
 | `/communications/stats` | GET | Statistiques globales | ✅ JWT |
@@ -55,9 +56,10 @@ Backend (NestJS)                  Frontend (Next.js/React)
 | Endpoint | Méthode | Description | Auth |
 |----------|---------|-------------|------|
 | `/communications/templates` | GET | Liste des templates | ✅ JWT |
+| `/communications/templates/:id` | GET | Récupérer un template | ✅ JWT |
 | `/communications/templates` | POST | Créer un template | ✅ JWT |
 | `/communications/templates/:id` | PUT | Modifier un template | ✅ JWT |
-| `/communications/templates/:id` | DELETE | Supprimer un template | ✅ JWT |
+| `/communications/templates/:id` | DELETE | Supprimer un template (soft) | ✅ JWT |
 
 #### 🧪 **Tests & Configuration**
 
@@ -245,7 +247,19 @@ GET /communications/templates
 GET /communications/templates?type=email
 ```
 
-#### 6. Statistiques
+#### 6. Récupérer un Template Spécifique
+```bash
+GET /communications/templates/:id
+Authorization: Bearer <token>
+```
+
+#### 7. Récupérer une Communication Spécifique
+```bash
+GET /communications/history/:id
+Authorization: Bearer <token>
+```
+
+#### 8. Statistiques
 ```bash
 GET /communications/stats
 ```
@@ -276,7 +290,24 @@ Authorization: Bearer <token>
 {
   "name": "Nouveau nom",
   "subject": "Nouveau sujet",
-  "content": "Nouveau contenu..."
+  "content": "Nouveau contenu...",
+  "variables": ["var1", "var2"]
+}
+```
+
+**Réponse:**
+```json
+{
+  "id": "template-uuid",
+  "userId": "user-uuid",
+  "name": "Nouveau nom",
+  "type": "email",
+  "subject": "Nouveau sujet",
+  "content": "Nouveau contenu...",
+  "variables": ["var1", "var2"],
+  "isActive": true,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-02T00:00:00Z"
 }
 ```
 
@@ -286,7 +317,7 @@ Authorization: Bearer <token>
 
 ### 🗑️ **DELETE**
 
-#### Supprimer un Template
+#### Supprimer un Template (Soft Delete)
 ```bash
 DELETE /communications/templates/:id
 Authorization: Bearer <token>
@@ -300,7 +331,13 @@ Authorization: Bearer <token>
 }
 ```
 
-**Note:** Les communications historiques ne peuvent pas être supprimées (soft delete possible mais pas implémenté).
+**Important:**
+- ⚠️ **Soft Delete**: Le template n'est pas supprimé physiquement mais marqué comme `isActive: false`
+- ✅ Les données sont préservées pour l'historique
+- ❌ Le template n'apparaît plus dans les listes (filtre `isActive: true`)
+- ✅ Peut être réactivé manuellement en base de données si nécessaire
+
+**Note:** Les communications historiques ne peuvent pas être supprimées (immuables pour audit).
 
 ---
 

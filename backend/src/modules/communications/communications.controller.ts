@@ -69,10 +69,34 @@ export class CommunicationsController {
     return this.communicationsService.getTemplates(req.user.userId, type);
   }
 
+  @Get('templates/:id')
+  @ApiOperation({ summary: 'Récupérer un template par ID' })
+  getTemplateById(@Request() req, @Param('id') id: string) {
+    return this.communicationsService.getTemplateById(id, req.user.userId);
+  }
+
   @Post('templates')
   @ApiOperation({ summary: 'Créer un template' })
   createTemplate(@Request() req, @Body() dto: CreateTemplateDto) {
     return this.communicationsService.createTemplate(req.user.userId, dto);
+  }
+
+  @Put('templates/:id')
+  @ApiOperation({ summary: 'Modifier un template' })
+  updateTemplate(@Request() req, @Param('id') id: string, @Body() dto: UpdateTemplateDto) {
+    return this.communicationsService.updateTemplate(id, req.user.userId, dto);
+  }
+
+  @Delete('templates/:id')
+  @ApiOperation({ summary: 'Supprimer un template' })
+  deleteTemplate(@Request() req, @Param('id') id: string) {
+    return this.communicationsService.deleteTemplate(id, req.user.userId);
+  }
+
+  @Get('history/:id')
+  @ApiOperation({ summary: 'Récupérer une communication par ID' })
+  getCommunicationById(@Request() req, @Param('id') id: string) {
+    return this.communicationsService.getCommunicationById(id, req.user.userId);
   }
 
   @Get('stats')
