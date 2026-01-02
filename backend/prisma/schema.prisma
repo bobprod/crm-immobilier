@@ -1,11 +1,9 @@
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================
@@ -87,13 +85,6 @@ enum Urgency {
   moyenne
   haute
   inconnu
-}
-
-enum CampaignStatus {
-  draft
-  active
-  paused
-  completed
 }
 
 enum MandateType {
@@ -259,16 +250,20 @@ model agencies {
   users      users[]
 
   // ── Nouvelles relations AI Billing ──
-  apiKeys      AgencyApiKeys?
-  aiCredits    AiCredits?
-  aiUsages     AiUsage[]
-  aiErrorLogs  AiErrorLog[]
+  apiKeys     AgencyApiKeys?
+  aiCredits   AiCredits?
+  aiUsages    AiUsage[]
+  aiErrorLogs AiErrorLog[]
 
   // ── Nouvelles relations Module Registry (Phase 1) ──
   moduleSubscriptions ModuleAgencySubscription[]
 
   // ── Nouvelles relations Provider Registry (Phase 1) ──
-  providerConfigs     ProviderConfig[] @relation("AgencyProviders")
+  providerConfigs ProviderConfig[] @relation("AgencyProviders")
+
+  // ── Nouvelles relations WhatsApp ──
+  whatsappConfigs       WhatsAppConfig[]       @relation("AgencyWhatsAppConfig")
+  whatsappConversations WhatsAppConversation[] @relation("AgencyWhatsAppConversations")
 }
 
 model appointments {
@@ -365,45 +360,45 @@ model matches {
 }
 
 model properties {
-  id                  String                      @id @default(cuid())
-  userId              String
-  agencyId            String?
-  reference           String?
-  title               String
-  description         String?
-  type                String                      // PropertyType as string for flexibility
-  category            PropertyCategory            @default(sale)
-  price               Float
-  currency            String                      @default("TND")
-  address             String?
-  city                String?
-  delegation          String?
-  zipCode             String?
-  latitude            Float?
-  longitude           Float?
-  bedrooms            Int?
-  bathrooms           Int?
-  area                Float?
-  images              String[]                    // Array of image URLs
-  features            String[]                    // Array of feature strings
-  status              PropertyStatus              @default(available)
-  viewsCount          Int                         @default(0)
+  id             String           @id @default(cuid())
+  userId         String
+  agencyId       String?
+  reference      String?
+  title          String
+  description    String?
+  type           String // PropertyType as string for flexibility
+  category       PropertyCategory @default(sale)
+  price          Float
+  currency       String           @default("TND")
+  address        String?
+  city           String?
+  delegation     String?
+  zipCode        String?
+  latitude       Float?
+  longitude      Float?
+  bedrooms       Int?
+  bathrooms      Int?
+  area           Float?
+  images         String[] // Array of image URLs
+  features       String[] // Array of feature strings
+  status         PropertyStatus   @default(available)
+  viewsCount     Int              @default(0)
   // DEPRECATED: These fields couple properties to prospecting domain
   // Should be moved to prospecting_matches or a separate junction table
   // TODO: Migrate data and remove in future version
-  prospectType        String?                     // @deprecated - use prospecting_leads.leadType
-  subType             String?                     // @deprecated
-  searchCriteria      Json?                       // @deprecated - use prospecting_leads criteria
-  mandatInfo          Json?                       // @deprecated - use prospecting_leads.metadata
-  profiling           Json?                       // @deprecated
-  timeline            String?                     // @deprecated - use prospecting_leads.urgency
-  budget              Json?                       // @deprecated - use prospecting_leads.budget*
-  wpSyncId            String?
-  wpSyncedAt          DateTime?
-  wordpressId         String?
-  deletedAt           DateTime?                   // Soft delete timestamp
-  createdAt           DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
+  prospectType   String? // @deprecated - use prospecting_leads.leadType
+  subType        String? // @deprecated
+  searchCriteria Json? // @deprecated - use prospecting_leads criteria
+  mandatInfo     Json? // @deprecated - use prospecting_leads.metadata
+  profiling      Json? // @deprecated
+  timeline       String? // @deprecated - use prospecting_leads.urgency
+  budget         Json? // @deprecated - use prospecting_leads.budget*
+  wpSyncId       String?
+  wpSyncedAt     DateTime?
+  wordpressId    String?
+  deletedAt      DateTime? // Soft delete timestamp
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   // Relations
   history             PropertyHistory[]
@@ -414,38 +409,38 @@ model properties {
   communications      communications[]
   documents           documents[]
   matches             matches[]
-  agencies            agencies?                   @relation(fields: [agencyId], references: [id])
-  users               users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prospectShown              prospect_properties_shown[]     @relation("PropertyProspectShown")
-  prospecting_matches        prospecting_matches[]           @relation("PropertyMatches")
-  matchedLeads               prospecting_lead_properties[]   @relation("PropertyLeadMatches")
-  tasks                      tasks[]                         @relation("PropertyTasks")
+  agencies            agencies?                     @relation(fields: [agencyId], references: [id])
+  users               users                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prospectShown       prospect_properties_shown[]   @relation("PropertyProspectShown")
+  prospecting_matches prospecting_matches[]         @relation("PropertyMatches")
+  matchedLeads        prospecting_lead_properties[] @relation("PropertyLeadMatches")
+  tasks               tasks[]                       @relation("PropertyTasks")
 
   // Priority & Organization
-  priority            PropertyPriority            @default(medium)
-  tags                String[]                    // Array of tag strings
-  assignedTo          String?
-  isFeatured          Boolean                     @default(false)
-  notes               String?
-  lastContactAt       DateTime?
-  assignedUser        users?                      @relation("AssignedProperties", fields: [assignedTo], references: [id])
+  priority      PropertyPriority @default(medium)
+  tags          String[] // Array of tag strings
+  assignedTo    String?
+  isFeatured    Boolean          @default(false)
+  notes         String?
+  lastContactAt DateTime?
+  assignedUser  users?           @relation("AssignedProperties", fields: [assignedTo], references: [id])
 
   // Owner/Vendor (deprecated - use ownerNew)
-  ownerId             String?
-  owner               prospects?                  @relation("PropertyOwner", fields: [ownerId], references: [id])
+  ownerId String?
+  owner   prospects? @relation("PropertyOwner", fields: [ownerId], references: [id])
 
   // New Owner relation
-  ownerNewId          String?
-  ownerNew            Owner?                      @relation("OwnerProperties", fields: [ownerNewId], references: [id])
+  ownerNewId String?
+  ownerNew   Owner?  @relation("OwnerProperties", fields: [ownerNewId], references: [id])
 
   // Business relations
-  mandates            Mandate[]                   @relation("PropertyMandates")
-  transactions        Transaction[]               @relation("PropertyTransactions")
+  mandates     Mandate[]     @relation("PropertyMandates")
+  transactions Transaction[] @relation("PropertyTransactions")
 
   // Financials
-  netPrice            Float?
-  fees                Float?
-  feesPercentage      Float?
+  netPrice       Float?
+  fees           Float?
+  feesPercentage Float?
 
   @@index([priority])
   @@index([isFeatured])
@@ -458,7 +453,29 @@ model properties {
   @@index([type])
   @@index([status])
   @@index([deletedAt])
-  @@index([userId, status, price])  // Composite for matching queries
+  @@index([userId, status, price]) // Composite for matching queries
+}
+
+// ============================================
+// PropertyHistory - Track all property changes
+// ============================================
+model PropertyHistory {
+  id         String   @id @default(cuid())
+  propertyId String
+  userId     String
+  action     String
+  changes    Json?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  property properties @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     users      @relation("PropertyHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("property_history")
 }
 
 model prospects {
@@ -502,103 +519,119 @@ model prospects {
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
   transactions         Transaction[]               @relation("ProspectTransactions")
+  prospectHistory      ProspectHistory[]
 }
 
-model user_integrations {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String
-  apiKey    String
-  config    Json?
-  data      Json?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+// ============================================
+// ProspectHistory - Track all prospect changes
+// ============================================
+model ProspectHistory {
+  id         String   @id @default(cuid())
+  prospectId String
+  userId     String
+  action     String
+  changes    Json
+  metadata   Json?
+  createdAt  DateTime @default(now())
 
-  @@unique([userId, type])
+  prospect prospects @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  user     users     @relation("UserProspectHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("prospect_history")
 }
 
 // ════════════════════════════════════════════════════════════
 // USER ROLES ENUM - SAAS CORE OS
 // ════════════════════════════════════════════════════════════
 enum UserRole {
-  USER          // Utilisateur simple (ex: freelance, client final)
-  AGENT         // Agent métier (immo, voyage, recruteur)
-  ADMIN         // Admin agence
-  SUPER_ADMIN   // Admin plateforme
+  USER // Utilisateur simple (ex: freelance, client final)
+  AGENT // Agent métier (immo, voyage, recruteur)
+  ADMIN // Admin agence
+  SUPER_ADMIN // Admin plateforme
 }
 
 model users {
-  id                       String                    @id @default(cuid())
-  email                    String                    @unique
-  password                 String
-  firstName                String?
-  lastName                 String?
-  role                     UserRole                  @default(AGENT)
-  agencyId                 String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  aiSuggestions            AiSuggestion[]
-  detectedAnomalies        DetectedAnomaly[]
-  llmConfig                LlmConfig?
-  mlConfig                 MlConfig?
-  pages                    Page[]
-  publishedProperties      PublishedProperty[]
-  seoBlogPosts             SeoBlogPost[]
-  seoConfig                SeoConfig?
-  trackingConfigs          TrackingConfig[]
-  trackingEvents           TrackingEvent[]
-  vitrineAnalytics         VitrineAnalytics[]
-  vitrineConfig            VitrineConfig?
-  ai_generations           ai_generations[]          @relation("UserAiGenerations")
-  ai_settings              ai_settings?
-  ai_usage_metrics         ai_usage_metrics[]        @relation("UserAiUsageMetrics")
-  analytics_events         analytics_events[]        @relation("UserAnalyticsEvents")
-  appointments             appointments[]
-  campaigns                campaigns[]
-  communication_templates  communication_templates[] @relation("UserCommunicationTemplates")
-  communications           communications[]          @relation("UserCommunications")
-  contact_validations      contact_validations[]     @relation("UserContactValidations")
-  conversion_events        conversion_events[]       @relation("UserConversionEvents")
-  document_templates       document_templates[]      @relation("UserDocumentTemplates")
-  documents                documents[]               @relation("UserDocuments")
-  ocr_results              ocr_results[]             @relation("UserOcrResults")
-  properties               properties[]
-  prospect_interactions    prospect_interactions[]   @relation("UserProspectInteractions")
-  prospecting_campaigns    prospecting_campaigns[]   @relation("UserProspectingCampaigns")
-  prospecting_leads        prospecting_leads[]       @relation("UserProspectingLeads")
-  prospects                prospects[]
-  prospectHistory          ProspectHistory[]         @relation("UserProspectHistory")
-  settings                 settings[]                @relation("UserSettings")
-  tasks                    tasks[]                   @relation("UserTasks")
-  user_integrations        user_integrations[]
-  aiOrchestrations         AiOrchestration[]
-  toolCallLogs             ToolCallLog[]
-  agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
-  assignedProperties       properties[]              @relation("AssignedProperties")
-  notifications            Notification[]            @relation("UserNotifications")
-  notificationPreferences  NotificationPreference?   @relation("UserNotificationPreferences")
-  userIntegrations         UserIntegration[]         @relation("UserIntegrations")
-  activities               Activity[]                @relation("UserActivities")
-  owners                   Owner[]                   @relation("UserOwners")
-  mandates                 Mandate[]                 @relation("UserMandates")
-  transactions             Transaction[]             @relation("UserTransactions")
-  commissions              Commission[]              @relation("UserCommissions")
-  agentCommissions         Commission[]              @relation("AgentCommissions")
-  invoices                 Invoice[]                 @relation("UserInvoices")
-  payments                 Payment[]                 @relation("UserPayments")
-  wordpressUrl             String?
-  wordpressUsername        String?
-  wordpressPassword        String?
+  id                      String                    @id @default(cuid())
+  email                   String                    @unique
+  password                String
+  firstName               String?
+  lastName                String?
+  role                    UserRole                  @default(AGENT)
+  agencyId                String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  aiSuggestions           AiSuggestion[]
+  detectedAnomalies       DetectedAnomaly[]
+  llmConfig               LlmConfig?
+  mlConfig                MlConfig?
+  pages                   Page[]
+  publishedProperties     PublishedProperty[]
+  seoBlogPosts            SeoBlogPost[]
+  seoConfig               SeoConfig?
+  trackingConfigs         TrackingConfig[]
+  trackingEvents          TrackingEvent[]
+  vitrineAnalytics        VitrineAnalytics[]
+  vitrineConfig           VitrineConfig?
+  ai_generations          ai_generations[]          @relation("UserAiGenerations")
+  ai_settings             ai_settings?
+  ai_usage_metrics        ai_usage_metrics[]        @relation("UserAiUsageMetrics")
+  analytics_events        analytics_events[]        @relation("UserAnalyticsEvents")
+  appointments            appointments[]
+  campaigns               campaigns[]
+  communication_templates communication_templates[] @relation("UserCommunicationTemplates")
+  communications          communications[]          @relation("UserCommunications")
+  contact_validations     contact_validations[]     @relation("UserContactValidations")
+  conversion_events       conversion_events[]       @relation("UserConversionEvents")
+  document_templates      document_templates[]      @relation("UserDocumentTemplates")
+  documents               documents[]               @relation("UserDocuments")
+  ocr_results             ocr_results[]             @relation("UserOcrResults")
+  properties              properties[]
+  prospect_interactions   prospect_interactions[]   @relation("UserProspectInteractions")
+  prospecting_campaigns   prospecting_campaigns[]   @relation("UserProspectingCampaigns")
+  prospecting_leads       prospecting_leads[]       @relation("UserProspectingLeads")
+  prospects               prospects[]
+  prospectHistory         ProspectHistory[]         @relation("UserProspectHistory")
+  propertyHistory         PropertyHistory[]         @relation("PropertyHistory")
+  settings                settings[]                @relation("UserSettings")
+  tasks                   tasks[]                   @relation("UserTasks")
+  userIntegrations        UserIntegration[]         @relation("UserIntegrations")
+  aiOrchestrations        AiOrchestration[]
+  toolCallLogs            ToolCallLog[]
+  agencies                agencies?                 @relation(fields: [agencyId], references: [id])
+  assignedProperties      properties[]              @relation("AssignedProperties")
+  notifications           Notification[]            @relation("UserNotifications")
+  notificationPreferences NotificationPreference?   @relation("UserNotificationPreferences")
+  activities              Activity[]                @relation("UserActivities")
+  owners                  Owner[]                   @relation("UserOwners")
+  mandates                Mandate[]                 @relation("UserMandates")
+  transactions            Transaction[]             @relation("UserTransactions")
+  commissions             Commission[]              @relation("UserCommissions")
+  agentCommissions        Commission[]              @relation("AgentCommissions")
+  invoices                Invoice[]                 @relation("UserInvoices")
+  payments                Payment[]                 @relation("UserPayments")
+  wordpressUrl            String?
+  wordpressUsername       String?
+  wordpressPassword       String?
 
   // ── Nouvelles relations AI Billing ──
-  aiUsages                 AiUsage[]
-  aiErrorLogs              AiErrorLog[]
-  userAiCredits            UserAiCredits?
+  aiUsages      AiUsage[]
+  aiErrorLogs   AiErrorLog[]
+  userAiCredits UserAiCredits?
 
   // ── Nouvelles relations Provider Registry (Phase 1) ──
-  providerConfigs          ProviderConfig[] @relation("UserProviders")
+  providerConfigs ProviderConfig[] @relation("UserProviders")
+
+  // ── Nouvelles relations LLM & WhatsApp ──
+  userLlmProviders      UserLlmProvider[]
+  llmUsageLogs          LlmUsageLog[]          @relation("UserLlmUsageLogs")
+  providerPerformances  ProviderPerformance[]  @relation("UserProviderPerformance")
+  whatsappConfigs       WhatsAppConfig[]       @relation("UserWhatsAppConfig")
+  whatsappConversations WhatsAppConversation[] @relation("UserWhatsAppConversations")
+  whatsappMessages      WhatsAppMessage[]      @relation("UserWhatsAppMessages")
 }
 
 model communications {
@@ -792,36 +825,82 @@ model ocr_results {
 }
 
 model ai_settings {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  defaultProvider   String   @default("openai")
-  preferredProvider String?  @default("openai")
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  defaultProvider   String  @default("openai")
+  preferredProvider String? @default("openai")
   // ── LLM Providers ──
   openaiApiKey      String?
   geminiApiKey      String?
-  claudeApiKey      String?       // Anthropic
+  claudeApiKey      String? // Anthropic
   deepseekApiKey    String?
   openrouterApiKey  String?
 
   // ── Scraping & Data Providers ──
-  serpApiKey          String?     // Google SERP API
-  firecrawlApiKey     String?     // Firecrawl web scraping
-  picaApiKey          String?     // Pica real estate data
-  jinaReaderApiKey    String?     // Jina Reader (URL → Markdown)
-  scrapingBeeApiKey   String?     // ScrapingBee
-  browserlessApiKey   String?     // Browserless headless browser
-  rapidApiKey         String?     // RapidAPI
+  serpApiKey        String? // Google SERP API
+  firecrawlApiKey   String? // Firecrawl web scraping
+  picaApiKey        String? // Pica real estate data
+  jinaReaderApiKey  String? // Jina Reader (URL → Markdown)
+  scrapingBeeApiKey String? // ScrapingBee
+  browserlessApiKey String? // Browserless headless browser
+  rapidApiKey       String? // RapidAPI
 
-  customApiKeys     Json?
-  defaultModel      String?
-  temperature       Float    @default(0.7)
-  maxTokens         Int      @default(2000)
-  preferences       Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  users             users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customApiKeys Json?
+  defaultModel  String?
+  temperature   Float    @default(0.7)
+  maxTokens     Int      @default(2000)
+  preferences   Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  users         users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ============================================
+// AI Orchestration Models
+// ============================================
+model AiOrchestration {
+  id          String    @id @default(cuid())
+  userId      String
+  tenantId    String
+  objective   String
+  context     Json
+  status      String
+  plan        Json?
+  results     Json?
+  finalResult Json?
+  metrics     Json?
+  errors      String[]
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user      users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolCalls ToolCallLog[]
+
+  @@index([userId, tenantId, status, objective, createdAt])
+  @@map("ai_orchestrations")
+}
+
+model ToolCallLog {
+  id              String    @id @default(cuid())
+  orchestrationId String
+  toolType        String
+  action          String
+  params          Json
+  status          String
+  result          Json?
+  error           String?
+  executionTimeMs Int?
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  orchestration AiOrchestration @relation(fields: [orchestrationId], references: [id], onDelete: Cascade)
+  user          users?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String?
+
+  @@index([orchestrationId, toolType, status, createdAt])
+  @@map("tool_call_logs")
 }
 
 model prospecting_campaigns {
@@ -829,7 +908,7 @@ model prospecting_campaigns {
   userId         String
   name           String
   description    String?
-  type           String              // CampaignType as string for flexibility
+  type           String // CampaignType as string for flexibility
   config         Json
   status         CampaignStatus      @default(draft)
   prospectType   String?
@@ -858,65 +937,66 @@ model prospecting_campaigns {
 }
 
 model prospecting_leads {
-  id                  String                @id @default(cuid())
-  campaignId          String
-  userId              String
-  firstName           String?
-  lastName            String?
-  email               String?
-  phone               String?
-  address             String?
-  city                String?
-  zipCode             String?
-  country             String?               @default("Tunisie")
-  propertyType        String?
-  propertyTypes       String[]              // Array of property types from LLM
-  source              String?
-  sourceUrl           String?
-  rawText             String?               @db.Text // Original scraped text
-  title               String?               // Title from scraped content
-  score               Int                   @default(0)
-  status              LeadStatus            @default(new)
-  leadType            LeadType              @default(inconnu)
-  intention           Intention?
-  urgency             Urgency?
-  validationStatus    ValidationStatus      @default(pending)
-  seriousnessScore    Int?                  // 0-100 from LLM analysis
-  surfaceM2           Int?                  // Surface in square meters
-  rooms               Int?                  // Number of rooms
-  budgetMin           Float?                // Minimum budget
-  budgetMax           Float?                // Maximum budget
-  budgetCurrency      String?               @default("TND")
-  qualificationNotes  String?               @db.Text // Notes de qualification du lead
+  id                 String           @id @default(cuid())
+  campaignId         String
+  userId             String
+  firstName          String?
+  lastName           String?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  zipCode            String?
+  country            String?          @default("Tunisie")
+  propertyType       String?
+  propertyTypes      String[] // Array of property types from LLM
+  source             String?
+  sourceUrl          String?
+  rawText            String?          @db.Text // Original scraped text
+  title              String? // Title from scraped content
+  score              Int              @default(0)
+  status             LeadStatus       @default(new)
+  leadType           LeadType         @default(inconnu)
+  intention          Intention?
+  urgency            Urgency?
+  validationStatus   ValidationStatus @default(pending)
+  seriousnessScore   Int? // 0-100 from LLM analysis
+  surfaceM2          Int? // Surface in square meters
+  rooms              Int? // Number of rooms
+  budgetMin          Float? // Minimum budget
+  budgetMax          Float? // Maximum budget
+  budgetCurrency     String?          @default("TND")
+  qualificationNotes String?          @db.Text // Notes de qualification du lead
 
   // ✅ NOUVEAUX CHAMPS TRACKING
-  retryCount          Int                   @default(0)  // Nombre de tentatives de contact
-  lastContactedAt     DateTime?                          // Dernière tentative de contact
-  nextActionDate      DateTime?                          // Prochaine action planifiée
-  sourceMetadata      Json?                              // Métadonnées du scraping
-  qualityScore        Int?                               // Score qualité 0-100
-  aiModelVersion      String?                            // Version du modèle LLM utilisé
+  retryCount      Int       @default(0) // Nombre de tentatives de contact
+  lastContactedAt DateTime? // Dernière tentative de contact
+  nextActionDate  DateTime? // Prochaine action planifiée
+  sourceMetadata  Json? // Métadonnées du scraping
+  qualityScore    Int? // Score qualité 0-100
+  aiModelVersion  String? // Version du modèle LLM utilisé
 
   // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
-  prospectType        String?               // @deprecated - Use leadType
-  subType             String?               // @deprecated
-  searchCriteria      Json?                 // @deprecated
-  mandatInfo          Json?                 // @deprecated
-  profiling           Json?                 // @deprecated
-  timeline            String?               // @deprecated - Use urgency
-  budget              Json?                 // @deprecated - Use budgetMin/budgetMax
-  matchedPropertyIds  String[]              // @deprecated - Use prospecting_lead_properties junction table
+  prospectType       String? // @deprecated - Use leadType
+  subType            String? // @deprecated
+  searchCriteria     Json? // @deprecated
+  mandatInfo         Json? // @deprecated
+  profiling          Json? // @deprecated
+  timeline           String? // @deprecated - Use urgency
+  budget             Json? // @deprecated - Use budgetMin/budgetMax
+  matchedPropertyIds String[] // @deprecated - Use prospecting_lead_properties junction table
 
-  metadata            Json?
-  convertedProspectId String?
-  convertedAt         DateTime?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  campaigns           prospecting_campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  convertedProspect   prospects?                        @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
-  users               users                             @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
-  prospecting_matches prospecting_matches[]             @relation("LeadMatches")
-  matchedProperties   prospecting_lead_properties[]     @relation("LeadPropertyMatches")
+  metadata              Json?
+  convertedProspectId   String?
+  convertedAt           DateTime?
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime                      @updatedAt
+  campaigns             prospecting_campaigns         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  convertedProspect     prospects?                    @relation("ConvertedProspect", fields: [convertedProspectId], references: [id])
+  users                 users                         @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
+  prospecting_matches   prospecting_matches[]         @relation("LeadMatches")
+  matchedProperties     prospecting_lead_properties[] @relation("LeadPropertyMatches")
+  whatsappConversations WhatsAppConversation[]        @relation("LeadWhatsAppConversations")
 
   @@index([campaignId])
   @@index([userId])
@@ -933,40 +1013,40 @@ model prospecting_leads {
 }
 
 model prospecting_matches {
-  id             String            @id @default(cuid())
-  leadId         String
-  prospectId     String?
-  propertyId     String
-  score          Int
-  reason         Json              // MatchReason structure from matching algorithm
-  status         MatchStatus       @default(pending)
-  isQualified    Boolean           @default(false) // score >= 50
+  id          String      @id @default(cuid())
+  leadId      String
+  prospectId  String?
+  propertyId  String
+  score       Int
+  reason      Json // MatchReason structure from matching algorithm
+  status      MatchStatus @default(pending)
+  isQualified Boolean     @default(false) // score >= 50
 
   // ✅ NOUVEAUX CHAMPS TRACKING
-  convertedAt       DateTime?        // Date de conversion en prospect/client
-  conversionValue   Float?           // Valeur de la conversion (€)
-  attemptCount      Int       @default(1)   // Nombre de tentatives de contact
-  lastAttemptAt     DateTime?        // Dernière tentative
-  feedbackScore     Int?             // Note de satisfaction (1-5)
+  convertedAt     DateTime? // Date de conversion en prospect/client
+  conversionValue Float? // Valeur de la conversion (€)
+  attemptCount    Int       @default(1) // Nombre de tentatives de contact
+  lastAttemptAt   DateTime? // Dernière tentative
+  feedbackScore   Int? // Note de satisfaction (1-5)
 
   // ⚠️ DEPRECATED FIELDS - À SUPPRIMER DANS PROCHAINE VERSION
-  prospectType   String?              // @deprecated - Use lead.leadType
-  subType        String?              // @deprecated
-  searchCriteria Json?                // @deprecated
-  mandatInfo     Json?                // @deprecated
-  profiling      Json?                // @deprecated
-  timeline       String?              // @deprecated - Use lead.urgency
-  budget         Json?                // @deprecated - Use lead.budgetMin/budgetMax
+  prospectType   String? // @deprecated - Use lead.leadType
+  subType        String? // @deprecated
+  searchCriteria Json? // @deprecated
+  mandatInfo     Json? // @deprecated
+  profiling      Json? // @deprecated
+  timeline       String? // @deprecated - Use lead.urgency
+  budget         Json? // @deprecated - Use lead.budgetMin/budgetMax
 
   // Tracking existant
-  notifiedAt     DateTime?
-  contactedAt    DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  notifiedAt  DateTime?
+  contactedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   // Relations
-  lead           prospecting_leads @relation("LeadMatches", fields: [leadId], references: [id], onDelete: Cascade)
-  properties     properties        @relation("PropertyMatches", fields: [propertyId], references: [id], onDelete: Cascade)
-  prospects      prospects?        @relation("ProspectMatches", fields: [prospectId], references: [id])
+  lead        prospecting_leads @relation("LeadMatches", fields: [leadId], references: [id], onDelete: Cascade)
+  properties  properties        @relation("PropertyMatches", fields: [propertyId], references: [id], onDelete: Cascade)
+  prospects   prospects?        @relation("ProspectMatches", fields: [prospectId], references: [id])
 
   @@unique([leadId, propertyId])
   @@index([leadId])
@@ -983,16 +1063,16 @@ model prospecting_matches {
 // Table de junction pour remplacer matchedPropertyIds[] dans prospecting_leads
 // Permet de créer une vraie relation many-to-many avec indexes efficaces
 model prospecting_lead_properties {
-  id          String            @id @default(cuid())
-  leadId      String
-  propertyId  String
-  matchScore  Int               @default(0) // Score spécifique de ce match (0-100)
-  matchedAt   DateTime          @default(now())
-  createdAt   DateTime          @default(now())
+  id         String   @id @default(cuid())
+  leadId     String
+  propertyId String
+  matchScore Int      @default(0) // Score spécifique de ce match (0-100)
+  matchedAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   // Relations
-  lead        prospecting_leads @relation("LeadPropertyMatches", fields: [leadId], references: [id], onDelete: Cascade)
-  property    properties        @relation("PropertyLeadMatches", fields: [propertyId], references: [id], onDelete: Cascade)
+  lead     prospecting_leads @relation("LeadPropertyMatches", fields: [leadId], references: [id], onDelete: Cascade)
+  property properties        @relation("PropertyLeadMatches", fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([leadId, propertyId])
   @@index([leadId, matchScore])
@@ -1349,32 +1429,32 @@ model LlmConfig {
 // ═══════════════════════════════════════════════════════
 
 model UserLlmProvider {
-  id                    String   @id @default(cuid())
-  userId                String
-  provider              String   // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
-  apiKey                String   // Clé API (cryptée)
-  model                 String?  // Modèle par défaut pour ce provider
-  isActive              Boolean  @default(true)
-  priority              Int      @default(0)  // 0 = plus haute priorité
-  monthlyBudget         Float?   // Budget mensuel pour ce provider (en $)
+  id            String  @id @default(cuid())
+  userId        String
+  provider      String // 'anthropic', 'openai', 'gemini', 'openrouter', 'deepseek', 'qwen', 'kimi', 'mistral'
+  apiKey        String // Clé API (cryptée)
+  model         String? // Modèle par défaut pour ce provider
+  isActive      Boolean @default(true)
+  priority      Int     @default(0) // 0 = plus haute priorité
+  monthlyBudget Float? // Budget mensuel pour ce provider (en $)
 
   // ✅ NOUVEAUX CHAMPS TRACKING
-  monthlyTokensUsed     Int      @default(0)  // Tokens utilisés ce mois
-  estimatedMonthCost    Float    @default(0)  // Coût estimé ce mois
-  quotaRemainingTokens  Int?                  // Tokens restants (quota API)
-  rateLimitPerMinute    Int?                  // Rate limit du provider
-  lastUsedAt            DateTime?             // Dernière utilisation
-  successRate           Float    @default(100) // Taux de succès (0-100%)
-  failureCount          Int      @default(0)  // Nombre d'échecs
-  totalApiCalls         Int      @default(0)  // Total d'appels API
+  monthlyTokensUsed    Int       @default(0) // Tokens utilisés ce mois
+  estimatedMonthCost   Float     @default(0) // Coût estimé ce mois
+  quotaRemainingTokens Int? // Tokens restants (quota API)
+  rateLimitPerMinute   Int? // Rate limit du provider
+  lastUsedAt           DateTime? // Dernière utilisation
+  successRate          Float     @default(100) // Taux de succès (0-100%)
+  failureCount         Int       @default(0) // Nombre d'échecs
+  totalApiCalls        Int       @default(0) // Total d'appels API
 
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user                  users                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  usageLogs             LlmUsageLog[]           @relation("ProviderUsageLogs")
-  performanceMetrics    ProviderPerformance[]   @relation("ProviderMetrics")
+  user               users                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs          LlmUsageLog[]         @relation("ProviderUsageLogs")
+  performanceMetrics ProviderPerformance[] @relation("ProviderMetrics")
 
   @@unique([userId, provider])
   @@index([userId])
@@ -1385,22 +1465,22 @@ model UserLlmProvider {
 }
 
 model LlmUsageLog {
-  id                String            @id @default(cuid())
+  id                String   @id @default(cuid())
   userId            String
-  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel car peut être un provider non configuré)
-  provider          String            // Provider utilisé
-  operationType     String            // 'seo', 'prospecting_mass', 'analysis_quick', etc.
-  tokensInput       Int               @default(0)
-  tokensOutput      Int               @default(0)
-  cost              Float             @default(0) // Coût en $
-  latency           Int               @default(0) // Latence en ms
-  success           Boolean           @default(true)
+  userLlmProviderId String? // FK vers UserLlmProvider (optionnel car peut être un provider non configuré)
+  provider          String // Provider utilisé
+  operationType     String // 'seo', 'prospecting_mass', 'analysis_quick', etc.
+  tokensInput       Int      @default(0)
+  tokensOutput      Int      @default(0)
+  cost              Float    @default(0) // Coût en $
+  latency           Int      @default(0) // Latence en ms
+  success           Boolean  @default(true)
   errorMessage      String?
-  createdAt         DateTime          @default(now())
+  createdAt         DateTime @default(now())
 
   // Relations
-  user              users?            @relation("UserLlmUsageLogs", fields: [userId], references: [id], onDelete: Cascade)
-  userLlmProvider   UserLlmProvider?  @relation("ProviderUsageLogs", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
+  user            users?           @relation("UserLlmUsageLogs", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider UserLlmProvider? @relation("ProviderUsageLogs", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([userLlmProviderId, createdAt])
@@ -1413,21 +1493,21 @@ model LlmUsageLog {
 }
 
 model ProviderPerformance {
-  id                String            @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
-  userLlmProviderId String?           // FK vers UserLlmProvider (optionnel)
+  userLlmProviderId String? // FK vers UserLlmProvider (optionnel)
   provider          String
-  avgLatency        Int               @default(0) // Latence moyenne (ms)
-  successRate       Float             @default(100) // Taux de succès (0-100%)
-  totalCalls        Int               @default(0)
-  totalTokens       Int               @default(0)
-  totalCost         Float             @default(0)
+  avgLatency        Int       @default(0) // Latence moyenne (ms)
+  successRate       Float     @default(100) // Taux de succès (0-100%)
+  totalCalls        Int       @default(0)
+  totalTokens       Int       @default(0)
+  totalCost         Float     @default(0)
   lastUsed          DateTime?
-  updatedAt         DateTime          @updatedAt
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  user              users             @relation("UserProviderPerformance", fields: [userId], references: [id], onDelete: Cascade)
-  userLlmProvider   UserLlmProvider?  @relation("ProviderMetrics", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
+  user            users            @relation("UserProviderPerformance", fields: [userId], references: [id], onDelete: Cascade)
+  userLlmProvider UserLlmProvider? @relation("ProviderMetrics", fields: [userLlmProviderId], references: [id], onDelete: SetNull)
 
   @@unique([userId, provider])
   @@index([avgLatency])
@@ -1610,33 +1690,34 @@ model conversion_events {
 // ============================================
 
 model Notification {
-  id        String    @id @default(cuid())
+  id        String  @id @default(cuid())
   userId    String
-  type      String    // appointment, task, lead, system, property, message
+  type      String // appointment, task, lead, system, property, message
   title     String
-  message   String    @db.Text
+  message   String  @db.Text
   actionUrl String?
-  metadata  Json?     @default("{}")
+  metadata  Json?   @default("{}")
 
   // ✅ Smart AI Notification - Canal de livraison
-  channel   String    @default("in_app") // in_app, email, sms, push, whatsapp
+  channel String @default("in_app") // in_app, email, sms, push, whatsapp
 
-  isRead    Boolean   @default(false)
-  readAt    DateTime?
+  isRead Boolean   @default(false)
+  readAt DateTime?
 
   // ✅ Smart AI Notification - Tracking
-  deliveredAt DateTime?  // Quand la notification a été livrée
-  openedAt    DateTime?  // Quand l'utilisateur a ouvert/cliqué
+  deliveredAt DateTime? // Quand la notification a été livrée
+  openedAt    DateTime? // Quand l'utilisateur a ouvert/cliqué
+  deletedAt   DateTime? // Soft delete support
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user users @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
   @@index([type])
-  @@index([channel])      // NEW - Pour stats par canal
+  @@index([channel]) // NEW - Pour stats par canal
   @@index([createdAt])
   @@index([deletedAt])
   @@map("notifications")
@@ -1644,30 +1725,30 @@ model Notification {
 
 // ✅ Smart AI Notification - Préférences utilisateur
 model NotificationPreference {
-  id        String   @id @default(cuid())
-  userId    String   @unique
+  id     String @id @default(cuid())
+  userId String @unique
 
   // Canaux activés par type de notification
-  channels  Json     @default("{\"appointment\":[\"in_app\",\"email\"],\"task\":[\"in_app\"],\"lead\":[\"in_app\",\"email\"],\"system\":[\"in_app\"],\"property\":[\"in_app\"],\"message\":[\"in_app\",\"push\"]}")
+  channels Json @default("{\"appointment\":[\"in_app\",\"email\"],\"task\":[\"in_app\"],\"lead\":[\"in_app\",\"email\"],\"system\":[\"in_app\"],\"property\":[\"in_app\"],\"message\":[\"in_app\",\"push\"]}")
 
   // Horaires préférés (format: { "start": "09:00", "end": "18:00", "timezone": "Europe/Paris" })
   quietHours Json?
 
   // Fréquence maximale (ex: max 5 notifications par heure)
-  maxPerHour Int      @default(10)
+  maxPerHour Int @default(10)
 
   // AI Smart Routing activé
   aiOptimization Boolean @default(true)
 
   // Digest quotidien activé
-  dailyDigest Boolean  @default(false)
-  digestTime  String?  // Format: "09:00"
+  dailyDigest Boolean @default(false)
+  digestTime  String? // Format: "09:00"
 
   // Priorités (high, medium, low)
-  minPriority String   @default("low")
+  minPriority String @default("low")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user users @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1676,26 +1757,26 @@ model NotificationPreference {
 
 // ✅ Smart AI Notification - Intégrations API utilisateur
 model UserIntegration {
-  id        String   @id @default(cuid())
-  userId    String
-  provider  String   // resend, sendgrid, twilio, firebase, etc.
+  id       String @id @default(cuid())
+  userId   String
+  provider String // resend, sendgrid, twilio, firebase, etc.
 
   // Configuration (JSON chiffré contenant les clés API)
-  config    Json     // { apiKey, accountSid, authToken, phoneNumber, etc. }
+  config Json // { apiKey, accountSid, authToken, phoneNumber, etc. }
 
   // Métadonnées
-  isActive  Boolean  @default(true)
-  label     String?  // Nom personnalisé (ex: "Twilio Production")
+  isActive Boolean @default(true)
+  label    String? // Nom personnalisé (ex: "Twilio Production")
 
   // Quotas & Limites
-  monthlyQuota     Int?     // Quota mensuel (emails, SMS)
-  currentUsage     Int      @default(0)
-  lastResetAt      DateTime @default(now())
+  monthlyQuota Int? // Quota mensuel (emails, SMS)
+  currentUsage Int      @default(0)
+  lastResetAt  DateTime @default(now())
 
   // Statut
-  lastTestedAt     DateTime?
-  lastTestStatus   String?  // success, failed
-  lastTestError    String?  @db.Text
+  lastTestedAt   DateTime?
+  lastTestStatus String? // success, failed
+  lastTestError  String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1715,10 +1796,10 @@ model UserIntegration {
 
 model SyncLog {
   id           String   @id @default(cuid())
-  entityType   String   // property, prospect, appointment, etc.
+  entityType   String // property, prospect, appointment, etc.
   entityId     String
-  platform     String   // wordpress, facebook, google, etc.
-  status       String   // success, error, pending
+  platform     String // wordpress, facebook, google, etc.
+  status       String // success, error, pending
   externalId   String?
   errorMessage String?  @db.Text
   syncedAt     DateTime @default(now())
@@ -1739,9 +1820,9 @@ model SyncLog {
 model Activity {
   id          String   @id @default(cuid())
   userId      String
-  type        String   // property_created, prospect_contacted, appointment_scheduled, etc.
+  type        String // property_created, prospect_contacted, appointment_scheduled, etc.
   description String
-  entityType  String?  // property, prospect, appointment, etc.
+  entityType  String? // property, prospect, appointment, etc.
   entityId    String?
   metadata    Json?
   createdAt   DateTime @default(now())
@@ -1761,28 +1842,28 @@ model Activity {
 // ============================================
 
 model Owner {
-  id          String    @id @default(cuid())
-  userId      String
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  zipCode     String?
-  country     String?   @default("Tunisie")
-  taxId       String?   // Numéro fiscal
-  idCard      String?   // CIN ou autre
-  notes       String?   @db.Text
-  metadata    Json?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now)
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  zipCode   String?
+  country   String?  @default("Tunisie")
+  taxId     String? // Numéro fiscal
+  idCard    String? // CIN ou autre
+  notes     String?  @db.Text
+  metadata  Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        users       @relation("UserOwners", fields: [userId], references: [id], onDelete: Cascade)
-  mandates    Mandate[]
-  properties  properties[] @relation("OwnerProperties")
-  invoices    Invoice[]
+  user       users        @relation("UserOwners", fields: [userId], references: [id], onDelete: Cascade)
+  mandates   Mandate[]
+  properties properties[] @relation("OwnerProperties")
+  invoices   Invoice[]
 
   @@index([userId])
   @@index([email])
@@ -1795,35 +1876,35 @@ model Owner {
 // ============================================
 
 model Mandate {
-  id                String          @id @default(cuid())
-  userId            String
-  ownerId           String
-  propertyId        String?
-  reference         String          @unique
-  type              MandateType
-  category          MandateCategory
-  status            MandateStatus   @default(active)
-  startDate         DateTime
-  endDate           DateTime
-  price             Float
-  currency          String          @default("TND")
-  commission        Float
-  commissionType    String          @default("percentage") // percentage, fixed
-  exclusivityBonus  Float?
-  terms             String?         @db.Text
-  notes             String?         @db.Text
-  documentUrl       String?
-  signedAt          DateTime?
-  cancelledAt       DateTime?
-  cancellationReason String?       @db.Text
-  metadata          Json?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  id                 String          @id @default(cuid())
+  userId             String
+  ownerId            String
+  propertyId         String?
+  reference          String          @unique
+  type               MandateType
+  category           MandateCategory
+  status             MandateStatus   @default(active)
+  startDate          DateTime
+  endDate            DateTime
+  price              Float
+  currency           String          @default("TND")
+  commission         Float
+  commissionType     String          @default("percentage") // percentage, fixed
+  exclusivityBonus   Float?
+  terms              String?         @db.Text
+  notes              String?         @db.Text
+  documentUrl        String?
+  signedAt           DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?         @db.Text
+  metadata           Json?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
-  user              users           @relation("UserMandates", fields: [userId], references: [id], onDelete: Cascade)
-  owner             Owner           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  property          properties?     @relation("PropertyMandates", fields: [propertyId], references: [id], onDelete: SetNull)
-  transactions      Transaction[]
+  user         users         @relation("UserMandates", fields: [userId], references: [id], onDelete: Cascade)
+  owner        Owner         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  property     properties?   @relation("PropertyMandates", fields: [propertyId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
 
   @@index([userId])
   @@index([ownerId])
@@ -1839,46 +1920,46 @@ model Mandate {
 // ============================================
 
 model Transaction {
-  id                  String              @id @default(cuid())
-  userId              String
-  propertyId          String
-  prospectId          String?
-  mandateId           String?
-  reference           String              @unique
-  type                TransactionType
-  status              TransactionStatus   @default(offer_received)
-  offerPrice          Float?
-  negotiatedPrice     Float?
-  finalPrice          Float?
-  currency            String              @default("TND")
-  depositAmount       Float?
-  depositPaidAt       DateTime?
-  offerDate           DateTime?
-  promiseDate         DateTime?
-  compromisDate       DateTime?
-  finalDeedDate       DateTime?
-  estimatedClosing    DateTime?
-  actualClosing       DateTime?
-  buyerName           String?
-  buyerEmail          String?
-  buyerPhone          String?
-  notes               String?             @db.Text
-  notaryName          String?
-  notaryContact       String?
-  loanAmount          Float?
-  loanApproved        Boolean             @default(false)
-  conditions          Json?               // Conditions suspensives
-  metadata            Json?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id               String            @id @default(cuid())
+  userId           String
+  propertyId       String
+  prospectId       String?
+  mandateId        String?
+  reference        String            @unique
+  type             TransactionType
+  status           TransactionStatus @default(offer_received)
+  offerPrice       Float?
+  negotiatedPrice  Float?
+  finalPrice       Float?
+  currency         String            @default("TND")
+  depositAmount    Float?
+  depositPaidAt    DateTime?
+  offerDate        DateTime?
+  promiseDate      DateTime?
+  compromisDate    DateTime?
+  finalDeedDate    DateTime?
+  estimatedClosing DateTime?
+  actualClosing    DateTime?
+  buyerName        String?
+  buyerEmail       String?
+  buyerPhone       String?
+  notes            String?           @db.Text
+  notaryName       String?
+  notaryContact    String?
+  loanAmount       Float?
+  loanApproved     Boolean           @default(false)
+  conditions       Json? // Conditions suspensives
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  user                users               @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
-  property            properties          @relation("PropertyTransactions", fields: [propertyId], references: [id], onDelete: Restrict)
-  prospect            prospects?          @relation("ProspectTransactions", fields: [prospectId], references: [id], onDelete: SetNull)
-  mandate             Mandate?            @relation(fields: [mandateId], references: [id], onDelete: SetNull)
-  steps               TransactionStep[]
-  commissions         Commission[]
-  invoices            Invoice[]
+  user        users             @relation("UserTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  property    properties        @relation("PropertyTransactions", fields: [propertyId], references: [id], onDelete: Restrict)
+  prospect    prospects?        @relation("ProspectTransactions", fields: [prospectId], references: [id], onDelete: SetNull)
+  mandate     Mandate?          @relation(fields: [mandateId], references: [id], onDelete: SetNull)
+  steps       TransactionStep[]
+  commissions Commission[]
+  invoices    Invoice[]
 
   @@index([userId])
   @@index([propertyId])
@@ -1892,18 +1973,18 @@ model Transaction {
 }
 
 model TransactionStep {
-  id              String      @id @default(cuid())
-  transactionId   String
-  stage           String      // offer_received, offer_accepted, etc.
-  completedAt     DateTime    @default(now())
-  completedBy     String?
-  notes           String?     @db.Text
-  documents       Json?       // Array of document URLs
-  metadata        Json?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id            String   @id @default(cuid())
+  transactionId String
+  stage         String // offer_received, offer_accepted, etc.
+  completedAt   DateTime @default(now())
+  completedBy   String?
+  notes         String?  @db.Text
+  documents     Json? // Array of document URLs
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   @@index([transactionId])
   @@index([stage])
@@ -1915,26 +1996,26 @@ model TransactionStep {
 // ============================================
 
 model Commission {
-  id              String            @id @default(cuid())
-  userId          String
-  transactionId   String
-  agentId         String
-  type            String            @default("agent") // agent, agency, referral
-  amount          Float
-  percentage      Float?
-  currency        String            @default("TND")
-  status          CommissionStatus  @default(pending)
-  dueDate         DateTime?
-  paidAt          DateTime?
-  notes           String?           @db.Text
-  metadata        Json?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id            String           @id @default(cuid())
+  userId        String
+  transactionId String
+  agentId       String
+  type          String           @default("agent") // agent, agency, referral
+  amount        Float
+  percentage    Float?
+  currency      String           @default("TND")
+  status        CommissionStatus @default(pending)
+  dueDate       DateTime?
+  paidAt        DateTime?
+  notes         String?          @db.Text
+  metadata      Json?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-  user            users             @relation("UserCommissions", fields: [userId], references: [id], onDelete: Cascade)
-  transaction     Transaction       @relation(fields: [transactionId], references: [id], onDelete: Restrict)
-  agent           users             @relation("AgentCommissions", fields: [agentId], references: [id], onDelete: Restrict)
-  payments        Payment[]
+  user        users       @relation("UserCommissions", fields: [userId], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  agent       users       @relation("AgentCommissions", fields: [agentId], references: [id], onDelete: Restrict)
+  payments    Payment[]
 
   @@index([userId])
   @@index([transactionId])
@@ -1945,36 +2026,36 @@ model Commission {
 }
 
 model Invoice {
-  id              String        @id @default(cuid())
-  userId          String
-  transactionId   String?
-  ownerId         String?
-  number          String        @unique
-  clientType      ClientType
-  clientName      String
-  clientEmail     String?
-  clientPhone     String?
-  clientAddress   String?       @db.Text
-  amount          Float
-  vat             Float         @default(0)
-  totalAmount     Float
-  currency        String        @default("TND")
-  status          InvoiceStatus @default(draft)
-  issueDate       DateTime      @default(now())
-  dueDate         DateTime
-  paidAt          DateTime?
-  description     String?       @db.Text
-  items           Json?         // Line items
-  notes           String?       @db.Text
-  pdfUrl          String?
-  metadata        Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  userId        String
+  transactionId String?
+  ownerId       String?
+  number        String        @unique
+  clientType    ClientType
+  clientName    String
+  clientEmail   String?
+  clientPhone   String?
+  clientAddress String?       @db.Text
+  amount        Float
+  vat           Float         @default(0)
+  totalAmount   Float
+  currency      String        @default("TND")
+  status        InvoiceStatus @default(draft)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime
+  paidAt        DateTime?
+  description   String?       @db.Text
+  items         Json? // Line items
+  notes         String?       @db.Text
+  pdfUrl        String?
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  user            users         @relation("UserInvoices", fields: [userId], references: [id], onDelete: Cascade)
-  transaction     Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
-  owner           Owner?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  payments        Payment[]
+  user        users        @relation("UserInvoices", fields: [userId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  owner       Owner?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  payments    Payment[]
 
   @@index([userId])
   @@index([transactionId])
@@ -1986,23 +2067,23 @@ model Invoice {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  userId          String
-  invoiceId       String?
-  commissionId    String?
-  amount          Float
-  currency        String        @default("TND")
-  method          PaymentMethod
-  reference       String?
-  paidAt          DateTime      @default(now())
-  notes           String?       @db.Text
-  metadata        Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  userId       String
+  invoiceId    String?
+  commissionId String?
+  amount       Float
+  currency     String        @default("TND")
+  method       PaymentMethod
+  reference    String?
+  paidAt       DateTime      @default(now())
+  notes        String?       @db.Text
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  user            users         @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
-  invoice         Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  commission      Commission?   @relation(fields: [commissionId], references: [id], onDelete: SetNull)
+  user       users       @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  commission Commission? @relation(fields: [commissionId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([invoiceId])
@@ -2020,27 +2101,27 @@ model Payment {
 // 1. CLÉS API AU NIVEAU AGENCE (BYOK)
 // ──────────────────────────────────────────
 model AgencyApiKeys {
-  id        String   @id @default(cuid())
-  agencyId  String   @unique
-  agency    agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  agencyId String   @unique
+  agency   agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   // ── LLM Providers ──
-  llmProvider         String?  @default("anthropic") // Provider par défaut
-  llmApiKey           String?  // Clé LLM principale (déprécié, utiliser les spécifiques)
-  anthropicApiKey     String?
-  openaiApiKey        String?
-  geminiApiKey        String?
-  deepseekApiKey      String?
-  openrouterApiKey    String?
+  llmProvider      String? @default("anthropic") // Provider par défaut
+  llmApiKey        String? // Clé LLM principale (déprécié, utiliser les spécifiques)
+  anthropicApiKey  String?
+  openaiApiKey     String?
+  geminiApiKey     String?
+  deepseekApiKey   String?
+  openrouterApiKey String?
 
   // ── Scraping & Data Providers ──
-  serpApiKey          String?  // Google SERP
-  firecrawlApiKey     String?  // Firecrawl web scraping
-  picaApiKey          String?  // Pica real estate data
-  jinaReaderApiKey    String?  // Jina Reader (URL → Markdown)
-  scrapingBeeApiKey   String?  // ScrapingBee
-  browserlessApiKey   String?  // Browserless headless browser
-  rapidApiKey         String?  // RapidAPI (futur)
+  serpApiKey        String? // Google SERP
+  firecrawlApiKey   String? // Firecrawl web scraping
+  picaApiKey        String? // Pica real estate data
+  jinaReaderApiKey  String? // Jina Reader (URL → Markdown)
+  scrapingBeeApiKey String? // ScrapingBee
+  browserlessApiKey String? // Browserless headless browser
+  rapidApiKey       String? // RapidAPI (futur)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2052,25 +2133,25 @@ model AgencyApiKeys {
 // 2. PRICING DES ACTIONS IA
 // ──────────────────────────────────────────
 model AiPricing {
-  id          String   @id @default(cuid())
-  actionCode  String   @unique // Ex: "AI_PROSPECTION_INTERNAL", "AI_MATCHING"
-  actionName  String   // Nom lisible
+  id          String  @id @default(cuid())
+  actionCode  String  @unique // Ex: "AI_PROSPECTION_INTERNAL", "AI_MATCHING"
+  actionName  String // Nom lisible
   description String?
 
-  creditsCost Int      // Crédits consommés par action
+  creditsCost Int // Crédits consommés par action
 
   // Détails techniques (optionnel)
-  estimatedTokens Int?     // Tokens moyens
-  providerCostUsd Float?   // Coût réel USD
+  estimatedTokens Int? // Tokens moyens
+  providerCostUsd Float? // Coût réel USD
 
-  enabled     Boolean  @default(true)
-  category    String?  // "prospecting", "matching", "seo", "chat", "email"
+  enabled  Boolean @default(true)
+  category String? // "prospecting", "matching", "seo", "chat", "email"
 
   // ── Nouvelles relations Module Registry (Phase 1) ──
   moduleAiActions ModuleAiAction[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("ai_pricing")
 }
@@ -2079,36 +2160,36 @@ model AiPricing {
 // 3. CONSOMMATION DE CRÉDITS (Billing)
 // ──────────────────────────────────────────
 model AiUsage {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // ── Soit agence, soit user (au moins un des deux) ──
-  agencyId   String?
-  agency     agencies? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId String?
+  agency   agencies? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
-  userId     String?
-  user       users?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   users?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   // ── Action ──
   actionCode String
   actionName String?
 
   // ── Crédits ──
-  creditsUsed     Int
-  creditsBalance  Int?     // Snapshot du solde après
+  creditsUsed    Int
+  creditsBalance Int? // Snapshot du solde après
 
   // ── Métadonnées techniques ──
-  provider        String?  // "anthropic", "serp", etc.
-  model           String?
-  tokensUsed      Int?
-  realCostUsd     Float?
+  provider    String? // "anthropic", "serp", etc.
+  model       String?
+  tokensUsed  Int?
+  realCostUsd Float?
 
   // ── Contexte métier ──
-  entityType      String?  // "prospect", "property", "campaign"
-  entityId        String?
+  entityType String? // "prospect", "property", "campaign"
+  entityId   String?
 
-  metadata        Json?
+  metadata Json?
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([agencyId, createdAt])
   @@index([userId, createdAt])
@@ -2120,18 +2201,18 @@ model AiUsage {
 // 4. LOGS D'ERREURS IA
 // ──────────────────────────────────────────
 model AiErrorLog {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  agencyId   String?
-  agency     agencies? @relation(fields: [agencyId], references: [id], onDelete: SetNull)
+  agencyId String?
+  agency   agencies? @relation(fields: [agencyId], references: [id], onDelete: SetNull)
 
-  userId     String?
-  user       users?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   users?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   actionCode   String
   provider     String
-  errorType    String    // "api_key_invalid", "quota_exceeded", "network_error"
-  errorMessage String    @db.Text
+  errorType    String // "api_key_invalid", "quota_exceeded", "network_error"
+  errorMessage String @db.Text
 
   // Contexte technique
   statusCode Int?
@@ -2141,9 +2222,9 @@ model AiErrorLog {
   entityType String?
   entityId   String?
 
-  metadata   Json?
+  metadata Json?
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([agencyId, createdAt])
   @@index([userId, createdAt])
@@ -2155,25 +2236,25 @@ model AiErrorLog {
 // 5. CRÉDITS AGENCE (pool partagé)
 // ──────────────────────────────────────────
 model AiCredits {
-  id              String   @id @default(cuid())
-  agencyId        String   @unique
-  agency          agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  agencyId String   @unique
+  agency   agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
-  balance         Int      @default(0)
-  consumed        Int      @default(0)
-  quotaMonthly    Int?                      // null = illimité
-  quotaDaily      Int?
+  balance      Int  @default(0)
+  consumed     Int  @default(0)
+  quotaMonthly Int? // null = illimité
+  quotaDaily   Int?
 
   // Reset automatique
-  lastResetAt     DateTime?
-  resetFrequency  String?  @default("monthly") // "daily", "weekly", "monthly", "never"
+  lastResetAt    DateTime?
+  resetFrequency String?   @default("monthly") // "daily", "weekly", "monthly", "never"
 
   // Alertes
-  alertThreshold  Int?     @default(20)     // % restants
-  alertSent       Boolean  @default(false)
+  alertThreshold Int?    @default(20) // % restants
+  alertSent      Boolean @default(false)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("ai_credits")
 }
@@ -2182,23 +2263,23 @@ model AiCredits {
 // 6. CRÉDITS USER (users indépendants)
 // ──────────────────────────────────────────
 model UserAiCredits {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   users  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  balance         Int      @default(0)
-  consumed        Int      @default(0)
-  quotaMonthly    Int?
-  quotaDaily      Int?
+  balance      Int  @default(0)
+  consumed     Int  @default(0)
+  quotaMonthly Int?
+  quotaDaily   Int?
 
-  lastResetAt     DateTime?
-  resetFrequency  String?  @default("monthly")
+  lastResetAt    DateTime?
+  resetFrequency String?   @default("monthly")
 
-  alertThreshold  Int?     @default(20)
-  alertSent       Boolean  @default(false)
+  alertThreshold Int?    @default(20)
+  alertSent      Boolean @default(false)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("user_ai_credits")
 }
@@ -2236,40 +2317,40 @@ enum ModuleStatus {
 }
 
 enum ModuleCategory {
-  BUSINESS      // Modules métier (Immo, Voyage, Casting, RH)
-  INTELLIGENCE  // Modules IA (Matching, Scoring, RAG)
-  INTEGRATION   // Intégrations externes (WordPress, Stripe, n8n)
+  BUSINESS // Modules métier (Immo, Voyage, Casting, RH)
+  INTELLIGENCE // Modules IA (Matching, Scoring, RAG)
+  INTEGRATION // Intégrations externes (WordPress, Stripe, n8n)
   COMMUNICATION // Email, SMS, Notifications
-  MARKETING     // SEO, Ads, Analytics
+  MARKETING // SEO, Ads, Analytics
 }
 
 // ──────────────────────────────────────────────────────────────
 // 1. BUSINESS MODULES (Registre des modules métier)
 // ──────────────────────────────────────────────────────────────
 model BusinessModule {
-  id              String         @id @default(cuid())
-  code            String         @unique  // "real-estate", "travel", "casting"
-  name            String                  // "Immobilier", "Voyage", "Casting"
-  description     String?        @db.Text
-  version         String         @default("1.0.0")
-  status          ModuleStatus   @default(ACTIVE)
-  category        ModuleCategory @default(BUSINESS)
+  id          String         @id @default(cuid())
+  code        String         @unique // "real-estate", "travel", "casting"
+  name        String // "Immobilier", "Voyage", "Casting"
+  description String?        @db.Text
+  version     String         @default("1.0.0")
+  status      ModuleStatus   @default(ACTIVE)
+  category    ModuleCategory @default(BUSINESS)
 
   // Manifest JSON (déclaration des besoins du module)
-  manifest        Json           // { menus, permissions, schemas, aiActions }
+  manifest Json // { menus, permissions, schemas, aiActions }
 
   // Pricing (coût d'activation du module)
-  basePrice       Float?         // Prix de base mensuel (EUR)
-  creditsIncluded Int?           // Crédits IA inclus par mois
+  basePrice       Float? // Prix de base mensuel (EUR)
+  creditsIncluded Int? // Crédits IA inclus par mois
 
   // Relations
-  subscriptions   ModuleAgencySubscription[]
-  menuItems       DynamicMenuItem[]
-  aiActions       ModuleAiAction[]
-  schemas         DynamicSchema[]
+  subscriptions ModuleAgencySubscription[]
+  menuItems     DynamicMenuItem[]
+  aiActions     ModuleAiAction[]
+  schemas       DynamicSchema[]
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
   @@index([status])
@@ -2280,24 +2361,24 @@ model BusinessModule {
 // 2. SOUSCRIPTIONS AGENCES (qui a activé quoi)
 // ──────────────────────────────────────────────────────────────
 model ModuleAgencySubscription {
-  id             String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  agencyId       String
-  agency         agencies       @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyId String
+  agency   agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
-  moduleId       String
-  module         BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId String
+  module   BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   // Activation
-  isActive       Boolean        @default(true)
-  activatedAt    DateTime       @default(now())
-  expiresAt      DateTime?
+  isActive    Boolean   @default(true)
+  activatedAt DateTime  @default(now())
+  expiresAt   DateTime?
 
   // Configuration spécifique agence (override manifest)
-  config         Json?          // Configuration custom du module
+  config Json? // Configuration custom du module
 
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([agencyId, moduleId])
   @@index([agencyId])
@@ -2309,23 +2390,23 @@ model ModuleAgencySubscription {
 // 3. MENU ITEMS DYNAMIQUES (générés depuis le manifest)
 // ──────────────────────────────────────────────────────────────
 model DynamicMenuItem {
-  id           String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  moduleId     String
-  module       BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId String
+  module   BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   // Menu structure
-  label        String         // "Biens", "Prospects", "Voyages"
-  icon         String?        // "Home", "Users", "Plane"
-  path         String         // "/properties", "/prospects", "/trips"
-  parentId     String?        // Pour sous-menus hiérarchiques
-  order        Int            @default(0)
+  label    String // "Biens", "Prospects", "Voyages"
+  icon     String? // "Home", "Users", "Plane"
+  path     String // "/properties", "/prospects", "/trips"
+  parentId String? // Pour sous-menus hiérarchiques
+  order    Int     @default(0)
 
   // Permissions
-  requiredRole UserRole?      // Minimum role required (null = tous)
+  requiredRole UserRole? // Minimum role required (null = tous)
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([moduleId, path])
   @@index([moduleId])
@@ -2336,29 +2417,29 @@ model DynamicMenuItem {
 // 4. AI ACTIONS PAR MODULE (actions IA disponibles)
 // ──────────────────────────────────────────────────────────────
 model ModuleAiAction {
-  id              String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  moduleId        String
-  module          BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId String
+  module   BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  actionCode      String         @unique // "real_estate_matching", "travel_scoring"
-  actionName      String                 // "Matching Bien-Prospect", "Scoring Voyage"
-  description     String?        @db.Text
+  actionCode  String  @unique // "real_estate_matching", "travel_scoring"
+  actionName  String // "Matching Bien-Prospect", "Scoring Voyage"
+  description String? @db.Text
 
   // Lien avec le pricing existant
-  pricingId       String?
-  pricing         AiPricing?     @relation(fields: [pricingId], references: [id])
+  pricingId String?
+  pricing   AiPricing? @relation(fields: [pricingId], references: [id])
 
   // Configuration IA (prompts & modèles)
-  systemPrompt    String?        @db.Text
-  userPromptTpl   String?        @db.Text
-  provider        String?        // "anthropic", "openai", "deepseek"
-  model           String?        // "claude-3-5-sonnet", "gpt-4o"
+  systemPrompt  String? @db.Text
+  userPromptTpl String? @db.Text
+  provider      String? // "anthropic", "openai", "deepseek"
+  model         String? // "claude-3-5-sonnet", "gpt-4o"
 
-  enabled         Boolean        @default(true)
+  enabled Boolean @default(true)
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([moduleId])
   @@index([actionCode])
@@ -2369,16 +2450,16 @@ model ModuleAiAction {
 // 5. SCHEMAS MÉTIER DYNAMIQUES (optionnel, avancé)
 // ──────────────────────────────────────────────────────────────
 model DynamicSchema {
-  id          String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  moduleId    String
-  module      BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId String
+  module   BusinessModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
-  tableName   String         // "properties", "trips", "missions"
-  schema      Json           // JSON Schema du modèle métier
+  tableName String // "properties", "trips", "missions"
+  schema    Json // JSON Schema du modèle métier
 
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([moduleId, tableName])
   @@index([moduleId])
@@ -2391,91 +2472,91 @@ model DynamicSchema {
 
 // Type de provider (catégorie principale)
 enum ProviderType {
-  scraping      // Providers de scraping (Cheerio, Puppeteer, Firecrawl, Pica, SerpAPI)
-  llm           // Providers LLM (Anthropic, OpenAI, Gemini, etc.)
-  storage       // Providers de stockage (S3, Cloudinary, etc.)
-  email         // Providers d'email (SendGrid, Mailgun, etc.)
-  payment       // Providers de paiement (Stripe, PayPal, etc.)
+  scraping // Providers de scraping (Cheerio, Puppeteer, Firecrawl, Pica, SerpAPI)
+  llm // Providers LLM (Anthropic, OpenAI, Gemini, etc.)
+  storage // Providers de stockage (S3, Cloudinary, etc.)
+  email // Providers d'email (SendGrid, Mailgun, etc.)
+  payment // Providers de paiement (Stripe, PayPal, etc.)
   communication // Providers de communication (Twilio, WhatsApp, etc.)
-  integration   // Providers d'intégration (Zapier, Make, etc.)
+  integration // Providers d'intégration (Zapier, Make, etc.)
 }
 
 // Catégorie de provider (sous-type)
 enum ProviderCategory {
-  internal      // Provider interne (ex: Cheerio, Puppeteer)
-  external_api  // Provider API externe (ex: Firecrawl, OpenAI)
+  internal // Provider interne (ex: Cheerio, Puppeteer)
+  external_api // Provider API externe (ex: Firecrawl, OpenAI)
   cloud_service // Provider cloud (ex: AWS, GCP)
-  saas          // Provider SaaS (ex: SendGrid, Stripe)
+  saas // Provider SaaS (ex: SendGrid, Stripe)
 }
 
 // Statut du provider
 enum ProviderStatus {
-  active        // Actif et disponible
-  inactive      // Désactivé temporairement
-  error         // En erreur (clé invalide, quota dépassé, etc.)
-  testing       // En phase de test
+  active // Actif et disponible
+  inactive // Désactivé temporairement
+  error // En erreur (clé invalide, quota dépassé, etc.)
+  testing // En phase de test
 }
 
 // ──────────────────────────────────────────────────────────────
 // PROVIDER CONFIG - Configuration unifiée de tous les providers
 // ──────────────────────────────────────────────────────────────
 model ProviderConfig {
-  id                    String           @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identification
-  type                  ProviderType     // Type de provider (scraping, llm, storage, etc.)
-  category              ProviderCategory // Catégorie (internal, external_api, etc.)
-  provider              String           // Nom du provider (ex: 'firecrawl', 'anthropic', 'cheerio')
-  name                  String           // Nom affiché (ex: 'Firecrawl API', 'Claude 3.5 Sonnet')
-  description           String?          @db.Text
+  type        ProviderType // Type de provider (scraping, llm, storage, etc.)
+  category    ProviderCategory // Catégorie (internal, external_api, etc.)
+  provider    String // Nom du provider (ex: 'firecrawl', 'anthropic', 'cheerio')
+  name        String // Nom affiché (ex: 'Firecrawl API', 'Claude 3.5 Sonnet')
+  description String?          @db.Text
 
   // Multi-tenant
-  userId                String?          // User spécifique (null = provider global/système)
-  agencyId              String?          // Agency spécifique (pour facturation agence)
+  userId   String? // User spécifique (null = provider global/système)
+  agencyId String? // Agency spécifique (pour facturation agence)
 
   // Authentification & Configuration
-  apiKey                String?          // Clé API (cryptée)
-  apiSecret             String?          // Secret API (crypté)
-  endpoint              String?          // Endpoint personnalisé
-  config                Json?            // Configuration additionnelle (modèle, options, etc.)
+  apiKey    String? // Clé API (cryptée)
+  apiSecret String? // Secret API (crypté)
+  endpoint  String? // Endpoint personnalisé
+  config    Json? // Configuration additionnelle (modèle, options, etc.)
 
   // État & Priorité
-  status                ProviderStatus   @default(active)
-  isActive              Boolean          @default(true)
-  priority              Int              @default(0) // 0 = plus haute priorité
+  status   ProviderStatus @default(active)
+  isActive Boolean        @default(true)
+  priority Int            @default(0) // 0 = plus haute priorité
 
   // Budget & Limites
-  monthlyBudget         Float?           // Budget mensuel (en $)
-  dailyBudget           Float?           // Budget journalier (en $)
-  rateLimit             Int?             // Limite de requêtes par minute
-  maxConcurrent         Int?             // Nombre max de requêtes simultanées
+  monthlyBudget Float? // Budget mensuel (en $)
+  dailyBudget   Float? // Budget journalier (en $)
+  rateLimit     Int? // Limite de requêtes par minute
+  maxConcurrent Int? // Nombre max de requêtes simultanées
 
   // Tracking Usage
-  monthlyUsage          Float            @default(0)  // Coût ce mois (en $)
-  dailyUsage            Float            @default(0)  // Coût aujourd'hui (en $)
-  totalCalls            Int              @default(0)  // Total d'appels API
-  successCalls          Int              @default(0)  // Appels réussis
-  failedCalls           Int              @default(0)  // Appels échoués
-  lastUsedAt            DateTime?        // Dernière utilisation
+  monthlyUsage Float     @default(0) // Coût ce mois (en $)
+  dailyUsage   Float     @default(0) // Coût aujourd'hui (en $)
+  totalCalls   Int       @default(0) // Total d'appels API
+  successCalls Int       @default(0) // Appels réussis
+  failedCalls  Int       @default(0) // Appels échoués
+  lastUsedAt   DateTime? // Dernière utilisation
 
   // Métriques Performance
-  avgLatency            Float            @default(0)  // Latence moyenne (ms)
-  successRate           Float            @default(100) // Taux de succès (0-100%)
+  avgLatency  Float @default(0) // Latence moyenne (ms)
+  successRate Float @default(100) // Taux de succès (0-100%)
 
   // Metadata
-  metadata              Json?            // Données additionnelles
-  tags                  String[]         // Tags pour filtrage
+  metadata Json? // Données additionnelles
+  tags     String[] // Tags pour filtrage
 
   // Timestamps
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  lastHealthCheckAt     DateTime?        // Dernier test de santé
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastHealthCheckAt DateTime? // Dernier test de santé
 
   // Relations
-  user                  users?           @relation("UserProviders", fields: [userId], references: [id], onDelete: Cascade)
-  agency                agencies?        @relation("AgencyProviders", fields: [agencyId], references: [id], onDelete: Cascade)
-  usageLogs             ProviderUsageLog[] @relation("ProviderUsageLogs")
-  metrics               ProviderMetrics[]  @relation("ProviderMetrics")
+  user      users?             @relation("UserProviders", fields: [userId], references: [id], onDelete: Cascade)
+  agency    agencies?          @relation("AgencyProviders", fields: [agencyId], references: [id], onDelete: Cascade)
+  usageLogs ProviderUsageLog[] @relation("ProviderUsageLogs")
+  metrics   ProviderMetrics[]  @relation("ProviderMetrics")
 
   @@unique([userId, type, provider])
   @@unique([agencyId, type, provider])
@@ -2494,35 +2575,35 @@ model ProviderConfig {
 // PROVIDER USAGE LOG - Logs d'utilisation détaillés
 // ──────────────────────────────────────────────────────────────
 model ProviderUsageLog {
-  id                String         @id @default(cuid())
+  id String @id @default(cuid())
 
   // Référence provider
-  providerConfigId  String
-  providerConfig    ProviderConfig @relation("ProviderUsageLogs", fields: [providerConfigId], references: [id], onDelete: Cascade)
+  providerConfigId String
+  providerConfig   ProviderConfig @relation("ProviderUsageLogs", fields: [providerConfigId], references: [id], onDelete: Cascade)
 
   // Context
-  userId            String?
-  agencyId          String?
-  operationType     String         // 'scraping', 'llm_generation', 'email_send', etc.
-  operationCode     String?        // Code spécifique (ex: 'prospecting_qualify', 'seo_generate')
+  userId        String?
+  agencyId      String?
+  operationType String // 'scraping', 'llm_generation', 'email_send', etc.
+  operationCode String? // Code spécifique (ex: 'prospecting_qualify', 'seo_generate')
 
   // Métadonnées de l'appel
-  requestData       Json?          // Données de la requête
-  responseData      Json?          // Données de la réponse
+  requestData  Json? // Données de la requête
+  responseData Json? // Données de la réponse
 
   // Métriques
-  tokensInput       Int?           // Tokens d'entrée (LLM)
-  tokensOutput      Int?           // Tokens de sortie (LLM)
-  latencyMs         Int?           // Latence en ms
-  cost              Float?         // Coût de l'opération
+  tokensInput  Int? // Tokens d'entrée (LLM)
+  tokensOutput Int? // Tokens de sortie (LLM)
+  latencyMs    Int? // Latence en ms
+  cost         Float? // Coût de l'opération
 
   // Statut
-  success           Boolean        @default(true)
-  errorMessage      String?        @db.Text
-  errorCode         String?
+  success      Boolean @default(true)
+  errorMessage String? @db.Text
+  errorCode    String?
 
   // Timestamps
-  createdAt         DateTime       @default(now())
+  createdAt DateTime @default(now())
 
   @@index([providerConfigId])
   @@index([userId])
@@ -2537,29 +2618,29 @@ model ProviderUsageLog {
 // PROVIDER METRICS - Métriques agrégées par provider
 // ──────────────────────────────────────────────────────────────
 model ProviderMetrics {
-  id                String         @id @default(cuid())
+  id String @id @default(cuid())
 
   // Référence provider
-  providerConfigId  String
-  providerConfig    ProviderConfig @relation("ProviderMetrics", fields: [providerConfigId], references: [id], onDelete: Cascade)
+  providerConfigId String
+  providerConfig   ProviderConfig @relation("ProviderMetrics", fields: [providerConfigId], references: [id], onDelete: Cascade)
 
   // Période
-  date              DateTime       @db.Date // Date de la métrique (agrégation journalière)
-  operationType     String?        // Type d'opération spécifique (optionnel)
+  date          DateTime @db.Date // Date de la métrique (agrégation journalière)
+  operationType String? // Type d'opération spécifique (optionnel)
 
   // Métriques agrégées
-  totalCalls        Int            @default(0)
-  successCalls      Int            @default(0)
-  failedCalls       Int            @default(0)
-  avgLatency        Float          @default(0)
-  minLatency        Float?
-  maxLatency        Float?
-  totalCost         Float          @default(0)
-  totalTokens       Int?           // Pour LLM
+  totalCalls   Int    @default(0)
+  successCalls Int    @default(0)
+  failedCalls  Int    @default(0)
+  avgLatency   Float  @default(0)
+  minLatency   Float?
+  maxLatency   Float?
+  totalCost    Float  @default(0)
+  totalTokens  Int? // Pour LLM
 
   // Timestamps
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([providerConfigId, date, operationType])
   @@index([providerConfigId])
@@ -2576,47 +2657,47 @@ model ProviderMetrics {
 // WHATSAPP CONFIG - Configuration WhatsApp par utilisateur/agence
 // ──────────────────────────────────────────────────────────────
 model WhatsAppConfig {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Owner
-  userId            String?  @unique
-  agencyId          String?  @unique
+  userId   String? @unique
+  agencyId String? @unique
 
   // Meta Cloud API
-  phoneNumberId     String?  // Meta phone number ID
-  businessAccountId String?  // Meta business account ID
-  accessToken       String?  @db.Text // Meta access token
+  phoneNumberId     String? // Meta phone number ID
+  businessAccountId String? // Meta business account ID
+  accessToken       String? @db.Text // Meta access token
 
   // Twilio (alternative)
   twilioAccountSid  String?
-  twilioAuthToken   String?  @db.Text
+  twilioAuthToken   String? @db.Text
   twilioPhoneNumber String?
 
   // Configuration
-  provider          WhatsAppProvider @default(meta)
-  isActive          Boolean  @default(false)
+  provider WhatsAppProvider @default(meta)
+  isActive Boolean          @default(false)
 
   // Webhooks
-  webhookUrl        String?
-  webhookSecret     String?
+  webhookUrl    String?
+  webhookSecret String?
 
   // Auto-reply settings
-  autoReplyEnabled  Boolean  @default(false)
-  businessHoursOnly Boolean  @default(false)
+  autoReplyEnabled   Boolean @default(false)
+  businessHoursOnly  Boolean @default(false)
   businessHoursStart String? // Format: "09:00"
-  businessHoursEnd  String?  // Format: "18:00"
+  businessHoursEnd   String? // Format: "18:00"
 
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user              users?   @relation("UserWhatsAppConfig", fields: [userId], references: [id], onDelete: Cascade)
-  agency            agencies? @relation("AgencyWhatsAppConfig", fields: [agencyId], references: [id], onDelete: Cascade)
-  conversations     WhatsAppConversation[] @relation("ConfigConversations")
-  templates         WhatsAppTemplate[] @relation("ConfigTemplates")
-  contacts          WhatsAppContact[] @relation("ConfigContacts")
-  campaigns         WhatsAppCampaign[] @relation("ConfigCampaigns")
+  user          users?                 @relation("UserWhatsAppConfig", fields: [userId], references: [id], onDelete: Cascade)
+  agency        agencies?              @relation("AgencyWhatsAppConfig", fields: [agencyId], references: [id], onDelete: Cascade)
+  conversations WhatsAppConversation[] @relation("ConfigConversations")
+  templates     WhatsAppTemplate[]     @relation("ConfigTemplates")
+  contacts      WhatsAppContact[]      @relation("ConfigContacts")
+  campaigns     WhatsAppCampaign[]     @relation("ConfigCampaigns")
 
   @@map("whatsapp_configs")
 }
@@ -2625,41 +2706,41 @@ model WhatsAppConfig {
 // WHATSAPP CONVERSATION - Conversations WhatsApp
 // ──────────────────────────────────────────────────────────────
 model WhatsAppConversation {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Configuration
-  configId          String
-  config            WhatsAppConfig @relation("ConfigConversations", fields: [configId], references: [id], onDelete: Cascade)
+  configId String
+  config   WhatsAppConfig @relation("ConfigConversations", fields: [configId], references: [id], onDelete: Cascade)
 
   // Contact info
-  phoneNumber       String   // E.164 format: +33612345678
-  contactName       String?
+  phoneNumber String // E.164 format: +33612345678
+  contactName String?
 
   // CRM links
-  leadId            String?
-  prospectId        String?
-  userId            String?
-  agencyId          String?
+  leadId     String?
+  prospectId String?
+  userId     String?
+  agencyId   String?
 
   // Conversation metadata
-  status            ConversationStatus @default(open)
-  assignedTo        String?  // User ID
-  tags              String[] // ["hot_lead", "viewing_scheduled"]
+  status     ConversationStatus @default(open)
+  assignedTo String? // User ID
+  tags       String[] // ["hot_lead", "viewing_scheduled"]
 
   // Counters
-  messageCount      Int      @default(0)
-  unreadCount       Int      @default(0)
+  messageCount Int @default(0)
+  unreadCount  Int @default(0)
 
   // Timestamps
-  lastMessageAt     DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
-  lead              leads?   @relation("LeadWhatsAppConversations", fields: [leadId], references: [id], onDelete: SetNull)
-  user              users?   @relation("UserWhatsAppConversations", fields: [userId], references: [id], onDelete: Cascade)
-  agency            agencies? @relation("AgencyWhatsAppConversations", fields: [agencyId], references: [id], onDelete: Cascade)
-  messages          WhatsAppMessage[] @relation("ConversationMessages")
+  lead     prospecting_leads? @relation("LeadWhatsAppConversations", fields: [leadId], references: [id], onDelete: SetNull)
+  user     users?             @relation("UserWhatsAppConversations", fields: [userId], references: [id], onDelete: Cascade)
+  agency   agencies?          @relation("AgencyWhatsAppConversations", fields: [agencyId], references: [id], onDelete: Cascade)
+  messages WhatsAppMessage[]  @relation("ConversationMessages")
 
   @@index([configId])
   @@index([phoneNumber])
@@ -2673,49 +2754,49 @@ model WhatsAppConversation {
 // WHATSAPP MESSAGE - Messages WhatsApp
 // ──────────────────────────────────────────────────────────────
 model WhatsAppMessage {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Conversation
-  conversationId    String
-  conversation      WhatsAppConversation @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   WhatsAppConversation @relation("ConversationMessages", fields: [conversationId], references: [id], onDelete: Cascade)
 
   // Message info
-  messageId         String   @unique  // WhatsApp message ID
-  direction         MessageDirection  // inbound | outbound
+  messageId String           @unique // WhatsApp message ID
+  direction MessageDirection // inbound | outbound
 
   // Content
-  type              MessageType  // text | image | document | template | location
-  content           String       @db.Text // Text content or media URL
-  caption           String?      @db.Text // For media messages
+  type    MessageType // text | image | document | template | location
+  content String      @db.Text // Text content or media URL
+  caption String?     @db.Text // For media messages
 
   // Media
-  mediaUrl          String?
-  mimeType          String?
-  mediaSize         Int?         // Size in bytes
+  mediaUrl  String?
+  mimeType  String?
+  mediaSize Int? // Size in bytes
 
   // Template (for outbound)
-  templateName      String?
-  templateParams    Json?
+  templateName   String?
+  templateParams Json?
 
   // Status
-  status            MessageStatus @default(sent)
+  status MessageStatus @default(sent)
 
   // Metadata
-  sentBy            String?  // User ID (if outbound)
-  timestamp         DateTime @default(now())
-  deliveredAt       DateTime?
-  readAt            DateTime?
+  sentBy      String? // User ID (if outbound)
+  timestamp   DateTime  @default(now())
+  deliveredAt DateTime?
+  readAt      DateTime?
 
   // Error tracking
-  errorCode         String?
-  errorMessage      String?  @db.Text
+  errorCode    String?
+  errorMessage String? @db.Text
 
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  sender            users?   @relation("UserWhatsAppMessages", fields: [sentBy], references: [id], onDelete: SetNull)
+  sender users? @relation("UserWhatsAppMessages", fields: [sentBy], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([messageId])
@@ -2728,43 +2809,43 @@ model WhatsAppMessage {
 // WHATSAPP TEMPLATE - Templates de messages WhatsApp
 // ──────────────────────────────────────────────────────────────
 model WhatsAppTemplate {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Configuration
-  configId          String
-  config            WhatsAppConfig @relation("ConfigTemplates", fields: [configId], references: [id], onDelete: Cascade)
+  configId String
+  config   WhatsAppConfig @relation("ConfigTemplates", fields: [configId], references: [id], onDelete: Cascade)
 
   // Template info
-  name              String
-  language          String   @default("fr")
-  category          TemplateCategory
+  name     String
+  language String           @default("fr")
+  category TemplateCategory
 
   // Template content
-  header            String?  @db.Text
-  body              String   @db.Text
-  footer            String?  @db.Text
-  buttons           Json?    // Array of button objects
+  header  String? @db.Text
+  body    String  @db.Text
+  footer  String? @db.Text
+  buttons Json? // Array of button objects
 
   // Variables
-  variables         String[] // ["{{1}}", "{{2}}"]
+  variables String[] // ["{{1}}", "{{2}}"]
 
   // Status
-  status            TemplateStatus @default(pending)
-  approvedAt        DateTime?
-  rejectedReason    String?  @db.Text
+  status         TemplateStatus @default(pending)
+  approvedAt     DateTime?
+  rejectedReason String?        @db.Text
 
   // Stats
-  sentCount         Int      @default(0)
-  deliveredCount    Int      @default(0)
-  readCount         Int      @default(0)
-  failedCount       Int      @default(0)
+  sentCount      Int @default(0)
+  deliveredCount Int @default(0)
+  readCount      Int @default(0)
+  failedCount    Int @default(0)
 
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  campaigns         WhatsAppCampaign[] @relation("TemplateCampaigns")
+  campaigns WhatsAppCampaign[] @relation("TemplateCampaigns")
 
   @@unique([configId, name])
   @@index([configId])
@@ -2777,40 +2858,40 @@ model WhatsAppTemplate {
 // WHATSAPP CONTACT - WhatsApp Contacts Management
 // ──────────────────────────────────────────────────────────────
 model WhatsAppContact {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Configuration
-  configId          String
-  config            WhatsAppConfig @relation("ConfigContacts", fields: [configId], references: [id], onDelete: Cascade)
+  configId String
+  config   WhatsAppConfig @relation("ConfigContacts", fields: [configId], references: [id], onDelete: Cascade)
 
   // Contact info
-  phoneNumber       String   // E.164 format: +33612345678
-  name              String?
-  email             String?
-  profilePicture    String?  @db.Text
+  phoneNumber    String // E.164 format: +33612345678
+  name           String?
+  email          String?
+  profilePicture String? @db.Text
 
   // Organization
-  tags              String[] @default([])
-  groups            String[] @default([])
-  notes             String?  @db.Text
-  customFields      Json?    // Custom fields as JSON object
+  tags         String[] @default([])
+  groups       String[] @default([])
+  notes        String?  @db.Text
+  customFields Json? // Custom fields as JSON object
 
   // Status
-  isBlocked         Boolean  @default(false)
+  isBlocked Boolean @default(false)
 
   // Stats (cached for performance)
-  totalMessages     Int      @default(0)
-  sentMessages      Int      @default(0)
-  receivedMessages  Int      @default(0)
-  totalConversations Int     @default(0)
-  activeConversations Int    @default(0)
-  avgResponseTime   Int      @default(0) // in minutes
-  lastInteractionAt DateTime?
+  totalMessages       Int       @default(0)
+  sentMessages        Int       @default(0)
+  receivedMessages    Int       @default(0)
+  totalConversations  Int       @default(0)
+  activeConversations Int       @default(0)
+  avgResponseTime     Int       @default(0) // in minutes
+  lastInteractionAt   DateTime?
 
   // Timestamps
-  lastMessageAt     DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([configId, phoneNumber])
   @@index([configId])
@@ -2825,45 +2906,45 @@ model WhatsAppContact {
 // WHATSAPP CAMPAIGN - WhatsApp Campaign Management
 // ──────────────────────────────────────────────────────────────
 model WhatsAppCampaign {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Configuration
-  configId          String
-  config            WhatsAppConfig @relation("ConfigCampaigns", fields: [configId], references: [id], onDelete: Cascade)
+  configId String
+  config   WhatsAppConfig @relation("ConfigCampaigns", fields: [configId], references: [id], onDelete: Cascade)
 
   // Campaign info
-  name              String
-  description       String?  @db.Text
-  type              CampaignType
-  status            CampaignStatus @default(draft)
+  name        String
+  description String?        @db.Text
+  type        CampaignType
+  status      CampaignStatus @default(draft)
 
   // Template
-  templateId        String
-  template          WhatsAppTemplate @relation("TemplateCampaigns", fields: [templateId], references: [id], onDelete: Restrict)
-  templateName      String   // Cached for display
+  templateId   String
+  template     WhatsAppTemplate @relation("TemplateCampaigns", fields: [templateId], references: [id], onDelete: Restrict)
+  templateName String // Cached for display
 
   // Scheduling
-  scheduledAt       DateTime?
-  startedAt         DateTime?
-  completedAt       DateTime?
-  pausedAt          DateTime?
-  cancelledAt       DateTime?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  pausedAt    DateTime?
+  cancelledAt DateTime?
 
   // Stats
-  totalRecipients   Int      @default(0)
-  sentCount         Int      @default(0)
-  deliveredCount    Int      @default(0)
-  readCount         Int      @default(0)
-  failedCount       Int      @default(0)
-  pendingCount      Int      @default(0)
+  totalRecipients Int @default(0)
+  sentCount       Int @default(0)
+  deliveredCount  Int @default(0)
+  readCount       Int @default(0)
+  failedCount     Int @default(0)
+  pendingCount    Int @default(0)
 
   // Metadata
-  createdBy         String   // User ID
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdBy String // User ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  recipients        WhatsAppCampaignRecipient[] @relation("CampaignRecipients")
+  recipients WhatsAppCampaignRecipient[] @relation("CampaignRecipients")
 
   @@index([configId])
   @@index([status])
@@ -2874,32 +2955,32 @@ model WhatsAppCampaign {
 }
 
 model WhatsAppCampaignRecipient {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Campaign
-  campaignId        String
-  campaign          WhatsAppCampaign @relation("CampaignRecipients", fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   WhatsAppCampaign @relation("CampaignRecipients", fields: [campaignId], references: [id], onDelete: Cascade)
 
   // Recipient info
-  contactId         String?  // Optional link to WhatsAppContact
-  phoneNumber       String   // E.164 format
-  name              String?
-  variables         Json?    // Template variables as JSON object
+  contactId   String? // Optional link to WhatsAppContact
+  phoneNumber String // E.164 format
+  name        String?
+  variables   Json? // Template variables as JSON object
 
   // Status
-  status            RecipientStatus @default(pending)
-  sentAt            DateTime?
-  deliveredAt       DateTime?
-  readAt            DateTime?
-  failedAt          DateTime?
-  errorMessage      String?  @db.Text
+  status       RecipientStatus @default(pending)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  readAt       DateTime?
+  failedAt     DateTime?
+  errorMessage String?         @db.Text
 
   // WhatsApp message ID (for tracking)
-  messageId         String?
+  messageId String?
 
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([campaignId])
   @@index([status])
