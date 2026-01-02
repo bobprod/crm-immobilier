@@ -198,14 +198,6 @@ enum CampaignType {
   recurring
 }
 
-enum CampaignStatus {
-  draft
-  scheduled
-  running
-  completed
-  paused
-  cancelled
-}
 
 enum RecipientStatus {
   pending
@@ -269,6 +261,9 @@ model agencies {
 
   // ── Nouvelles relations Provider Registry (Phase 1) ──
   providerConfigs     ProviderConfig[] @relation("AgencyProviders")
+  // WhatsApp relations
+  whatsappConfigs         WhatsAppConfig[]       @relation("AgencyWhatsAppConfig")
+  whatsappConversations   WhatsAppConversation[] @relation("AgencyWhatsAppConversations")
 }
 
 model appointments {
@@ -502,21 +497,7 @@ model prospects {
   tasks                tasks[]                     @relation("ProspectTasks")
   ownedProperties      properties[]                @relation("PropertyOwner")
   transactions         Transaction[]               @relation("ProspectTransactions")
-}
-
-model user_integrations {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String
-  apiKey    String
-  config    Json?
-  data      Json?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, type])
+  prospectHistory      ProspectHistory[]          @relation("ProspectHistory")
 }
 
 // ════════════════════════════════════════════════════════════
@@ -572,7 +553,6 @@ model users {
   prospectHistory          ProspectHistory[]         @relation("UserProspectHistory")
   settings                 settings[]                @relation("UserSettings")
   tasks                    tasks[]                   @relation("UserTasks")
-  user_integrations        user_integrations[]
   aiOrchestrations         AiOrchestration[]
   toolCallLogs             ToolCallLog[]
   agencies                 agencies?                 @relation(fields: [agencyId], references: [id])
@@ -599,6 +579,16 @@ model users {
 
   // ── Nouvelles relations Provider Registry (Phase 1) ──
   providerConfigs          ProviderConfig[] @relation("UserProviders")
+
+  // LLM / Provider relations
+  userLlmProviders        UserLlmProvider[]
+  llmUsageLogs            LlmUsageLog[]            @relation("UserLlmUsageLogs")
+  providerPerformance     ProviderPerformance[]    @relation("UserProviderPerformance")
+
+  // WhatsApp relations
+  whatsappConfigs         WhatsAppConfig[]         @relation("UserWhatsAppConfig")
+  whatsappConversations   WhatsAppConversation[]   @relation("UserWhatsAppConversations")
+  whatsappMessages        WhatsAppMessage[]       @relation("UserWhatsAppMessages")
 }
 
 model communications {
@@ -917,6 +907,7 @@ model prospecting_leads {
   users               users                             @relation("UserProspectingLeads", fields: [userId], references: [id], onDelete: Cascade)
   prospecting_matches prospecting_matches[]             @relation("LeadMatches")
   matchedProperties   prospecting_lead_properties[]     @relation("LeadPropertyMatches")
+  whatsappConversations WhatsAppConversation[]            @relation("LeadWhatsAppConversations")
 
   @@index([campaignId])
   @@index([userId])
@@ -1627,6 +1618,7 @@ model Notification {
   // ✅ Smart AI Notification - Tracking
   deliveredAt DateTime?  // Quand la notification a été livrée
   openedAt    DateTime?  // Quand l'utilisateur a ouvert/cliqué
+  deletedAt   DateTime?  // Soft delete
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -1776,7 +1768,7 @@ model Owner {
   notes       String?   @db.Text
   metadata    Json?
   isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now)
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   user        users       @relation("UserOwners", fields: [userId], references: [id], onDelete: Cascade)
@@ -2656,7 +2648,7 @@ model WhatsAppConversation {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  lead              leads?   @relation("LeadWhatsAppConversations", fields: [leadId], references: [id], onDelete: SetNull)
+  lead              prospecting_leads?   @relation("LeadWhatsAppConversations", fields: [leadId], references: [id], onDelete: SetNull)
   user              users?   @relation("UserWhatsAppConversations", fields: [userId], references: [id], onDelete: Cascade)
   agency            agencies? @relation("AgencyWhatsAppConversations", fields: [agencyId], references: [id], onDelete: Cascade)
   messages          WhatsAppMessage[] @relation("ConversationMessages")
@@ -2905,4 +2897,48 @@ model WhatsAppCampaignRecipient {
   @@index([status])
   @@index([phoneNumber])
   @@map("whatsapp_campaign_recipients")
+}
+
+// Minimal history and orchestration models added to satisfy relations
+model PropertyHistory {
+  id         String   @id @default(cuid())
+  propertyId String?
+  changes    Json?
+  createdAt  DateTime @default(now())
+  property   properties? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@map("property_history")
+}
+
+model ProspectHistory {
+  id         String   @id @default(cuid())
+  userId     String?
+  prospectId String?
+  changes    Json?
+  createdAt  DateTime @default(now())
+  user       users?    @relation("UserProspectHistory", fields: [userId], references: [id], onDelete: Cascade)
+  prospect   prospects? @relation("ProspectHistory", fields: [prospectId], references: [id], onDelete: Cascade)
+  @@map("prospect_history")
+}
+
+model AiOrchestration {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String?
+  input     Json?
+  output    Json?
+  createdAt DateTime @default(now())
+  user      users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("ai_orchestrations")
+}
+
+model ToolCallLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  toolName  String?
+  input     Json?
+  output    Json?
+  duration  Int?
+  createdAt DateTime @default(now())
+  user      users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("tool_call_logs")
 }
