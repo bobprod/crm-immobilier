@@ -2987,3 +2987,88 @@ model WhatsAppCampaignRecipient {
   @@index([phoneNumber])
   @@map("whatsapp_campaign_recipients")
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MARKETING TRACKING - Advanced Features (Heatmaps, A/B Testing)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ──────────────────────────────────────────────────────────────
+// HEATMAP EVENTS - Track clicks, mouse movements, and scrolls
+// ──────────────────────────────────────────────────────────────
+model HeatmapEvent {
+  id           String   @id @default(cuid())
+  userId       String   // Owner of the vitrine
+  pageUrl      String   // Full URL of the page
+  x            Int      // X coordinate
+  y            Int      // Y coordinate
+  type         String   // 'click' | 'move' | 'scroll'
+  sessionId    String   // User session identifier
+  deviceType   String   @default("desktop") // 'desktop' | 'mobile' | 'tablet'
+  screenWidth  Int      @default(1920)
+  screenHeight Int      @default(1080)
+  element      String?  // CSS selector of clicked element
+  userAgent    String?  @db.Text
+  timestamp    DateTime @default(now())
+
+  @@index([userId, pageUrl, type])
+  @@index([sessionId])
+  @@index([pageUrl])
+  @@index([timestamp])
+  @@map("heatmap_events")
+}
+
+// ──────────────────────────────────────────────────────────────
+// A/B TESTING - Test different tracking pixel configurations
+// ──────────────────────────────────────────────────────────────
+model TrackingABTest {
+  id             String   @id @default(cuid())
+  userId         String   // Test owner
+  name           String   // Test name
+  description    String?  @db.Text
+  variantAConfig Json     // Tracking config for variant A
+  variantBConfig Json     // Tracking config for variant B
+  trafficSplit   Int      @default(50) // 0-100, percentage for variant A
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("running") // 'running' | 'stopped' | 'completed'
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assignments TrackingABTestAssignment[]
+  results     TrackingABTestResult[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("tracking_ab_tests")
+}
+
+// Variant assignment per session (deterministic)
+model TrackingABTestAssignment {
+  testId    String
+  test      TrackingABTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  sessionId String
+  variant   String         // 'A' | 'B'
+  createdAt DateTime       @default(now())
+
+  @@id([testId, sessionId])
+  @@index([sessionId])
+  @@map("tracking_ab_test_assignments")
+}
+
+// Results per variant
+model TrackingABTestResult {
+  id        String         @id @default(cuid())
+  testId    String
+  test      TrackingABTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  sessionId String
+  variant   String // 'A' | 'B'
+  eventName String // Event that was tracked
+  value     Float? // Optional value (for revenue tracking)
+  timestamp DateTime @default(now())
+
+  @@index([testId, variant])
+  @@index([sessionId])
+  @@index([eventName])
+  @@map("tracking_ab_test_results")
+}
