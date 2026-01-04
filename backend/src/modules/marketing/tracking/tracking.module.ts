@@ -8,6 +8,13 @@ import { SegmentationService } from './ml/segmentation.service';
 import { AttributionService } from './ml/attribution.service';
 import { AutomationService } from './services/automation.service';
 import { PrismaModule } from '@/shared/database/prisma.module';
+import { MetaConversionApiService } from './conversions/meta-conversion-api.service';
+import { GoogleAdsConversionService } from './conversions/google-ads-conversion.service';
+import { TikTokEventsApiService } from './conversions/tiktok-events-api.service';
+import { LinkedInConversionApiService } from './conversions/linkedin-conversion-api.service';
+import { GA4MeasurementProtocolService } from './conversions/ga4-measurement-protocol.service';
+import { TrackingAnalyticsService } from './analytics/tracking-analytics.service';
+import { TrackingAnalyticsController } from './analytics/tracking-analytics.controller';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -26,7 +33,11 @@ import { PrismaModule } from '@/shared/database/prisma.module';
  */
 @Module({
   imports: [PrismaModule],
-  controllers: [MarketingTrackingController, PublicTrackingController],
+  controllers: [
+    MarketingTrackingController,
+    PublicTrackingController,
+    TrackingAnalyticsController,
+  ],
   providers: [
     TrackingConfigService,
     TrackingEventsService,
@@ -35,7 +46,17 @@ import { PrismaModule } from '@/shared/database/prisma.module';
     SegmentationService,
     AttributionService,
     AutomationService,
+    MetaConversionApiService,
+    GoogleAdsConversionService,
+    TikTokEventsApiService,
+    LinkedInConversionApiService,
+    GA4MeasurementProtocolService,
+    TrackingAnalyticsService,
   ],
-  exports: [TrackingEventsService, ConversionPredictionService],
+  exports: [
+    TrackingEventsService,
+    ConversionPredictionService,
+    TrackingAnalyticsService,
+  ],
 })
 export class MarketingTrackingModule {}
