@@ -9,16 +9,25 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  HttpStatus,
+  Ip,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { VitrineService } from './vitrine.service';
+import { VitrineTrackingService } from './services/vitrine-tracking.service';
 import { UpdateVitrineConfigDto, UpdatePublishedPropertyDto } from './dto';
 
 @ApiTags('Vitrine Publique')
 @Controller('vitrine')
 export class VitrineController {
-  constructor(private readonly vitrineService: VitrineService) {}
+  constructor(
+    private readonly vitrineService: VitrineService,
+    private readonly vitrineTrackingService: VitrineTrackingService,
+  ) {}
 
   // ============================================
   // ROUTES PRIVÉES (Authentifiées)
@@ -84,5 +93,53 @@ export class VitrineController {
   @ApiOperation({ summary: 'Get public vitrine (no auth required)' })
   async getPublicVitrine(@Param('userId') userId: string) {
     return this.vitrineService.getPublicVitrine(userId);
+  }
+
+  @Get('tracking-script/:userId')
+  @ApiOperation({
+    summary: 'Get tracking pixels script for vitrine (no auth required)',
+    description:
+      'Retourne le script JavaScript contenant tous les pixels de tracking configurés pour cette agence',
+  })
+  async getTrackingScript(@Param('userId') userId: string, @Res() res: Response) {
+    const script = await this.vitrineTrackingService.generateTrackingScript(userId);
+
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Cache 5 minutes
+    res.status(HttpStatus.OK).send(script);
+  }
+
+  @Post('track-event')
+  @ApiOperation({
+    summary: 'Track a vitrine event (no auth required)',
+    description: 'Enregistre un événement de tracking depuis une page vitrine publique',
+  })
+  async trackEvent(
+    @Body()
+    body: {
+      userId: string;
+      eventName: string;
+      eventData: Record<string, any>;
+      sessionId?: string;
+    },
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    await this.vitrineTrackingService.trackVitrineEvent(body.userId, body.eventName, {
+      ...body.eventData,
+      sessionId: body.sessionId,
+      userAgent,
+      ipAddress,
+    });
+
+    return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('tracking-stats')
+  @ApiOperation({ summary: 'Get vitrine tracking statistics' })
+  async getTrackingStats(@Request() req, @Query('period') period?: 'day' | 'week' | 'month') {
+    return this.vitrineTrackingService.getVitrineTrackingStats(req.user.userId, period);
   }
 }
