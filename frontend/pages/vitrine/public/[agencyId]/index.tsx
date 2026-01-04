@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { TrackingPixelsLoader, useVitrineTracking } from '@/shared/components/vitrine/TrackingPixelsLoader';
+import { HeatmapTracker } from '@/shared/components/vitrine/HeatmapTracker';
+import { PropertyViewTracker } from '@/shared/components/vitrine/PropertyViewTracker';
 import api from '@/shared/utils/api-client';
 import { Home, MapPin, Bed, Bath, Square, Phone, Mail, MapPinned } from 'lucide-react';
 
@@ -132,7 +134,12 @@ export default function PublicVitrinePage() {
       </Head>
 
       {/* Charger automatiquement les pixels de tracking configurés pour cette agence */}
-      {typeof agencyId === 'string' && <TrackingPixelsLoader agencyId={agencyId} />}
+      {typeof agencyId === 'string' && (
+        <>
+          <TrackingPixelsLoader agencyId={agencyId} />
+          <HeatmapTracker agencyId={agencyId} enabled={true} />
+        </>
+      )}
 
       <div className="min-h-screen bg-white">
         {/* Header / Navigation */}
@@ -249,8 +256,34 @@ export default function PublicVitrinePage() {
               {featuredProperties.map((property) => (
                 <Card
                   key={property.id}
+                  id={`property-${property.id}`}
+                  data-property-id={property.id}
+                  data-property-data={JSON.stringify({
+                    title: property.title,
+                    price: property.price,
+                    city: property.city,
+                    type: property.type,
+                    category: property.category,
+                  })}
                   className="overflow-hidden hover:shadow-lg transition-shadow"
                 >
+                  {/* Tracker automatique pour ce bien */}
+                  {typeof agencyId === 'string' && (
+                    <PropertyViewTracker
+                      agencyId={agencyId}
+                      propertyId={property.id}
+                      propertyData={{
+                        title: property.title,
+                        price: property.price,
+                        city: property.city,
+                        type: property.type,
+                        category: property.category,
+                        bedrooms: property.bedrooms,
+                        bathrooms: property.bathrooms,
+                        surface: property.surface,
+                      }}
+                    />
+                  )}
                   <div className="relative h-48 bg-gray-200">
                     {property.images && property.images.length > 0 ? (
                       <img

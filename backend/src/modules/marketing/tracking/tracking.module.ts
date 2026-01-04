@@ -20,7 +20,9 @@ import { TrackingRealtimeGateway } from './analytics/tracking-realtime.gateway';
 import { HeatmapService } from './heatmap/heatmap.service';
 import { HeatmapController } from './heatmap/heatmap.controller';
 import { ABTestingService } from './ab-testing/ab-testing.service';
+import { ABTestingController } from './ab-testing/ab-testing.controller';
 import { AttributionMultiTouchService } from './attribution/attribution-multi-touch.service';
+import { AttributionMultiTouchController } from './attribution/attribution-multi-touch.controller';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -53,6 +55,8 @@ import { AttributionMultiTouchService } from './attribution/attribution-multi-to
     PublicTrackingController,
     TrackingAnalyticsController,
     HeatmapController,
+    ABTestingController,
+    AttributionMultiTouchController,
   ],
   providers: [
     TrackingConfigService,
