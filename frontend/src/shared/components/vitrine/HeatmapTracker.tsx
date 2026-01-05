@@ -36,9 +36,13 @@ export function HeatmapTracker({
 
     // Handler pour les clics
     const handleClick = (e: MouseEvent) => {
-      const element = (e.target as HTMLElement).tagName.toLowerCase();
-      const classes = (e.target as HTMLElement).className;
+      const target = e.target as HTMLElement;
+      const element = target.tagName.toLowerCase();
+      const classes = target.className;
       const selector = `${element}${classes ? '.' + classes.split(' ').join('.') : ''}`;
+
+      // Identifier le contexte du clic (bien immobilier, bouton, etc.)
+      const context = identifyClickContext(target);
 
       addEvent({
         pageUrl: currentPageUrl,
@@ -50,6 +54,7 @@ export function HeatmapTracker({
         deviceType,
         screenWidth,
         screenHeight,
+        ...context, // Contexte enrichi (propertyId, buttonType, etc.)
       });
     };
 
@@ -155,6 +160,130 @@ export function HeatmapTracker({
   };
 
   return null; // Ce composant n'affiche rien
+}
+
+/**
+ * Identifier le contexte du clic pour enrichir les données heatmap
+ */
+function identifyClickContext(target: HTMLElement): Record<string, any> {
+  const context: Record<string, any> = {};
+
+  // Chercher si on est dans une carte de bien immobilier
+  const propertyCard = target.closest('[data-property-id], [id^="property-"]');
+  if (propertyCard) {
+    const propertyId =
+      propertyCard.getAttribute('data-property-id') ||
+      propertyCard.id.replace('property-', '');
+    context.propertyId = propertyId;
+    context.contextType = 'property';
+
+    // Récupérer les données du bien si disponibles
+    const propertyData = propertyCard.getAttribute('data-property-data');
+    if (propertyData) {
+      try {
+        context.propertyData = JSON.parse(propertyData);
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }
+
+  // Identifier le type d'élément cliqué
+  const button = target.closest('button, a[href]');
+  if (button) {
+    const buttonText =
+      button.textContent?.trim() ||
+      button.getAttribute('aria-label') ||
+      button.getAttribute('title') ||
+      '';
+
+    context.buttonText = buttonText;
+    context.buttonType = identifyButtonType(buttonText, button);
+    context.isButton = true;
+
+    const href = button.getAttribute('href');
+    if (href) {
+      context.buttonHref = href;
+    }
+  }
+
+  // Identifier si c'est une image
+  if (target.tagName.toLowerCase() === 'img' || target.closest('img')) {
+    context.isImage = true;
+    const img = target.tagName.toLowerCase() === 'img' ? target : target.closest('img');
+    context.imageAlt = img?.getAttribute('alt');
+    context.imageSrc = img?.getAttribute('src');
+  }
+
+  // Identifier si c'est un formulaire ou input
+  const formElement = target.closest('form');
+  if (formElement) {
+    context.isForm = true;
+    context.formId = formElement.id || formElement.getAttribute('name');
+  }
+
+  if (target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'textarea') {
+    context.isInput = true;
+    context.inputType = target.getAttribute('type');
+    context.inputName = target.getAttribute('name');
+  }
+
+  return context;
+}
+
+/**
+ * Identifier le type de bouton
+ */
+function identifyButtonType(text: string, button: Element): string {
+  const textLower = text.toLowerCase();
+  const href = button.getAttribute('href')?.toLowerCase() || '';
+
+  if (
+    textLower.includes('contact') ||
+    textLower.includes('nous contacter') ||
+    href.includes('contact')
+  ) {
+    return 'contact';
+  }
+
+  if (
+    textLower.includes('appel') ||
+    textLower.includes('téléphone') ||
+    href.startsWith('tel:')
+  ) {
+    return 'call';
+  }
+
+  if (textLower.includes('email') || textLower.includes('mail') || href.startsWith('mailto:')) {
+    return 'email';
+  }
+
+  if (
+    textLower.includes('détail') ||
+    textLower.includes('voir') ||
+    textLower.includes('plus') ||
+    textLower.includes('info')
+  ) {
+    return 'view_details';
+  }
+
+  if (textLower.includes('télécharger') || textLower.includes('download')) {
+    return 'download';
+  }
+
+  if (textLower.includes('partag')) {
+    return 'share';
+  }
+
+  if (textLower.includes('favoris') || textLower.includes('sauvegard')) {
+    return 'save';
+  }
+
+  if (textLower.includes('visite') || textLower.includes('rendez-vous') || textLower.includes('rdv')) {
+    return 'schedule_visit';
+  }
+
+  return 'other';
 }
 
 function generateSessionId(): string {

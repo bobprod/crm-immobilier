@@ -1,8 +1,11 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Optional } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TrackingEvent, TrackingPlatform } from '../dto';
 import { ConversionPredictionService } from '../ml/conversion-prediction.service';
 import { TrackingRealtimeGateway } from '../analytics/tracking-realtime.gateway';
+import { TrackingNotificationsService } from '../notifications/tracking-notifications.service';
+import { TrackingCommunicationsService } from '../communications/tracking-communications.service';
+import { PropertyTrackingStatsService } from '@/modules/business/properties/property-tracking-stats.service';
 
 /**
  * Service de tracking des événements marketing
@@ -14,6 +17,12 @@ export class TrackingEventsService {
     private readonly conversionPrediction: ConversionPredictionService,
     @Inject(forwardRef(() => TrackingRealtimeGateway))
     private readonly realtimeGateway: TrackingRealtimeGateway,
+    @Optional()
+    private readonly trackingNotifications?: TrackingNotificationsService,
+    @Optional()
+    private readonly trackingCommunications?: TrackingCommunicationsService,
+    @Optional()
+    private readonly propertyTrackingStats?: PropertyTrackingStatsService,
   ) {}
 
   async trackEvent(userId: string, event: TrackingEvent) {
@@ -65,6 +74,65 @@ export class TrackingEventsService {
     } catch (error) {
       // Ne pas bloquer si WebSocket échoue
       console.error('Failed to emit realtime event:', error);
+    }
+
+    // Déclencher les notifications automatiques si configuré
+    try {
+      if (this.trackingNotifications) {
+        await this.trackingNotifications.processTrackingEvent(userId, {
+          eventName: event.eventName,
+          data: event.data,
+          sessionId: event.sessionId,
+          propertyId: event.propertyId,
+          prospectId: event.prospectId,
+          timestamp: finalEvent.timestamp,
+        });
+      }
+    } catch (error) {
+      // Ne pas bloquer si les notifications échouent
+      console.error('Failed to process tracking notifications:', error);
+    }
+
+    // Mettre à jour les statistiques des biens si configuré
+    try {
+      if (this.propertyTrackingStats && event.propertyId) {
+        let eventType: 'impression' | 'click' | 'lead' = 'impression';
+        let additionalData: any = {};
+
+        if (event.eventName === 'PropertyImpression') {
+          eventType = 'impression';
+          additionalData.timeSpent = event.data?.timeSpent || 0;
+        } else if (event.eventName === 'PropertyButtonClick') {
+          eventType = 'click';
+        } else if (event.eventName === 'Lead') {
+          eventType = 'lead';
+        }
+
+        await this.propertyTrackingStats.updatePropertyStats(
+          userId,
+          event.propertyId,
+          eventType,
+          additionalData,
+        );
+      }
+    } catch (error) {
+      console.error('Failed to update property tracking stats:', error);
+    }
+
+    // Déclencher les communications automatiques si configuré
+    try {
+      if (this.trackingCommunications) {
+        await this.trackingCommunications.processTrackingEvent(userId, {
+          eventName: event.eventName,
+          data: event.data,
+          sessionId: event.sessionId,
+          propertyId: event.propertyId,
+          prospectId: event.prospectId,
+          timestamp: finalEvent.timestamp,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to process tracking communications:', error);
     }
 
     return finalEvent;

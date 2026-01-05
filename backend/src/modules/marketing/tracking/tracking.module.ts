@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MarketingTrackingController, PublicTrackingController } from './tracking.controller';
 import { TrackingConfigService } from './services/tracking-config.service';
@@ -20,7 +21,22 @@ import { TrackingRealtimeGateway } from './analytics/tracking-realtime.gateway';
 import { HeatmapService } from './heatmap/heatmap.service';
 import { HeatmapController } from './heatmap/heatmap.controller';
 import { ABTestingService } from './ab-testing/ab-testing.service';
+import { ABTestingController } from './ab-testing/ab-testing.controller';
 import { AttributionMultiTouchService } from './attribution/attribution-multi-touch.service';
+import { AttributionMultiTouchController } from './attribution/attribution-multi-touch.controller';
+import { PropertyAnalyticsController } from './analytics/property-analytics.controller';
+import { AITrackingInsightsService } from './ai-insights/ai-tracking-insights.service';
+import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights.controller';
+import { TrackingNotificationsService } from './notifications/tracking-notifications.service';
+import { TrackingProspectionAiService } from './prospection/tracking-prospection-ai.service';
+import { TrackingProspectionAiController } from './prospection/tracking-prospection-ai.controller';
+import { TrackingCommunicationsService } from './communications/tracking-communications.service';
+import { TrackingWebDataService } from './webdata/tracking-webdata.service';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.module';
+import { PropertiesModule } from '@/modules/business/properties/properties.module';
+import { CommunicationsModule } from '@/modules/communications/communications.module';
+import { SmartFormsModule } from '@/modules/intelligence/smart-forms/smart-forms.module';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -43,6 +59,11 @@ import { AttributionMultiTouchService } from './attribution/attribution-multi-to
 @Module({
   imports: [
     PrismaModule,
+    NotificationsModule,
+    ProspectingAiModule,
+    PropertiesModule,
+    CommunicationsModule,
+    SmartFormsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '7d' },
@@ -53,6 +74,11 @@ import { AttributionMultiTouchService } from './attribution/attribution-multi-to
     PublicTrackingController,
     TrackingAnalyticsController,
     HeatmapController,
+    ABTestingController,
+    AttributionMultiTouchController,
+    PropertyAnalyticsController,
+    AITrackingInsightsController,
+    TrackingProspectionAiController,
   ],
   providers: [
     TrackingConfigService,
@@ -72,6 +98,11 @@ import { AttributionMultiTouchService } from './attribution/attribution-multi-to
     HeatmapService,
     ABTestingService,
     AttributionMultiTouchService,
+    AITrackingInsightsService,
+    TrackingNotificationsService,
+    TrackingProspectionAiService,
+    TrackingCommunicationsService,
+    TrackingWebDataService,
   ],
   exports: [
     TrackingEventsService,
@@ -81,6 +112,114 @@ import { AttributionMultiTouchService } from './attribution/attribution-multi-to
     HeatmapService,
     ABTestingService,
     AttributionMultiTouchService,
+    AITrackingInsightsService,
+    TrackingNotificationsService,
+    TrackingProspectionAiService,
+    TrackingCommunicationsService,
+    TrackingWebDataService,
   ],
 })
-export class MarketingTrackingModule {}
+export class MarketingTrackingModule implements OnModuleInit {
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  /**
+   * Initialisation du module - injection des dépendances pour éviter les circular dependencies
+   */
+  async onModuleInit() {
+    // Injecter NotificationsService dans TrackingNotificationsService
+    try {
+      const trackingNotifications = this.moduleRef.get(
+        TrackingNotificationsService,
+        { strict: false },
+      );
+      const notificationsService = this.moduleRef.get(
+        'NotificationsService',
+        { strict: false },
+      );
+
+      if (trackingNotifications && notificationsService) {
+        trackingNotifications.setNotificationsService(notificationsService);
+      }
+    } catch (error) {
+      console.warn('Could not inject NotificationsService:', error.message);
+    }
+
+    // Injecter ProspectionService et AiOrchestratorService dans TrackingProspectionAiService
+    try {
+      const trackingProspectionAi = this.moduleRef.get(
+        TrackingProspectionAiService,
+        { strict: false },
+      );
+      const prospectionService = this.moduleRef.get(
+        'ProspectionService',
+        { strict: false },
+      );
+      const aiOrchestratorService = this.moduleRef.get(
+        'AiOrchestratorService',
+        { strict: false },
+      );
+
+      if (trackingProspectionAi) {
+        if (prospectionService) {
+          trackingProspectionAi.setProspectionService(prospectionService);
+        }
+        if (aiOrchestratorService) {
+          trackingProspectionAi.setAiOrchestratorService(aiOrchestratorService);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not inject Prospection/AI services:', error.message);
+    }
+
+    // Injecter EmailService, SmsService et UnifiedCommunicationService dans TrackingCommunicationsService
+    try {
+      const trackingCommunications = this.moduleRef.get(
+        TrackingCommunicationsService,
+        { strict: false },
+      );
+      const emailService = this.moduleRef.get('EmailService', {
+        strict: false,
+      });
+      const smsService = this.moduleRef.get('SmsService', { strict: false });
+      const unifiedCommunicationService = this.moduleRef.get(
+        'UnifiedCommunicationService',
+        { strict: false },
+      );
+
+      if (trackingCommunications) {
+        if (emailService) {
+          trackingCommunications.setEmailService(emailService);
+        }
+        if (smsService) {
+          trackingCommunications.setSmsService(smsService);
+        }
+        if (unifiedCommunicationService) {
+          trackingCommunications.setUnifiedCommunicationService(
+            unifiedCommunicationService,
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(
+        'Could not inject Communication services:',
+        error.message,
+      );
+    }
+
+    // Injecter SmartFormsService dans TrackingWebDataService
+    try {
+      const trackingWebData = this.moduleRef.get(TrackingWebDataService, {
+        strict: false,
+      });
+      const smartFormsService = this.moduleRef.get('SmartFormsService', {
+        strict: false,
+      });
+
+      if (trackingWebData && smartFormsService) {
+        trackingWebData.setSmartFormsService(smartFormsService);
+      }
+    } catch (error) {
+      console.warn('Could not inject SmartFormsService:', error.message);
+    }
+  }
+}

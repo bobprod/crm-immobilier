@@ -98,4 +98,63 @@ export class HeatmapController {
   async getScrollDepth(@Request() req, @Query('pageUrl') pageUrl: string) {
     return this.heatmapService.getScrollDepth(req.user.userId, pageUrl);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('property/:propertyId')
+  @ApiOperation({ summary: 'Get heatmap data for a specific property' })
+  async getPropertyHeatmap(
+    @Request() req,
+    @Param('propertyId') propertyId: string,
+    @Query('type') type?: 'click' | 'move' | 'scroll',
+    @Query('deviceType') deviceType?: 'desktop' | 'mobile' | 'tablet',
+  ) {
+    // Récupérer tous les événements heatmap avec le propertyId dans le contexte
+    const prisma = (this.heatmapService as any).prisma;
+
+    const events = await prisma.heatmapEvent.findMany({
+      where: {
+        userId: req.user.userId,
+        ...(type && { type }),
+        ...(deviceType && { deviceType }),
+      },
+    });
+
+    // Filtrer les événements qui ont le propertyId dans les données contextuelles
+    // Note: le champ 'element' peut contenir le JSON avec propertyId
+    const propertyEvents = events.filter((event: any) => {
+      // Essayer de parser l'élément comme JSON pour vérifier propertyId
+      try {
+        if (event.element && event.element.includes('propertyId')) {
+          return event.element.includes(propertyId);
+        }
+      } catch (e) {
+        // Ignore
+      }
+      return false;
+    });
+
+    // Agréger les données
+    const gridSize = 20; // pixels
+    const heatmapData = new Map<string, { x: number; y: number; value: number }>();
+
+    propertyEvents.forEach((event: any) => {
+      const gridX = Math.floor(event.x / gridSize) * gridSize;
+      const gridY = Math.floor(event.y / gridSize) * gridSize;
+      const key = `${gridX},${gridY}`;
+
+      if (heatmapData.has(key)) {
+        heatmapData.get(key)!.value++;
+      } else {
+        heatmapData.set(key, { x: gridX, y: gridY, value: 1 });
+      }
+    });
+
+    return {
+      propertyId,
+      totalEvents: propertyEvents.length,
+      heatmapData: Array.from(heatmapData.values()),
+      filters: { type, deviceType },
+    };
+  }
 }
