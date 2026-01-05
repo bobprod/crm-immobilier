@@ -23,6 +23,7 @@ import { ABTestingService } from './ab-testing/ab-testing.service';
 import { ABTestingController } from './ab-testing/ab-testing.controller';
 import { AttributionMultiTouchService } from './attribution/attribution-multi-touch.service';
 import { AttributionMultiTouchController } from './attribution/attribution-multi-touch.controller';
+import { PropertyAnalyticsController } from './analytics/property-analytics.controller';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -57,6 +58,7 @@ import { AttributionMultiTouchController } from './attribution/attribution-multi
     HeatmapController,
     ABTestingController,
     AttributionMultiTouchController,
+    PropertyAnalyticsController,
   ],
   providers: [
     TrackingConfigService,
