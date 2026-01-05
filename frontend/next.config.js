@@ -3,8 +3,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Configuration Turbopack (Next.js 16+)
-  turbopack: {},
+  // Turbopack disabled to avoid Windows symlink permission issues during CI/build
 };
 
 module.exports = nextConfig;

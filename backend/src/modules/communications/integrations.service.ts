@@ -258,7 +258,7 @@ export class IntegrationsService {
         },
       });
 
-      return testResult;
+      return testResult as any;
     } catch (error) {
       this.logger.error(`Test integration failed: ${error.message}`);
       return {

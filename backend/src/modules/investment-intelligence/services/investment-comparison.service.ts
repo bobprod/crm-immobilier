@@ -15,7 +15,7 @@ import { InvestmentComparison, InvestmentProject } from '@prisma/client';
 export class InvestmentComparisonService {
   private readonly logger = new Logger(InvestmentComparisonService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Compare multiple investment projects
@@ -141,8 +141,8 @@ export class InvestmentComparisonService {
       const liquidityScore = analysis?.liquidityScore || 50;
       const ticketScore = this.calculateTicketScore(project.minTicket, criteria);
       const durationScore = this.calculateDurationScore(
-        project.durationMonths,
         criteria,
+        project.durationMonths,
       );
 
       // Calculate weighted overall score
@@ -211,8 +211,8 @@ export class InvestmentComparisonService {
   }
 
   private calculateDurationScore(
-    durationMonths?: number | null,
     criteria: ComparisonCriteria,
+    durationMonths?: number | null,
   ): number {
     if (!durationMonths) return 50;
 

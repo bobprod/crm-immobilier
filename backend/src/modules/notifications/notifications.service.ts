@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { CreateNotificationDto, NotificationType } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { SmartNotificationsService } from './smart-notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
 import { EmailService } from '../communications/email/email.service';
@@ -16,7 +17,7 @@ export class NotificationsService {
     private notificationsGateway: NotificationsGateway,
     private emailService: EmailService,
     private smsService: SmsService,
-  ) {}
+  ) { }
 
   /**
    * Créer une nouvelle notification avec Smart AI
@@ -104,6 +105,15 @@ export class NotificationsService {
    * Récupérer les notifications d'un utilisateur
    */
   async getUserNotifications(userId: string, limit: number = 20) {
+    return this.prisma.notifications.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  async getUserNotificationsPaginated(userId: string, query: any) {
+    const limit = query?.limit || 20;
     return this.prisma.notifications.findMany({
       where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -237,6 +247,16 @@ export class NotificationsService {
     });
   }
 
+  async hardDeleteOldSoftDeleted(cutoffDate: Date) {
+    return this.prisma.notifications.deleteMany({
+      where: {
+        deletedAt: {
+          lt: cutoffDate,
+        },
+      },
+    });
+  }
+
   /**
    * Nettoyer les anciennes notifications (> 30 jours)
    */
@@ -292,9 +312,8 @@ export class NotificationsService {
           if (user.email) {
             // Utiliser sendForUser pour support multi-tenant
             const emailHtml = this.getNotificationEmailHtml(notificationData);
-            const emailText = `${notificationData.title}\n\n${notificationData.message}${
-              notificationData.actionUrl ? `\n\nLien: ${notificationData.actionUrl}` : ''
-            }`;
+            const emailText = `${notificationData.title}\n\n${notificationData.message}${notificationData.actionUrl ? `\n\nLien: ${notificationData.actionUrl}` : ''
+              }`;
 
             const result = await this.emailService.sendForUser(userId, {
               to: user.email,
@@ -456,9 +475,8 @@ export class NotificationsService {
             <td style="padding: 30px;">
               <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">${notification.title}</h2>
               <p style="margin: 0; color: #4B5563; font-size: 16px; line-height: 1.6;">${notification.message}</p>
-              ${
-                notification.actionUrl
-                  ? `
+              ${notification.actionUrl
+        ? `
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
                 <tr>
                   <td align="center">
@@ -467,8 +485,8 @@ export class NotificationsService {
                 </tr>
               </table>
               `
-                  : ''
-              }
+        : ''
+      }
             </td>
           </tr>
         </table>

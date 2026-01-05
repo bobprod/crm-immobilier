@@ -12,7 +12,7 @@ import {
   Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { MandatesService } from './mandates.service';
 import { CreateMandateDto } from './dto/create-mandate.dto';
 import { UpdateMandateDto } from './dto/update-mandate.dto';
@@ -22,7 +22,7 @@ import { UpdateMandateDto } from './dto/update-mandate.dto';
 @Controller('mandates')
 @UseGuards(JwtAuthGuard)
 export class MandatesController {
-  constructor(private readonly mandatesService: MandatesService) {}
+  constructor(private readonly mandatesService: MandatesService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new mandate' })

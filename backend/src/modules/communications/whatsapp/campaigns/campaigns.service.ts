@@ -25,7 +25,7 @@ export class CampaignsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly whatsappService: WhatsAppService,
-  ) {}
+  ) { }
 
   /**
    * Create a new campaign
@@ -447,7 +447,7 @@ export class CampaignsService {
           templateName: campaign.templateName,
           language: 'fr',
           variables: Object.values((recipient.variables as any) || {}),
-        });
+        } as any);
 
         // Update recipient status
         await this.prisma.whatsAppCampaignRecipient.update({

@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { CreateOwnerDto } from './dto/create-owner.dto';
 import { UpdateOwnerDto } from './dto/update-owner.dto';
 
 @Injectable()
 export class OwnersService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) { }
 
   async create(userId: string, createOwnerDto: CreateOwnerDto) {
     return this.db.owner.create({

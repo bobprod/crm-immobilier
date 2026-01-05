@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { BusinessNotificationHelper } from '../shared/notification.helper';
 import { BusinessActivityLogger } from '../shared/activity-logger.helper';
 

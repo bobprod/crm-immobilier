@@ -38,47 +38,47 @@ export class LLMRouterService {
       description: string;
     }
   > = {
-    seo: {
-      priority: ['anthropic', 'openai', 'gemini', 'mistral'],
-      criteria: 'quality',
-      description: 'Qualité maximale pour le SEO',
-    },
-    prospecting_mass: {
-      priority: ['deepseek', 'qwen', 'mistral', 'gemini'],
-      criteria: 'cost',
-      description: 'Coût minimal pour traitement en masse',
-    },
-    prospecting_qualify: {
-      priority: ['gemini', 'mistral', 'qwen', 'anthropic'],
-      criteria: 'balanced',
-      description: 'Équilibre qualité/coût pour qualification',
-    },
-    analysis_quick: {
-      priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
-      criteria: 'speed',
-      description: 'Vitesse maximale',
-    },
-    content_generation: {
-      priority: ['anthropic', 'mistral', 'openai', 'gemini'],
-      criteria: 'quality',
-      description: 'Qualité de contenu',
-    },
-    long_context: {
-      priority: ['kimi', 'anthropic', 'openai', 'gemini'],
-      criteria: 'context_window',
-      description: 'Fenêtre de contexte large',
-    },
-    scraping_analysis: {
-      priority: ['mistral', 'gemini', 'deepseek', 'qwen'],
-      criteria: 'balanced',
-      description: 'Bon rapport qualité/prix',
-    },
-  };
+      seo: {
+        priority: ['anthropic', 'openai', 'gemini', 'mistral'],
+        criteria: 'quality',
+        description: 'Qualité maximale pour le SEO',
+      },
+      prospecting_mass: {
+        priority: ['deepseek', 'qwen', 'mistral', 'gemini'],
+        criteria: 'cost',
+        description: 'Coût minimal pour traitement en masse',
+      },
+      prospecting_qualify: {
+        priority: ['gemini', 'mistral', 'qwen', 'anthropic'],
+        criteria: 'balanced',
+        description: 'Équilibre qualité/coût pour qualification',
+      },
+      analysis_quick: {
+        priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
+        criteria: 'speed',
+        description: 'Vitesse maximale',
+      },
+      content_generation: {
+        priority: ['anthropic', 'mistral', 'openai', 'gemini'],
+        criteria: 'quality',
+        description: 'Qualité de contenu',
+      },
+      long_context: {
+        priority: ['kimi', 'anthropic', 'openai', 'gemini'],
+        criteria: 'context_window',
+        description: 'Fenêtre de contexte large',
+      },
+      scraping_analysis: {
+        priority: ['mistral', 'gemini', 'deepseek', 'qwen'],
+        criteria: 'balanced',
+        description: 'Bon rapport qualité/prix',
+      },
+    };
 
   constructor(
     private prisma: PrismaService,
     private providerFactory: LLMProviderFactory,
-  ) {}
+  ) { }
 
   /**
    * 🎯 MÉTHODE PRINCIPALE : Sélection intelligente du provider
@@ -120,7 +120,7 @@ export class LLMRouterService {
     );
 
     // 4. Créer et retourner l'instance du provider
-    const provider = await this.providerFactory.createProvider(
+    const provider = await (this.providerFactory as any).createProvider(
       userId,
       selectedConfig.provider,
     );
@@ -262,7 +262,7 @@ export class LLMRouterService {
       );
     }
 
-    return this.providerFactory.createProvider(userId, providerName);
+    return (this.providerFactory as any).createProvider(userId, providerName);
   }
 
   /**
@@ -618,11 +618,11 @@ export class LLMRouterService {
 
     // Créer une instance du provider et tester
     try {
-      const providerInstance = this.createProviderInstance(
-        userProvider.provider,
-        userProvider.apiKey,
-        userProvider.model,
-      );
+      const providerInstance = this.providerFactory.createProviderFromConfig({
+        provider: userProvider.provider,
+        apiKey: userProvider.apiKey,
+        model: userProvider.model,
+      } as any);
 
       // Test simple avec un prompt minimal
       await providerInstance.generate('Test connection', {

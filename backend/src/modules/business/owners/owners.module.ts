@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { OwnersController } from './owners.controller';
 import { OwnersService } from './owners.service';
-import { DatabaseModule } from '../../../shared/services/database/database.module';
+import { PrismaModule as DatabaseModule } from '../../../shared/database/prisma.module';
 
 @Module({
   imports: [DatabaseModule],
@@ -9,4 +9,4 @@ import { DatabaseModule } from '../../../shared/services/database/database.modul
   providers: [OwnersService],
   exports: [OwnersService],
 })
-export class OwnersModule {}
+export class OwnersModule { }

@@ -58,7 +58,7 @@ TYPES DE BIENS:
     private prisma: PrismaService,
     private configService: ConfigService,
     private llmRouter: LLMRouterService,
-  ) {}
+  ) { }
 
   // ============================================
   // 1) ANALYSE UN ELEMENT BRUT SCRAPPE
@@ -452,9 +452,9 @@ Retourne au format:
               phone: this.normalizePhone(analyzed.phone),
               city: analyzed.city,
               propertyTypes: analyzed.propertyTypes,
-              budgetMin: analyzed.budgetMin,
-              budgetMax: analyzed.budgetMax,
-              budgetCurrency: analyzed.budgetCurrency || 'TND',
+              budgetMin: (analyzed as any).budgetMin,
+              budgetMax: (analyzed as any).budgetMax,
+              budgetCurrency: (analyzed as any).budgetCurrency || 'TND',
               surfaceM2: analyzed.surfaceM2,
               rooms: analyzed.rooms,
               leadType: analyzed.leadType,
@@ -465,9 +465,9 @@ Retourne au format:
               status: validation.status === 'valid' ? 'new' : 'rejected',
               metadata: {
                 analyzedAt: new Date().toISOString(),
-                confidence: analyzed.confidence,
+                confidence: (analyzed as any).confidence,
                 seriousnessScore: analyzed.seriousnessScore,
-                validationDetails: validation.details,
+                validationDetails: (validation as any).details,
               },
             };
 

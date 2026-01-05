@@ -46,7 +46,7 @@ export class ProspectingIntegrationService {
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
     private llmRouter: LLMRouterService,
-  ) {}
+  ) { }
 
   // ============================================
   // CONFIGURATION - Recuperation des cles API
@@ -223,10 +223,10 @@ export class ProspectingIntegrationService {
             propertyType: lead.propertyTypes?.[0],
             budget: lead.budgetMax
               ? {
-                  min: lead.budgetMin,
-                  max: lead.budgetMax,
-                  currency: lead.budgetCurrency || 'TND',
-                }
+                min: lead.budgetMin,
+                max: lead.budgetMax,
+                currency: lead.budgetCurrency || 'TND',
+              }
               : undefined,
             source: lead.source,
             sourceUrl: lead.url,
@@ -469,7 +469,7 @@ export class ProspectingIntegrationService {
       const allLeads: LeadData[] = [];
 
       // Utiliser WebDataService avec le provider Firecrawl
-      const results = await this.webDataService.fetchMultipleUrls(urls, {
+      const results = await (this as any).webDataService.fetchMultipleUrls(urls, {
         provider: 'firecrawl',
         tenantId: userId,
         extractionPrompt: `Extraire les informations de contact et les détails immobiliers:
@@ -502,7 +502,7 @@ export class ProspectingIntegrationService {
       return { success: true, leads: allLeads, count: allLeads.length };
     } catch (error) {
       this.logger.error(`Erreur Firecrawl: ${error.message}`);
-      
+
       // Si Firecrawl n'est pas disponible, fallback sur les autres providers
       this.logger.warn('Fallback sur scraping standard...');
       return this.scrapeWebsites(userId, urls, config);
@@ -535,11 +535,11 @@ export class ProspectingIntegrationService {
 
   private detectLeadTypeFromExtractedData(data: any): 'requete' | 'mandat' {
     const type = (data.type || data.intention || '').toLowerCase();
-    
+
     if (type.includes('vendeur') || type.includes('bailleur') || type.includes('vendre')) {
       return 'mandat';
     }
-    
+
     return 'requete'; // Par défaut: acheteur/locataire
   }
 
@@ -648,7 +648,7 @@ export class ProspectingIntegrationService {
     try {
       // Utiliser le WebDataService unifié qui sélectionne automatiquement
       // le meilleur provider (Cheerio, Puppeteer, ou Firecrawl)
-      const results = await this.webDataService.fetchMultipleUrls(urls, {
+      const results = await (this as any).webDataService.fetchMultipleUrls(urls, {
         tenantId: userId,
       });
 

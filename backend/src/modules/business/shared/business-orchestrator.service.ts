@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { MandatesService } from '../mandates/mandates.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { FinanceService } from '../finance/finance.service';
@@ -25,7 +25,7 @@ export class BusinessOrchestrator {
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   // ========== MANDATE WORKFLOWS ==========
 
@@ -99,6 +99,7 @@ export class BusinessOrchestrator {
         category: oldMandate.category,
         ownerId: oldMandate.ownerId,
         propertyId: oldMandate.propertyId,
+        price: (oldMandate as any).price || 0,
         startDate: newDates.startDate.toISOString(),
         endDate: newDates.endDate.toISOString(),
         commission: oldMandate.commission,
@@ -188,14 +189,14 @@ export class BusinessOrchestrator {
       const transaction = await this.transactionsService.update(
         transactionId,
         userId,
-        {
+        ({
           status: 'final_deed_signed',
           finalPrice: finalizationData.finalPrice,
-          actualClosing: finalizationData.actualClosing || new Date(),
+          actualClosing: (finalizationData.actualClosing || new Date()).toISOString(),
           notes: finalizationData.notaryFees
             ? `Frais notaire: ${finalizationData.notaryFees}`
             : undefined,
-        },
+        } as any),
       );
 
       // 2. Générer facture pour l'acheteur (optionnel)
@@ -244,10 +245,10 @@ export class BusinessOrchestrator {
       const transaction = await this.transactionsService.findOne(transactionId, userId);
 
       // 2. Annuler la transaction (déclenche auto-cancel des commissions)
-      const cancelled = await this.transactionsService.update(transactionId, userId, {
+      const cancelled = await this.transactionsService.update(transactionId, userId, ({
         status: 'cancelled',
         notes: `Annulée le ${new Date().toLocaleDateString('fr-FR')} : ${reason}`,
-      });
+      } as any));
 
       // 3. Restaurer le statut de la propriété
       if (transaction.propertyId) {
@@ -448,7 +449,7 @@ export class BusinessOrchestrator {
       const invoice = await this.financeService.createInvoice(userId, {
         number: `INV-${transaction.reference}-${Date.now()}`,
         transactionId: transaction.id,
-        clientType: transaction.type === 'sale' ? 'buyer' : 'tenant',
+        clientType: (transaction.type === 'sale' ? 'buyer' : 'tenant') as any,
         clientName: buyerInfo.name,
         clientEmail: buyerInfo.email,
         clientPhone: buyerInfo.phone,
@@ -457,10 +458,10 @@ export class BusinessOrchestrator {
         vat: notaryFees || 0,
         totalAmount,
         currency: transaction.currency,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
-        status: 'draft',
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 jours
+        status: 'draft' as any,
         description: `${transaction.type === 'sale' ? 'Achat' : 'Location'} - ${transaction.property?.title || 'Propriété'}`,
-      });
+      } as any);
 
       return invoice;
     } catch (error) {

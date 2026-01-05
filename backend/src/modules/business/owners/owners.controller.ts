@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { OwnersService } from './owners.service';
 import { CreateOwnerDto } from './dto/create-owner.dto';
 import { UpdateOwnerDto } from './dto/update-owner.dto';
@@ -21,7 +21,7 @@ import { UpdateOwnerDto } from './dto/update-owner.dto';
 @Controller('owners')
 @UseGuards(JwtAuthGuard)
 export class OwnersController {
-  constructor(private readonly ownersService: OwnersService) {}
+  constructor(private readonly ownersService: OwnersService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new owner' })

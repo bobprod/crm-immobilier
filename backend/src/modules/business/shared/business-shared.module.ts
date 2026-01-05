@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from '../../notifications/notifications.module';
-import { DatabaseModule } from '../../../shared/services/database/database.module';
+import { PrismaModule as DatabaseModule } from '../../../shared/database/prisma.module';
 import { BusinessNotificationHelper } from './notification.helper';
 import { BusinessActivityLogger } from './activity-logger.helper';
 import { ScheduledTasksService } from './scheduled-tasks.service';
@@ -40,4 +40,4 @@ import { BusinessEventHandlers } from './events/business.event-handlers';
     EmailService,
   ],
 })
-export class BusinessSharedModule {}
+export class BusinessSharedModule { }

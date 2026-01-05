@@ -2,6 +2,145 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ============================================
+// Investment Intelligence - minimal enums/models
+// (Added to match existing DB migration and TS imports)
+// ============================================
+
+enum InvestmentProjectSource {
+  bricks
+  homunity
+  anaxago
+  fundimmo
+  lymo
+  raizers
+  wiseed
+  estateguru
+  reinvest24
+  crowdestate
+  propertypartner
+  crowdproperty
+  brickowner
+  exporo
+  rendity
+  fundrise
+  realtymogul
+  crowdstreet
+  peerstreet
+  roofstock
+  arrived
+  addy
+  triovest
+  realtypro
+  brla_urba
+  brla_credihome
+  brla_housers
+  colombia_la_haus
+  venezuela_local
+  tunisia_bricks_tn
+  tunisia_local
+  morocco_reit
+  morocco_local
+  algeria_local
+  egypt_nawy
+  egypt_aqarmap
+  uae_smartcrowd
+  uae_stake
+  saudi_redf
+  saudi_local
+  qatar_local
+  cameroon_local
+  ivorycoast_local
+  nigeria_proptech
+  nigeria_local
+  manual
+  other
+}
+
+enum InvestmentProjectStatus {
+  draft
+  analyzing
+  active
+  funded
+  completed
+  archived
+}
+
+model InvestmentProject {
+  id              String   @id @default(cuid())
+  userId          String
+  tenantId        String
+  title           String
+  description     String?
+  source          InvestmentProjectSource
+  sourceUrl       String?
+  sourceProjectId String?
+  city            String
+  country         String   @default("France")
+  totalPrice      Float
+  minTicket       Float
+  currency        String   @default("EUR")
+  targetYield     Float?
+  durationMonths  Int?
+  propertyType    String?
+  fundingProgress Float?
+  status          InvestmentProjectStatus @default(draft)
+  importedAt      DateTime? @default(now())
+  lastAnalyzedAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  analyses        InvestmentAnalysis[]
+
+  @@map("investment_projects")
+}
+
+model InvestmentAnalysis {
+  id            String  @id @default(cuid())
+  projectId     String
+  userId        String
+  overallScore  Int
+  recommendation String
+  analyzedAt    DateTime? @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project InvestmentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("investment_analyses")
+}
+
+model InvestmentComparison {
+  id         String  @id @default(cuid())
+  userId     String
+  name       String?
+  projectIds String[]
+  criteria   Json
+  results    Json
+  comparedAt DateTime? @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("investment_comparisons")
+}
+
+model InvestmentAlert {
+  id                   String  @id @default(cuid())
+  userId               String
+  tenantId             String
+  name                 String
+  isActive             Boolean @default(true)
+  criteria             Json
+  notificationChannels Json
+  frequency            String  @default("immediate")
+  lastTriggeredAt      DateTime?
+  triggeredCount       Int     @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("investment_alerts")
+}
+
 datasource db {
   provider = "postgresql"
 }
