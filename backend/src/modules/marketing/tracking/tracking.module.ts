@@ -30,8 +30,13 @@ import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights
 import { TrackingNotificationsService } from './notifications/tracking-notifications.service';
 import { TrackingProspectionAiService } from './prospection/tracking-prospection-ai.service';
 import { TrackingProspectionAiController } from './prospection/tracking-prospection-ai.controller';
+import { TrackingCommunicationsService } from './communications/tracking-communications.service';
+import { TrackingWebDataService } from './webdata/tracking-webdata.service';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.module';
+import { PropertiesModule } from '@/modules/business/properties/properties.module';
+import { CommunicationsModule } from '@/modules/communications/communications.module';
+import { SmartFormsModule } from '@/modules/intelligence/smart-forms/smart-forms.module';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -56,6 +61,9 @@ import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.mod
     PrismaModule,
     NotificationsModule,
     ProspectingAiModule,
+    PropertiesModule,
+    CommunicationsModule,
+    SmartFormsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '7d' },
@@ -93,6 +101,8 @@ import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.mod
     AITrackingInsightsService,
     TrackingNotificationsService,
     TrackingProspectionAiService,
+    TrackingCommunicationsService,
+    TrackingWebDataService,
   ],
   exports: [
     TrackingEventsService,
@@ -105,6 +115,8 @@ import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.mod
     AITrackingInsightsService,
     TrackingNotificationsService,
     TrackingProspectionAiService,
+    TrackingCommunicationsService,
+    TrackingWebDataService,
   ],
 })
 export class MarketingTrackingModule implements OnModuleInit {
@@ -157,6 +169,57 @@ export class MarketingTrackingModule implements OnModuleInit {
       }
     } catch (error) {
       console.warn('Could not inject Prospection/AI services:', error.message);
+    }
+
+    // Injecter EmailService, SmsService et UnifiedCommunicationService dans TrackingCommunicationsService
+    try {
+      const trackingCommunications = this.moduleRef.get(
+        TrackingCommunicationsService,
+        { strict: false },
+      );
+      const emailService = this.moduleRef.get('EmailService', {
+        strict: false,
+      });
+      const smsService = this.moduleRef.get('SmsService', { strict: false });
+      const unifiedCommunicationService = this.moduleRef.get(
+        'UnifiedCommunicationService',
+        { strict: false },
+      );
+
+      if (trackingCommunications) {
+        if (emailService) {
+          trackingCommunications.setEmailService(emailService);
+        }
+        if (smsService) {
+          trackingCommunications.setSmsService(smsService);
+        }
+        if (unifiedCommunicationService) {
+          trackingCommunications.setUnifiedCommunicationService(
+            unifiedCommunicationService,
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(
+        'Could not inject Communication services:',
+        error.message,
+      );
+    }
+
+    // Injecter SmartFormsService dans TrackingWebDataService
+    try {
+      const trackingWebData = this.moduleRef.get(TrackingWebDataService, {
+        strict: false,
+      });
+      const smartFormsService = this.moduleRef.get('SmartFormsService', {
+        strict: false,
+      });
+
+      if (trackingWebData && smartFormsService) {
+        trackingWebData.setSmartFormsService(smartFormsService);
+      }
+    } catch (error) {
+      console.warn('Could not inject SmartFormsService:', error.message);
     }
   }
 }
