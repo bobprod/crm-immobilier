@@ -1,8 +1,9 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Optional } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TrackingEvent, TrackingPlatform } from '../dto';
 import { ConversionPredictionService } from '../ml/conversion-prediction.service';
 import { TrackingRealtimeGateway } from '../analytics/tracking-realtime.gateway';
+import { TrackingNotificationsService } from '../notifications/tracking-notifications.service';
 
 /**
  * Service de tracking des événements marketing
@@ -14,6 +15,8 @@ export class TrackingEventsService {
     private readonly conversionPrediction: ConversionPredictionService,
     @Inject(forwardRef(() => TrackingRealtimeGateway))
     private readonly realtimeGateway: TrackingRealtimeGateway,
+    @Optional()
+    private readonly trackingNotifications?: TrackingNotificationsService,
   ) {}
 
   async trackEvent(userId: string, event: TrackingEvent) {
@@ -65,6 +68,23 @@ export class TrackingEventsService {
     } catch (error) {
       // Ne pas bloquer si WebSocket échoue
       console.error('Failed to emit realtime event:', error);
+    }
+
+    // Déclencher les notifications automatiques si configuré
+    try {
+      if (this.trackingNotifications) {
+        await this.trackingNotifications.processTrackingEvent(userId, {
+          eventName: event.eventName,
+          data: event.data,
+          sessionId: event.sessionId,
+          propertyId: event.propertyId,
+          prospectId: event.prospectId,
+          timestamp: finalEvent.timestamp,
+        });
+      }
+    } catch (error) {
+      // Ne pas bloquer si les notifications échouent
+      console.error('Failed to process tracking notifications:', error);
     }
 
     return finalEvent;

@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { MarketingTrackingController, PublicTrackingController } from './tracking.controller';
 import { TrackingConfigService } from './services/tracking-config.service';
@@ -26,6 +27,11 @@ import { AttributionMultiTouchController } from './attribution/attribution-multi
 import { PropertyAnalyticsController } from './analytics/property-analytics.controller';
 import { AITrackingInsightsService } from './ai-insights/ai-tracking-insights.service';
 import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights.controller';
+import { TrackingNotificationsService } from './notifications/tracking-notifications.service';
+import { TrackingProspectionAiService } from './prospection/tracking-prospection-ai.service';
+import { TrackingProspectionAiController } from './prospection/tracking-prospection-ai.controller';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { ProspectingAiModule } from '@/modules/prospecting-ai/prospecting-ai.module';
 
 /**
  * Module Marketing Tracking + IA/ML
@@ -48,6 +54,8 @@ import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights
 @Module({
   imports: [
     PrismaModule,
+    NotificationsModule,
+    ProspectingAiModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '7d' },
@@ -62,6 +70,7 @@ import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights
     AttributionMultiTouchController,
     PropertyAnalyticsController,
     AITrackingInsightsController,
+    TrackingProspectionAiController,
   ],
   providers: [
     TrackingConfigService,
@@ -82,6 +91,8 @@ import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights
     ABTestingService,
     AttributionMultiTouchService,
     AITrackingInsightsService,
+    TrackingNotificationsService,
+    TrackingProspectionAiService,
   ],
   exports: [
     TrackingEventsService,
@@ -92,6 +103,60 @@ import { AITrackingInsightsController } from './ai-insights/ai-tracking-insights
     ABTestingService,
     AttributionMultiTouchService,
     AITrackingInsightsService,
+    TrackingNotificationsService,
+    TrackingProspectionAiService,
   ],
 })
-export class MarketingTrackingModule {}
+export class MarketingTrackingModule implements OnModuleInit {
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  /**
+   * Initialisation du module - injection des dépendances pour éviter les circular dependencies
+   */
+  async onModuleInit() {
+    // Injecter NotificationsService dans TrackingNotificationsService
+    try {
+      const trackingNotifications = this.moduleRef.get(
+        TrackingNotificationsService,
+        { strict: false },
+      );
+      const notificationsService = this.moduleRef.get(
+        'NotificationsService',
+        { strict: false },
+      );
+
+      if (trackingNotifications && notificationsService) {
+        trackingNotifications.setNotificationsService(notificationsService);
+      }
+    } catch (error) {
+      console.warn('Could not inject NotificationsService:', error.message);
+    }
+
+    // Injecter ProspectionService et AiOrchestratorService dans TrackingProspectionAiService
+    try {
+      const trackingProspectionAi = this.moduleRef.get(
+        TrackingProspectionAiService,
+        { strict: false },
+      );
+      const prospectionService = this.moduleRef.get(
+        'ProspectionService',
+        { strict: false },
+      );
+      const aiOrchestratorService = this.moduleRef.get(
+        'AiOrchestratorService',
+        { strict: false },
+      );
+
+      if (trackingProspectionAi) {
+        if (prospectionService) {
+          trackingProspectionAi.setProspectionService(prospectionService);
+        }
+        if (aiOrchestratorService) {
+          trackingProspectionAi.setAiOrchestratorService(aiOrchestratorService);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not inject Prospection/AI services:', error.message);
+    }
+  }
+}
