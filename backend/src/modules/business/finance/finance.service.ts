@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import {
   CreateCommissionDto,
   UpdateCommissionDto,
@@ -17,7 +17,7 @@ export class FinanceService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) {}
+  ) { }
 
   // ========== COMMISSIONS ==========
 

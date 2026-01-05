@@ -15,8 +15,8 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
-import { CurrentUser } from '../../../shared/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { InvestmentImportService } from './services/investment-import.service';
 import { InvestmentAnalysisService } from './services/investment-analysis.service';
 import { InvestmentComparisonService } from './services/investment-comparison.service';
@@ -43,7 +43,7 @@ export class InvestmentIntelligenceController {
     private readonly comparisonService: InvestmentComparisonService,
     private readonly alertService: InvestmentAlertService,
     private readonly adapterRegistry: AdapterRegistryService,
-  ) {}
+  ) { }
 
   // ============================================
   // Platform Detection

@@ -94,7 +94,7 @@ export class BehavioralSignalsService {
     'retraite',
   ];
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * Analyser les signaux comportementaux d'un lead
@@ -340,7 +340,7 @@ export class BehavioralSignalsService {
   private getRecommendedAction(
     quality: string,
     score: number,
-  ): { action: string; priority: string; delay: string } {
+  ): { action: string; priority: 'very_high' | 'high' | 'medium' | 'low' | 'none'; delay: string } {
     switch (quality) {
       case 'hot':
         return {
@@ -453,7 +453,7 @@ export class BehavioralSignalsService {
       return acc;
     }, {});
 
-    const maxCount = Math.max(...Object.values(locationCounts as any));
+    const maxCount = Math.max(...(Object.values(locationCounts as any) as number[]));
     return maxCount / locations.length > 0.7;
   }
 

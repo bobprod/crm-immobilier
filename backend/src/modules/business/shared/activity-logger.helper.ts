@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 
 /**
  * Helper pour logger automatiquement les activités métier
  */
 @Injectable()
 export class BusinessActivityLogger {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) { }
 
   // ========== MANDATES ==========
 

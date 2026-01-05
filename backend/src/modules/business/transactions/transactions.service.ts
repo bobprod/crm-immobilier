@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -14,7 +14,7 @@ export class TransactionsService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) {}
+  ) { }
 
   async create(userId: string, createDto: CreateTransactionDto) {
     // Check if reference already exists
@@ -438,8 +438,8 @@ export class TransactionsService {
     // Get mandate to calculate commission
     const mandate = transaction.mandateId
       ? await this.db.mandate.findUnique({
-          where: { id: transaction.mandateId },
-        })
+        where: { id: transaction.mandateId },
+      })
       : null;
 
     if (!mandate) {

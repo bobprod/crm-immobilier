@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BusinessOrchestrator } from './business-orchestrator.service';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { MandatesService } from '../mandates/mandates.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { FinanceService } from '../finance/finance.service';

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { BusinessNotificationHelper } from './notification.helper';
 import { BusinessActivityLogger } from './activity-logger.helper';
 
@@ -15,7 +15,7 @@ export class ScheduledTasksService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) {}
+  ) { }
 
   /**
    * 🕐 Exécuté tous les jours à minuit
@@ -115,7 +115,7 @@ export class ScheduledTasksService {
       for (const mandate of expiringMandates) {
         const daysRemaining = Math.ceil(
           (new Date(mandate.endDate).getTime() - new Date().getTime()) /
-            (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24),
         );
 
         // Only notify for specific thresholds (30 days, 15 days, 7 days, 3 days)
@@ -180,7 +180,7 @@ export class ScheduledTasksService {
       for (const invoice of overdueInvoices) {
         const daysOverdue = Math.floor(
           (new Date().getTime() - new Date(invoice.dueDate).getTime()) /
-            (1000 * 60 * 60 * 24),
+          (1000 * 60 * 60 * 24),
         );
 
         // Notify for specific thresholds (1 day, 7 days, 14 days, 30 days)

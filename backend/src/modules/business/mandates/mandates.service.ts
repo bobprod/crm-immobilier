@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../../shared/services/database/database.service';
+import { PrismaService as DatabaseService } from '../../../shared/database/prisma.service';
 import { CreateMandateDto } from './dto/create-mandate.dto';
 import { UpdateMandateDto } from './dto/update-mandate.dto';
 import { BusinessNotificationHelper } from '../shared/notification.helper';
@@ -11,7 +11,7 @@ export class MandatesService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) {}
+  ) { }
 
   async create(userId: string, createMandateDto: CreateMandateDto) {
     // Check if reference already exists
@@ -383,7 +383,7 @@ export class MandatesService {
     for (const mandate of expiringMandates) {
       const daysRemaining = Math.ceil(
         (new Date(mandate.endDate).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24),
       );
 
       await this.notificationHelper.notifyMandateExpiring(

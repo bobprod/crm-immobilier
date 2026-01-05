@@ -19,7 +19,7 @@ export class WhatsAppService {
     private readonly prisma: PrismaService,
     private readonly metaProvider: MetaCloudProvider,
     private readonly twilioProvider: TwilioProvider,
-  ) {}
+  ) { }
 
   // ═══════════════════════════════════════════════════════════════
   // CONFIG MANAGEMENT
@@ -407,15 +407,15 @@ export class WhatsAppService {
 
   async closeConversation(userId: string, conversationId: string) {
     return this.updateConversation(userId, conversationId, {
-      status: 'closed',
-    });
+      status: 'closed' as any,
+    } as any);
   }
 
   async assignConversation(userId: string, conversationId: string, assignToUserId: string) {
     return this.updateConversation(userId, conversationId, {
-      status: 'assigned',
+      status: 'assigned' as any,
       assignedTo: assignToUserId,
-    });
+    } as any);
   }
 
   // ═══════════════════════════════════════════════════════════════

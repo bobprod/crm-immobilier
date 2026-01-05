@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
-import { DatabaseModule } from '../../../shared/services/database/database.module';
+import { PrismaModule as DatabaseModule } from '../../../shared/database/prisma.module';
 import { BusinessSharedModule } from '../shared/business-shared.module';
 
 @Module({
@@ -10,4 +10,4 @@ import { BusinessSharedModule } from '../shared/business-shared.module';
   providers: [TransactionsService],
   exports: [TransactionsService],
 })
-export class TransactionsModule {}
+export class TransactionsModule { }

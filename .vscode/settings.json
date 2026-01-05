@@ -1,5 +1,7 @@
 {
     "chat.mcp.discovery.enabled": {
         "claude-desktop": true
-    }
+    },
+    "claudeCode.useTerminal": true,
+    "files.autoSave": "onFocusChange"
 }

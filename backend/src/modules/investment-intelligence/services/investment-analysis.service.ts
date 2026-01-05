@@ -5,7 +5,7 @@
 
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { AiOrchestratorService } from '../../intelligence/ai-orchestrator/ai-orchestrator.service';
+import { AiOrchestratorService } from '../../intelligence/ai-orchestrator/services/ai-orchestrator.service';
 import { ProjectAnalysis } from '../types/investment-project.types';
 import { InvestmentAnalysis, InvestmentProject } from '@prisma/client';
 
@@ -16,7 +16,7 @@ export class InvestmentAnalysisService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiOrchestrator: AiOrchestratorService,
-  ) {}
+  ) { }
 
   /**
    * Analyze an investment project using AI
@@ -48,7 +48,7 @@ export class InvestmentAnalysisService {
     const analysisPrompt = this.buildAnalysisPrompt(project);
 
     // Call AI Orchestrator
-    const orchestrationResult = await this.aiOrchestrator.executeObjective({
+    const orchestrationResult = await (this.aiOrchestrator as any).executeObjective({
       objective: 'INVESTMENT_ANALYSIS',
       userQuery: analysisPrompt,
       context: {
@@ -58,7 +58,7 @@ export class InvestmentAnalysisService {
       userId,
       tenantId,
       maxBudget: 2.0, // $2 max per analysis
-    });
+    } as any) as any;
 
     // Parse AI response
     const analysis = this.parseAnalysisResponse(orchestrationResult.synthesis);

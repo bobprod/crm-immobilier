@@ -3,7 +3,7 @@ import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
 import { BrowserlessService, FacebookMarketplaceSearch, ScrapingResult } from './browserless.service';
 import { BehavioralSignalsService, IntentionScore } from './behavioral-signals.service';
-import { PrismaService } from '../../core/database/prisma.service';
+import { PrismaService } from '../../shared/database/prisma.service';
 
 /**
  * Service de gestion des queues de scraping avec Bull
@@ -47,7 +47,7 @@ export class ScrapingQueueService {
     private readonly browserlessService: BrowserlessService,
     private readonly behavioralSignalsService: BehavioralSignalsService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * Ajouter un job de scraping Facebook Marketplace à la queue
@@ -247,14 +247,14 @@ export class ScrapingQueueService {
         this.logger.log(
           `Skipping scoring for ${prospectId}: recent score exists`,
         );
-        return {
+        return ({
           totalScore: prospect.intentionScore || 0,
           quality: prospect.quality as any,
-          breakdown: {},
+          breakdown: {} as any,
           confidence: 0.8,
           signals: [],
           recommendations: [],
-        };
+        } as any);
       }
 
       // 2. Extraire les signaux comportementaux

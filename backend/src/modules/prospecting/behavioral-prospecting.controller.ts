@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { ScrapingQueueService } from './scraping-queue.service';
 import { BehavioralSignalsService } from './behavioral-signals.service';
 import { FacebookMarketplaceSearch } from './browserless.service';
@@ -59,7 +59,7 @@ export class BehavioralProspectingController {
   constructor(
     private readonly scrapingQueueService: ScrapingQueueService,
     private readonly behavioralSignalsService: BehavioralSignalsService,
-  ) {}
+  ) { }
 
   /**
    * ==================== SCRAPING ====================

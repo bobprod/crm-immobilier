@@ -4,7 +4,7 @@ import { MandatesModule } from './mandates/mandates.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { FinanceModule } from './finance/finance.module';
 import { BusinessSharedModule } from './shared/business-shared.module';
-import { DatabaseModule } from '../../shared/services/database/database.module';
+import { PrismaModule as DatabaseModule } from '../../shared/database/prisma.module';
 
 /**
  * Module pour le Business Orchestrator
@@ -23,4 +23,4 @@ import { DatabaseModule } from '../../shared/services/database/database.module';
   providers: [BusinessOrchestrator],
   exports: [BusinessOrchestrator],
 })
-export class BusinessOrchestratorModule {}
+export class BusinessOrchestratorModule { }

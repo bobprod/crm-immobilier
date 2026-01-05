@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { IntegrationsService, CreateIntegrationDto, UpdateIntegrationDto } from './integrations.service';
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 
 /**
  * 🔌 Contrôleur pour la gestion des intégrations API utilisateur
@@ -28,7 +28,7 @@ import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 @Controller('integrations')
 @UseGuards(JwtAuthGuard)
 export class IntegrationsController {
-  constructor(private readonly integrationsService: IntegrationsService) {}
+  constructor(private readonly integrationsService: IntegrationsService) { }
 
   /**
    * 📋 Lister toutes les intégrations de l'utilisateur

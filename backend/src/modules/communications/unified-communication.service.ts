@@ -79,7 +79,7 @@ export class UnifiedCommunicationService {
     private emailService: EmailService,
     private smsService: SmsService,
     private whatsappService: WhatsAppService,
-  ) {}
+  ) { }
 
   /**
    * 📤 Envoyer un message via le canal approprié
@@ -101,7 +101,7 @@ export class UnifiedCommunicationService {
             subject: options.subject || 'Message from CRM',
             html: options.content,
             text: options.content,
-          });
+          } as any);
           externalMessageId = result.messageId;
           break;
 
@@ -110,7 +110,7 @@ export class UnifiedCommunicationService {
             to: options.to as string,
             message: options.content,
             from: options.from,
-          });
+          } as any);
           externalMessageId = result.messageId;
           break;
 
@@ -119,7 +119,7 @@ export class UnifiedCommunicationService {
           result = await this.whatsappService.sendTextMessage(userId, {
             to: options.to as string,
             body: options.content,
-          });
+          } as any);
           externalMessageId = result.message?.id;
           break;
 
@@ -357,7 +357,7 @@ export class UnifiedCommunicationService {
       ) {
         const whatsappMessage = whatsappMessageMap.get(
           comm.metadata.externalMessageId,
-        );
+        ) as any;
         if (whatsappMessage) {
           return {
             ...comm,

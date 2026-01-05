@@ -212,7 +212,7 @@ export class MetaCloudProvider {
 
       const formData = new FormData();
       formData.append('messaging_product', 'whatsapp');
-      formData.append('file', new Blob([file], { type: mimeType }));
+      formData.append('file', file as any);
 
       const response = await this.axiosInstance.post(url, formData, {
         headers: {
