@@ -189,14 +189,6 @@ enum CampaignType {
   recurring
 }
 
-enum CampaignStatus {
-  draft
-  scheduled
-  running
-  completed
-  paused
-  cancelled
-}
 
 enum RecipientStatus {
   pending
