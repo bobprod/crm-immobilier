@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
+import { TrackingPixelsLoader, useVitrineTracking } from '@/shared/components/vitrine/TrackingPixelsLoader';
 import api from '@/shared/utils/api-client';
 import { Home, MapPin, Bed, Bath, Square, Phone, Mail, MapPinned } from 'lucide-react';
 
@@ -53,6 +54,7 @@ interface Property {
 export default function PublicVitrinePage() {
   const router = useRouter();
   const { agencyId } = router.query;
+  const { trackSearch } = useVitrineTracking();
 
   const [config, setConfig] = useState<VitrineConfig | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -128,6 +130,9 @@ export default function PublicVitrinePage() {
         <meta property="og:description" content={config.seoDescription || ''} />
         <meta property="og:type" content="website" />
       </Head>
+
+      {/* Charger automatiquement les pixels de tracking configurés pour cette agence */}
+      {typeof agencyId === 'string' && <TrackingPixelsLoader agencyId={agencyId} />}
 
       <div className="min-h-screen bg-white">
         {/* Header / Navigation */}

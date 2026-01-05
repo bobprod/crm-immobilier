@@ -198,6 +198,71 @@ export class CommunicationsService {
     });
   }
 
+  async getTemplateById(id: string, userId: string) {
+    const template = await this.prisma.communication_templates.findFirst({
+      where: { id, userId },
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    return template;
+  }
+
+  async updateTemplate(id: string, userId: string, dto: UpdateTemplateDto) {
+    // Vérifier que le template existe et appartient à l'utilisateur
+    const template = await this.prisma.communication_templates.findFirst({
+      where: { id, userId },
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    return this.prisma.communication_templates.update({
+      where: { id },
+      data: {
+        ...(dto.name && { name: dto.name }),
+        ...(dto.subject !== undefined && { subject: dto.subject }),
+        ...(dto.content && { content: dto.content }),
+        ...(dto.variables && { variables: dto.variables }),
+      },
+    });
+  }
+
+  async deleteTemplate(id: string, userId: string) {
+    // Vérifier que le template existe et appartient à l'utilisateur
+    const template = await this.prisma.communication_templates.findFirst({
+      where: { id, userId },
+    });
+
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    // Soft delete: marquer comme inactif plutôt que supprimer
+    await this.prisma.communication_templates.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    return { success: true, message: 'Template supprimé avec succès' };
+  }
+
+  async getCommunicationById(id: string, userId: string) {
+    const communication = await this.prisma.communications.findFirst({
+      where: { id, userId },
+      include: { prospects: true, properties: true, template: true },
+    });
+
+    if (!communication) {
+      throw new Error('Communication not found');
+    }
+
+    return communication;
+  }
+
   async getStats(userId: string) {
     const [total, sent, failed, emails, sms, whatsapp] = await Promise.all([
       this.prisma.communications.count({ where: { userId } }),

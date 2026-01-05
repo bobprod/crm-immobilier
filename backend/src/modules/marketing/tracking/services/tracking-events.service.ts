@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TrackingEvent, TrackingPlatform } from '../dto';
 import { ConversionPredictionService } from '../ml/conversion-prediction.service';
+import { TrackingRealtimeGateway } from '../analytics/tracking-realtime.gateway';
 
 /**
  * Service de tracking des événements marketing
@@ -11,6 +12,8 @@ export class TrackingEventsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conversionPrediction: ConversionPredictionService,
+    @Inject(forwardRef(() => TrackingRealtimeGateway))
+    private readonly realtimeGateway: TrackingRealtimeGateway,
   ) {}
 
   async trackEvent(userId: string, event: TrackingEvent) {
@@ -34,11 +37,12 @@ export class TrackingEventsService {
     });
 
     // Prédiction ML si PageView ou événement important
+    let finalEvent = savedEvent;
     if (event.eventName === 'PageView' || event.eventName === 'ViewContent') {
       const prediction = await this.conversionPrediction.predictConversion(userId, event);
 
       if (prediction) {
-        await this.prisma.trackingEvent.update({
+        finalEvent = await this.prisma.trackingEvent.update({
           where: { id: savedEvent.id },
           data: {
             conversionProbability: prediction.probability,
@@ -48,7 +52,22 @@ export class TrackingEventsService {
       }
     }
 
-    return savedEvent;
+    // Émettre l'événement en temps réel via WebSocket
+    try {
+      this.realtimeGateway?.emitTrackingEvent({
+        userId,
+        platform: event.platform[0],
+        eventName: event.eventName,
+        eventData: event.data,
+        timestamp: finalEvent.timestamp,
+        id: finalEvent.id,
+      });
+    } catch (error) {
+      // Ne pas bloquer si WebSocket échoue
+      console.error('Failed to emit realtime event:', error);
+    }
+
+    return finalEvent;
   }
 
   async getEvents(
