@@ -11,6 +11,7 @@ export enum TrackingPlatform {
   GA4 = 'ga4',
   GTM = 'gtm',
   SNAPCHAT = 'snapchat',
+  VITRINE = 'vitrine',
 }
 
 /**

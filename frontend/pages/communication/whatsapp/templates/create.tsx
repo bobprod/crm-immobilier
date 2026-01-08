@@ -248,7 +248,7 @@ export default function CreateTemplatePage() {
               <span className="text-xs text-gray-500 self-center">etc...</span>
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              Les variables doivent être séquentielles ({{1}}, {{2}}, {{3}}...)
+              Les variables doivent être séquentielles ({'{{1}}, {{2}}, {{3}}...'})
             </p>
           </div>
         </div>

@@ -69,23 +69,23 @@ export interface ProspectEnhanced {
   preferences?: any;
   source?: string;
   status:
-    | 'active'
-    | 'inactive'
-    | 'converted'
-    | 'lost'
-    | 'archived'
-    | 'lead'
-    | 'contacted'
-    | 'qualified'
-    | 'negotiation'
-    | 'closing';
+  | 'active'
+  | 'inactive'
+  | 'converted'
+  | 'lost'
+  | 'archived'
+  | 'lead'
+  | 'contacted'
+  | 'qualified'
+  | 'negotiation'
+  | 'closing';
   score: number;
   prospectType?:
-    | 'requete_location'
-    | 'requete_achat'
-    | 'mandat_location'
-    | 'mandat_vente'
-    | 'promoteur';
+  | 'requete_location'
+  | 'requete_achat'
+  | 'mandat_location'
+  | 'mandat_vente'
+  | 'promoteur';
   subType?: string;
   searchCriteria?: SearchCriteria;
   mandatInfo?: any;
@@ -262,7 +262,7 @@ export function useProspectsEnhanced() {
   }, []);
 
   // Changer l'étape du funnel
-  const changeStage = useCallback(async (prospectId: string, stage: string) => {
+  const changeStage = useCallback(async (prospectId: string, stage: ProspectEnhanced['status']) => {
     try {
       setError(null);
       const updated = await prospectsEnhancedAPI.changeStage(prospectId, stage);

@@ -3,7 +3,7 @@ import { ApiKeysService } from '../services/api-keys.service';
 import { AiCreditsService } from '../services/ai-credits.service';
 import { AiPricingService } from '../services/ai-pricing.service';
 import { AiErrorLogService } from '../services/ai-error-log.service';
-import { PrismaService } from '../database/prisma.service';
+import { PrismaModule } from '../database/prisma.module';
 
 /**
  * ═════════════════════════════════════════════════════════════════════
@@ -55,9 +55,8 @@ import { PrismaService } from '../database/prisma.service';
  * ```
  */
 @Module({
-  imports: [],
+  imports: [PrismaModule],
   providers: [
-    PrismaService,
     ApiKeysService,
     AiCreditsService,
     AiPricingService,
@@ -70,4 +69,4 @@ import { PrismaService } from '../database/prisma.service';
     AiErrorLogService,
   ],
 })
-export class AiBillingModule {}
+export class AiBillingModule { }

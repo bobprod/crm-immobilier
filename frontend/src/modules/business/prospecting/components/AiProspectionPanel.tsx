@@ -179,14 +179,26 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
                 2. Critères de Ciblage
               </h3>
               <DemographicTargeting
-                targetType={configuration.targetType}
-                propertyType={configuration.propertyType}
-                budget={configuration.budget}
-                keywords={configuration.keywords || []}
-                onTargetTypeChange={handleTargetTypeChange}
-                onPropertyTypeChange={handlePropertyTypeChange}
-                onBudgetChange={handleBudgetChange}
-                onKeywordsChange={handleKeywordsChange}
+                initialCriteria={{
+                  propertyIntent:
+                    configuration.targetType === 'buyers'
+                      ? ['buy']
+                      : configuration.targetType === 'sellers'
+                        ? ['sell']
+                        : configuration.targetType === 'investors'
+                          ? ['invest']
+                          : ['rent'],
+                  propertyTypes: [configuration.propertyType],
+                  budgetRange: configuration.budget || undefined,
+                }}
+                onChange={(criteria) => {
+                  updateConfiguration({
+                    targetType: configuration.targetType,
+                    propertyType: configuration.propertyType,
+                    budget: criteria.budgetRange,
+                    keywords: criteria.interests || configuration.keywords,
+                  });
+                }}
                 disabled={isLocked}
               />
             </div>

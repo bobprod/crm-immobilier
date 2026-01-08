@@ -565,11 +565,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${
-                  activeTab === tab.id
+                className={`px-5 py-3 text-sm font-medium rounded-xl transition-all whitespace-nowrap ${activeTab === tab.id
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.label}
@@ -981,11 +980,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                         }
                       }}
                       disabled={scrapingInProgress}
-                      className={`w-full py-2 rounded-lg font-medium transition ${
-                        scrapingInProgress
+                      className={`w-full py-2 rounded-lg font-medium transition ${scrapingInProgress
                           ? 'bg-gray-100 text-gray-400'
                           : `bg-${source.color}-100 text-${source.color}-700 hover:bg-${source.color}-200`
-                      }`}
+                        }`}
                     >
                       {scrapingInProgress ? 'Scraping...' : '⚙️ Configurer'}
                     </button>
@@ -1025,9 +1023,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 {[1, 2, 3].map((step) => (
                   <div
                     key={step}
-                    className={`flex-1 h-1 rounded-full ${
-                      step <= campaignStep ? 'bg-white' : 'bg-white/30'
-                    }`}
+                    className={`flex-1 h-1 rounded-full ${step <= campaignStep ? 'bg-white' : 'bg-white/30'
+                      }`}
                   />
                 ))}
               </div>
@@ -1314,9 +1311,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">🔗 Source</h3>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source)}`}
+                    className={`px-3 py-1 rounded-full text-sm ${getSourceColor(selectedLead.source as any)}`}
                   >
-                    {getSourceLabel(selectedLead.source)}
+                    {getSourceLabel(selectedLead.source as any)}
                   </span>
                 </div>
               )}
@@ -1414,15 +1411,14 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                           </div>
                           <div className="text-right">
                             <div
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${
-                                match.score >= 80
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${match.score >= 80
                                   ? 'bg-green-100 text-green-700'
                                   : match.score >= 60
                                     ? 'bg-blue-100 text-blue-700'
                                     : match.score >= 50
                                       ? 'bg-yellow-100 text-yellow-700'
                                       : 'bg-red-100 text-red-700'
-                              }`}
+                                }`}
                             >
                               {match.score}%
                             </div>

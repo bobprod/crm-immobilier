@@ -42,6 +42,11 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.startsWith('sk-');
+    // Clés OpenAI commencent par sk- (ou sk-proj-) et font ~51+ caractères
+    return (
+      !!this.apiKey &&
+      this.apiKey.startsWith('sk-') &&
+      this.apiKey.length >= 40
+    );
   }
 }

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 120 npm run start:dev:*)",
+      "Bash(tee:*)",
+      "Bash(test:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(set \"TURBOPACK=0\")",
+      "Bash(npx next build --help:*)",
+      "Bash(npx next build:*)"
+    ]
+  }
+}

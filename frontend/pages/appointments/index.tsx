@@ -1,22 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Calendar, Clock, MapPin, User, Plus } from 'lucide-react';
-import { apiClient } from '../../src/shared/utils/api-client-backend';
+import { appointmentsAPI, Appointment } from '@/shared/utils/appointments-api';
 import { useRouter } from 'next/router';
-
-interface Appointment {
-  id: string;
-  title: string;
-  type: string;
-  startTime: string;
-  endTime: string;
-  location?: string;
-  attendees: string[];
-  status: string;
-}
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -28,27 +17,40 @@ export default function AppointmentsPage() {
   }, []);
 
   const loadAppointments = async () => {
+    console.log('[AppointmentsPage] 🔄 Starting to load appointments...');
     try {
       // Vérifier que le token existe avant de faire la requête
       const token = localStorage.getItem('auth_token');
+      console.log('[AppointmentsPage] 🔑 Token check:', token ? 'Token found' : 'No token');
+
       if (!token) {
-        console.error('[Appointments] No token found, cannot fetch data');
-        setAppointments([]);
-        setLoading(false);
-        return;
+        console.warn('[AppointmentsPage] ⚠️ No token found, trying without auth...');
+        // Ne pas arrêter, essayer quand même
       }
 
-      console.log('[Appointments] Fetching upcoming appointments...');
-      const response = await apiClient.get('/appointments/upcoming');
+      console.log('[AppointmentsPage] 📡 Fetching upcoming appointments...');
+      const data = await appointmentsAPI.getUpcoming();
 
-      console.log('[Appointments] Response received:', response.data);
-      setAppointments(response.data || []);
+      console.log('[AppointmentsPage] ✅ Response received:', {
+        dataLength: data?.length || 0,
+        data: data
+      });
+
+      const appointmentsData = Array.isArray(data) ? data : [];
+      console.log('[AppointmentsPage] 📋 Setting appointments:', appointmentsData.length, 'items');
+      setAppointments(appointmentsData);
     } catch (error: any) {
-      console.error('[Appointments] Erreur chargement RDV:', error);
-      console.error('[Appointments] Error details:', error.response?.status, error.response?.data);
+      console.error('[AppointmentsPage] ❌ Error loading appointments:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
       // Définir un tableau vide en cas d'erreur au lieu de crasher
       setAppointments([]);
     } finally {
+      console.log('[AppointmentsPage] ⏹️ Loading finished');
       setLoading(false);
     }
   };
@@ -106,7 +108,7 @@ export default function AppointmentsPage() {
 
                 <div className="flex items-center gap-2 text-sm">
                   <User className="h-4 w-4" />
-                  <span>{apt.attendees.length} participant(s)</span>
+                  <span>{apt.attendees?.length || 0} participant(s)</span>
                 </div>
 
                 <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>

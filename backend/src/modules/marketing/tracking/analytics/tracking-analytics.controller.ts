@@ -12,7 +12,7 @@ export class TrackingAnalyticsController {
 
   @Get('realtime')
   @ApiOperation({ summary: 'Obtenir événements en temps réel' })
-  async getRealTimeEvents(@Request() req, @Query('limit') limit?: number) {
+  async getRealTimeEvents(@Request() req, @Query('limit') limit?: string) {
     return this.analyticsService.getRealTimeEvents(req.user.userId, limit ? parseInt(limit) : 20);
   }
 
@@ -49,7 +49,7 @@ export class TrackingAnalyticsController {
   async getTopEvents(
     @Request() req,
     @Query('period') period?: 'day' | 'week' | 'month',
-    @Query('limit') limit?: number
+    @Query('limit') limit?: string
   ) {
     return this.analyticsService.getTopEvents(req.user.userId, period || 'week', limit ? parseInt(limit) : 5);
   }

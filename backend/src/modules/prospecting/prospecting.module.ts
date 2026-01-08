@@ -20,6 +20,8 @@ import { CommunicationsModule } from '../communications/communications.module';
     ScheduleModule.forRoot(),
     ConfigModule,
     CommunicationsModule,
+    SeoAiModule,
+    LLMConfigModule,
     BullModule.registerQueue(
       { name: 'scraping' },
       { name: 'scoring' },

@@ -23,7 +23,7 @@ export class AiOrchestratorService {
     private readonly executionPlanner: ExecutionPlannerService,
     private readonly toolExecutor: ToolExecutorService,
     private readonly budgetTracker: BudgetTrackerService,
-  ) {}
+  ) { }
 
   /**
    * Point d'entrée principal : orchestrer une demande
@@ -150,7 +150,7 @@ export class AiOrchestratorService {
 
       return {
         status: OrchestrationStatus.FAILED,
-        errors: [error.message],
+        errors: [error?.message || String(error)],
         metrics: {
           totalDurationMs: Date.now() - startTime,
           successfulCalls: 0,
@@ -165,7 +165,7 @@ export class AiOrchestratorService {
    */
   private synthesizeResults(objective: string, results: any[]): any {
     // Trouver le dernier résultat réussi (souvent le plus pertinent)
-    const lastSuccess = results.reverse().find((r) => r.success);
+    const lastSuccess = [...results].reverse().find((r) => r.success);
 
     if (!lastSuccess) {
       return null;

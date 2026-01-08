@@ -378,8 +378,8 @@ function CreateAppointmentDialog({ open, onOpenChange, onSuccess }: any) {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [location, setLocation] = useState('');
-  const [type, setType] = useState('visit');
-  const [priority, setPriority] = useState('medium');
+  const [type, setType] = useState<Appointment['type']>('visit');
+  const [priority, setPriority] = useState<Appointment['priority']>('medium');
   const { toast } = useToast();
 
   const handleSubmit = async () => {
@@ -454,7 +454,7 @@ function CreateAppointmentDialog({ open, onOpenChange, onSuccess }: any) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="type">Type</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(value) => setType(value as Appointment['type'])}>
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
@@ -471,7 +471,7 @@ function CreateAppointmentDialog({ open, onOpenChange, onSuccess }: any) {
 
             <div>
               <Label htmlFor="priority">Priorité</Label>
-              <Select value={priority} onValueChange={setPriority}>
+              <Select value={priority} onValueChange={(value) => setPriority(value as Appointment['priority'])}>
                 <SelectTrigger id="priority">
                   <SelectValue />
                 </SelectTrigger>

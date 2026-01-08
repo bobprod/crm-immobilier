@@ -5,12 +5,14 @@ interface Toast {
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive';
+  action?: React.ReactNode;
 }
 
 interface ToastOptions {
   title?: string;
   description?: string;
   variant?: 'default' | 'destructive';
+  action?: React.ReactNode;
 }
 
 export function useToast() {

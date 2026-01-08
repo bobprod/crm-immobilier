@@ -106,8 +106,8 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
     // Validation telephone
     const phoneValid = lead.phone
       ? /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(
-          lead.phone.replace(/\s/g, '')
-        )
+        lead.phone.replace(/\s/g, '')
+      )
       : false;
     const phoneSpam = lead.phone
       ? SPAM_PATTERNS.phonePatterns.some((p) => p.test(lead.phone!))
@@ -224,7 +224,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
   const filteredLeads = leads.filter((lead) => {
     const result = validationResults.get(lead.id);
     if (filter === 'all') return true;
-    if (!result) return filter === 'all';
+    if (!result) return false;
     return result.overall.status === filter;
   });
 
@@ -332,11 +332,10 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                filter === f
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filter === f
                   ? 'bg-teal-600 text-white'
                   : 'bg-white border text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {f === 'all'
                 ? 'Tous'
@@ -425,13 +424,12 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                         <span className="text-sm text-gray-600">Score:</span>
                         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full transition-all ${
-                              result.overall.score >= 70
+                            className={`h-full transition-all ${result.overall.score >= 70
                                 ? 'bg-green-500'
                                 : result.overall.score >= 40
                                   ? 'bg-yellow-500'
                                   : 'bg-red-500'
-                            }`}
+                              }`}
                             style={{ width: `${result.overall.score}%` }}
                           />
                         </div>

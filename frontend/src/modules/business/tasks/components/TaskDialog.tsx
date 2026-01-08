@@ -79,7 +79,7 @@ export function TaskDialog({ open, onOpenChange, task, onSubmit }: TaskDialogPro
   const handleSubmit = async (values: TaskFormValues) => {
     try {
       setIsSubmitting(true);
-      await onSubmit(values);
+      await onSubmit(values as CreateTaskDto);
       onOpenChange(false);
       form.reset();
     } catch (error: any) {

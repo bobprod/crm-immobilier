@@ -3,7 +3,7 @@
  * Architecture DDD - Module Business/Mandates
  */
 
-import apiClient from './api-client';
+import apiClient from './backend-api';
 
 /**
  * Interfaces de types pour les mandats
@@ -104,55 +104,62 @@ export const mandatesAPI = {
     }
     const query = params.toString();
     const url = `/api/business/mandates${query ? `?${query}` : ''}`;
-    return apiClient.get<Mandate[]>(url);
+    const response = await apiClient.get<Mandate[]>(url);
+    return response.data;
   },
 
   /**
    * Récupère un mandat par son ID
    */
   getById: async (id: string): Promise<Mandate> => {
-    return apiClient.get<Mandate>(`/api/business/mandates/${id}`);
+    const response = await apiClient.get<Mandate>(`/api/business/mandates/${id}`);
+    return response.data;
   },
 
   /**
    * Crée un nouveau mandat
    */
   create: async (data: CreateMandateData): Promise<Mandate> => {
-    return apiClient.post<Mandate>('/api/business/mandates', data);
+    const response = await apiClient.post<Mandate>('/api/business/mandates', data);
+    return response.data;
   },
 
   /**
    * Met à jour un mandat existant
    */
   update: async (id: string, data: UpdateMandateData): Promise<Mandate> => {
-    return apiClient.patch<Mandate>(`/api/business/mandates/${id}`, data);
+    const response = await apiClient.patch<Mandate>(`/api/business/mandates/${id}`, data);
+    return response.data;
   },
 
   /**
    * Supprime un mandat
    */
   delete: async (id: string): Promise<void> => {
-    return apiClient.delete(`/api/business/mandates/${id}`);
+    await apiClient.delete(`/api/business/mandates/${id}`);
   },
 
   /**
    * Annule un mandat
    */
   cancel: async (id: string, reason: string): Promise<Mandate> => {
-    return apiClient.post<Mandate>(`/api/business/mandates/${id}/cancel`, { reason });
+    const response = await apiClient.post<Mandate>(`/api/business/mandates/${id}/cancel`, { reason });
+    return response.data;
   },
 
   /**
    * Récupère les statistiques des mandats
    */
   getStats: async (): Promise<MandateStats> => {
-    return apiClient.get<MandateStats>('/api/business/mandates/stats');
+    const response = await apiClient.get<MandateStats>('/api/business/mandates/stats');
+    return response.data;
   },
 
   /**
    * Vérifie les mandats expirés
    */
   checkExpired: async (): Promise<Mandate[]> => {
-    return apiClient.post<Mandate[]>('/api/business/mandates/check-expired', {});
+    const response = await apiClient.post<Mandate[]>('/api/business/mandates/check-expired', {});
+    return response.data;
   },
 };

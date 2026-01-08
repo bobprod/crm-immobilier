@@ -64,49 +64,47 @@ export default function SettingsPage() {
 
         {/* Quick Links to Configuration Pages */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push('/settings/ai-api-keys')}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                  <Search className="h-6 w-6 text-purple-600" />
+          <div className="cursor-pointer" onClick={() => router.push('/settings/ai-api-keys')}>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <Search className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                      Clés API (BYOK)
+                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Configurez vos clés API pour LLM (Claude, GPT) et Scraping (Pica, SERP, Firecrawl)
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-                    Clés API (BYOK)
-                    <ExternalLink className="h-4 w-4 text-gray-400" />
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Configurez vos clés API pour LLM (Claude, GPT) et Scraping (Pica, SERP, Firecrawl)
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => router.push('/settings/llm-config')}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="h-6 w-6 text-indigo-600" />
+          <div className="cursor-pointer" onClick={() => router.push('/settings/llm-config')}>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                      Configuration LLM / IA
+                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Configurez les modèles d'IA pour l'analyse automatique et l'optimisation SEO
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1 flex items-center gap-2">
-                    Configuration LLM / IA
-                    <ExternalLink className="h-4 w-4 text-gray-400" />
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Configurez les modèles d'IA pour l'analyse automatique et l'optimisation SEO
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Profil */}

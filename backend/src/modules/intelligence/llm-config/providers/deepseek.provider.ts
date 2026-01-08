@@ -53,6 +53,11 @@ export class DeepSeekProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.length > 10;
+    // Clés DeepSeek (format API standard)
+    return (
+      !!this.apiKey &&
+      this.apiKey.length >= 32 &&
+      (this.apiKey.startsWith('sk-') || this.apiKey.length > 40)
+    );
   }
 }

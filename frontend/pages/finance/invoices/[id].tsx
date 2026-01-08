@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -192,7 +192,7 @@ export default function InvoiceDetailPage() {
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Date d'émission</p>
-                                        <p className="font-medium">{format(new Date(invoice.issueDate), 'dd/MM/yyyy')}</p>
+                                        <p className="font-medium">{format(new Date(invoice.createdAt), 'dd/MM/yyyy')}</p>
                                     </div>
                                 </div>
 

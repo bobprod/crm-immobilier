@@ -8,11 +8,11 @@ export interface ConversionEvent {
   id: string;
   prospectId: string;
   eventType:
-    | 'lead_created'
-    | 'prospect_qualified'
-    | 'property_viewed'
-    | 'appointment_scheduled'
-    | 'deal_closed';
+  | 'lead_created'
+  | 'prospect_qualified'
+  | 'property_viewed'
+  | 'appointment_scheduled'
+  | 'deal_closed';
   eventName?: string;
   propertyId?: string;
   appointmentId?: string;
@@ -198,3 +198,17 @@ export async function getAllConversions(filters?: {
   });
   return response.data;
 }
+
+// Backward-compatible API object expected by some pages
+export const prospectsConversionApi = {
+  getById: getPerformanceReport,
+  getAll: getAllConversions,
+  detectConversions,
+  trackProspectQualified,
+  trackMeetingBooked,
+  trackVisitCompleted,
+  trackOfferMade,
+  trackContractSigned,
+  getAgentContribution,
+  getHighRoiProspects,
+};

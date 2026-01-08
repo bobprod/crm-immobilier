@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 
-type AttributionModel =
+export type AttributionModel =
   | 'first_touch'
   | 'last_touch'
   | 'linear'
@@ -9,14 +9,14 @@ type AttributionModel =
   | 'position_based'
   | 'data_driven';
 
-interface TouchPoint {
+export interface TouchPoint {
   platform: string;
   eventName: string;
   timestamp: Date;
   sessionId: string;
 }
 
-interface AttributionResult {
+export interface AttributionResult {
   platform: string;
   credit: number; // 0-100
   touchpoints: number;

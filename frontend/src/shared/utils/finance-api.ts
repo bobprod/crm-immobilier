@@ -180,7 +180,7 @@ export interface CreatePaymentDTO {
   metadata?: any;
 }
 
-export interface UpdatePaymentDTO extends Partial<CreatePaymentDTO> {}
+export interface UpdatePaymentDTO extends Partial<CreatePaymentDTO> { }
 
 export interface PaymentFilters {
   invoiceId?: string;
@@ -197,6 +197,7 @@ export interface FinanceStats {
     paid: number;
     totalAmount: number;
     paidAmount: number;
+    pendingAmount: number;
   };
   invoices: {
     total: number;
@@ -206,6 +207,7 @@ export interface FinanceStats {
     overdue: number;
     totalAmount: number;
     paidAmount: number;
+    pendingAmount: number;
   };
   payments: {
     total: number;

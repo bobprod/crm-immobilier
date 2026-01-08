@@ -40,6 +40,11 @@ export class GeminiProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.length > 20;
+    // Clés API Google commencent généralement par AIza et font ~39 caractères
+    return (
+      !!this.apiKey &&
+      this.apiKey.length >= 30 &&
+      (this.apiKey.startsWith('AIza') || this.apiKey.length > 35)
+    );
   }
 }

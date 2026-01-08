@@ -15,7 +15,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 @Module({
   imports: [
     QuickWinsLLMModule,
-    AIChatAssistantModule,
+    forwardRef(() => AIChatAssistantModule),
     forwardRef(() => WhatsAppModule),
   ],
   controllers: [CommunicationsController, IntegrationsController],

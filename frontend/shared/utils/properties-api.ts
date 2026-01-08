@@ -3,7 +3,23 @@
  * Architecture DDD - Module Business/Properties
  */
 
-import apiClient, { PaginatedResponse, PaginationParams } from './api-client';
+import apiClient from './backend-api';
+
+// Types de pagination
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 /**
  * Interfaces de types pour les biens immobiliers
@@ -110,72 +126,110 @@ class PropertiesAPIService {
    * Récupérer tous les biens de l'utilisateur connecté
    */
   async getMyProperties(params?: PaginationParams & PropertyFilters): Promise<PaginatedResponse<Property>> {
-    return apiClient.get<PaginatedResponse<Property>>('/properties', { params });
+    const response = await apiClient.get<PaginatedResponse<Property>>('/properties', { params });
+    return response.data;
+  }
+
+  /**
+   * Alias pour getMyProperties (utilisé dans les composants)
+   */
+  async list(params?: PaginationParams & PropertyFilters): Promise<PaginatedResponse<Property>> {
+    return this.getMyProperties(params);
   }
 
   /**
    * Récupérer un bien par son ID
    */
   async getPropertyById(id: string): Promise<Property> {
-    return apiClient.get<Property>(`/properties/${id}`);
+    const response = await apiClient.get<Property>(`/properties/${id}`);
+    return response.data;
   }
 
   /**
    * Créer un nouveau bien
    */
   async createProperty(data: CreatePropertyData): Promise<Property> {
-    return apiClient.post<Property>('/properties', data);
+    const response = await apiClient.post<Property>('/properties', data);
+    return response.data;
+  }
+
+  /**
+   * Alias pour createProperty (utilisé dans les composants)
+   */
+  async create(data: CreatePropertyData): Promise<Property> {
+    return this.createProperty(data);
   }
 
   /**
    * Mettre à jour un bien
    */
   async updateProperty(id: string, data: UpdatePropertyData): Promise<Property> {
-    return apiClient.patch<Property>(`/properties/${id}`, data);
+    const response = await apiClient.patch<Property>(`/properties/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * Alias pour updateProperty (utilisé dans les composants)
+   */
+  async update(id: string, data: UpdatePropertyData): Promise<Property> {
+    return this.updateProperty(id, data);
   }
 
   /**
    * Supprimer un bien
    */
   async deleteProperty(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/properties/${id}`);
+    const response = await apiClient.delete<{ message: string }>(`/properties/${id}`);
+    return response.data;
+  }
+
+  /**
+   * Alias pour deleteProperty (utilisé dans les composants)
+   */
+  async delete(id: string): Promise<{ message: string }> {
+    return this.deleteProperty(id);
   }
 
   /**
    * Rechercher des biens avec filtres
    */
   async searchProperties(filters: PropertyFilters, params?: PaginationParams): Promise<PaginatedResponse<Property>> {
-    return apiClient.get<PaginatedResponse<Property>>('/properties/search', {
+    const response = await apiClient.get<PaginatedResponse<Property>>('/properties/search', {
       params: { ...filters, ...params }
     });
+    return response.data;
   }
 
   /**
    * Récupérer les biens publiés (vitrine)
    */
   async getPublishedProperties(params?: PaginationParams): Promise<PaginatedResponse<Property>> {
-    return apiClient.get<PaginatedResponse<Property>>('/properties/published', { params });
+    const response = await apiClient.get<PaginatedResponse<Property>>('/properties/published', { params });
+    return response.data;
   }
 
   /**
    * Publier un bien (rendre visible sur la vitrine)
    */
   async publishProperty(id: string, isFeatured: boolean = false): Promise<Property> {
-    return apiClient.post<Property>(`/properties/${id}/publish`, { isFeatured });
+    const response = await apiClient.post<Property>(`/properties/${id}/publish`, { isFeatured });
+    return response.data;
   }
 
   /**
    * Dépublier un bien
    */
   async unpublishProperty(id: string): Promise<Property> {
-    return apiClient.post<Property>(`/properties/${id}/unpublish`);
+    const response = await apiClient.post<Property>(`/properties/${id}/unpublish`);
+    return response.data;
   }
 
   /**
    * Récupérer les statistiques des biens
    */
   async getPropertyStats(): Promise<PropertyStats> {
-    return apiClient.get<PropertyStats>('/properties/stats');
+    const response = await apiClient.get<PropertyStats>('/properties/stats');
+    return response.data;
   }
 
   /**
@@ -187,27 +241,30 @@ class PropertiesAPIService {
       formData.append('images', image);
     });
 
-    return apiClient.post<Property>(`/properties/${id}/images`, formData, {
+    const response = await apiClient.post<Property>(`/properties/${id}/images`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
   }
 
   /**
    * Supprimer une image d'un bien
    */
   async deletePropertyImage(id: string, imageUrl: string): Promise<Property> {
-    return apiClient.delete<Property>(`/properties/${id}/images`, {
+    const response = await apiClient.delete<Property>(`/properties/${id}/images`, {
       data: { imageUrl }
     });
+    return response.data;
   }
 
   /**
    * Générer une description IA pour un bien
    */
   async generatePropertyDescription(id: string): Promise<{ description: string }> {
-    return apiClient.post<{ description: string }>(`/properties/${id}/generate-description`);
+    const response = await apiClient.post<{ description: string }>(`/properties/${id}/generate-description`);
+    return response.data;
   }
 
   /**
@@ -219,91 +276,103 @@ class PropertiesAPIService {
     keywords: string[];
     slug: string;
   }> {
-    return apiClient.post(`/properties/${id}/optimize-seo`);
+    const response = await apiClient.post(`/properties/${id}/optimize-seo`);
+    return response.data;
   }
 
   /**
    * Récupérer les biens similaires
    */
   async getSimilarProperties(id: string, limit: number = 5): Promise<Property[]> {
-    return apiClient.get<Property[]>(`/properties/${id}/similar`, {
+    const response = await apiClient.get<Property[]>(`/properties/${id}/similar`, {
       params: { limit }
     });
+    return response.data;
   }
 
   /**
    * Récupérer les biens favoris
    */
   async getFavoriteProperties(): Promise<Property[]> {
-    return apiClient.get<Property[]>('/properties/favorites');
+    const response = await apiClient.get<Property[]>('/properties/favorites');
+    return response.data;
   }
 
   /**
    * Ajouter un bien aux favoris
    */
   async addToFavorites(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/properties/${id}/favorite`);
+    const response = await apiClient.post<{ message: string }>(`/properties/${id}/favorite`);
+    return response.data;
   }
 
   /**
    * Retirer un bien des favoris
    */
   async removeFromFavorites(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/properties/${id}/favorite`);
+    const response = await apiClient.delete<{ message: string }>(`/properties/${id}/favorite`);
+    return response.data;
   }
 
   /**
    * Récupérer les biens récemment vus
    */
   async getRecentlyViewed(limit: number = 10): Promise<Property[]> {
-    return apiClient.get<Property[]>('/properties/recently-viewed', {
+    const response = await apiClient.get<Property[]>('/properties/recently-viewed', {
       params: { limit }
     });
+    return response.data;
   }
 
   /**
    * Marquer un bien comme vu
    */
   async markAsViewed(id: string): Promise<{ message: string }> {
-    return apiClient.post<{ message: string }>(`/properties/${id}/view`);
+    const response = await apiClient.post<{ message: string }>(`/properties/${id}/view`);
+    return response.data;
   }
 
   /**
    * Exporter les données d'un bien
    */
   async exportPropertyData(id: string, format: 'pdf' | 'excel' | 'word'): Promise<Blob> {
-    return apiClient.get<Blob>(`/properties/${id}/export`, {
+    const response = await apiClient.get<Blob>(`/properties/${id}/export`, {
       params: { format },
       responseType: 'blob',
     });
+    return response.data;
   }
 
   /**
    * Récupérer les documents associés à un bien
    */
   async getPropertyDocuments(id: string): Promise<any[]> {
-    return apiClient.get<any[]>(`/properties/${id}/documents`);
+    const response = await apiClient.get<any[]>(`/properties/${id}/documents`);
+    return response.data;
   }
 
   /**
    * Récupérer les rendez-vous associés à un bien
    */
   async getPropertyAppointments(id: string, params?: PaginationParams): Promise<PaginatedResponse<any>> {
-    return apiClient.get<PaginatedResponse<any>>(`/properties/${id}/appointments`, { params });
+    const response = await apiClient.get<PaginatedResponse<any>>(`/properties/${id}/appointments`, { params });
+    return response.data;
   }
 
   /**
    * Récupérer les prospects intéressés par un bien
    */
   async getPropertyInterestedProspects(id: string): Promise<any[]> {
-    return apiClient.get<any[]>(`/properties/${id}/interested-prospects`);
+    const response = await apiClient.get<any[]>(`/properties/${id}/interested-prospects`);
+    return response.data;
   }
 
   /**
    * Récupérer les matches IA pour un bien
    */
   async getPropertyMatches(id: string): Promise<any[]> {
-    return apiClient.get<any[]>(`/properties/${id}/matches`);
+    const response = await apiClient.get<any[]>(`/properties/${id}/matches`);
+    return response.data;
   }
 
   /**
@@ -317,7 +386,8 @@ class PropertiesAPIService {
     factors: string[];
     similarProperties: Property[];
   }> {
-    return apiClient.get(`/properties/${id}/price-analysis`);
+    const response = await apiClient.get(`/properties/${id}/price-analysis`);
+    return response.data;
   }
 }
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LlmService } from './llm.service';
 import { OrchestrationObjective } from '../dto';
+import { ProviderSelectorService } from './provider-selector.service';
 
 /**
  * Résultat de l'analyse d'intention
@@ -44,7 +45,10 @@ export interface IntentAnalysis {
 export class IntentAnalyzerService {
   private readonly logger = new Logger(IntentAnalyzerService.name);
 
-  constructor(private readonly llmService: LlmService) {}
+  constructor(
+    private readonly llmService: LlmService,
+    private readonly providerSelector: ProviderSelectorService,
+  ) { }
 
   /**
    * Analyser une demande d'orchestration
@@ -61,7 +65,7 @@ export class IntentAnalyzerService {
     // Pour les objectifs standards, on peut utiliser des règles
     // Pour CUSTOM, on utilise le LLM
     if (objective !== OrchestrationObjective.CUSTOM) {
-      return this.analyzeStandardObjective(objective, context);
+      return await this.analyzeStandardObjective(objective, context, userId);
     }
 
     // Analyse custom avec LLM
@@ -71,13 +75,14 @@ export class IntentAnalyzerService {
   /**
    * Analyser un objectif standard (règles prédéfinies)
    */
-  private analyzeStandardObjective(
+  private async analyzeStandardObjective(
     objective: OrchestrationObjective,
     context: Record<string, any>,
-  ): IntentAnalysis {
+    userId?: string,
+  ): Promise<IntentAnalysis> {
     switch (objective) {
       case OrchestrationObjective.PROSPECTION:
-        return this.analyzeProspectionIntent(context);
+        return await this.analyzeProspectionIntent(context, userId);
 
       case OrchestrationObjective.INVESTMENT_BENCHMARK:
         return this.analyzeInvestmentBenchmarkIntent(context);
@@ -96,8 +101,12 @@ export class IntentAnalyzerService {
   /**
    * Analyse pour la prospection
    */
-  private analyzeProspectionIntent(context: Record<string, any>): IntentAnalysis {
-    const requiredTools = ['serpapi', 'firecrawl', 'llm'];
+  private async analyzeProspectionIntent(context: Record<string, any>, userId?: string): Promise<IntentAnalysis> {
+    // Dynamically determine available tools via ProviderSelector
+    const availableTools = userId
+      ? await this.providerSelector.getAvailableTools(userId, context.agencyId)
+      : ['llm', 'puppeteer', 'cheerio'];
+    const requiredTools = availableTools;
     const extractedParams: Record<string, any> = {};
 
     // Extraire les paramètres de ciblage

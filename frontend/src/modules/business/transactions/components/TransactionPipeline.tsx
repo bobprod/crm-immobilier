@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { transactionsAPI, Transaction } from '@/shared/utils/transactions-api';
+import { transactionsAPI, Transaction, TransactionStatus } from '@/shared/utils/transactions-api';
 import { TransactionFilters } from './TransactionFilters';
 import { Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,11 +21,11 @@ type StatusColumn = {
 };
 
 const PIPELINE_COLUMNS: StatusColumn[] = [
-    { key: 'offer_received', label: 'Offre Reçue', color: 'bg-blue-50 border-blue-200' },
-    { key: 'offer_accepted', label: 'Offre Acceptée', color: 'bg-purple-50 border-purple-200' },
-    { key: 'promise_signed', label: 'Promesse Signée', color: 'bg-indigo-50 border-indigo-200' },
-    { key: 'compromis_signed', label: 'Compromis Signé', color: 'bg-yellow-50 border-yellow-200' },
-    { key: 'final_deed_signed', label: 'Acte Final', color: 'bg-green-50 border-green-200' },
+    { key: TransactionStatus.OFFER_RECEIVED, label: 'Offre Reçue', color: 'bg-blue-50 border-blue-200' },
+    { key: TransactionStatus.OFFER_ACCEPTED, label: 'Offre Acceptée', color: 'bg-purple-50 border-purple-200' },
+    { key: TransactionStatus.PROMISE_SIGNED, label: 'Promesse Signée', color: 'bg-indigo-50 border-indigo-200' },
+    { key: TransactionStatus.COMPROMIS_SIGNED, label: 'Compromis Signé', color: 'bg-yellow-50 border-yellow-200' },
+    { key: TransactionStatus.FINAL_DEED_SIGNED, label: 'Acte Final', color: 'bg-green-50 border-green-200' },
 ];
 
 export function TransactionPipeline({ initialLoading, initialError, initialTransactions }: TransactionPipelineProps) {
@@ -71,7 +71,10 @@ export function TransactionPipeline({ initialLoading, initialError, initialTrans
         }
 
         try {
-            await transactionsAPI.finalize(transaction.id, finalPrice);
+            await transactionsAPI.update(transaction.id, {
+                finalPrice,
+                status: TransactionStatus.FINAL_DEED_SIGNED,
+            });
             await fetchTransactions();
         } catch (err) {
             console.error('Failed to finalize transaction:', err);
@@ -84,7 +87,10 @@ export function TransactionPipeline({ initialLoading, initialError, initialTrans
         if (!reason) return;
 
         try {
-            await transactionsAPI.cancel(transaction.id, reason);
+            await transactionsAPI.update(transaction.id, {
+                status: TransactionStatus.CANCELLED,
+                metadata: { cancelReason: reason },
+            });
             await fetchTransactions();
         } catch (err) {
             console.error('Failed to cancel transaction:', err);
@@ -175,9 +181,9 @@ export function TransactionPipeline({ initialLoading, initialError, initialTrans
                                                         {new Intl.NumberFormat('fr-TN', { style: 'currency', currency: transaction.currency }).format(transaction.finalPrice || transaction.offerPrice)}
                                                     </div>
 
-                                                    {transaction.expectedClosing && (
+                                                    {transaction.estimatedClosing && (
                                                         <div className="text-xs text-gray-500">
-                                                            Clôture: {format(new Date(transaction.expectedClosing), 'dd/MM/yyyy')}
+                                                            Clôture: {format(new Date(transaction.estimatedClosing), 'dd/MM/yyyy')}
                                                         </div>
                                                     )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X, AlertCircle } from 'lucide-react';
-import DashboardLayout from '@/layouts/DashboardLayout';
+import Layout from '@/modules/core/layout/components/Layout';
 
 /**
  * Interface provider configuré
@@ -112,17 +112,17 @@ export default function LLMProvidersPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <Layout>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
         </div>
-      </DashboardLayout>
+      </Layout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -332,6 +332,6 @@ export default function LLMProvidersPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </Layout>
   );
 }

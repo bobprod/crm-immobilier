@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, Image as ImageIcon, FileText, Smile, MoreVertical, Phone, Video } from 'lucide-react';
 import { MessageBubble, TypingIndicator, DateSeparator } from './MessageBubble';
 import { useMessages } from '../hooks/useMessages';
-import { WhatsAppConversation } from '../types/whatsapp.types';
+import { WhatsAppConversation, MessageType } from '../types/whatsapp.types';
 import { isSameDay, parseISO } from 'date-fns';
 
 interface ChatInterfaceProps {
@@ -59,11 +59,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation, onBa
       // Upload file
       const mediaUrl = await uploadMedia(file);
 
-      // Determine media type
-      let mediaType: 'image' | 'document' | 'video' | 'audio' = 'document';
-      if (file.type.startsWith('image/')) mediaType = 'image';
-      else if (file.type.startsWith('video/')) mediaType = 'video';
-      else if (file.type.startsWith('audio/')) mediaType = 'audio';
+      // Determine media type (use MessageType enum)
+      let mediaType: MessageType = MessageType.DOCUMENT;
+      if (file.type.startsWith('image/')) mediaType = MessageType.IMAGE;
+      else if (file.type.startsWith('video/')) mediaType = MessageType.VIDEO;
+      else if (file.type.startsWith('audio/')) mediaType = MessageType.AUDIO;
 
       // Send media message
       await sendMediaMessage({

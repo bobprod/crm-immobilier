@@ -64,6 +64,11 @@ export class MistralProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.length > 20;
+    // Clés Mistral AI (format UUID-like ou custom)
+    return (
+      !!this.apiKey &&
+      this.apiKey.length >= 32 &&
+      (this.apiKey.includes('-') || this.apiKey.length > 40)
+    );
   }
 }

@@ -1,0 +1,28 @@
+
+> crm-immobilier-frontend@1.0.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\DELL\Desktop\project dev\CRM_IMMOBILIER_COMPLET_FINAL\.git\crm-immobilier\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\DELL\Desktop\project dev\CRM_IMMOBILIER_COMPLET_FINAL\.git\crm-immobilier\frontend\package-lock.json
+
+▲ Next.js 16.1.0 (Turbopack)
+- Environments: .env.local, .env
+
+  Running TypeScript ...
+Failed to compile.
+
+./pages/transactions/[id].tsx:49:35
+Type error: Property 'finalize' does not exist on type '{ create: (data: CreateTransactionDTO) => Promise<Transaction>; list: (filters?: TransactionFilters) => Promise<Transaction[]>; ... 5 more ...; addStep: (id: string, data: CreateTransactionStepDTO) => Promise<...>; }'.
+
+[0m [90m 47 |[39m
+ [90m 48 |[39m         [36mtry[39m {
+[31m[1m>[22m[39m[90m 49 |[39m             [36mawait[39m transactionsAPI[33m.[39mfinalize(transaction[33m.[39mid[33m,[39m finalPrice)[33m;[39m
+ [90m    |[39m                                   [31m[1m^[22m[39m
+ [90m 50 |[39m             router[33m.[39mpush([32m'/transactions'[39m)[33m;[39m
+ [90m 51 |[39m         } [36mcatch[39m (err) {
+ [90m 52 |[39m             console[33m.[39merror([32m'Failed to finalize transaction:'[39m[33m,[39m err)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null

@@ -29,7 +29,18 @@ export default function AppointmentsPage() {
     try {
       setError(null);
       const response = await apiClient.get('/appointments/upcoming');
-      setAppointments(response.data || []);
+      // Normalize server response: accept array or { items: [] } or paginated shape
+      const data = response?.data;
+      if (Array.isArray(data)) {
+        setAppointments(data);
+      } else if (data && Array.isArray((data as any).items)) {
+        setAppointments((data as any).items);
+      } else if (data && Array.isArray((data as any).data)) {
+        setAppointments((data as any).data);
+      } else {
+        console.warn('[AppointmentsPage] Unexpected /appointments/upcoming response:', data);
+        setAppointments([]);
+      }
     } catch (error) {
       console.error('Erreur chargement RDV:', error);
       setError('Impossible de charger les rendez-vous');
@@ -94,7 +105,7 @@ export default function AppointmentsPage() {
 
                 <div className="flex items-center gap-2 text-sm">
                   <User className="h-4 w-4" />
-                  <span>{apt.attendees.length} participant(s)</span>
+                  <span>{Array.isArray(apt.attendees) ? apt.attendees.length : 0} participant(s)</span>
                 </div>
 
                 <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>

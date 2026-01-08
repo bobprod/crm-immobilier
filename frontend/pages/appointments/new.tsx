@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -14,14 +14,24 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
-import { appointmentsAPI } from '@/shared/utils/appointments-api';
+import { appointmentsAPI, Appointment } from '@/shared/utils/appointments-api';
 import { useToast } from '@/shared/components/ui/use-toast';
+
+interface FormData {
+  title: string;
+  type: Appointment['type'];
+  priority: Appointment['priority'];
+  startTime: string;
+  endTime: string;
+  location: string;
+  description: string;
+}
 
 export default function NewAppointmentPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<FormData>({
     title: '',
     type: 'visit',
     priority: 'medium',
@@ -112,7 +122,7 @@ export default function NewAppointmentPage() {
                   <Label htmlFor="type">Type</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
+                    onValueChange={(value) => setFormData({ ...formData, type: value as Appointment['type'] })}
                   >
                     <SelectTrigger id="type">
                       <SelectValue />
@@ -132,7 +142,7 @@ export default function NewAppointmentPage() {
                   <Label htmlFor="priority">Priorité</Label>
                   <Select
                     value={formData.priority}
-                    onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                    onValueChange={(value) => setFormData({ ...formData, priority: value as Appointment['priority'] })}
                   >
                     <SelectTrigger id="priority">
                       <SelectValue />

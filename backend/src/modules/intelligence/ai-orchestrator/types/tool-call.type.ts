@@ -4,6 +4,8 @@
 export type ToolType =
   | 'serpapi'           // Recherche Google via SerpAPI
   | 'firecrawl'         // Scraping web via Firecrawl
+  | 'puppeteer'         // Scraping via Puppeteer (built-in)
+  | 'cheerio'           // Scraping via Cheerio (built-in)
   | 'llm'               // Appel à un LLM (extraction, analyse, etc.)
   | 'investment-import' // Import de projet d'investissement
   | 'prospection-internal' // Moteur de prospection interne
@@ -47,6 +49,8 @@ export interface ToolCall {
     description?: string;
     priority?: number;
     timeout?: number;
+    // internal retry metadata (not part of public API)
+    _retryCount?: number;
   };
 }
 

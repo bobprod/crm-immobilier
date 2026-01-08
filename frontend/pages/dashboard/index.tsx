@@ -1,12 +1,10 @@
-'use client';
-
 import { useEffect, useState } from 'react';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { StatsWidget } from '../../src/modules/dashboard/components/StatsWidget';
 import { RecentActivities } from '../../src/modules/dashboard/components/RecentActivities';
 import { QuickActions } from '../../src/modules/dashboard/components/QuickActions';
 import { apiClient } from '../../src/shared/utils/api-client-backend';
-import type { DashboardStats } from '../../src/modules/dashboard/types/dashboard.types';
+import type { DashboardStats, RecentActivities as RecentActivitiesType } from '../../src/modules/dashboard/types/dashboard.types';
 
 const defaultStats: DashboardStats = {
   activeProspects: 0,
@@ -20,10 +18,16 @@ const defaultStats: DashboardStats = {
   matchSuccessRate: 0,
 };
 
+const defaultActivities: RecentActivitiesType = {
+  recentProspects: [],
+  recentProperties: [],
+  recentAppointments: [],
+  recentCommunications: [],
+};
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>(defaultStats);
-
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivitiesType>(defaultActivities);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function Dashboard() {
       console.error('[Dashboard] Error details:', error.response?.status, error.response?.data);
       // Set default values on error
       setStats(defaultStats);
-      setRecentActivities([]);
+      setRecentActivities(defaultActivities);
     } finally {
       setLoading(false);
     }

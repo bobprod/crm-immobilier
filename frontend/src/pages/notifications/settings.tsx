@@ -451,7 +451,7 @@ export default function NotificationSettings() {
                 <ul className="space-y-1 text-sm">
                   {Object.entries(testResult.optimalChannels).map(([type, channel]) => (
                     <li key={type}>
-                      <span className="font-medium">{type}:</span> {channel}
+                      <span className="font-medium">{type}:</span> {String(channel)}
                     </li>
                   ))}
                 </ul>

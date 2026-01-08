@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { QuickWinsLLMService } from '../quick-wins-llm/quick-wins-llm.service';
+import { JinaService } from './jina.service';
 import { SemanticSearchQueryDto, SemanticSearchResult } from './dto/semantic-search.dto';
 
 @Injectable()
@@ -10,7 +11,47 @@ export class SemanticSearchService {
   constructor(
     private prisma: PrismaService,
     private llmService: QuickWinsLLMService,
+    private jinaService: JinaService,
   ) { }
+
+  /**
+   * Appliquer le reranking avec Jina pour améliorer l'ordre des résultats
+   */
+  private async applyJinaReranking(
+    userId: string,
+    query: string,
+    results: SemanticSearchResult[],
+  ): Promise<SemanticSearchResult[]> {
+    try {
+      const isAvailable = await this.jinaService.isAvailable(userId);
+      if (!isAvailable) {
+        this.logger.debug('Jina service not available, skipping reranking');
+        return results;
+      }
+
+      // Préparer les documents pour le reranking
+      const documents = results.map(result =>
+        `${result.title} ${result.description}`.trim()
+      );
+
+      // Appliquer le reranking
+      const scores = await this.jinaService.rerank(userId, { query, documents });
+
+      // Mettre à jour les scores de pertinence avec les scores Jina
+      results.forEach((result, index) => {
+        // Combiner le score original avec le score Jina (pondération 70% Jina, 30% original)
+        const jinaScore = scores[index] * 100; // Convertir en 0-100
+        const combinedScore = (jinaScore * 0.7) + (result.relevanceScore * 0.3);
+        result.relevanceScore = Math.min(combinedScore, 100);
+      });
+
+      this.logger.debug(`Applied Jina reranking to ${results.length} results`);
+      return results;
+    } catch (error) {
+      this.logger.warn(`Jina reranking failed: ${error.message}, using original results`);
+      return results;
+    }
+  }
 
   /**
    * Recherche sémantique dans le CRM
@@ -60,7 +101,12 @@ export class SemanticSearchService {
         results = [...results, ...appointmentResults];
       }
 
-      // Trier par score de pertinence
+      // Appliquer le reranking avec Jina si disponible
+      if (results.length > 0) {
+        results = await this.applyJinaReranking(userId, query.query, results);
+      }
+
+      // Trier par score de pertinence (mis à jour par reranking)
       results.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
       return results.slice(0, limit);

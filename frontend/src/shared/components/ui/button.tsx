@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/shared/utils/utils';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
@@ -37,16 +37,13 @@ export const buttonVariants = (opts?: {
   return `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]}`;
 };
 
-export function Button({
-  children,
-  variant = 'default',
-  size = 'default',
-  className = '',
-  ...props
-}: ButtonProps) {
-  return (
-    <button className={cn(buttonVariants({ variant, size }), className)} {...props}>
-      {children}
-    </button>
-  );
-}
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, variant = 'default', size = 'default', className = '', ...props }, ref) => {
+    return (
+      <button ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        {children}
+      </button>
+    );
+  }
+);
+Button.displayName = 'Button';

@@ -48,6 +48,13 @@ export function useMenu() {
 
       const items = await moduleRegistryApi.getMyMenu();
 
+      // Vérifier que items est bien un tableau
+      if (!Array.isArray(items)) {
+        console.warn('⚠️ Menu API response is not an array:', items);
+        setMenuItems(getDefaultMenu());
+        return;
+      }
+
       // Trier les items par ordre
       const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -90,11 +97,83 @@ function getDefaultMenu(): DynamicMenuItem[] {
       order: 0,
     },
     {
+      id: 'default-prospects',
+      moduleId: 'sales-prospects',
+      label: 'Prospects',
+      icon: 'Users',
+      path: '/prospects',
+      order: 1,
+    },
+    {
+      id: 'default-properties',
+      moduleId: 'inventory-properties',
+      label: 'Propriétés',
+      icon: 'Building',
+      path: '/properties',
+      order: 2,
+    },
+    {
+      id: 'default-matching',
+      moduleId: 'sales-matching',
+      label: 'Matching',
+      icon: 'Target',
+      path: '/matching',
+      order: 3,
+    },
+    {
+      id: 'default-communications',
+      moduleId: 'communications',
+      label: 'Communications',
+      icon: 'MessageSquare',
+      path: '/communications',
+      order: 4,
+    },
+    {
+      id: 'default-appointments',
+      moduleId: 'business-appointments',
+      label: 'Rendez-vous',
+      icon: 'Calendar',
+      path: '/appointments',
+      order: 5,
+    },
+    {
       id: 'default-tasks',
       moduleId: 'business-tasks',
       label: 'Tâches',
       icon: 'CheckSquare',
       path: '/tasks',
+      order: 6,
+    },
+    {
+      id: 'default-prospecting',
+      moduleId: 'ai-prospecting',
+      label: 'Prospection IA',
+      icon: 'Search',
+      path: '/prospecting',
+      order: 7,
+    },
+    {
+      id: 'default-marketing',
+      moduleId: 'marketing-tracking',
+      label: 'Marketing',
+      icon: 'TrendingUp',
+      path: '/marketing',
+      order: 8,
+    },
+    {
+      id: 'default-analytics',
+      moduleId: 'business-analytics',
+      label: 'Analytiques',
+      icon: 'BarChart',
+      path: '/analytics',
+      order: 9,
+    },
+    {
+      id: 'default-documents',
+      moduleId: 'business-documents',
+      label: 'Documents',
+      icon: 'FileText',
+      path: '/documents',
       order: 10,
     },
     {

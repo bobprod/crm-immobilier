@@ -282,7 +282,7 @@ export default function ProspectManagementConnected({
   };
 
   // Handle stage change
-  const handleStageChange = async (prospectId: string, newStage: string) => {
+  const handleStageChange = async (prospectId: string, newStage: ProspectEnhanced['status']) => {
     try {
       await changeStage(prospectId, newStage);
       toast({

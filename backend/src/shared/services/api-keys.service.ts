@@ -8,6 +8,9 @@ export type ProviderType =
   | 'gemini'
   | 'deepseek'
   | 'openrouter'
+  | 'qwen'          // Alibaba Cloud Qwen
+  | 'kimi'          // Moonshot AI Kimi
+  | 'mistral'       // Mistral AI
   | 'serp'          // Google SERP API
   | 'firecrawl'
   | 'pica'
@@ -18,7 +21,7 @@ export type ProviderType =
 
 @Injectable()
 export class ApiKeysService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * ═══════════════════════════════════════════════════════════
@@ -58,7 +61,7 @@ export class ApiKeysService {
     userId: string,
     provider: ProviderType,
   ): Promise<string | null> {
-    const aiSettings = await this.prisma.aiSettings.findUnique({
+    const aiSettings = await this.prisma.ai_settings.findUnique({
       where: { userId },
     });
 
@@ -71,6 +74,9 @@ export class ApiKeysService {
       gemini: aiSettings.geminiApiKey,
       deepseek: aiSettings.deepseekApiKey,
       openrouter: aiSettings.openrouterApiKey,
+      qwen: aiSettings.qwenApiKey || null,
+      kimi: aiSettings.kimiApiKey || null,
+      mistral: aiSettings.mistralApiKey || null,
       // Pas de scraping keys dans ai_settings
       serp: null,
       firecrawl: null,
@@ -104,6 +110,9 @@ export class ApiKeysService {
       gemini: agencyKeys.geminiApiKey,
       deepseek: agencyKeys.deepseekApiKey,
       openrouter: agencyKeys.openrouterApiKey,
+      qwen: agencyKeys.qwenApiKey || null,
+      kimi: agencyKeys.kimiApiKey || null,
+      mistral: agencyKeys.mistralApiKey || null,
       serp: agencyKeys.serpApiKey,
       firecrawl: agencyKeys.firecrawlApiKey,
       pica: agencyKeys.picaApiKey,
