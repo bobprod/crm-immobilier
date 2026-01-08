@@ -6,7 +6,7 @@
     ],
     "rootDir": "../",
     "testMatch": [
-        "<rootDir>/test/**/*.e2e-spec.ts"
+        "<rootDir>/test/**/*.e2e-spec.@(ts|js)"
     ],
     "transform": {
         "^.+\\.(t|j)s$": "ts-jest"
