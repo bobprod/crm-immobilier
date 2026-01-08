@@ -8,15 +8,15 @@ import { WebDataService } from './services/web-data.service';
 
 /**
  * Module de scraping web unifié
- * 
+ *
  * Ce module fournit une architecture propre pour le scraping web
  * avec support de plusieurs providers:
- * 
+ *
  * - CheerioService: Parsing HTML simple (gratuit, rapide)
  * - PuppeteerService: Browser automation (gratuit, sites JS)
  * - FirecrawlService: IA intégrée (API payante, sites complexes)
  * - WebDataService: Orchestrateur qui sélectionne le meilleur provider
- * 
+ *
  * Les clés API se configurent dans les paramètres utilisateur ou
  * dans les variables d'environnement.
  */
@@ -26,4 +26,4 @@ import { WebDataService } from './services/web-data.service';
   providers: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],
   exports: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],
 })
-export class ScrapingModule {}
+export class ScrapingModule { }

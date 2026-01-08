@@ -24,6 +24,13 @@ export interface PaginatedResponse<T> {
 /**
  * Interfaces de types pour les biens immobiliers
  */
+
+// Type aliases for property attributes
+export type PropertyType = 'apartment' | 'house' | 'villa' | 'studio' | 'land' | 'commercial' | 'office' | 'garage' | 'other';
+export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending' | 'draft' | 'archived';
+export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type PropertyCategory = 'sale' | 'rent' | 'vacation_rental';
+
 export interface Property {
   id: string;
   userId: string;
@@ -31,8 +38,21 @@ export interface Property {
   reference?: string;
   title: string;
   description?: string;
-  type: 'apartment' | 'house' | 'villa' | 'land' | 'commercial' | 'office' | 'garage' | 'other';
-  category: 'sale' | 'rent' | 'vacation_rental';
+  notes?: string;
+  priority?: 'low' | 'medium' | 'high';
+  tags?: string[];
+  owner?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  ownerId?: string;
+  netPrice?: number;
+  fees?: number;
+  feesPercentage?: number;
+  type: PropertyType;
+  category: PropertyCategory;
   price: number;
   currency: string;
   address?: string;
@@ -46,7 +66,7 @@ export interface Property {
   area?: number;
   images?: string[];
   features?: Record<string, any>;
-  status: 'available' | 'sold' | 'rented' | 'draft' | 'archived';
+  status: PropertyStatus;
   viewsCount: number;
   prospectType?: string;
   subType?: string;
@@ -57,6 +77,7 @@ export interface Property {
   budget?: Record<string, any>;
   wpSyncId?: string;
   wpSyncedAt?: string;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +89,7 @@ export interface CreatePropertyData {
   price: number;
   currency?: string;
   description?: string;
+  priority?: string;
   address?: string;
   city?: string;
   delegation?: string;
@@ -195,6 +217,30 @@ class PropertiesAPIService {
    */
   async delete(id: string): Promise<{ message: string }> {
     return this.deleteProperty(id);
+  }
+
+  /**
+   * Supprimer plusieurs biens en masse
+   */
+  async bulkDelete(ids: string[]): Promise<{ message: string; deletedCount: number }> {
+    const response = await apiClient.post<{ message: string; deletedCount: number }>('/properties/bulk-delete', { ids });
+    return response.data;
+  }
+
+  /**
+   * Mettre à jour la priorité pour plusieurs biens
+   */
+  async bulkUpdatePriority(ids: string[], priority: string): Promise<{ message: string; updatedCount: number }> {
+    const response = await apiClient.post<{ message: string; updatedCount: number }>('/properties/bulk-update-priority', { ids, priority });
+    return response.data;
+  }
+
+  /**
+   * Mettre à jour le statut pour plusieurs biens
+   */
+  async bulkUpdateStatus(ids: string[], status: string): Promise<{ message: string; updatedCount: number }> {
+    const response = await apiClient.post<{ message: string; updatedCount: number }>('/properties/bulk-update-status', { ids, status });
+    return response.data;
   }
 
   /**
