@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../shared/database/prisma.module';
+import { ScrapingModule } from '../../../modules/scraping/scraping.module';
 import { LLMConfigModule } from '../llm-config/llm-config.module';
 import { CommunicationsModule } from '../../communications/communications.module';
 import { AiBillingModule } from '../../../shared/ai-billing/ai-billing.module';
@@ -31,6 +32,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     LLMConfigModule, // Pour utiliser LLMProviderFactory
     CommunicationsModule,
     AiBillingModule, // Pour ApiKeysService (utilisé par SerpApiService et FirecrawlService)
+    ScrapingModule,
   ],
   providers: [
     // Guards

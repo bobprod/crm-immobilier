@@ -20,7 +20,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import {
   Property,
-  CreatePropertyDTO,
+  CreatePropertyData,
   PropertyType,
   PropertyStatus,
   PropertyPriority,
@@ -29,7 +29,7 @@ import {
 interface PropertyFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreatePropertyDTO) => Promise<void>;
+  onSubmit: (data: CreatePropertyData) => Promise<void>;
   property?: Property | null; // If provided, we're in edit mode
   isLoading?: boolean;
 }
@@ -59,7 +59,7 @@ const PROPERTY_PRIORITIES: { value: PropertyPriority; label: string }[] = [
   { value: 'urgent', label: 'Urgente' },
 ];
 
-const initialFormData: CreatePropertyDTO = {
+const initialFormData: CreatePropertyData = {
   title: '',
   description: '',
   type: 'apartment',
@@ -80,7 +80,7 @@ export function PropertyFormModal({
   property,
   isLoading = false,
 }: PropertyFormModalProps) {
-  const [formData, setFormData] = useState<CreatePropertyDTO>(initialFormData);
+  const [formData, setFormData] = useState<CreatePropertyData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -95,6 +95,7 @@ export function PropertyFormModal({
           title: property.title || '',
           description: property.description || '',
           type: property.type || 'apartment',
+          category: property.category || 'sale',
           price: property.price || 0,
           area: property.area || 0,
           bedrooms: property.bedrooms || 0,
@@ -111,7 +112,7 @@ export function PropertyFormModal({
     }
   }, [isOpen, property]);
 
-  const handleChange = (field: keyof CreatePropertyDTO, value: string | number) => {
+  const handleChange = (field: keyof CreatePropertyData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when field is modified
     if (errors[field]) {
