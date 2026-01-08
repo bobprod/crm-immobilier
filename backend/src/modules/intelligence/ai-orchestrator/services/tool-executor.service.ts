@@ -5,6 +5,7 @@ import { SerpApiService } from './serpapi.service';
 import { FirecrawlService } from './firecrawl.service';
 import { WebDataService } from '../../../scraping/services/web-data.service';
 import { ProviderSelectorService } from './provider-selector.service';
+import { MetricsService } from '../../../../shared/metrics/metrics.service';
 
 /**
  * Service d'exécution des appels d'outils
@@ -22,6 +23,7 @@ export class ToolExecutorService {
     private readonly firecrawlService: FirecrawlService,
     private readonly webDataService: WebDataService,
     private readonly providerSelector: ProviderSelectorService,
+    private readonly metricsService: MetricsService,
   ) { }
 
   /**
@@ -118,23 +120,30 @@ export class ToolExecutorService {
           const strategy = await this.providerSelector.selectOptimalStrategy(uid, aid);
           const alternatives = strategy.scrape.filter(p => p !== (toolCall.tool as any));
 
-          if (alternatives.length > 0) {
-            const alt = alternatives[0];
-            this.logger.warn(`Retrying ${toolCall.id} with alternative provider: ${alt}`);
+            if (alternatives.length > 0) {
+              const alt = alternatives[0];
+              this.logger.warn(`Retrying ${toolCall.id} with alternative provider: ${alt}`);
 
-            const retryCall: ToolCall = {
-              ...toolCall,
-              tool: alt as any,
-              metadata: {
-                ...(toolCall.metadata || {}),
-                _retryCount: currentRetry + 1,
-              },
-            };
+              // increment retry metric
+              try {
+                this.metricsService.increment('tool_executor.retry');
+              } catch (merr) {
+                this.logger.debug('Metrics increment failed: ' + (merr.message || merr));
+              }
 
-            // Execute the alternative tool call
-            const retryResult = await this.executeToolCall(retryCall, previousResults);
-            return retryResult;
-          }
+              const retryCall: ToolCall = {
+                ...toolCall,
+                tool: alt as any,
+                metadata: {
+                  ...(toolCall.metadata || {}),
+                  _retryCount: currentRetry + 1,
+                },
+              };
+
+              // Execute the alternative tool call
+              const retryResult = await this.executeToolCall(retryCall, previousResults);
+              return retryResult;
+            }
         } catch (replanError) {
           this.logger.warn('Replanning failed:', replanError.message || replanError);
         }

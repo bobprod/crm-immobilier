@@ -10,6 +10,7 @@ import { SerpApiService } from './services/serpapi.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { IntegrationKeysService } from './services/integrations/integration-keys.service';
 import { ProviderSelectorService } from './services/provider-selector.service';
+import { MetricsService } from '../../../shared/metrics/metrics.service';
 
 // Services orchestrateur
 import { IntentAnalyzerService } from './services/intent-analyzer.service';
@@ -52,6 +53,8 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     ToolExecutorService,
     BudgetTrackerService,
     AiOrchestratorService,
+    // Metrics
+    MetricsService,
   ],
   controllers: [AiOrchestratorController],
   exports: [
@@ -60,6 +63,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     SerpApiService,
     FirecrawlService,
     ProviderSelectorService,
+    MetricsService,
     IntentAnalyzerService,
     ExecutionPlannerService,
     ToolExecutorService,
