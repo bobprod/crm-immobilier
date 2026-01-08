@@ -56,7 +56,7 @@ const NotificationSettingsPage: React.FC = () => {
     try {
       const token = getAuthToken();
       const response = await axios.get('/api/notifications/settings', {
-        headers: token ? { Authorization: \`Bearer \${token}\` } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.data) {
         setSettings(response.data);
@@ -73,7 +73,7 @@ const NotificationSettingsPage: React.FC = () => {
     try {
       const token = getAuthToken();
       await axios.post('/api/notifications/settings', settings, {
-        headers: token ? { Authorization: \`Bearer \${token}\` } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       toast({
         title: 'Paramètres sauvegardés',
@@ -92,7 +92,7 @@ const NotificationSettingsPage: React.FC = () => {
   };
 
   const handleChannelToggle = (channel: string, enabled: boolean) => {
-    const key = \`enable\${channel.charAt(0).toUpperCase() + channel.slice(1)}\` as keyof NotificationSettings;
+    const key = `enable${channel.charAt(0).toUpperCase() + channel.slice(1)}` as keyof NotificationSettings;
     setSettings((prev) => ({
       ...prev,
       [key]: enabled,

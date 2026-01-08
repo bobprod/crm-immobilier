@@ -269,6 +269,21 @@ export interface UpdateTemplateDto {
   buttons?: any;
 }
 
+// Template Button Types
+export enum TemplateButtonType {
+  QUICK_REPLY = 'quick_reply',
+  URL = 'url',
+  PHONE_NUMBER = 'phone_number',
+}
+
+export interface TemplateButton {
+  type: TemplateButtonType;
+  text: string;
+  url?: string;
+  phoneNumber?: string;
+  payload?: string;
+}
+
 // ══════════════════════════════════════════════════════════════════
 // DASHBOARD STATS
 // ══════════════════════════════════════════════════════════════════

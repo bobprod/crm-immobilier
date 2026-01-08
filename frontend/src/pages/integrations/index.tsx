@@ -19,10 +19,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   Paper,
   Divider,
 } from '@mui/material';
+// Simple local shim for Grid2 to avoid mismatched MUI typing across versions
+const Grid2: any = (props: any) => <div {...props} />;
 import {
   Email,
   Sms,
@@ -300,8 +301,8 @@ export default function IntegrationsPage() {
               </Alert>
             )}
 
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
+            <Grid2 container spacing={2}>
+              <Grid2 xs={12}>
                 <TextField
                   fullWidth
                   label="API Key Resend"
@@ -311,9 +312,9 @@ export default function IntegrationsPage() {
                   placeholder="re_123456789..."
                   helperText="Obtenez votre clé sur https://resend.com/api-keys"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Label (optionnel)"
@@ -321,9 +322,9 @@ export default function IntegrationsPage() {
                   onChange={(e) => setResendForm({ ...resendForm, label: e.target.value })}
                   placeholder="Ex: Mon compte Resend"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Quota mensuel (optionnel)"
@@ -333,10 +334,10 @@ export default function IntegrationsPage() {
                   placeholder="3000"
                   helperText="Limite d'emails par mois"
                 />
-              </Grid>
+              </Grid2>
 
               {integration && integration.monthlyQuota && (
-                <Grid item xs={12}>
+                <Grid2 xs={12}>
                   <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
                     <Typography variant="caption" color="text.secondary" gutterBottom>
                       Usage ce mois: {integration.currentUsage} / {integration.monthlyQuota}
@@ -347,10 +348,10 @@ export default function IntegrationsPage() {
                       sx={{ mt: 1 }}
                     />
                   </Paper>
-                </Grid>
+                </Grid2>
               )}
-            </Grid>
 
+            </Grid2>
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
                 variant="contained"
@@ -430,8 +431,8 @@ export default function IntegrationsPage() {
               </Alert>
             )}
 
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
+            <Grid2 container spacing={2}>
+              <Grid2 xs={12}>
                 <TextField
                   fullWidth
                   label="API Key SendGrid"
@@ -441,18 +442,18 @@ export default function IntegrationsPage() {
                   placeholder="SG.123456789..."
                   helperText="Obtenez votre clé sur https://app.sendgrid.com/settings/api_keys"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Label (optionnel)"
                   value={sendgridForm.label || ''}
                   onChange={(e) => setSendgridForm({ ...sendgridForm, label: e.target.value })}
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Quota mensuel (optionnel)"
@@ -460,8 +461,8 @@ export default function IntegrationsPage() {
                   value={sendgridForm.monthlyQuota || ''}
                   onChange={(e) => setSendgridForm({ ...sendgridForm, monthlyQuota: parseInt(e.target.value) })}
                 />
-              </Grid>
-            </Grid>
+              </Grid2>
+            </Grid2>
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
@@ -532,8 +533,8 @@ export default function IntegrationsPage() {
               </Alert>
             )}
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Grid2 container spacing={2}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Account SID"
@@ -541,9 +542,9 @@ export default function IntegrationsPage() {
                   onChange={(e) => setTwilioForm({ ...twilioForm, twilioAccountSid: e.target.value })}
                   placeholder="ACxxxxxxxxxxxxxxxxxxxxx"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Auth Token"
@@ -552,9 +553,9 @@ export default function IntegrationsPage() {
                   onChange={(e) => setTwilioForm({ ...twilioForm, twilioAuthToken: e.target.value })}
                   placeholder="your_auth_token"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Numéro de téléphone (SMS)"
@@ -563,9 +564,9 @@ export default function IntegrationsPage() {
                   placeholder="+33612345678"
                   helperText="Format E.164"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Numéro WhatsApp (optionnel)"
@@ -573,18 +574,18 @@ export default function IntegrationsPage() {
                   onChange={(e) => setTwilioForm({ ...twilioForm, twilioWhatsappNumber: e.target.value })}
                   placeholder="whatsapp:+33612345678"
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Label (optionnel)"
                   value={twilioForm.label || ''}
                   onChange={(e) => setTwilioForm({ ...twilioForm, label: e.target.value })}
                 />
-              </Grid>
+              </Grid2>
 
-              <Grid item xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <TextField
                   fullWidth
                   label="Quota mensuel (optionnel)"
@@ -592,8 +593,8 @@ export default function IntegrationsPage() {
                   value={twilioForm.monthlyQuota || ''}
                   onChange={(e) => setTwilioForm({ ...twilioForm, monthlyQuota: parseInt(e.target.value) })}
                 />
-              </Grid>
-            </Grid>
+              </Grid2>
+            </Grid2>
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button

@@ -51,6 +51,10 @@ export interface Mandate {
   owner?: any;
   property?: any;
   transactions?: any[];
+  // Prisma count fields
+  _count?: {
+    transactions?: number;
+  };
 }
 
 export interface CreateMandateDTO {

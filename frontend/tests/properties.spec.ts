@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 
 test.describe('PropertyList Component', () => {
     test.beforeEach(async ({ page }) => {
-        // Mock authentication
+        // Mock authentication - use auth_token to match backend-api.ts
         await page.addInitScript(() => {
-            localStorage.setItem('access_token', 'test-token');
+            localStorage.setItem('auth_token', 'test-token');
+            localStorage.setItem('refresh_token', 'test-refresh-token');
             localStorage.setItem('user', JSON.stringify({
                 id: '1',
                 email: 'test@example.com',
@@ -29,48 +30,74 @@ test.describe('PropertyList Component', () => {
                     body: JSON.stringify({ message: 'Failed to fetch properties' }),
                 });
             } else {
-                // Default success response
+                // Default success response - use correct API structure
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify([
-                        {
-                            id: '1',
-                            title: 'Property 1',
-                            type: 'House',
-                            price: 100000,
-                            currency: 'USD',
-                            location: 'Test City 1',
-                            bedrooms: 3,
-                            bathrooms: 2,
-                            area: 150,
-                            status: 'For Sale'
-                        },
-                        {
-                            id: '2',
-                            title: 'Property 2',
-                            type: 'Apartment',
-                            price: 200000,
-                            currency: 'USD',
-                            location: 'Test City 2',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: 100,
-                            status: 'For Rent'
-                        },
-                        {
-                            id: '3',
-                            title: 'Property 3',
-                            type: 'Villa',
-                            price: 300000,
-                            currency: 'USD',
-                            location: 'Test City 3',
-                            bedrooms: 5,
-                            bathrooms: 3,
-                            area: 250,
-                            status: 'Sold'
-                        },
-                    ]),
+                    body: JSON.stringify({
+                        data: [
+                            {
+                                id: '1',
+                                userId: 'test-user-id',
+                                title: 'Property 1',
+                                type: 'house',
+                                category: 'sale',
+                                price: 100000,
+                                currency: 'TND',
+                                city: 'Test City 1',
+                                bedrooms: 3,
+                                bathrooms: 2,
+                                area: 150,
+                                status: 'available',
+                                priority: 'high',
+                                viewsCount: 0,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            },
+                            {
+                                id: '2',
+                                userId: 'test-user-id',
+                                title: 'Property 2',
+                                type: 'apartment',
+                                category: 'rent',
+                                price: 200000,
+                                currency: 'TND',
+                                city: 'Test City 2',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: 100,
+                                status: 'available',
+                                priority: 'medium',
+                                viewsCount: 0,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            },
+                            {
+                                id: '3',
+                                userId: 'test-user-id',
+                                title: 'Property 3',
+                                type: 'villa',
+                                category: 'sale',
+                                price: 300000,
+                                currency: 'TND',
+                                city: 'Test City 3',
+                                bedrooms: 5,
+                                bathrooms: 3,
+                                area: 250,
+                                status: 'sold',
+                                priority: 'low',
+                                viewsCount: 0,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            },
+                        ],
+                        meta: {
+                            total: 3,
+                            page: 1,
+                            limit: 10,
+                            totalPages: 1
+                        }
+                    }),
                 });
             }
         });

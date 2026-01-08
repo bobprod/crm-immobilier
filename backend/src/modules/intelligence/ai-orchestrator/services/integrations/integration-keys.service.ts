@@ -21,50 +21,86 @@ export class IntegrationKeysService {
 
     // Créer une clé de 32 bytes pour AES-256
     this.encryptionKey = crypto.scryptSync(key, 'salt', 32);
-    this.iv = Buffer.alloc(16, 0); // IV fixe (en prod, utiliser un IV aléatoire stocké avec les données)
+    this.iv = Buffer.alloc(16, 0);
+
+    this.logger.log('IntegrationKeysService initialized');
+    this.logger.log(`Prisma instance: ${prisma ? 'OK' : 'UNDEFINED'}`);
+    if (prisma) {
+      this.logger.log(`Prisma.users: ${prisma.users ? 'OK' : 'UNDEFINED'}`);
+    }
   }
 
   /**
    * Récupérer les clés d'intégration pour un tenant
    */
   async getKeys(tenantId: string) {
-    const keys = await this.prisma.integrationKeys.findUnique({
-      where: { tenantId },
-    });
+    try {
+      this.logger.debug(`Getting keys for tenant: ${tenantId}`);
 
-    if (!keys) {
+      // Chercher l'agence du tenant
+      const user = await this.prisma.users.findUnique({
+        where: { id: tenantId },
+        select: { agencyId: true },
+      });
+
+      if (!user) {
+        this.logger.warn(`User ${tenantId} not found`);
+        return null;
+      }
+
+      if (!user.agencyId) {
+        this.logger.warn(`User ${tenantId} has no agency`);
+        return null;
+      }
+
+      const keys = await this.prisma.agencyApiKeys.findUnique({
+        where: { agencyId: user.agencyId },
+      });
+
+      if (!keys) {
+        this.logger.warn(`No API keys found for agency ${user.agencyId}`);
+        return null;
+      }
+
+      // Décrypter les clés sensibles
+      return {
+        ...keys,
+        serpApiKey: keys.serpApiKey ? this.decrypt(keys.serpApiKey) : null,
+        firecrawlApiKey: keys.firecrawlApiKey ? this.decrypt(keys.firecrawlApiKey) : null,
+        picaApiKey: keys.picaApiKey ? this.decrypt(keys.picaApiKey) : null,
+        geminiApiKey: keys.geminiApiKey ? this.decrypt(keys.geminiApiKey) : null,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get keys:', error.message);
+      this.logger.error('Stack:', error.stack);
       return null;
     }
-
-    // Décrypter les clés sensibles
-    return {
-      ...keys,
-      serpApiKey: keys.serpApiKey ? this.decrypt(keys.serpApiKey) : null,
-      firecrawlKey: keys.firecrawlKey ? this.decrypt(keys.firecrawlKey) : null,
-      picaAiKey: keys.picaAiKey ? this.decrypt(keys.picaAiKey) : null,
-      googleApiKey: keys.googleApiKey ? this.decrypt(keys.googleApiKey) : null,
-    };
   }
 
   /**
-   * Récupérer une clé spécifique
+   * Récupérer une clé spécifique (avec fallback sur l'environnement)
    */
-  async getKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlKey' | 'picaAiKey' | 'googleApiKey'): Promise<string | null> {
-    const keys = await this.getKeys(tenantId);
+  async getKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlApiKey' | 'picaApiKey' | 'geminiApiKey'): Promise<string | null> {
+    try {
+      const keys = await this.getKeys(tenantId);
+      if (!keys) {
+        // Fallback : essayer les variables d'environnement
+        return this.getFallbackKey(keyName);
+      }
 
-    if (!keys) {
-      // Fallback : essayer les variables d'environnement
+      const key = keys[keyName];
+
+      // Si pas de clé pour le tenant, essayer l'env
+      if (!key) {
+        return this.getFallbackKey(keyName);
+      }
+
+      return key;
+    } catch (error) {
+      this.logger.error(`Failed to get key ${keyName}:`, error.message);
+      // Fallback absolu en cas d'erreur
       return this.getFallbackKey(keyName);
     }
-
-    const key = keys[keyName];
-
-    // Si pas de clé pour le tenant, essayer l'env
-    if (!key) {
-      return this.getFallbackKey(keyName);
-    }
-
-    return key;
   }
 
   /**
@@ -74,65 +110,108 @@ export class IntegrationKeysService {
     tenantId: string,
     keys: {
       serpApiKey?: string;
-      firecrawlKey?: string;
-      picaAiKey?: string;
-      googleApiKey?: string;
+      firecrawlApiKey?: string;
+      picaApiKey?: string;
+      geminiApiKey?: string;
       customKeys?: Record<string, any>;
     },
   ) {
-    const existing = await this.prisma.integrationKeys.findUnique({
-      where: { tenantId },
-    });
-
-    // Encrypter les clés sensibles
-    const encryptedKeys = {
-      serpApiKey: keys.serpApiKey ? this.encrypt(keys.serpApiKey) : undefined,
-      firecrawlKey: keys.firecrawlKey ? this.encrypt(keys.firecrawlKey) : undefined,
-      picaAiKey: keys.picaAiKey ? this.encrypt(keys.picaAiKey) : undefined,
-      googleApiKey: keys.googleApiKey ? this.encrypt(keys.googleApiKey) : undefined,
-      customKeys: keys.customKeys,
-    };
-
-    if (existing) {
-      return this.prisma.integrationKeys.update({
-        where: { tenantId },
-        data: encryptedKeys,
+    try {
+      // Chercher les clés de l'agence du tenant
+      const user = await this.prisma.users.findUnique({
+        where: { id: tenantId },
+        select: { agencyId: true },
       });
-    }
 
-    return this.prisma.integrationKeys.create({
-      data: {
-        tenantId,
-        ...encryptedKeys,
-      },
-    });
+      if (!user || !user.agencyId) {
+        throw new Error('User or agency not found');
+      }
+
+      const existing = await this.prisma.agencyApiKeys.findUnique({
+        where: { agencyId: user.agencyId },
+      });
+
+      // Encrypter les clés sensibles
+      const encryptedKeys = {
+        serpApiKey: keys.serpApiKey ? this.encrypt(keys.serpApiKey) : undefined,
+        firecrawlApiKey: keys.firecrawlApiKey ? this.encrypt(keys.firecrawlApiKey) : undefined,
+        picaApiKey: keys.picaApiKey ? this.encrypt(keys.picaApiKey) : undefined,
+        geminiApiKey: keys.geminiApiKey ? this.encrypt(keys.geminiApiKey) : undefined,
+        customKeys: keys.customKeys,
+      };
+
+      if (existing) {
+        return this.prisma.agencyApiKeys.update({
+          where: { agencyId: user.agencyId },
+          data: encryptedKeys,
+        });
+      }
+
+      return this.prisma.agencyApiKeys.create({
+        data: {
+          agencyId: user.agencyId,
+          ...encryptedKeys,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to set keys:', error);
+      throw error;
+    }
   }
 
   /**
    * Supprimer une clé spécifique
    */
-  async deleteKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlKey' | 'picaAiKey' | 'googleApiKey') {
-    return this.prisma.integrationKeys.update({
-      where: { tenantId },
-      data: {
-        [keyName]: null,
-      },
-    });
+  async deleteKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlApiKey' | 'picaApiKey' | 'geminiApiKey') {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: tenantId },
+        select: { agencyId: true },
+      });
+
+      if (!user || !user.agencyId) {
+        throw new Error('User or agency not found');
+      }
+
+      return this.prisma.agencyApiKeys.update({
+        where: { agencyId: user.agencyId },
+        data: {
+          [keyName]: null,
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to delete key ${keyName}:`, error);
+      throw error;
+    }
   }
 
   /**
    * Supprimer toutes les clés d'un tenant
    */
   async deleteAllKeys(tenantId: string) {
-    return this.prisma.integrationKeys.delete({
-      where: { tenantId },
-    });
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: tenantId },
+        select: { agencyId: true },
+      });
+
+      if (!user || !user.agencyId) {
+        throw new Error('User or agency not found');
+      }
+
+      return this.prisma.agencyApiKeys.delete({
+        where: { agencyId: user.agencyId },
+      });
+    } catch (error) {
+      this.logger.error('Failed to delete all keys:', error);
+      throw error;
+    }
   }
 
   /**
    * Vérifier si une clé existe et est valide
    */
-  async hasValidKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlKey' | 'picaAiKey' | 'googleApiKey'): Promise<boolean> {
+  async hasValidKey(tenantId: string, keyName: 'serpApiKey' | 'firecrawlApiKey' | 'picaApiKey' | 'geminiApiKey'): Promise<boolean> {
     const key = await this.getKey(tenantId, keyName);
     return key !== null && key.length > 0;
   }
@@ -177,12 +256,21 @@ export class IntegrationKeysService {
   private getFallbackKey(keyName: string): string | null {
     const envMap: Record<string, string> = {
       serpApiKey: 'SERPAPI_KEY',
-      firecrawlKey: 'FIRECRAWL_API_KEY',
-      picaAiKey: 'PICA_AI_KEY',
-      googleApiKey: 'GOOGLE_API_KEY',
+      firecrawlApiKey: 'FIRECRAWL_API_KEY',
+      picaApiKey: 'PICA_AI_KEY',
+      geminiApiKey: 'GEMINI_API_KEY',
     };
 
     const envVarName = envMap[keyName];
-    return envVarName ? process.env[envVarName] || null : null;
+    if (!envVarName) {
+      this.logger.warn(`No fallback mapping for key: ${keyName}`);
+      return null;
+    }
+
+    const value = process.env[envVarName];
+    if (value) {
+      this.logger.debug(`Using fallback for ${keyName} from ${envVarName}`);
+    }
+    return value || null;
   }
 }

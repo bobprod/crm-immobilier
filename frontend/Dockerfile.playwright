@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+
+WORKDIR /app
+
+# Installer Node.js 18 si nécessaire (l'image Playwright a déjà Node)
+# L'image playwright inclut déjà les navigateurs
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer les dépendances (incluant Playwright)
+RUN npm ci
+
+# Installer les navigateurs Playwright (déjà dans l'image mais on s'assure)
+RUN npx playwright install --with-deps
+
+# Copier le code source et les tests
+COPY . .
+
+# Créer les dossiers pour les résultats
+RUN mkdir -p test-results playwright-report
+
+# Variables d'environnement pour Playwright
+ENV CI=true
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Commande par défaut
+CMD ["npx", "playwright", "test", "--reporter=html"]

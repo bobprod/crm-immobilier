@@ -76,7 +76,7 @@ export class TrackingProspectionAiService {
   /**
    * Créer une campagne de prospection automatique basée sur le comportement
    */
-  async createBehaviorBasedCampaign(userId: string, criteria: any): Promise<any> {
+  async createBehaviorBasedCampaign(userId: string, criteria: any, campaignName?: string, campaignType?: string): Promise<any> {
     try {
       // Identifier les sessions qui matchent les critères
       const targetSessions = await this.findTargetSessions(userId, criteria);
@@ -102,8 +102,8 @@ export class TrackingProspectionAiService {
       // Créer la campagne de prospection
       const campaign = {
         userId,
-        name: `Campagne Tracking - ${criteria.behaviorType || 'Auto'}`,
-        type: 'automated_tracking',
+        name: campaignName || `Campagne Tracking - ${criteria.behaviorType || 'Auto'}`,
+        type: campaignType || 'automated_tracking',
         targetCount: targetSessions.length,
         message: campaignMessage,
         metadata: {

@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  notificationsAPI,
-  NotificationAnalytics,
-  ChannelStatistics,
-  NotificationChannel,
-} from '../../shared/utils/notifications-api';
+import { notificationsAPI } from '../../shared/utils/notifications-api';
+import type { NotificationAnalytics, ChannelStatistics, NotificationChannel } from '../../shared/utils/notifications-api';
 
 /**
  * 📊 Page d'Analytics des Notifications Smart AI

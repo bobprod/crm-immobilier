@@ -23,12 +23,14 @@ export class DesktopNotificationService {
   static show(title: string, options?: NotificationOptions) {
     if (this.permission !== 'granted') return;
 
-    const notification = new Notification(title, {
+    const notifOptions: any = {
       icon: '/notification-icon.png',
       badge: '/badge-icon.png',
       vibrate: [200, 100, 200],
       ...options,
-    });
+    };
+
+    const notification = new Notification(title, notifOptions);
 
     notification.onclick = () => {
       window.focus();
@@ -38,7 +40,7 @@ export class DesktopNotificationService {
           const url = new URL(options.data.url, window.location.origin);
           // Only allow same-origin URLs with http/https protocols
           if (url.origin === window.location.origin &&
-              (url.protocol === 'http:' || url.protocol === 'https:')) {
+            (url.protocol === 'http:' || url.protocol === 'https:')) {
             window.location.assign(url.href);
           }
         } catch (e) {

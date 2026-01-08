@@ -3,6 +3,8 @@ import { ToolCall, ToolCallResult, ExecutionPlan } from '../types';
 import { LlmService } from './llm.service';
 import { SerpApiService } from './serpapi.service';
 import { FirecrawlService } from './firecrawl.service';
+import { WebDataService } from '../../../scraping/services/web-data.service';
+import { ProviderSelectorService } from './provider-selector.service';
 
 /**
  * Service d'exécution des appels d'outils
@@ -18,7 +20,9 @@ export class ToolExecutorService {
     private readonly llmService: LlmService,
     private readonly serpApiService: SerpApiService,
     private readonly firecrawlService: FirecrawlService,
-  ) {}
+    private readonly webDataService: WebDataService,
+    private readonly providerSelector: ProviderSelectorService,
+  ) { }
 
   /**
    * Exécuter un plan d'exécution complet
@@ -55,9 +59,10 @@ export class ToolExecutorService {
 
     this.logger.log(`Executing tool call: ${toolCall.id} (${toolCall.tool}:${toolCall.action})`);
 
+    let resolvedParams: any = {};
     try {
       // Résoudre les dépendances
-      const resolvedParams = this.resolveParams(toolCall, previousResults);
+      resolvedParams = this.resolveParams(toolCall, previousResults);
 
       // Exécuter selon le type d'outil
       let data: any;
@@ -69,6 +74,14 @@ export class ToolExecutorService {
 
         case 'firecrawl':
           data = await this.executeFirecrawl(toolCall.action, resolvedParams);
+          break;
+
+        case 'puppeteer':
+          data = await this.executePuppeteer(toolCall.action, resolvedParams);
+          break;
+
+        case 'cheerio':
+          data = await this.executeCheerio(toolCall.action, resolvedParams);
           break;
 
         case 'llm':
@@ -93,6 +106,39 @@ export class ToolExecutorService {
       const durationMs = Date.now() - startTime;
 
       this.logger.error(`Tool call ${toolCall.id} failed:`, error);
+
+      // Attempt simple replanning for scraping providers (one retry)
+      const currentRetry = toolCall.metadata?._retryCount || 0;
+      const scrapingProviders = ['firecrawl', 'puppeteer', 'cheerio'];
+
+      if (currentRetry < 1 && scrapingProviders.includes(toolCall.tool as string)) {
+        try {
+          const uid = resolvedParams?.userId || resolvedParams?.user || resolvedParams?.tenantId || 'system';
+          const aid = resolvedParams?.agencyId || resolvedParams?.tenantId;
+          const strategy = await this.providerSelector.selectOptimalStrategy(uid, aid);
+          const alternatives = strategy.scrape.filter(p => p !== (toolCall.tool as any));
+
+          if (alternatives.length > 0) {
+            const alt = alternatives[0];
+            this.logger.warn(`Retrying ${toolCall.id} with alternative provider: ${alt}`);
+
+            const retryCall: ToolCall = {
+              ...toolCall,
+              tool: alt as any,
+              metadata: {
+                ...(toolCall.metadata || {}),
+                _retryCount: currentRetry + 1,
+              },
+            };
+
+            // Execute the alternative tool call
+            const retryResult = await this.executeToolCall(retryCall, previousResults);
+            return retryResult;
+          }
+        } catch (replanError) {
+          this.logger.warn('Replanning failed:', replanError.message || replanError);
+        }
+      }
 
       return {
         toolCallId: toolCall.id,
@@ -127,16 +173,66 @@ export class ToolExecutorService {
   private async executeFirecrawl(action: string, params: any): Promise<any> {
     switch (action) {
       case 'scrape':
-        return this.firecrawlService.scrape(params);
+        return await this.webDataService.fetchHtml(params.url, {
+          provider: 'firecrawl',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
 
       case 'scrapeBatch':
-        return this.firecrawlService.scrapeBatch(params);
+        return await this.webDataService.fetchMultipleUrls(params.urls, {
+          provider: 'firecrawl',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
 
       case 'extractMainContent':
         return this.firecrawlService.extractMainContent(params);
 
       default:
         throw new Error(`Unknown Firecrawl action: ${action}`);
+    }
+  }
+
+  private async executePuppeteer(action: string, params: any): Promise<any> {
+    switch (action) {
+      case 'scrape':
+        return await this.webDataService.fetchHtml(params.url, {
+          provider: 'puppeteer',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
+
+      case 'scrapeBatch':
+        return await this.webDataService.fetchMultipleUrls(params.urls, {
+          provider: 'puppeteer',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
+
+      default:
+        throw new Error(`Puppeteer action not supported: ${action}`);
+    }
+  }
+
+  private async executeCheerio(action: string, params: any): Promise<any> {
+    switch (action) {
+      case 'scrape':
+        return await this.webDataService.fetchHtml(params.url, {
+          provider: 'cheerio',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
+
+      case 'scrapeBatch':
+        return await this.webDataService.fetchMultipleUrls(params.urls, {
+          provider: 'cheerio',
+          tenantId: params.tenantId,
+          extractionPrompt: params.extractionPrompt,
+        });
+
+      default:
+        throw new Error(`Cheerio action not supported: ${action}`);
     }
   }
 
@@ -195,8 +291,8 @@ export class ToolExecutorService {
       // Injecter les résultats selon le contexte
       params._dependencyResult = dependency.data;
 
-      // Cas spécifique : scraper les URLs trouvées par SerpAPI
-      if (toolCall.tool === 'firecrawl' && toolCall.action === 'scrapeBatch') {
+      // Cas spécifique : si l'action est scrapeBatch, injecter les URLs trouvées par la dépendance
+      if (toolCall.action === 'scrapeBatch') {
         const searchResults = dependency.data;
         if (Array.isArray(searchResults)) {
           params.urls = searchResults.slice(0, 10).map((r: any) => r.link);

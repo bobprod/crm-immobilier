@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { IntegrationKeysService } from './integrations/integration-keys.service';
+import { ApiKeysService } from '../../../../shared/services/api-keys.service';
 import { withRetry } from '../utils/retry.util';
 
 /**
@@ -28,37 +28,56 @@ export class SerpApiService {
   private readonly logger = new Logger(SerpApiService.name);
   private readonly baseUrl = 'https://serpapi.com/search.json';
 
-  constructor(private readonly integrationKeys: IntegrationKeysService) {}
+  constructor(private readonly apiKeys: ApiKeysService) { }
 
   /**
    * Récupérer la clé API SerpAPI du tenant
    */
-  private async getApiKey(tenantId: string): Promise<string> {
-    const apiKey = await this.integrationKeys.getKey(tenantId, 'serpApiKey');
+  private async getApiKey(userId: string, agencyId?: string): Promise<string> {
+    try {
+      this.logger.log(`🔑 Getting API key for userId=${userId}, agencyId=${agencyId}`);
 
-    if (!apiKey) {
-      throw new Error('SerpAPI key not configured for tenant');
+      if (!this.apiKeys) {
+        const errMsg = 'ApiKeysService is undefined - Dependency Injection failed!';
+        this.logger.error(errMsg);
+        throw new Error(errMsg);
+      }
+
+      this.logger.log(`About to call this.apiKeys.getApiKey...`);
+      const apiKey = await this.apiKeys.getApiKey(userId, 'serp', agencyId);
+      this.logger.log(`Got API key successfully: ${apiKey ? apiKey.substring(0, 10) + '...' : 'null'}`);
+
+      if (!apiKey) {
+        throw new Error('SerpAPI key not configured for tenant');
+      }
+
+      return apiKey;
+    } catch (error) {
+      this.logger.error(`❌ Error in getApiKey: ${error.message}`);
+      this.logger.error(`Stack: ${error.stack}`);
+      throw error;
     }
-
-    return apiKey;
   }
 
   /**
    * Rechercher sur Google via SerpAPI
    */
   async search(params: {
-    tenantId: string;
+    tenantId?: string;
+    userId: string;
     query: string;
     location?: string;
     numResults?: number;
     language?: string;
   }): Promise<SerpApiSearchResult[]> {
-    const { tenantId, query, location, numResults = 10, language = 'fr' } = params;
+    const { userId, tenantId, query, location, numResults = 10, language = 'fr' } = params;
 
     try {
       this.logger.log(`SerpAPI search: "${query}"`);
+      this.logger.log(`Params: userId=${userId}, tenantId=${tenantId}`);
 
-      const apiKey = await this.getApiKey(tenantId);
+      const apiKey = await this.getApiKey(userId, tenantId);
+      this.logger.log(`✅ API key retrieved successfully`);
 
       // Appel avec retry automatique
       const response = await withRetry(
@@ -94,7 +113,10 @@ export class SerpApiService {
       }));
     } catch (error) {
       this.logger.error('SerpAPI search failed:', error.message);
-      throw new Error(`SerpAPI search failed: ${error.message}`);
+      this.logger.error('Stack:', error.stack);
+      const wrappedError = new Error(`SerpAPI search failed: ${error.message}`);
+      wrappedError.stack = error.stack;  // Preserve original stack
+      throw wrappedError;
     }
   }
 
@@ -102,17 +124,18 @@ export class SerpApiService {
    * Recherche locale (pour trouver des professionnels dans une zone)
    */
   async localSearch(params: {
-    tenantId: string;
+    tenantId?: string;
+    userId: string;
     query: string;
     location: string;
     numResults?: number;
   }): Promise<any[]> {
-    const { tenantId, query, location, numResults = 20 } = params;
+    const { userId, tenantId, query, location, numResults = 20 } = params;
 
     try {
       this.logger.log(`SerpAPI local search: "${query}" in ${location}`);
 
-      const apiKey = await this.getApiKey(tenantId);
+      const apiKey = await this.getApiKey(userId, tenantId);
 
       const response = await axios.get(this.baseUrl, {
         params: {

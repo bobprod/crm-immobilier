@@ -120,7 +120,7 @@ export class LLMRouterService {
     );
 
     // 4. Créer et retourner l'instance du provider
-    const provider = await (this.providerFactory as any).createProvider(
+    const provider = await this.providerFactory.createProviderForUser(
       userId,
       selectedConfig.provider,
     );
@@ -262,7 +262,7 @@ export class LLMRouterService {
       );
     }
 
-    return (this.providerFactory as any).createProvider(userId, providerName);
+    return this.providerFactory.createProviderForUser(userId, providerName);
   }
 
   /**

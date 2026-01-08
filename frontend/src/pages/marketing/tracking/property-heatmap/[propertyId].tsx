@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/shared/utils/api-client-backend';
 import Link from 'next/link';
 import { ArrowLeft, Eye, Clock, MousePointer, TrendingUp } from 'lucide-react';
 

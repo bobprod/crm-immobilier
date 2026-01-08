@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Chip,
   Button,
   LinearProgress,
@@ -18,6 +17,8 @@ import {
   ListItemText,
   CircularProgress,
 } from '@mui/material';
+// Local shim for Grid2 to avoid MUI Grid typing mismatch across versions
+const Grid2: any = (props: any) => <div {...props} />;
 import {
   TrendingUp,
   CalendarToday,
@@ -84,7 +85,7 @@ export default function ProspectConversionDetail() {
     try {
       setLoading(true);
       const data = await prospectsConversionApi.getById(prospectId as string);
-      setProspect(data);
+      setProspect(data as any);
       setError(null);
     } catch (err) {
       setError('Erreur lors du chargement des détails du prospect');
@@ -153,9 +154,9 @@ export default function ProspectConversionDetail() {
           </Button>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid2 container spacing={3}>
           {/* Informations Principales */}
-          <Grid item xs={12} md={8}>
+          <Grid2 xs={12} md={8}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -163,8 +164,8 @@ export default function ProspectConversionDetail() {
                   Informations de Contact
                 </Typography>
                 <Divider sx={{ my: 2 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                <Grid2 container spacing={2}>
+                  <Grid2 xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Email fontSize="small" />
                       <Typography variant="body2" color="text.secondary">
@@ -172,8 +173,8 @@ export default function ProspectConversionDetail() {
                       </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.prospectEmail}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Phone fontSize="small" />
                       <Typography variant="body2" color="text.secondary">
@@ -181,8 +182,8 @@ export default function ProspectConversionDetail() {
                       </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.prospectPhone}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <Business fontSize="small" />
                       <Typography variant="body2" color="text.secondary">
@@ -190,8 +191,8 @@ export default function ProspectConversionDetail() {
                       </Typography>
                     </Box>
                     <Typography variant="body1">{prospect.assignedAgent}</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </Grid2>
+                  <Grid2 xs={12} sm={6}>
                     <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <CalendarToday fontSize="small" />
                       <Typography variant="body2" color="text.secondary">
@@ -201,8 +202,8 @@ export default function ProspectConversionDetail() {
                     <Typography variant="body1">
                       {new Date(prospect.firstContactDate).toLocaleDateString()}
                     </Typography>
-                  </Grid>
-                </Grid>
+                  </Grid2>
+                </Grid2>
               </CardContent>
             </Card>
 
@@ -260,10 +261,10 @@ export default function ProspectConversionDetail() {
                 </List>
               </CardContent>
             </Card>
-          </Grid>
+          </Grid2>
 
           {/* Sidebar - Métriques et Actions */}
-          <Grid item xs={12} md={4}>
+          <Grid2 xs={12} md={4}>
             {/* Statut et Probabilité */}
             <Card>
               <CardContent>
@@ -372,8 +373,8 @@ export default function ProspectConversionDetail() {
                 </List>
               </CardContent>
             </Card>
-          </Grid>
-        </Grid>
+          </Grid2>
+        </Grid2>
       </Box>
     </MainLayout>
   );

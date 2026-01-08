@@ -3,7 +3,7 @@
  * Architecture DDD - Module Core/Auth
  */
 
-import { apiClient } from './api-client-backend';
+import { apiClient } from '../../../shared/utils/backend-api';
 
 /**
  * Interfaces de types pour l'authentification
@@ -11,6 +11,7 @@ import { apiClient } from './api-client-backend';
 export interface User {
   id: string;
   email: string;
+  token?: string;
   firstName?: string;
   lastName?: string;
   role: 'admin' | 'agent' | 'manager';

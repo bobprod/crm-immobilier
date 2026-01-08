@@ -1,4 +1,4 @@
-import backendApiClient from './api-client-backend';
+import { apiClient as backendApiClient } from './api-client-backend';
 
 // ============================================
 // SMART FORMS AUTO-FILL
@@ -35,7 +35,7 @@ export const smartFormsApi = {
     params.append('fieldName', query.fieldName);
     if (query.partialValue) params.append('partialValue', query.partialValue);
     if (query.formType) params.append('formType', query.formType);
-    
+
     const response = await backendApiClient.get(`/smart-forms/suggestions?${params.toString()}`);
     return response.data.suggestions;
   },
@@ -72,7 +72,7 @@ export const semanticSearchApi = {
     params.append('query', query.query);
     if (query.searchType) params.append('searchType', query.searchType);
     if (query.limit) params.append('limit', query.limit.toString());
-    
+
     const response = await backendApiClient.get(`/semantic-search?${params.toString()}`);
     return response.data;
   },
@@ -121,7 +121,7 @@ export const priorityInboxApi = {
     const params = new URLSearchParams();
     if (query?.type) params.append('type', query.type);
     if (query?.limit) params.append('limit', query.limit.toString());
-    
+
     const response = await backendApiClient.get(`/priority-inbox?${params.toString()}`);
     return response.data;
   },

@@ -157,7 +157,7 @@ const LineChartCard: React.FC<LineChartCardProps> = ({
 
       {/* Chart */}
       <div className="h-48">
-        <SimpleLine ChartCard data={data} color={color} />
+        <SimpleLineChartCard data={data} color={color} />
       </div>
     </div>
   );

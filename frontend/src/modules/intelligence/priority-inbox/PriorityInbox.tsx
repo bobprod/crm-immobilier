@@ -102,69 +102,67 @@ export function PriorityInbox() {
             </Card>
           ) : (
             items.map((item) => (
-              <Card
-                key={item.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => handleItemClick(item)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge
-                          variant="outline"
-                          className={`${getUrgencyColor(item.urgencyLevel)} flex items-center gap-1`}
-                        >
-                          {getUrgencyIcon(item.urgencyLevel)}
-                          {item.urgencyLevel === 'critical' && 'Critique'}
-                          {item.urgencyLevel === 'high' && 'Haute'}
-                          {item.urgencyLevel === 'medium' && 'Moyenne'}
-                          {item.urgencyLevel === 'low' && 'Basse'}
-                        </Badge>
-                        <Badge variant="secondary">
-                          {item.type === 'prospect' ? 'Prospect' : 'Rendez-vous'}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg">{item.title}</CardTitle>
-                      <CardDescription className="mt-1">{item.description}</CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-600">{item.priorityScore}</div>
-                      <div className="text-xs text-gray-500">score</div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Reasons */}
-                  {item.reasons && item.reasons.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-sm font-medium mb-2">Raisons:</div>
-                      <div className="flex flex-wrap gap-2">
-                        {item.reasons.map((reason, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {reason}
+              <div key={item.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleItemClick(item)}>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge
+                            variant="outline"
+                            className={`${getUrgencyColor(item.urgencyLevel)} flex items-center gap-1`}
+                          >
+                            {getUrgencyIcon(item.urgencyLevel)}
+                            {item.urgencyLevel === 'critical' && 'Critique'}
+                            {item.urgencyLevel === 'high' && 'Haute'}
+                            {item.urgencyLevel === 'medium' && 'Moyenne'}
+                            {item.urgencyLevel === 'low' && 'Basse'}
                           </Badge>
-                        ))}
+                          <Badge variant="secondary">
+                            {item.type === 'prospect' ? 'Prospect' : 'Rendez-vous'}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-lg">{item.title}</CardTitle>
+                        <CardDescription className="mt-1">{item.description}</CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">{item.priorityScore}</div>
+                        <div className="text-xs text-gray-500">score</div>
                       </div>
                     </div>
-                  )}
+                  </CardHeader>
+                  <CardContent>
+                    {/* Reasons */}
+                    {item.reasons && item.reasons.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-sm font-medium mb-2">Raisons:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {item.reasons.map((reason, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {reason}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Recommended Actions */}
-                  {item.recommendedActions && item.recommendedActions.length > 0 && (
-                    <div>
-                      <div className="text-sm font-medium mb-2 flex items-center gap-1">
-                        <Lightbulb className="h-4 w-4 text-yellow-600" />
-                        Actions recommandées:
+                    {/* Recommended Actions */}
+                    {item.recommendedActions && item.recommendedActions.length > 0 && (
+                      <div>
+                        <div className="text-sm font-medium mb-2 flex items-center gap-1">
+                          <Lightbulb className="h-4 w-4 text-yellow-600" />
+                          Actions recommandées:
+                        </div>
+                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                          {item.recommendedActions.map((action, index) => (
+                            <li key={index}>{action}</li>
+                          ))}
+                        </ul>
                       </div>
-                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {item.recommendedActions.map((action, index) => (
-                          <li key={index}>{action}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             ))
           )}
         </TabsContent>

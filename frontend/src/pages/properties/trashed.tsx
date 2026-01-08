@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { propertiesAPI, Property } from '../../shared/utils/properties-api';
+import propertiesAPI, { Property } from '../../shared/utils/properties-api';
 import { Button } from '../../shared/components/ui/button';
 import {
   Card,
@@ -207,7 +207,7 @@ export default function TrashedPropertiesPage() {
                     </TableCell>
                     <TableCell>{property.city || '-'}</TableCell>
                     <TableCell>
-                      {property.deletedAt 
+                      {property.deletedAt
                         ? new Date(property.deletedAt).toLocaleDateString('fr-FR')
                         : '-'}
                     </TableCell>

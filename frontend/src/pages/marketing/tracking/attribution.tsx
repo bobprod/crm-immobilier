@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/shared/utils/api-client-backend';
 import {
   BarChart,
   Bar,
@@ -314,11 +314,10 @@ export default function AttributionPage() {
                 {conversions.map((conversion) => (
                   <div
                     key={conversion.sessionId}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                      selectedConversion?.sessionId === conversion.sessionId
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedConversion?.sessionId === conversion.sessionId
                         ? 'bg-blue-50 border-blue-300'
                         : 'hover:bg-gray-50'
-                    }`}
+                      }`}
                     onClick={() => setSelectedConversion(conversion)}
                   >
                     <div className="flex items-center justify-between">

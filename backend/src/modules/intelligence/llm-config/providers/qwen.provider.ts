@@ -68,6 +68,11 @@ export class QwenProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.length > 20;
+    // Clés Alibaba Cloud Qwen (DashScope)
+    return (
+      !!this.apiKey &&
+      this.apiKey.length >= 32 &&
+      (this.apiKey.startsWith('sk-') || this.apiKey.length > 40)
+    );
   }
 }

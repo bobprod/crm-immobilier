@@ -3,7 +3,7 @@
  * Architecture DDD - Module Business/Transactions
  */
 
-import apiClient from './api-client';
+import apiClient from './backend-api';
 
 /**
  * Interfaces de types pour les transactions
@@ -134,72 +134,80 @@ export const transactionsAPI = {
     }
     const query = params.toString();
     const url = `/api/business/transactions${query ? `?${query}` : ''}`;
-    return apiClient.get<Transaction[]>(url);
+    const response = await apiClient.get<Transaction[]>(url);
+    return response.data;
   },
 
   /**
    * Récupère une transaction par son ID
    */
   getById: async (id: string): Promise<Transaction> => {
-    return apiClient.get<Transaction>(`/api/business/transactions/${id}`);
+    const response = await apiClient.get<Transaction>(`/api/business/transactions/${id}`);
+    return response.data;
   },
 
   /**
    * Crée une nouvelle transaction
    */
   create: async (data: CreateTransactionData): Promise<Transaction> => {
-    return apiClient.post<Transaction>('/api/business/transactions', data);
+    const response = await apiClient.post<Transaction>('/api/business/transactions', data);
+    return response.data;
   },
 
   /**
    * Met à jour une transaction existante
    */
   update: async (id: string, data: UpdateTransactionData): Promise<Transaction> => {
-    return apiClient.patch<Transaction>(`/api/business/transactions/${id}`, data);
+    const response = await apiClient.patch<Transaction>(`/api/business/transactions/${id}`, data);
+    return response.data;
   },
 
   /**
    * Supprime une transaction
    */
   delete: async (id: string): Promise<void> => {
-    return apiClient.delete(`/api/business/transactions/${id}`);
+    await apiClient.delete(`/api/business/transactions/${id}`);
   },
 
   /**
    * Ajoute une étape à une transaction
    */
   addStep: async (transactionId: string, data: CreateTransactionStepData): Promise<TransactionStep> => {
-    return apiClient.post<TransactionStep>(
+    const response = await apiClient.post<TransactionStep>(
       `/api/business/transactions/${transactionId}/steps`,
       data
     );
+    return response.data;
   },
 
   /**
    * Récupère les statistiques des transactions
    */
   getStats: async (): Promise<TransactionStats> => {
-    return apiClient.get<TransactionStats>('/api/business/transactions/stats');
+    const response = await apiClient.get<TransactionStats>('/api/business/transactions/stats');
+    return response.data;
   },
 
   /**
    * Finalise une transaction
    */
   finalize: async (id: string, finalPrice: number, actualClosing?: string): Promise<Transaction> => {
-    return apiClient.patch<Transaction>(`/api/business/transactions/${id}`, {
+    const response = await apiClient.patch<Transaction>(`/api/business/transactions/${id}`, {
       status: 'final_deed_signed',
       finalPrice,
       actualClosing: actualClosing || new Date().toISOString(),
     });
+    return response.data;
   },
 
   /**
    * Annule une transaction
    */
   cancel: async (id: string, reason: string): Promise<Transaction> => {
-    return apiClient.patch<Transaction>(`/api/business/transactions/${id}`, {
+    const response = await apiClient.patch<Transaction>(`/api/business/transactions/${id}`, {
       status: 'cancelled',
       notes: reason,
     });
+    return response.data;
   },
 };

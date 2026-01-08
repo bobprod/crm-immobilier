@@ -46,7 +46,11 @@ export default function TransactionDetailPage() {
         }
 
         try {
-            await transactionsAPI.finalize(transaction.id, finalPrice);
+            await transactionsAPI.update(transaction.id, {
+                finalPrice,
+                status: 'final_deed_signed' as any,
+                actualClosing: new Date().toISOString()
+            });
             router.push('/transactions');
         } catch (err) {
             console.error('Failed to finalize transaction:', err);
@@ -60,7 +64,10 @@ export default function TransactionDetailPage() {
         if (!reason) return;
 
         try {
-            await transactionsAPI.cancel(transaction.id, reason);
+            await transactionsAPI.update(transaction.id, {
+                status: 'cancelled' as any,
+                notes: reason
+            });
             router.push('/transactions');
         } catch (err) {
             console.error('Failed to cancel transaction:', err);
@@ -245,10 +252,10 @@ export default function TransactionDetailPage() {
                                         <p className="text-sm text-gray-600">Créée le</p>
                                         <p className="font-medium">{format(new Date(transaction.createdAt), 'dd/MM/yyyy HH:mm')}</p>
                                     </div>
-                                    {transaction.expectedClosing && (
+                                    {transaction.estimatedClosing && (
                                         <div>
                                             <p className="text-sm text-gray-600">Clôture prévue</p>
-                                            <p className="font-medium">{format(new Date(transaction.expectedClosing), 'dd/MM/yyyy')}</p>
+                                            <p className="font-medium">{format(new Date(transaction.estimatedClosing), 'dd/MM/yyyy')}</p>
                                         </div>
                                     )}
                                     {transaction.actualClosing && (
@@ -278,9 +285,9 @@ export default function TransactionDetailPage() {
                                                     {index + 1}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-medium">{step.description}</p>
+                                                    <p className="font-medium">{step.stage}</p>
                                                     <p className="text-sm text-gray-600">
-                                                        {format(new Date(step.date), 'dd/MM/yyyy')}
+                                                        {format(new Date(step.completedAt), 'dd/MM/yyyy')}
                                                     </p>
                                                     {step.notes && (
                                                         <p className="text-sm text-gray-500 mt-1">{step.notes}</p>

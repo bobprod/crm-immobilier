@@ -293,50 +293,53 @@ export default function InvestmentDashboard() {
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => router.push('/investment/import')}>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Plus className="h-5 w-5 mr-2" />
-                Importer un projet
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Importez depuis Bricks, Homunity ou une URL personnalisée
-              </p>
-            </CardContent>
-          </Card>
+          <div className="cursor-pointer" onClick={() => router.push('/investment/import')}>
+            <Card className="hover:bg-accent/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Importer un projet
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Importez depuis Bricks, Homunity ou une URL personnalisée
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => router.push('/investment/compare')}>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <BarChart3 className="h-5 w-5 mr-2" />
-                Comparer des projets
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Analysez et comparez jusqu'à 5 projets simultanément
-              </p>
-            </CardContent>
-          </Card>
+          <div className="cursor-pointer" onClick={() => router.push('/investment/compare')}>
+            <Card className="hover:bg-accent/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  Comparer des projets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Analysez et comparez jusqu'à 5 projets simultanément
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card className="cursor-pointer hover:bg-accent/50 transition-colors"
-                onClick={() => router.push('/investment/alerts')}>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                Alertes opportunités
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Recevez des alertes sur les meilleures opportunités
-              </p>
-            </CardContent>
-          </Card>
+          <div className="cursor-pointer" onClick={() => router.push('/investment/alerts')}>
+            <Card className="hover:bg-accent/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  Alertes opportunités
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Recevez des alertes sur les meilleures opportunités
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Best Performing */}

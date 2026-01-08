@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { propertiesAPI, Property, PropertyFilters } from '../utils/properties-api';
+import propertiesAPI, { Property, PropertyFilters } from '../utils/properties-api';
 
 interface UseInfinitePropertiesResult {
   properties: Property[];

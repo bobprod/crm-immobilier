@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../shared/database/prisma.module';
 import { LLMConfigModule } from '../llm-config/llm-config.module';
 import { CommunicationsModule } from '../../communications/communications.module';
+import { AiBillingModule } from '../../../shared/ai-billing/ai-billing.module';
 
 // Services d'outils
 import { LlmService } from './services/llm.service';
 import { SerpApiService } from './services/serpapi.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { IntegrationKeysService } from './services/integrations/integration-keys.service';
+import { ProviderSelectorService } from './services/provider-selector.service';
 
 // Services orchestrateur
 import { IntentAnalyzerService } from './services/intent-analyzer.service';
@@ -27,6 +29,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     PrismaModule,
     LLMConfigModule, // Pour utiliser LLMProviderFactory
     CommunicationsModule,
+    AiBillingModule, // Pour ApiKeysService (utilisé par SerpApiService et FirecrawlService)
   ],
   providers: [
     // Guards
@@ -34,6 +37,9 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
 
     // Services d'intégration
     IntegrationKeysService,
+
+    // Service de sélection de provider
+    ProviderSelectorService,
 
     // Services d'outils externes
     LlmService,
@@ -53,10 +59,11 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     LlmService,
     SerpApiService,
     FirecrawlService,
+    ProviderSelectorService,
     IntentAnalyzerService,
     ExecutionPlannerService,
     ToolExecutorService,
     AiOrchestratorService,
   ],
 })
-export class AiOrchestratorModule {}
+export class AiOrchestratorModule { }

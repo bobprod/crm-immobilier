@@ -1,38 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { useState, useEffect } from 'react';
-import { financeAPI } from '@/shared/utils/finance-api';
+import { financeAPI, FinanceStats } from '@/shared/utils/finance-api';
 import { CommissionsList } from './CommissionsList';
 import { InvoicesList } from './InvoicesList';
 import { PaymentsList } from './PaymentsList';
 import { DollarSign, FileText, CreditCard, TrendingUp } from 'lucide-react';
 
 type TabType = 'commissions' | 'invoices' | 'payments';
-
-interface FinanceStats {
-    commissions: {
-        total: number;
-        pending: number;
-        paid: number;
-        totalAmount: number;
-        paidAmount: number;
-        pendingAmount: number;
-    };
-    invoices: {
-        total: number;
-        draft: number;
-        sent: number;
-        paid: number;
-        overdue: number;
-        totalAmount: number;
-        paidAmount: number;
-        pendingAmount: number;
-    };
-    payments: {
-        total: number;
-        totalAmount: number;
-    };
-}
 
 export function FinanceManager() {
     const [activeTab, setActiveTab] = useState<TabType>('commissions');

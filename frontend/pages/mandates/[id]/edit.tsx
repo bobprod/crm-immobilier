@@ -1,12 +1,12 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
-import { mandatesAPI, Mandate } from '@/shared/utils/mandates-api';
+import { mandatesAPI, Mandate, MandateType, MandateCategory } from '@/shared/utils/mandates-api';
 
 export default function EditMandatePage() {
     const router = useRouter();
@@ -16,8 +16,8 @@ export default function EditMandatePage() {
     const [error, setError] = React.useState<string | null>(null);
     const [mandate, setMandate] = React.useState<Mandate | null>(null);
 
-    const [mandateType, setMandateType] = React.useState<string>('exclusive');
-    const [category, setCategory] = React.useState<string>('sale');
+    const [mandateType, setMandateType] = React.useState<MandateType>(MandateType.EXCLUSIVE);
+    const [category, setCategory] = React.useState<MandateCategory>(MandateCategory.SALE);
     const [commissionType, setCommissionType] = React.useState<string>('percentage');
 
     React.useEffect(() => {
@@ -31,8 +31,8 @@ export default function EditMandatePage() {
             setLoadingData(true);
             const data = await mandatesAPI.getById(id as string);
             setMandate(data);
-            setMandateType(data.type);
-            setCategory(data.category);
+            setMandateType(data.type as MandateType);
+            setCategory(data.category as MandateCategory);
             setCommissionType(data.commissionType);
         } catch (err: any) {
             console.error('Error loading mandate:', err);
@@ -144,7 +144,7 @@ export default function EditMandatePage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Type de mandat *</label>
-                                        <Select value={mandateType} onValueChange={setMandateType}>
+                                        <Select value={mandateType} onValueChange={(value) => setMandateType(value as MandateType)}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -158,7 +158,7 @@ export default function EditMandatePage() {
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Catégorie *</label>
-                                        <Select value={category} onValueChange={setCategory}>
+                                        <Select value={category} onValueChange={(value) => setCategory(value as MandateCategory)}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>

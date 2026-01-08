@@ -1,0 +1,125 @@
+services:
+  # Base de données PostgreSQL pour les tests
+  db-test:
+    image: postgres:15-alpine
+    container_name: crm-db-test
+    environment:
+      POSTGRES_DB: crm_test
+      POSTGRES_USER: crm_test_user
+      POSTGRES_PASSWORD: crm_test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_test_user -d crm_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm-test-network
+
+  # Backend NestJS pour les tests
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm-backend-test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://crm_test_user:crm_test_password@db-test:5432/crm_test
+      JWT_SECRET: test_jwt_secret_key_for_testing_only
+      JWT_REFRESH_SECRET: test_jwt_refresh_secret_key_for_testing_only
+      PORT: 3001
+      CORS_ORIGIN: http://frontend-test:3000
+    ports:
+      - "3002:3001"
+    depends_on:
+      db-test:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+    command: >
+      sh -c "
+        echo '🔄 Waiting for database to be ready...' &&
+        npx prisma generate &&
+        npx prisma db push --skip-generate &&
+        echo '✅ Database schema synced' &&
+        npm run start:dev
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - crm-test-network
+
+  # Frontend Next.js pour les tests
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://backend-test:3001/api
+    container_name: crm-frontend-test
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://localhost:3002/api
+      PORT: 3000
+    ports:
+      - "3003:3000"
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - crm-test-network
+
+  # Service pour exécuter les tests Playwright
+  playwright-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.playwright
+    container_name: crm-playwright-test
+    environment:
+      BASE_URL: http://frontend-test:3000
+      API_URL: http://backend-test:3001/api
+    depends_on:
+      frontend-test:
+        condition: service_healthy
+      backend-test:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./frontend/test-results:/app/test-results
+      - ./frontend/playwright-report:/app/playwright-report
+    # Ne démarre pas automatiquement, lancé manuellement
+    profiles:
+      - test
+    command: npx playwright test
+    networks:
+      - crm-test-network
+
+networks:
+  crm-test-network:
+    driver: bridge
+
+volumes:
+  postgres_test_data:
+    driver: local

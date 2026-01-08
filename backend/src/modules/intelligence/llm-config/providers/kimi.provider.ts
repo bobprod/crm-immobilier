@@ -63,6 +63,11 @@ export class KimiProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.startsWith('sk-');
+    // Clés Moonshot (Kimi) commencent par sk-
+    return (
+      !!this.apiKey &&
+      this.apiKey.startsWith('sk-') &&
+      this.apiKey.length >= 40
+    );
   }
 }

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useAuth } from '@/shared/hooks/useAuth';
 
 /**
  * Composant pour charger automatiquement les pixels de tracking dans les pages vitrines

@@ -14,6 +14,33 @@ export class AppointmentsService {
   ) {}
 
   /**
+   * Normaliser les données d'un appointment (gérer les types Json de Prisma)
+   */
+  private normalizeAppointment(appointment: any) {
+    if (!appointment) return appointment;
+
+    // S'assurer que attendees est toujours un array ou null
+    if (appointment.attendees !== null && appointment.attendees !== undefined) {
+      if (!Array.isArray(appointment.attendees)) {
+        // Si c'est un objet unique, le mettre dans un array
+        appointment.attendees = [appointment.attendees];
+      }
+    } else {
+      // Si null ou undefined, le mettre à array vide pour cohérence
+      appointment.attendees = [];
+    }
+
+    return appointment;
+  }
+
+  /**
+   * Normaliser un tableau d'appointments
+   */
+  private normalizeAppointments(appointments: any[]) {
+    return appointments.map((apt) => this.normalizeAppointment(apt));
+  }
+
+  /**
    * Créer un rendez-vous
    */
   async create(userId: string, data: any) {
@@ -32,7 +59,7 @@ export class AppointmentsService {
       );
     }
 
-    return this.prisma.appointments.create({
+    const appointment = await this.prisma.appointments.create({
       data: {
         ...data,
         userId,
@@ -52,6 +79,8 @@ export class AppointmentsService {
         },
       },
     });
+
+    return this.normalizeAppointment(appointment);
   }
 
   /**
@@ -105,7 +134,7 @@ export class AppointmentsService {
       where.priority = filters.priority;
     }
 
-    return this.prisma.appointments.findMany({
+    const appointments = await this.prisma.appointments.findMany({
       where,
       include: {
         prospects: {
@@ -140,6 +169,8 @@ export class AppointmentsService {
       take: filters?.limit ? parseInt(filters.limit) : 100,
       skip: filters?.skip ? parseInt(filters.skip) : 0,
     });
+
+    return this.normalizeAppointments(appointments);
   }
 
   /**
@@ -162,7 +193,8 @@ export class AppointmentsService {
       },
     });
 
-    return ErrorHandler.ensureExists(appointment, 'Appointment', id);
+    const validated = ErrorHandler.ensureExists(appointment, 'Appointment', id);
+    return this.normalizeAppointment(validated);
   }
 
   /**
@@ -196,7 +228,7 @@ export class AppointmentsService {
       }
     }
 
-    return this.prisma.appointments.update({
+    const updated = await this.prisma.appointments.update({
       where: { id },
       data: updateData,
       include: {
@@ -204,6 +236,8 @@ export class AppointmentsService {
         properties: true,
       },
     });
+
+    return this.normalizeAppointment(updated);
   }
 
   /**
@@ -324,7 +358,7 @@ export class AppointmentsService {
    */
   async getUpcoming(userId: string, limit: number = 10) {
     try {
-      return await this.prisma.appointments.findMany({
+      const appointments = await this.prisma.appointments.findMany({
         where: {
           userId,
           startTime: {
@@ -355,6 +389,8 @@ export class AppointmentsService {
         orderBy: { startTime: 'asc' },
         take: limit,
       });
+
+      return this.normalizeAppointments(appointments);
     } catch (error) {
       this.logger.error(`Error fetching upcoming appointments: ${error.message}`);
       // Retourner un tableau vide en cas d'erreur au lieu de crasher
@@ -370,7 +406,7 @@ export class AppointmentsService {
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-    return this.prisma.appointments.findMany({
+    const appointments = await this.prisma.appointments.findMany({
       where: {
         userId,
         startTime: {
@@ -395,6 +431,8 @@ export class AppointmentsService {
       },
       orderBy: { startTime: 'asc' },
     });
+
+    return this.normalizeAppointments(appointments);
   }
 
   /**
@@ -403,7 +441,7 @@ export class AppointmentsService {
   async complete(id: string, userId: string, outcome?: string, rating?: number) {
     await this.findOne(id, userId);
 
-    return this.prisma.appointments.update({
+    const completed = await this.prisma.appointments.update({
       where: { id },
       data: {
         status: 'completed',
@@ -411,6 +449,8 @@ export class AppointmentsService {
         rating,
       },
     });
+
+    return this.normalizeAppointment(completed);
   }
 
   /**
@@ -419,7 +459,7 @@ export class AppointmentsService {
   async cancel(id: string, userId: string, reason?: string) {
     const appointment = await this.findOne(id, userId);
 
-    return this.prisma.appointments.update({
+    const cancelled = await this.prisma.appointments.update({
       where: { id },
       data: {
         status: 'cancelled',
@@ -428,6 +468,8 @@ export class AppointmentsService {
           : appointment.notes,
       },
     });
+
+    return this.normalizeAppointment(cancelled);
   }
 
   /**
@@ -448,7 +490,7 @@ export class AppointmentsService {
       throw new BadRequestException('Conflit avec un autre rendez-vous');
     }
 
-    return this.prisma.appointments.update({
+    const rescheduled = await this.prisma.appointments.update({
       where: { id },
       data: {
         startTime: new Date(newStartTime),
@@ -456,6 +498,8 @@ export class AppointmentsService {
         status: 'rescheduled',
       },
     });
+
+    return this.normalizeAppointment(rescheduled);
   }
 
   /**

@@ -198,7 +198,6 @@ export function TemplateSelector({ type, onSelect, isOpen, onClose }: TemplateSe
                         onChange={(e) =>
                           setVariableValues({ ...variableValues, [variable]: e.target.value })
                         }
-                        size="sm"
                       />
                     </div>
                   ))}

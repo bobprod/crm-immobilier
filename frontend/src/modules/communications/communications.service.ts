@@ -108,6 +108,39 @@ const communicationsService = {
     const response = await apiClient.post('/communications/smtp/test-email', { to });
     return response.data;
   },
+
+  // AI helpers
+  generateSmartEmail: async (data: {
+    prospectId?: string;
+    propertyId?: string;
+    purpose?: string;
+    tone?: string;
+    additionalContext?: string;
+  }) => {
+    const response = await apiClient.post('/communications/ai/generate-email', data);
+    return response.data as { subject: string; body: string; confidence?: number };
+  },
+
+  generateSmartSMS: async (data: {
+    prospectId?: string;
+    propertyId?: string;
+    purpose?: string;
+    maxLength?: number;
+    additionalContext?: string;
+  }) => {
+    const response = await apiClient.post('/communications/ai/generate-sms', data);
+    return response.data as { body: string; length?: number };
+  },
+
+  improveText: async (text: string, options?: string[]) => {
+    const response = await apiClient.post('/communications/ai/improve', { text, options });
+    return response.data as { improved: string; changes?: any[] };
+  },
+
+  translateMessage: async (text: string, target: string) => {
+    const response = await apiClient.post('/communications/ai/translate', { text, target });
+    return response.data as { translated: string };
+  },
 };
 
 export default communicationsService;

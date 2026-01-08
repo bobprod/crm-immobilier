@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntentAnalysis } from './intent-analyzer.service';
 import { OrchestrationObjective } from '../dto';
 import { ExecutionPlan, ToolCall } from '../types';
+import { ProviderSelectorService } from './provider-selector.service';
 
 /**
  * Service de planification d'exécution
@@ -11,6 +12,8 @@ import { ExecutionPlan, ToolCall } from '../types';
 @Injectable()
 export class ExecutionPlannerService {
   private readonly logger = new Logger(ExecutionPlannerService.name);
+
+  constructor(private readonly providerSelector: ProviderSelectorService) { }
 
   /**
    * Créer un plan d'exécution à partir de l'analyse d'intention
@@ -28,7 +31,7 @@ export class ExecutionPlannerService {
     // Planifier selon l'objectif
     switch (intentAnalysis.objective) {
       case OrchestrationObjective.PROSPECTION:
-        return this.planProspection(tenantId, userId, intentAnalysis, context);
+        return await this.planProspection(tenantId, userId, intentAnalysis, context);
 
       case OrchestrationObjective.INVESTMENT_BENCHMARK:
         return this.planInvestmentBenchmark(tenantId, userId, intentAnalysis, context);
@@ -52,47 +55,53 @@ export class ExecutionPlannerService {
    * 2. Firecrawl : scraper les pages trouvées
    * 3. LLM : extraire les leads des contenus scrapés
    */
-  private planProspection(
+  private async planProspection(
     tenantId: string,
     userId: string,
     analysis: IntentAnalysis,
     context: Record<string, any>,
-  ): ExecutionPlan {
+  ): Promise<ExecutionPlan> {
     const toolCalls: ToolCall[] = [];
 
     // Construire la query de recherche
     const searchQuery = this.buildProspectionSearchQuery(context);
 
-    // Étape 1 : Recherche SerpAPI
+    // Étape 1 : Recherche (provider dynamique via ProviderSelector)
+    const strategy = await this.providerSelector.selectOptimalStrategy(userId, context.agencyId || tenantId);
+    const searchProvider = strategy.search[0] || 'serpapi';
+
     toolCalls.push({
       id: 'search-prospects',
-      tool: 'serpapi',
+      tool: searchProvider,
       action: 'search',
       params: {
         tenantId,
+        userId,
         query: searchQuery,
         location: context.zone || 'France',
         numResults: context.maxResults || 20,
       },
       metadata: {
-        description: 'Rechercher des prospects potentiels',
+        description: `Rechercher des prospects potentiels (${searchProvider})`,
         priority: 1,
       },
     });
 
     // Étape 2 : Scraper les URLs trouvées
+    const scrapeProvider = strategy.scrape[0] || 'firecrawl';
     toolCalls.push({
       id: 'scrape-pages',
-      tool: 'firecrawl',
+      tool: scrapeProvider,
       action: 'scrapeBatch',
       params: {
         tenantId,
+        userId,
         // Les URLs viendront du résultat de l'étape 1
         formats: ['markdown'],
       },
       dependsOn: 'search-prospects',
       metadata: {
-        description: 'Scraper les pages trouvées',
+        description: `Scraper les pages trouvées (${scrapeProvider})`,
         priority: 2,
       },
     });

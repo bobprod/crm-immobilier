@@ -1,9 +1,17 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
-  // Turbopack disabled to avoid Windows symlink permission issues during CI/build
+  // Force Turbopack workspace root to this frontend folder to avoid
+  // creating symlinks outside the project on Windows (privilege issues).
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+  // Enable standalone output for Docker
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 };
 
 module.exports = nextConfig;

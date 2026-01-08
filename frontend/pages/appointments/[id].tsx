@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import Layout from '@/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -47,79 +47,148 @@ export default function AppointmentDetailPage() {
   }, [id]);
 
   const loadAppointment = async () => {
+    console.log('[AppointmentDetail] 🔄 Loading appointment, ID:', id);
     try {
       setLoading(true);
+      console.log('[AppointmentDetail] 📡 Calling API getById...');
       const data = await appointmentsAPI.getById(id as string);
+      console.log('[AppointmentDetail] ✅ Appointment loaded:', data);
       setAppointment(data);
+      setError(null);
     } catch (err: any) {
-      console.error('Error loading appointment:', err);
+      console.error('[AppointmentDetail] ❌ Error loading appointment:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        appointmentId: id
+      });
       setError('Erreur lors du chargement du rendez-vous');
+      setAppointment(null);
     } finally {
+      console.log('[AppointmentDetail] ⏹️ Loading finished');
       setLoading(false);
     }
   };
 
   const handleComplete = async () => {
-    if (!appointment) return;
+    if (!appointment) {
+      console.warn('[AppointmentDetail] ⚠️ No appointment to complete');
+      return;
+    }
+
+    console.log('[AppointmentDetail] 🎯 Initiating complete action for:', appointment.id);
     const outcome = prompt('Résultat du rendez-vous :');
-    if (outcome === null) return;
+    if (outcome === null) {
+      console.log('[AppointmentDetail] ❌ Complete action cancelled by user');
+      return;
+    }
 
     const ratingStr = prompt('Note de 1 à 5 (optionnel) :');
     const rating = ratingStr ? parseInt(ratingStr) : undefined;
+    console.log('[AppointmentDetail] 📊 Complete data:', { outcome, rating });
 
     try {
+      console.log('[AppointmentDetail] 📡 Calling complete API...');
       await appointmentsAPI.complete(appointment.id, outcome, rating);
+      console.log('[AppointmentDetail] ✅ Appointment completed successfully');
       loadAppointment();
-    } catch (err) {
-      console.error('Failed to complete appointment:', err);
+    } catch (err: any) {
+      console.error('[AppointmentDetail] ❌ Failed to complete appointment:', {
+        error: err.message,
+        data: err.response?.data
+      });
       alert('Erreur lors de la finalisation');
     }
   };
 
   const handleCancel = async () => {
-    if (!appointment) return;
-    const reason = prompt('Raison de l\'annulation :');
-    if (reason === null) return;
+    if (!appointment) {
+      console.warn('[AppointmentDetail] ⚠️ No appointment to cancel');
+      return;
+    }
 
+    console.log('[AppointmentDetail] 🚫 Initiating cancel action for:', appointment.id);
+    const reason = prompt('Raison de l\'annulation :');
+    if (reason === null) {
+      console.log('[AppointmentDetail] ❌ Cancel action cancelled by user');
+      return;
+    }
+
+    console.log('[AppointmentDetail] 📝 Cancel reason:', reason);
     try {
+      console.log('[AppointmentDetail] 📡 Calling cancel API...');
       await appointmentsAPI.cancel(appointment.id, reason);
+      console.log('[AppointmentDetail] ✅ Appointment cancelled successfully');
       loadAppointment();
-    } catch (err) {
-      console.error('Failed to cancel appointment:', err);
+    } catch (err: any) {
+      console.error('[AppointmentDetail] ❌ Failed to cancel appointment:', {
+        error: err.message,
+        data: err.response?.data
+      });
       alert('Erreur lors de l\'annulation');
     }
   };
 
   const handleReschedule = async () => {
-    if (!appointment) return;
+    if (!appointment) {
+      console.warn('[AppointmentDetail] ⚠️ No appointment to reschedule');
+      return;
+    }
+
+    console.log('[AppointmentDetail] 🔄 Initiating reschedule action for:', appointment.id);
     const newStartTime = prompt('Nouvelle date/heure de début (YYYY-MM-DD HH:MM) :');
-    if (!newStartTime) return;
+    if (!newStartTime) {
+      console.log('[AppointmentDetail] ❌ Reschedule cancelled: no start time');
+      return;
+    }
 
     const newEndTime = prompt('Nouvelle date/heure de fin (YYYY-MM-DD HH:MM) :');
-    if (!newEndTime) return;
+    if (!newEndTime) {
+      console.log('[AppointmentDetail] ❌ Reschedule cancelled: no end time');
+      return;
+    }
+
+    const startISO = new Date(newStartTime).toISOString();
+    const endISO = new Date(newEndTime).toISOString();
+    console.log('[AppointmentDetail] 📅 Reschedule data:', { newStartTime, newEndTime, startISO, endISO });
 
     try {
-      await appointmentsAPI.reschedule(
-        appointment.id,
-        new Date(newStartTime).toISOString(),
-        new Date(newEndTime).toISOString()
-      );
+      console.log('[AppointmentDetail] 📡 Calling reschedule API...');
+      await appointmentsAPI.reschedule(appointment.id, startISO, endISO);
+      console.log('[AppointmentDetail] ✅ Appointment rescheduled successfully');
       loadAppointment();
-    } catch (err) {
-      console.error('Failed to reschedule appointment:', err);
+    } catch (err: any) {
+      console.error('[AppointmentDetail] ❌ Failed to reschedule appointment:', {
+        error: err.message,
+        data: err.response?.data
+      });
       alert('Erreur lors de la reprogrammation');
     }
   };
 
   const handleDelete = async () => {
-    if (!appointment) return;
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) return;
+    if (!appointment) {
+      console.warn('[AppointmentDetail] ⚠️ No appointment to delete');
+      return;
+    }
+
+    console.log('[AppointmentDetail] 🗑️ Initiating delete action for:', appointment.id);
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce rendez-vous ?')) {
+      console.log('[AppointmentDetail] ❌ Delete action cancelled by user');
+      return;
+    }
 
     try {
+      console.log('[AppointmentDetail] 📡 Calling delete API...');
       await appointmentsAPI.delete(appointment.id);
+      console.log('[AppointmentDetail] ✅ Appointment deleted successfully');
+      console.log('[AppointmentDetail] 🔀 Redirecting to appointments list...');
       router.push('/appointments');
-    } catch (err) {
-      console.error('Failed to delete appointment:', err);
+    } catch (err: any) {
+      console.error('[AppointmentDetail] ❌ Failed to delete appointment:', {
+        error: err.message,
+        data: err.response?.data
+      });
       alert('Erreur lors de la suppression');
     }
   };
@@ -299,11 +368,10 @@ export default function AppointmentDetailPage() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-5 w-5 ${
-                              i < appointment.rating!
+                            className={`h-5 w-5 ${i < appointment.rating!
                                 ? 'fill-yellow-400 text-yellow-400'
                                 : 'text-gray-300'
-                            }`}
+                              }`}
                           />
                         ))}
                         <span className="ml-2 text-sm text-gray-600">

@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 
-interface HeatmapDataPoint {
+export interface HeatmapDataPoint {
   x: number; // Position X en pixels ou %
   y: number; // Position Y en pixels ou %
   value: number; // Intensité (nombre de clics/hovers)
   type: 'click' | 'move' | 'scroll';
 }
 
-interface HeatmapSession {
+export interface HeatmapSession {
   pageUrl: string;
   deviceType: 'desktop' | 'mobile' | 'tablet';
   screenWidth: number;

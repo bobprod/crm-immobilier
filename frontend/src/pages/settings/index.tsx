@@ -22,7 +22,8 @@ import {
   Brain,
   Zap,
   ChevronRight,
-  Coins
+  Coins,
+  Layers,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -53,6 +54,13 @@ export default function SettingsPage() {
       icon: Brain,
       href: '/settings/llm-config',
       color: 'bg-purple-500',
+    },
+    {
+      title: 'Stratégie des Providers',
+      description: 'Choisissez les providers à utiliser pour la recherche et le scraping',
+      icon: Layers,
+      href: '/settings/provider-strategy',
+      color: 'bg-indigo-500',
     },
     {
       title: 'APIs de Scraping',
@@ -98,11 +106,10 @@ export default function SettingsPage() {
 
         {message && (
           <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.includes('succès')
+            className={`mb-6 p-4 rounded-lg ${message.includes('succès')
                 ? 'bg-green-50 text-green-800 border border-green-200'
                 : 'bg-red-50 text-red-800 border border-red-200'
-            }`}
+              }`}
           >
             {message}
           </div>

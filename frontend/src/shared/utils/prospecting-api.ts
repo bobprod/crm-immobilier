@@ -768,6 +768,7 @@ export const getLeadTypeLabel = (type: LeadType): string => {
   const labels: Record<LeadType, string> = {
     requete: 'Requête - Cherche un bien',
     mandat: 'Mandat - Possède un bien',
+    inconnu: 'Inconnu',
   };
   return labels[type] || type;
 };
@@ -820,6 +821,7 @@ export const getLeadTypeColor = (type: LeadType): string => {
   const colors: Record<LeadType, string> = {
     requete: 'bg-indigo-100 text-indigo-800',
     mandat: 'bg-amber-100 text-amber-800',
+    inconnu: 'bg-gray-100 text-gray-800',
   };
   return colors[type] || 'bg-gray-100 text-gray-800';
 };

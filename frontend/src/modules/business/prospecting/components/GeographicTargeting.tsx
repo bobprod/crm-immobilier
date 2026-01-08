@@ -5,7 +5,12 @@ import dynamic from 'next/dynamic';
 interface Zone {
   id: string;
   name: string;
-  type: 'city' | 'region' | 'radius' | 'polygon';
+  type: 'city' | 'region' | 'radius' | 'polygon' | 'custom';
+  // allow custom zone types from external configuration
+  // e.g. Prospection `GeographicZone` may use 'custom'
+  // keep 'custom' compatible
+  // (Note: TypeScript will accept 'custom' now)
+  //
   coordinates?: { lat: number; lng: number };
   radius?: number; // en km
   polygon?: { lat: number; lng: number }[];
@@ -15,8 +20,12 @@ interface Zone {
 }
 
 interface GeographicTargetingProps {
-  onZonesChange: (zones: Zone[]) => void;
+  onZonesChange?: (zones: Zone[]) => void;
   initialZones?: Zone[];
+  // Single-zone compatibility for Prospection configuration (accept flexible shape)
+  value?: any;
+  onChange?: (zone: any) => void;
+  disabled?: boolean;
 }
 
 // Donnees des zones tunisiennes
@@ -214,6 +223,9 @@ const LeafletMap = dynamic(() => import('./LeafletMapComponent'), {
 export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   onZonesChange,
   initialZones = [],
+  value,
+  onChange,
+  disabled,
 }) => {
   const [zones, setZones] = useState<Zone[]>([...TUNISIAN_REGIONS, ...QUARTIERS_TUNIS]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -248,8 +260,33 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
   useEffect(() => {
     const selected = zones.filter((z) => z.selected);
     setSelectedZones(selected);
-    onZonesChange(selected);
+    if (onZonesChange) onZonesChange(selected);
+    // If consumer expects a single zone value, call onChange with the first selected zone
+    if (onChange) onChange(selected[0]);
   }, [zones, onZonesChange]);
+
+  // Support receiving a single `value` prop to mark a zone as selected (compat for Prospection)
+  useEffect(() => {
+    if (!value) return;
+
+    // Try to find an existing zone that matches by name or coordinates
+    const match = zones.find((z) => z.name === value.name || (z.coordinates && value.coordinates && z.coordinates.lat === value.coordinates.lat && z.coordinates.lng === value.coordinates.lng));
+    if (match) {
+      setZones((prev) => prev.map((z) => (z.id === match.id ? { ...z, selected: true } : z)));
+      return;
+    }
+
+    // Otherwise add it as a custom selected zone
+    const newZone: Zone = {
+      id: `custom-${Date.now()}`,
+      name: value.name || 'Zone personnalisée',
+      type: (value.type as Zone['type']) || 'custom',
+      coordinates: value.coordinates as any,
+      polygon: (value as any).polygon,
+      selected: true,
+    };
+    setZones((prev) => [...prev, newZone]);
+  }, [value]);
 
   // Ajouter une zone de rayon personnalise
   const addRadiusZone = useCallback(
@@ -361,21 +398,19 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
           <div className="flex rounded-lg overflow-hidden border">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'list'
+              className={`px-4 py-2 text-sm font-medium transition ${viewMode === 'list'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               📋 Liste
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'map'
+              className={`px-4 py-2 text-sm font-medium transition ${viewMode === 'map'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               🗺️ Carte
             </button>
@@ -384,11 +419,10 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
           {/* Radius mode */}
           <button
             onClick={() => setRadiusMode(!radiusMode)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              radiusMode
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${radiusMode
                 ? 'bg-orange-500 text-white ring-2 ring-orange-300'
                 : 'bg-white border text-gray-700 hover:bg-gray-50'
-            }`}
+              }`}
           >
             ⭕ {radiusMode ? 'Cliquez sur la carte' : 'Zone par rayon'}
           </button>
@@ -396,11 +430,10 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
           {/* Heatmap toggle */}
           <button
             onClick={() => setHeatmapEnabled(!heatmapEnabled)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              heatmapEnabled
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${heatmapEnabled
                 ? 'bg-red-500 text-white'
                 : 'bg-white border text-gray-700 hover:bg-gray-50'
-            }`}
+              }`}
           >
             🔥 Heatmap
           </button>
@@ -454,8 +487,8 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
         {viewMode === 'map' ? (
           /* Map View with Leaflet */
           <LeafletMap
-            zones={filteredZones}
-            selectedZones={selectedZones}
+            zones={filteredZones as any}
+            selectedZones={selectedZones as any}
             onZoneClick={toggleZone}
             onMapClick={handleMapClick}
             radiusMode={radiusMode}
@@ -469,11 +502,10 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
               <div
                 key={zone.id}
                 onClick={() => toggleZone(zone.id)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  zone.selected
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${zone.selected
                     ? 'border-blue-500 bg-blue-50 shadow-md'
                     : 'border-gray-200 hover:border-blue-300 hover:shadow'
-                }`}
+                  }`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -487,9 +519,8 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
                     </div>
                   </div>
                   <div
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      zone.selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
-                    }`}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${zone.selected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                      }`}
                   >
                     {zone.selected && <span className="text-white text-sm">✓</span>}
                   </div>
@@ -532,11 +563,10 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
             {selectedZones.map((zone) => (
               <span
                 key={zone.id}
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
-                  zone.type === 'radius'
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${zone.type === 'radius'
                     ? 'bg-orange-100 text-orange-800'
                     : 'bg-blue-100 text-blue-800'
-                }`}
+                  }`}
               >
                 {zone.type === 'radius' ? '⭕' : '📍'} {zone.name}
                 <button onClick={() => removeZone(zone.id)} className="ml-1 hover:opacity-70">

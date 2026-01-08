@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
+import { AiBillingModule } from '../../ai-billing/ai-billing.module';
 import { LLMConfigService } from './llm-config.service';
 import { LLMConfigController } from './llm-config.controller';
 import { LLMRouterService } from './llm-router.service';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { LLMProviderFactory } from './providers/llm-provider.factory';
+import { LLMProviderFactory, EmbeddingsProviderFactory } from './providers';
 import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker.service';
 
 /**
@@ -12,11 +13,13 @@ import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker
  * Inclut le router intelligent pour sélection automatique
  */
 @Module({
+  imports: [AiBillingModule],
   controllers: [LLMConfigController],
   providers: [
     LLMConfigService,
     LLMRouterService,
     LLMProviderFactory,
+    EmbeddingsProviderFactory,
     PrismaService,
     ApiCostTrackerService,
   ],
@@ -24,7 +27,8 @@ import { ApiCostTrackerService } from '../../../shared/services/api-cost-tracker
     LLMConfigService,
     LLMRouterService,
     LLMProviderFactory,
+    EmbeddingsProviderFactory,
     ApiCostTrackerService,
   ],
 })
-export class LLMConfigModule {}
+export class LLMConfigModule { }

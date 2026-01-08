@@ -12,7 +12,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { propertiesAPI, Property, CreatePropertyDTO } from '@/shared/utils/properties-api';
+import propertiesAPI, { Property, CreatePropertyData } from '@/shared/utils/properties-api';
 import { PropertyFilters } from './PropertyFilters';
 import { PropertyBulkActions } from './PropertyBulkActions';
 import { PropertyFormModal } from './PropertyFormModal';
@@ -199,7 +199,7 @@ export function PropertyList({
     setEditingProperty(null);
   };
 
-  const handleSubmitProperty = async (data: CreatePropertyDTO) => {
+  const handleSubmitProperty = async (data: CreatePropertyData) => {
     try {
       if (editingProperty) {
         // Update existing property
@@ -259,14 +259,15 @@ export function PropertyList({
 
   if (loading && properties.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-8" data-testid="loading-state">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2">Loading properties...</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="flex items-center justify-center p-8 text-red-500">{error}</div>;
+    return <div className="flex items-center justify-center p-8 text-red-500" data-testid="error-state">{error}</div>;
   }
 
   return (
@@ -293,7 +294,7 @@ export function PropertyList({
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <Table data-testid="properties-table">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px]">
@@ -311,7 +312,7 @@ export function PropertyList({
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody data-testid="properties-tbody">
               {properties.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-gray-500">

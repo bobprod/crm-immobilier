@@ -175,9 +175,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value.toLowerCase())}
             placeholder="ex: welcome_message"
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
+              }`}
             disabled={mode === 'edit'} // Can't change name in edit mode
           />
           {errors.name && (
@@ -219,11 +218,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           <button
             type="button"
             onClick={() => setCategory(TemplateCategory.MARKETING)}
-            className={`px-4 py-3 border-2 rounded-lg transition-all ${
-              category === TemplateCategory.MARKETING
+            className={`px-4 py-3 border-2 rounded-lg transition-all ${category === TemplateCategory.MARKETING
                 ? 'border-purple-500 bg-purple-50 text-purple-700'
                 : 'border-gray-200 hover:border-gray-300'
-            }`}
+              }`}
           >
             <div className="font-medium">Marketing</div>
             <div className="text-xs text-gray-500 mt-1">Promotions, offres</div>
@@ -232,11 +230,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           <button
             type="button"
             onClick={() => setCategory(TemplateCategory.UTILITY)}
-            className={`px-4 py-3 border-2 rounded-lg transition-all ${
-              category === TemplateCategory.UTILITY
+            className={`px-4 py-3 border-2 rounded-lg transition-all ${category === TemplateCategory.UTILITY
                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                 : 'border-gray-200 hover:border-gray-300'
-            }`}
+              }`}
           >
             <div className="font-medium">Utilitaire</div>
             <div className="text-xs text-gray-500 mt-1">Notifications, alertes</div>
@@ -245,11 +242,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           <button
             type="button"
             onClick={() => setCategory(TemplateCategory.AUTHENTICATION)}
-            className={`px-4 py-3 border-2 rounded-lg transition-all ${
-              category === TemplateCategory.AUTHENTICATION
+            className={`px-4 py-3 border-2 rounded-lg transition-all ${category === TemplateCategory.AUTHENTICATION
                 ? 'border-orange-500 bg-orange-50 text-orange-700'
                 : 'border-gray-200 hover:border-gray-300'
-            }`}
+              }`}
           >
             <div className="font-medium">Authentification</div>
             <div className="text-xs text-gray-500 mt-1">OTP, vérification</div>
@@ -268,9 +264,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           onChange={(e) => setHeader(e.target.value)}
           placeholder="Titre du message"
           maxLength={60}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.header ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.header ? 'border-red-500' : 'border-gray-300'
+            }`}
         />
         {errors.header && (
           <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -308,9 +303,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           rows={6}
           placeholder="Bonjour {{1}}, votre rendez-vous est confirmé pour le {{2}}."
           maxLength={1024}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm ${
-            errors.body ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm ${errors.body ? 'border-red-500' : 'border-gray-300'
+            }`}
         />
         {errors.body && (
           <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -347,9 +341,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           onChange={(e) => setFooter(e.target.value)}
           placeholder="Merci de votre confiance"
           maxLength={60}
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            errors.footer ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.footer ? 'border-red-500' : 'border-gray-300'
+            }`}
         />
         {errors.footer && (
           <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -467,7 +460,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         <ul className="text-xs text-blue-700 space-y-1">
           <li>• Les templates doivent être approuvés par WhatsApp avant utilisation</li>
           <li>• Le délai d'approbation peut prendre jusqu'à 24 heures</li>
-          <li>• Les variables permettent de personnaliser les messages ({{1}}, {{2}}, etc.)</li>
+          <li>• Les variables permettent de personnaliser les messages ({'{{1}}, {{2}}, etc.'})</li>
           <li>• Une fois approuvé, le template ne peut plus être modifié</li>
         </ul>
       </div>

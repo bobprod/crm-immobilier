@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { TrackingEventsService } from '@/modules/marketing/tracking/services/tracking-events.service';
+import { TrackingPlatform } from '@/modules/marketing/tracking/dto/tracking.dto';
 
 /**
  * Service pour gérer l'injection et le tracking des pixels sur les pages vitrines
@@ -422,11 +423,13 @@ export class VitrineTrackingService {
     eventData: Record<string, any>,
   ): Promise<void> {
     try {
-      await this.trackingEvents.trackEvent({
-        userId,
-        platform: 'vitrine',
+      await this.trackingEvents.trackEvent(userId, {
+        platform: [TrackingPlatform.VITRINE],
         eventName,
-        eventData: {
+        eventType: 'standard',
+        timestamp: new Date(),
+        source: 'web',
+        data: {
           ...eventData,
           source: 'vitrine_public',
           timestamp: new Date().toISOString(),

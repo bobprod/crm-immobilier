@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { IntegrationKeysService } from './integrations/integration-keys.service';
+import { ApiKeysService } from '../../../../shared/services/api-keys.service';
 import { withRetry } from '../utils/retry.util';
 
 /**
@@ -30,13 +30,13 @@ export class FirecrawlService {
   private readonly logger = new Logger(FirecrawlService.name);
   private readonly baseUrl = 'https://api.firecrawl.dev/v1';
 
-  constructor(private readonly integrationKeys: IntegrationKeysService) {}
+  constructor(private readonly apiKeys: ApiKeysService) { }
 
   /**
    * Récupérer la clé API Firecrawl du tenant
    */
-  private async getApiKey(tenantId: string): Promise<string> {
-    const apiKey = await this.integrationKeys.getKey(tenantId, 'firecrawlKey');
+  private async getApiKey(userId: string, agencyId?: string): Promise<string> {
+    const apiKey = await this.apiKeys.getApiKey(userId, 'firecrawl', agencyId);
 
     if (!apiKey) {
       throw new Error('Firecrawl API key not configured for tenant');
@@ -49,17 +49,18 @@ export class FirecrawlService {
    * Scraper une URL
    */
   async scrape(params: {
-    tenantId: string;
+    tenantId?: string;
+    userId: string;
     url: string;
     formats?: ('markdown' | 'html' | 'links')[];
     onlyMainContent?: boolean;
   }): Promise<FirecrawlScrapeResult> {
-    const { tenantId, url, formats = ['markdown'], onlyMainContent = true } = params;
+    const { userId, tenantId, url, formats = ['markdown'], onlyMainContent = true } = params;
 
     try {
       this.logger.log(`Firecrawl scraping: ${url}`);
 
-      const apiKey = await this.getApiKey(tenantId);
+      const apiKey = await this.getApiKey(userId, tenantId);
 
       // Appel avec retry automatique
       const response = await withRetry(
@@ -105,11 +106,12 @@ export class FirecrawlService {
    * Scraper plusieurs URLs en batch
    */
   async scrapeBatch(params: {
-    tenantId: string;
+    tenantId?: string;
+    userId: string;
     urls: string[];
     formats?: ('markdown' | 'html' | 'links')[];
   }): Promise<FirecrawlScrapeResult[]> {
-    const { tenantId, urls, formats } = params;
+    const { userId, tenantId, urls, formats } = params;
 
     this.logger.log(`Firecrawl batch scraping ${urls.length} URLs`);
 
@@ -122,6 +124,7 @@ export class FirecrawlService {
       const batchResults = await Promise.all(
         batch.map((url) =>
           this.scrape({
+            userId,
             tenantId,
             url,
             formats,
@@ -138,10 +141,12 @@ export class FirecrawlService {
    * Extraire uniquement le texte principal d'une URL
    */
   async extractMainContent(params: {
-    tenantId: string;
+    tenantId?: string;
+    userId: string;
     url: string;
   }): Promise<string | null> {
     const result = await this.scrape({
+      userId: params.userId,
       tenantId: params.tenantId,
       url: params.url,
       formats: ['markdown'],

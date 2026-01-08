@@ -101,7 +101,6 @@ export class TrackingAnalyticsService {
         const conversionCount = await this.prisma.trackingEvent.count({
           where: {
             userId,
-            eventName: event.eventName,
             timestamp: { gte: startDate },
             eventName: { in: ['Lead', 'Purchase', 'Schedule'] },
           },

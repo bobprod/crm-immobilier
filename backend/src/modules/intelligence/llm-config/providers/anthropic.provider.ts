@@ -49,6 +49,11 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.startsWith('sk-');
+    // Clés Anthropic commencent par sk-ant- et font ~100+ caractères
+    return (
+      !!this.apiKey &&
+      this.apiKey.startsWith('sk-ant-') &&
+      this.apiKey.length >= 80
+    );
   }
 }

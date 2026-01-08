@@ -55,6 +55,11 @@ export class OpenRouterProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey && this.apiKey.startsWith('sk-or-');
+    // Clés OpenRouter commencent par sk-or-v1- et font ~64 caractères
+    return (
+      !!this.apiKey &&
+      this.apiKey.startsWith('sk-or-') &&
+      this.apiKey.length >= 50
+    );
   }
 }

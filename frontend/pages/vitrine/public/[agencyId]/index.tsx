@@ -8,7 +8,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { TrackingPixelsLoader, useVitrineTracking } from '@/shared/components/vitrine/TrackingPixelsLoader';
 import { HeatmapTracker } from '@/shared/components/vitrine/HeatmapTracker';
 import { PropertyViewTracker } from '@/shared/components/vitrine/PropertyViewTracker';
-import api from '@/shared/utils/api-client';
+import api from '@/shared/utils/backend-api';
 import { Home, MapPin, Bed, Bath, Square, Phone, Mail, MapPinned } from 'lucide-react';
 
 interface VitrineConfig {
@@ -254,7 +254,7 @@ export default function PublicVitrinePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProperties.map((property) => (
-                <Card
+                <div
                   key={property.id}
                   id={`property-${property.id}`}
                   data-property-id={property.id}
@@ -265,8 +265,8 @@ export default function PublicVitrinePage() {
                     type: property.type,
                     category: property.category,
                   })}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
                 >
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   {/* Tracker automatique pour ce bien */}
                   {typeof agencyId === 'string' && (
                     <PropertyViewTracker
@@ -349,7 +349,8 @@ export default function PublicVitrinePage() {
                       </Link>
                     </div>
                   </CardContent>
-                </Card>
+                  </Card>
+                </div>
               ))}
             </div>
 
