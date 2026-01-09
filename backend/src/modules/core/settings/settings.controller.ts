@@ -14,7 +14,7 @@ import { SettingsService } from './settings.service';
 @UseGuards(JwtAuthGuard)
 @Controller('settings')
 export class SettingsController {
-  constructor(private settingsService: SettingsService) {}
+  constructor(private settingsService: SettingsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Obtenir tous les paramètres' })

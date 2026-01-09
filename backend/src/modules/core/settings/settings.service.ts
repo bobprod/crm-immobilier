@@ -311,4 +311,358 @@ export class SettingsService {
     });
     return obj;
   }
+
+  /**
+   * Tester une clé API OpenAI
+   */
+  async testOpenAIKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'openai' };
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'User-Agent': 'Mozilla/5.0',
+        },
+      });
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: 'Clé OpenAI valide',
+          provider: 'openai',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      } else {
+        const error = await response.json();
+        return {
+          success: false,
+          error: error.error?.message || 'Clé API invalide',
+          provider: 'openai',
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur de connexion: ${error.message}`,
+        provider: 'openai',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API Anthropic
+   */
+  async testAnthropicKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'anthropic' };
+    }
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 100,
+          messages: [{ role: 'user', content: 'Test' }],
+        }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        return {
+          success: false,
+          error: 'Clé API invalide ou non autorisée',
+          provider: 'anthropic',
+        };
+      }
+
+      if (response.ok || response.status === 400) {
+        // 400 peut signifier que le modèle est trop ancien, mais la clé est valide
+        return {
+          success: true,
+          message: 'Clé Anthropic valide',
+          provider: 'anthropic',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      return {
+        success: false,
+        error: `Erreur HTTP ${response.status}`,
+        provider: 'anthropic',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur de connexion: ${error.message}`,
+        provider: 'anthropic',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API Google Gemini
+   */
+  async testGeminiKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'gemini' };
+    }
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: 'Test',
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+      );
+
+      if (response.status === 400) {
+        // 400 est OK - cela signifie que la clé est valide mais la requête est mal formée
+        const data = await response.json();
+        if (data.error?.message?.includes('API key')) {
+          return {
+            success: false,
+            error: 'Clé API invalide',
+            provider: 'gemini',
+          };
+        }
+        return {
+          success: true,
+          message: 'Clé Gemini valide',
+          provider: 'gemini',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      // 429 = Rate Limited, which means the key is valid
+      if (response.status === 429) {
+        return {
+          success: true,
+          message: 'Clé Gemini valide (Rate limited - API fonctionne)',
+          provider: 'gemini',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: 'Clé Gemini valide',
+          provider: 'gemini',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      if (response.status === 403 || response.status === 401) {
+        return {
+          success: false,
+          error: 'Clé API invalide ou non autorisée',
+          provider: 'gemini',
+        };
+      }
+
+      return {
+        success: false,
+        error: `Erreur HTTP ${response.status}`,
+        provider: 'gemini',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur de connexion: ${error.message}`,
+        provider: 'gemini',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API Deepseek
+   */
+  async testDeepseekKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'deepseek' };
+    }
+
+    try {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: 'Test' }],
+          max_tokens: 10,
+        }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        return {
+          success: false,
+          error: 'Clé API invalide',
+          provider: 'deepseek',
+        };
+      }
+
+      if (response.ok || response.status === 400) {
+        return {
+          success: true,
+          message: 'Clé Deepseek valide',
+          provider: 'deepseek',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      return {
+        success: false,
+        error: `Erreur HTTP ${response.status}`,
+        provider: 'deepseek',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur de connexion: ${error.message}`,
+        provider: 'deepseek',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API Mistral
+   */
+  async testMistralKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'mistral' };
+    }
+
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'mistral-small-latest',
+          messages: [{ role: 'user', content: 'Test' }],
+          max_tokens: 10,
+        }),
+      });
+
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: 'Clé API invalide',
+          provider: 'mistral',
+        };
+      }
+
+      if (response.ok || response.status === 400) {
+        return {
+          success: true,
+          message: 'Clé Mistral valide',
+          provider: 'mistral',
+          keyPreview: apiKey.substring(0, 10) + '...',
+        };
+      }
+
+      return {
+        success: false,
+        error: `Erreur HTTP ${response.status}`,
+        provider: 'mistral',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur de connexion: ${error.message}`,
+        provider: 'mistral',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API Grok
+   */
+  async testGrokKey(apiKey: string): Promise<any> {
+    if (!apiKey || apiKey.trim() === '') {
+      return { success: false, error: 'API Key vide', provider: 'grok' };
+    }
+
+    // Grok n'a pas d'API publique accessible, on simule une validation basique
+    if (apiKey.length < 20) {
+      return {
+        success: false,
+        error: 'Format de clé API invalide',
+        provider: 'grok',
+      };
+    }
+
+    try {
+      // Validation basique - Grok n'a pas d'API publique
+      return {
+        success: true,
+        message: 'Format de clé Grok valide',
+        provider: 'grok',
+        keyPreview: apiKey.substring(0, 10) + '...',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Erreur: ${error.message}`,
+        provider: 'grok',
+      };
+    }
+  }
+
+  /**
+   * Tester une clé API pour n'importe quel provider
+   */
+  async testApiKey(provider: string, apiKey: string): Promise<any> {
+    const normalizedProvider = provider.toLowerCase();
+
+    switch (normalizedProvider) {
+      case 'openai':
+        return this.testOpenAIKey(apiKey);
+      case 'anthropic':
+        return this.testAnthropicKey(apiKey);
+      case 'gemini':
+      case 'google':
+        return this.testGeminiKey(apiKey);
+      case 'deepseek':
+        return this.testDeepseekKey(apiKey);
+      case 'mistral':
+        return this.testMistralKey(apiKey);
+      case 'grok':
+        return this.testGrokKey(apiKey);
+      default:
+        return {
+          success: false,
+          error: `Provider non supporté: ${provider}`,
+          provider: normalizedProvider,
+        };
+    }
+  }
 }
