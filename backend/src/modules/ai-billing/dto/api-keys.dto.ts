@@ -65,6 +65,51 @@ export class UpdateUserApiKeysDto {
   @IsOptional()
   @IsString()
   rapidApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Mistral' })
+  @IsOptional()
+  @IsString()
+  mistralApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Grok (xAI)' })
+  @IsOptional()
+  @IsString()
+  grokApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Cohere' })
+  @IsOptional()
+  @IsString()
+  cohereApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Together AI' })
+  @IsOptional()
+  @IsString()
+  togetherAiApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Replicate' })
+  @IsOptional()
+  @IsString()
+  replicateApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Perplexity' })
+  @IsOptional()
+  @IsString()
+  perplexityApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Hugging Face' })
+  @IsOptional()
+  @IsString()
+  huggingfaceApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Aleph Alpha' })
+  @IsOptional()
+  @IsString()
+  alephAlphaApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API NLP Cloud' })
+  @IsOptional()
+  @IsString()
+  nlpCloudApiKey?: string;
 }
 
 /**
@@ -131,6 +176,51 @@ export class UpdateAgencyApiKeysDto {
   @IsOptional()
   @IsString()
   rapidApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Mistral' })
+  @IsOptional()
+  @IsString()
+  mistralApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Grok (xAI)' })
+  @IsOptional()
+  @IsString()
+  grokApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Cohere' })
+  @IsOptional()
+  @IsString()
+  cohereApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Together AI' })
+  @IsOptional()
+  @IsString()
+  togetherAiApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Replicate' })
+  @IsOptional()
+  @IsString()
+  replicateApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Perplexity' })
+  @IsOptional()
+  @IsString()
+  perplexityApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Hugging Face' })
+  @IsOptional()
+  @IsString()
+  huggingfaceApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API Aleph Alpha' })
+  @IsOptional()
+  @IsString()
+  alephAlphaApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Clé API NLP Cloud' })
+  @IsOptional()
+  @IsString()
+  nlpCloudApiKey?: string;
 }
 
 /**

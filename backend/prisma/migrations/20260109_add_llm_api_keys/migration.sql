@@ -1,0 +1,10 @@
+-- Add missing LLM API Key fields to ai_settings table
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "mistralApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "grokApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "cohereApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "togetherAiApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "replicateApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "perplexityApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "huggingfaceApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "alephAlphaApiKey" TEXT;
+ALTER TABLE "ai_settings" ADD COLUMN IF NOT EXISTS "nlpCloudApiKey" TEXT;

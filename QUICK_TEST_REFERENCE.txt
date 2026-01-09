@@ -1,0 +1,358 @@
+```
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║     🧪 TESTING GUIDE - LLM API KEYS PLAYWRIGHT E2E TESTS 🧪              ║
+║                                                                            ║
+║                  "Quand j'ajoute API keys... nothing happened"            ║
+║                         → Maintenant on va tester! ✅                    ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+📊 PROBLÈME INITIAL
+═══════════════════════════════════════════════════════════════════════════════
+
+    User clicks "Enregistrer les clés LLM"
+              ↓
+           NOTHING
+              ↓
+    Did the save work? Does the frontend work? Does the API work?
+    → UNKNOWN ❌
+
+
+✅ SOLUTION: AUTOMATED E2E TESTING WITH PLAYWRIGHT
+═══════════════════════════════════════════════════════════════════════════════
+
+    Playwright automated browser tests will verify:
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │  1️⃣  FRONTEND                                               │
+    │      ✓ Page loads correctly                                 │
+    │      ✓ All 9 LLM input fields are visible                 │
+    │      ✓ Can fill each input                                 │
+    │      ✓ Save button is clickable                            │
+    │      ✓ Success message appears                             │
+    │                                                             │
+    │  2️⃣  BACKEND API                                           │
+    │      ✓ PUT /api/ai-billing/api-keys/user works            │
+    │      ✓ GET /api/ai-billing/api-keys/user works            │
+    │      ✓ Returns 200 OK                                      │
+    │      ✓ Data is saved correctly                             │
+    │                                                             │
+    │  3️⃣  DATABASE                                              │
+    │      ✓ All 9 columns exist in ai_settings table           │
+    │      ✓ Data persists after save                            │
+    │      ✓ Values are masked (security)                        │
+    └─────────────────────────────────────────────────────────────┘
+
+
+🚀 QUICK START (5 MINUTES)
+═══════════════════════════════════════════════════════════════════════════════
+
+    STEP 1: Start Backend
+    ─────────────────────
+    Terminal 1:
+    $ cd backend
+    $ npm run start:dev
+
+    Wait for: "Server running on http://localhost:3001" ✓
+
+
+    STEP 2: Start Frontend
+    ─────────────────────
+    Terminal 2:
+    $ cd frontend
+    $ npm run dev
+
+    Wait for: "Local: http://localhost:3000" ✓
+
+
+    STEP 3: Run Tests
+    ─────────────────
+    Terminal 3:
+
+    ON WINDOWS:
+    $ run-playwright-tests.bat
+
+    ON LINUX/MAC:
+    $ ./run-playwright-tests.sh
+
+
+    STEP 4: View Results
+    ──────────────────
+    Browser will open automatically showing:
+    ✅ All tests passed or
+    ❌ Which test failed
+
+
+🎯 WHAT GETS TESTED
+═══════════════════════════════════════════════════════════════════════════════
+
+    The 9 New LLM Keys:
+    ───────────────────
+
+    1. input#mistralApiKey       ← Mistral AI
+    2. input#grokApiKey          ← Grok (xAI)
+    3. input#cohereApiKey        ← Cohere
+    4. input#togetherAiApiKey    ← Together AI
+    5. input#replicateApiKey     ← Replicate
+    6. input#perplexityApiKey    ← Perplexity
+    7. input#huggingfaceApiKey   ← Hugging Face
+    8. input#alephAlphaApiKey    ← Aleph Alpha
+    9. input#nlpCloudApiKey      ← NLP Cloud
+
+
+📋 TEST SCENARIOS
+═══════════════════════════════════════════════════════════════════════════════
+
+    Test 1: PAGE LOADS CORRECTLY
+    ─────────────────────────────
+    1. Go to /settings/ai-api-keys
+    2. Wait for "Mes Clés API" heading
+    3. Click "LLM / IA" tab
+    Result: ✅ Page is visible and responsive
+
+
+    Test 2: ALL 9 FIELDS VISIBLE
+    ────────────────────────────
+    1. Check input#mistralApiKey exists
+    2. Check input#grokApiKey exists
+    3. ... (check all 9)
+    Result: ✅ All fields found in DOM
+
+
+    Test 3: FILL & SAVE ONE KEY
+    ───────────────────────────
+    1. Type in input#mistralApiKey
+    2. Click "Sauvegarder les clés LLM"
+    3. Wait for success message
+    Result: ✅ Message appears, API returns 200 OK
+
+
+    Test 4: FILL & SAVE ALL 9 KEYS
+    ──────────────────────────────
+    1. Fill all 9 inputs with values
+    2. Click "Sauvegarder les clés LLM"
+    3. Wait for success message
+    Result: ✅ All keys saved in one operation
+
+
+    Test 5: API SAVE & RETRIEVE
+    ───────────────────────────
+    1. Send PUT request with mistral key
+    2. Verify 200 OK response
+    3. Send GET request to retrieve
+    4. Verify key is returned (masked)
+    Result: ✅ API works correctly
+
+
+    Test 6: DATABASE PERSISTENCE
+    ────────────────────────────
+    1. Save grok key via API
+    2. Wait 500ms
+    3. Retrieve key again
+    4. Verify still there
+    Result: ✅ Data persists in database
+
+
+    Test 7: SHOW/HIDE KEYS
+    ─────────────────────
+    1. Type key value
+    2. Click eye icon
+    3. Input type changes from password to text
+    Result: ✅ Show/hide toggle works
+
+
+    Test 8-9: ERROR HANDLING
+    ───────────────────────
+    1. Test with empty fields
+    2. Test with network offline
+    Result: ✅ Graceful error handling
+
+
+📊 EXPECTED RESULTS
+═══════════════════════════════════════════════════════════════════════════════
+
+    After running tests, you'll see:
+
+    ✓ should load API Keys page
+    ✓ should display all 9 new LLM fields
+    ✓ should fill and save Mistral API key
+    ✓ should fill all 9 new LLM keys
+    ✓ should save and retrieve API key via API
+    ✓ should save multiple LLM keys at once
+    ✓ should persist keys in database
+    ✓ should show/hide API keys with eye icon
+    ✓ should handle empty fields gracefully
+    ✓ should handle network errors gracefully
+
+    ════════════════════════════════════════════════════════════════
+    10 passed ✅  |  0 failed ❌  |  Duration: 45 seconds ⏱️
+    ════════════════════════════════════════════════════════════════
+
+
+🔍 IF SOMETHING FAILS
+═══════════════════════════════════════════════════════════════════════════════
+
+    STEP 1: Read the Error Message
+    ──────────────────────────────
+    Example:
+    "Timeout: waiting for locator('input#mistralApiKey') to be visible"
+    → The input field not found on page
+
+
+    STEP 2: Check the Screenshot
+    ────────────────────────────
+    Playwright saves screenshots of failures
+    → Look in: test-results/ folder
+    → Shows exactly what the browser saw
+
+
+    STEP 3: Check the Network Tab
+    ────────────────────────────
+    In Playwright report:
+    → Network tab shows API requests
+    → If 404 or 500, API has a problem
+    → If 200, API worked but frontend didn't
+
+
+    STEP 4: Use Debug Mode
+    ─────────────────────
+    Run with debug to see step-by-step:
+    $ npx playwright test tests/llm-api-keys-e2e.spec.ts --debug
+
+    This allows you to:
+    • Pause execution
+    • Inspect elements
+    • See what selectors match
+    • Execute line by line
+
+
+⚡ PERFORMANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+    Total test duration: ~45-60 seconds
+
+    Time breakdown:
+    • Login: 5-10 seconds
+    • Page load: 2-3 seconds
+    • Field visibility checks: 5-10 seconds
+    • Fill forms: 10-15 seconds
+    • API calls: 5-10 seconds
+    • Error handling: 5-10 seconds
+
+
+🛠️ TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════════
+
+    Problem: "Port 3000 already in use"
+    Solution: $ lsof -i :3000  (Mac/Linux) or Check Task Manager (Windows)
+             Kill the process and restart
+
+    Problem: "Database connection failed"
+    Solution: Check PostgreSQL is running
+             Check DATABASE_URL in .env is correct
+             Check database crm_immobilier exists
+
+    Problem: "Tests timeout"
+    Solution: Increase timeout in playwright.config.ts
+             Check if services are actually running
+             Check internet/network connectivity
+
+    Problem: "All 9 fields not visible"
+    Solution: Frontend might not have the inputs
+             Check: frontend/src/pages/settings/ai-api-keys.tsx
+             Look for: input#mistralApiKey, input#grokApiKey, etc.
+
+    Problem: "Success message not appearing"
+    Solution: This is OK! The test continues
+             Check API response in Network tab
+             If status 200, save worked anyway
+
+
+📚 FILES CREATED
+═══════════════════════════════════════════════════════════════════════════════
+
+    Tests:
+    ✓ tests/llm-api-keys-e2e.spec.ts          ← Main test file
+    ✓ tests/selectors.reference.ts            ← Selector reference
+    ✓ playwright.config.ts                    ← Playwright config
+
+    Scripts:
+    ✓ run-playwright-tests.bat                ← Windows launcher
+    ✓ run-playwright-tests.sh                 ← Linux/Mac launcher
+    ✓ scripts/diagnostic-llm-keys.sh          ← Diagnostic script
+
+    Documentation:
+    ✓ PLAYWRIGHT_E2E_GUIDE.md                 ← Full guide
+    ✓ PRE_TEST_CHECKLIST.md                   ✓ Pre-test checklist
+    ✓ TEST_SETUP_SUMMARY.md                   ← Setup summary
+    ✓ This file                                ← Quick reference
+
+
+✨ NEXT STEPS
+═══════════════════════════════════════════════════════════════════════════════
+
+    1. Read: PRE_TEST_CHECKLIST.md
+       → Make sure everything is ready
+
+    2. Start: Backend + Frontend
+       $ cd backend && npm run start:dev
+       $ cd frontend && npm run dev
+
+    3. Run: Tests
+       $ run-playwright-tests.bat  (Windows)
+       $ ./run-playwright-tests.sh (Linux/Mac)
+
+    4. View: Results in browser
+       → HTML report opens automatically
+       → All tests should be ✅
+
+
+💬 SUPPORT
+═══════════════════════════════════════════════════════════════════════════════
+
+    Stuck? Check these files in order:
+    1. PRE_TEST_CHECKLIST.md      ← Verify setup
+    2. PLAYWRIGHT_E2E_GUIDE.md    ← Detailed guide
+    3. tests/selectors.reference.ts ← Selector details
+    4. Run with --debug flag       ← Interactive debugging
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+                    Ready to test? Let's go! 🚀
+
+═════════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## Quick Command Reference
+
+```bash
+# Windows
+run-playwright-tests.bat
+
+# Linux/Mac
+./run-playwright-tests.sh
+
+# Manual (all platforms)
+npx playwright test tests/llm-api-keys-e2e.spec.ts --headed --reporter=html
+
+# Debug mode
+npx playwright test tests/llm-api-keys-e2e.spec.ts --debug --headed
+
+# View results
+npx playwright show-report
+
+# One test only
+npx playwright test -g "should fill and save Mistral API key"
+
+# Verbose output
+npx playwright test tests/llm-api-keys-e2e.spec.ts --reporter=list --verbose
+```
+
+---
+
+Made with ❤️ for testing LLM API Keys
