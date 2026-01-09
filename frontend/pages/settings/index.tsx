@@ -12,6 +12,7 @@ import {
   Shield,
   Key,
   Brain,
+  Search,
 } from 'lucide-react';
 
 type TabType = 'profile' | 'api-keys' | 'llm' | 'security';
@@ -21,6 +22,17 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedOtherLLM, setSelectedOtherLLM] = useState<string>('cohere');
+
+  const otherLLMModels = [
+    { id: 'cohere', name: 'Cohere', description: 'Modèles de génération et classification de texte' },
+    { id: 'together', name: 'Together AI', description: 'Plateforme d\'inférence optimisée pour LLM' },
+    { id: 'replicate', name: 'Replicate', description: 'Exécutez des modèles ML en nuage' },
+    { id: 'perplexity', name: 'Perplexity', description: 'Modèles d\'IA avec accès à Internet en temps réel' },
+    { id: 'huggingface', name: 'Hugging Face', description: 'Plateforme communautaire d\'IA open-source' },
+    { id: 'aleph', name: 'Aleph Alpha', description: 'Modèles d\'IA multilingues et multimodaux' },
+    { id: 'nlp_cloud', name: 'NLP Cloud', description: 'API NLP sans infrastructure' },
+  ];
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +54,8 @@ export default function SettingsPage() {
     <button
       onClick={() => setActiveTab(tab)}
       className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === tab
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        ? 'bg-blue-600 text-white'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         }`}
     >
       {icon}
@@ -175,14 +187,15 @@ export default function SettingsPage() {
         {/* Tab 2: API Keys Configuration */}
         {activeTab === 'api-keys' && (
           <div className="space-y-6">
+            {/* LLM Models Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5 text-amber-600" />
-                  Configuration AI API Keys
+                  <Brain className="h-5 w-5 text-purple-600" />
+                  LLM - Modèles d'IA
                 </CardTitle>
                 <p className="text-sm text-gray-600 mt-2">
-                  Gérez vos clés API pour les services d'IA
+                  Configurez vos clés API pour les modèles d'IA avancés
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -194,7 +207,7 @@ export default function SettingsPage() {
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Votre clé API OpenAI pour accéder aux modèles d'IA
+                    Votre clé API OpenAI pour accéder aux modèles GPT-4o, GPT-4, etc.
                   </p>
                 </div>
                 <div>
@@ -205,7 +218,7 @@ export default function SettingsPage() {
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Claude et autres modèles Anthropic
+                    Clé API pour Claude 3 Opus, Sonnet et autres modèles Anthropic
                   </p>
                 </div>
                 <div>
@@ -216,9 +229,103 @@ export default function SettingsPage() {
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Clé API Google pour Gemini et autres services
+                    Clé API Google pour Gemini 2.0 et autres modèles Google
                   </p>
                 </div>
+                <div>
+                  <Label>Deepseek API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="sk-..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour Deepseek - Modèles d'IA haute performance et cost-effective
+                  </p>
+                </div>
+                <div>
+                  <Label>Mistral API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour Mistral - Modèles optimisés pour la performance et la latence
+                  </p>
+                </div>
+                <div>
+                  <Label>Open Router API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="sk-or-..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour Open Router - Accédez à plusieurs modèles via une seule API
+                  </p>
+                </div>
+                <div>
+                  <Label>Grok API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour Grok (xAI) - Modèles d'IA avec compréhension du contexte en temps réel
+                  </p>
+                </div>
+                <div>
+                  <Label>Autres Modèles LLM (BYOK)</Label>
+                  <select
+                    value={selectedOtherLLM}
+                    onChange={(e) => setSelectedOtherLLM(e.target.value)}
+                    className="w-full mt-1 p-2 border border-gray-300 rounded-md bg-white"
+                  >
+                    {otherLLMModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name} - {model.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Label className="text-blue-900">
+                    {otherLLMModels.find((m) => m.id === selectedOtherLLM)?.name} API Key
+                  </Label>
+                  <Input
+                    type="password"
+                    placeholder={`Clé API pour ${otherLLMModels.find((m) => m.id === selectedOtherLLM)?.name}`}
+                    className="mt-2 bg-white"
+                  />
+                  <p className="text-xs text-blue-700 mt-2">
+                    {otherLLMModels.find((m) => m.id === selectedOtherLLM)?.description}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button type="button" variant="outline">
+                    Annuler
+                  </Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Enregistrer les clés LLM
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Web Scraping Engines Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-orange-600" />
+                  Moteurs de Scraping Web
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Configurez vos clés API pour les services de web scraping et extraction de données
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
                   <Label>Firecrawl API Key</Label>
                   <Input
@@ -227,7 +334,29 @@ export default function SettingsPage() {
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Firecrawl (web scraping avancé)
+                    Clé API pour Firecrawl - Web scraping LLM-friendly avec support des PDFs
+                  </p>
+                </div>
+                <div>
+                  <Label>SERP API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour SerpAPI - Scraping des résultats de recherche (Google, Bing, etc.)
+                  </p>
+                </div>
+                <div>
+                  <Label>Pica API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Clé API pour Pica - Scraping de données web structurées et non-structurées
                   </p>
                 </div>
                 <div className="flex gap-2 justify-end pt-4">
