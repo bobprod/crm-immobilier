@@ -403,3 +403,148 @@ export async function validateApiKey(
 
     return validator(apiKey);
 }
+
+/**
+ * Get available models for a provider
+ * Fetches the list of models from the provider's API
+ */
+export async function getAvailableModels(provider: string, apiKey: string): Promise<string[]> {
+    try {
+        switch (provider) {
+            case 'openai':
+                return await getOpenAIModels(apiKey);
+            case 'anthropic':
+                return getAnthropicModels();
+            case 'gemini':
+                return await getGeminiModels(apiKey);
+            case 'deepseek':
+                return getDeepseekModels();
+            case 'mistral':
+                return await getMistralModels(apiKey);
+            case 'openrouter':
+                return await getOpenRouterModels(apiKey);
+            case 'grok':
+                return getGrokModels();
+            default:
+                return [];
+        }
+    } catch (error) {
+        console.error(`Error fetching models for ${provider}:`, error);
+        return [];
+    }
+}
+
+// OpenAI Models
+async function getOpenAIModels(apiKey: string): Promise<string[]> {
+    try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const models = data.data
+                .filter((m: any) => m.id.includes('gpt'))
+                .map((m: any) => m.id)
+                .sort();
+            return models;
+        }
+        return ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    } catch {
+        return ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    }
+}
+
+// Anthropic Models (static list)
+function getAnthropicModels(): string[] {
+    return [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20250219',
+        'claude-3-sonnet-20240229',
+        'claude-3-haiku-20240307',
+    ];
+}
+
+// Google Gemini Models
+async function getGeminiModels(apiKey: string): Promise<string[]> {
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            const models = data.models
+                .filter((m: any) => m.displayName && !m.displayName.includes('Embed'))
+                .map((m: any) => m.name.replace('models/', ''))
+                .sort();
+            return models;
+        }
+        return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+    } catch {
+        return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+    }
+}
+
+// Deepseek Models (static list)
+function getDeepseekModels(): string[] {
+    return [
+        'deepseek-chat',
+        'deepseek-coder',
+    ];
+}
+
+// Mistral Models
+async function getMistralModels(apiKey: string): Promise<string[]> {
+    try {
+        const response = await fetch('https://api.mistral.ai/v1/models', {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const models = data.data
+                .map((m: any) => m.id)
+                .sort();
+            return models;
+        }
+        return ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'];
+    } catch {
+        return ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest'];
+    }
+}
+
+// OpenRouter Models
+async function getOpenRouterModels(apiKey: string): Promise<string[]> {
+    try {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const models = data.data
+                .map((m: any) => m.id)
+                .slice(0, 20)
+                .sort();
+            return models;
+        }
+        return ['gpt-4', 'claude-3-opus', 'mistral-large'];
+    } catch {
+        return ['gpt-4', 'claude-3-opus', 'mistral-large'];
+    }
+}
+
+// Grok Models (static list)
+function getGrokModels(): string[] {
+    return [
+        'grok-2',
+        'grok-1',
+    ];
+}

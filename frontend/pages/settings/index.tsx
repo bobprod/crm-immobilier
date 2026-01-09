@@ -17,7 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { validateApiKey } from '../../utils/api-key-validators';
+import { validateApiKey, getAvailableModels } from '../../utils/api-key-validators';
 
 type TabType = 'profile' | 'api-keys' | 'llm' | 'security';
 
@@ -25,6 +25,9 @@ interface ApiKeyFieldState {
   apiKey: string;
   testing: boolean;
   testResult: { success: boolean; message?: string; error?: string } | null;
+  models: string[];
+  loadingModels: boolean;
+  selectedModel: string;
 }
 
 export default function SettingsPage() {
@@ -36,13 +39,13 @@ export default function SettingsPage() {
 
   // State for API key testing
   const [apiKeyStates, setApiKeyStates] = useState<Record<string, ApiKeyFieldState>>({
-    openai: { apiKey: '', testing: false, testResult: null },
-    anthropic: { apiKey: '', testing: false, testResult: null },
-    gemini: { apiKey: '', testing: false, testResult: null },
-    deepseek: { apiKey: '', testing: false, testResult: null },
-    mistral: { apiKey: '', testing: false, testResult: null },
-    openrouter: { apiKey: '', testing: false, testResult: null },
-    grok: { apiKey: '', testing: false, testResult: null },
+    openai: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    anthropic: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    gemini: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    deepseek: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    mistral: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    openrouter: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    grok: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
   });
 
   const testApiKey = async (provider: string, apiKey: string) => {
@@ -82,6 +85,11 @@ export default function SettingsPage() {
           testResult: result,
         },
       }));
+
+      // If validation successful, load available models
+      if (result.success) {
+        loadModels(provider, apiKey);
+      }
     } catch (error) {
       setApiKeyStates((prev) => ({
         ...prev,
@@ -97,12 +105,54 @@ export default function SettingsPage() {
     }
   };
 
+  const loadModels = async (provider: string, apiKey: string) => {
+    setApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        loadingModels: true,
+      },
+    }));
+
+    try {
+      const models = await getAvailableModels(provider, apiKey);
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          models,
+          loadingModels: false,
+          selectedModel: models.length > 0 ? models[0] : '',
+        },
+      }));
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          loadingModels: false,
+        },
+      }));
+    }
+  };
+
   const handleApiKeyChange = (provider: string, value: string) => {
     setApiKeyStates((prev) => ({
       ...prev,
       [provider]: {
         ...prev[provider],
         apiKey: value,
+      },
+    }));
+  };
+
+  const handleModelSelect = (provider: string, model: string) => {
+    setApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        selectedModel: model,
       },
     }));
   };
@@ -172,6 +222,40 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Models Dropdown - Show only if validation was successful and models were loaded */}
+        {state.testResult?.success && state.models.length > 0 && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <Label className="text-blue-900 font-semibold">📊 Modèles disponibles</Label>
+            {state.loadingModels ? (
+              <div className="mt-2 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm text-blue-600">Chargement des modèles...</span>
+              </div>
+            ) : (
+              <select
+                value={state.selectedModel}
+                onChange={(e) => handleModelSelect(provider, e.target.value)}
+                className="w-full mt-2 px-3 py-2 border border-blue-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Sélectionnez un modèle</option>
+                {state.models.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            )}
+            {state.selectedModel && (
+              <div className="mt-2 p-2 bg-white rounded border border-blue-300">
+                <p className="text-sm font-medium text-blue-900">
+                  ✅ Sélectionné: <span className="font-mono text-blue-700">{state.selectedModel}</span>
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="text-xs text-gray-500 mt-1">{description}</p>
       </div>
     );
