@@ -13,9 +13,19 @@ import {
   Key,
   Brain,
   Search,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
 } from 'lucide-react';
+import { validateApiKey } from '../../utils/api-key-validators';
 
 type TabType = 'profile' | 'api-keys' | 'llm' | 'security';
+
+interface ApiKeyFieldState {
+  apiKey: string;
+  testing: boolean;
+  testResult: { success: boolean; message?: string; error?: string } | null;
+}
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -23,6 +33,149 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedOtherLLM, setSelectedOtherLLM] = useState<string>('cohere');
+
+  // State for API key testing
+  const [apiKeyStates, setApiKeyStates] = useState<Record<string, ApiKeyFieldState>>({
+    openai: { apiKey: '', testing: false, testResult: null },
+    anthropic: { apiKey: '', testing: false, testResult: null },
+    gemini: { apiKey: '', testing: false, testResult: null },
+    deepseek: { apiKey: '', testing: false, testResult: null },
+    mistral: { apiKey: '', testing: false, testResult: null },
+    openrouter: { apiKey: '', testing: false, testResult: null },
+    grok: { apiKey: '', testing: false, testResult: null },
+  });
+
+  const testApiKey = async (provider: string, apiKey: string) => {
+    if (!apiKey.trim()) {
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: false,
+            error: 'Veuillez entrer une clé API',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Start testing
+    setApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        testing: true,
+        testResult: null,
+      },
+    }));
+
+    try {
+      // Call the direct API validator (no backend needed)
+      const result = await validateApiKey(provider, apiKey);
+
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: result,
+        },
+      }));
+    } catch (error) {
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: {
+            success: false,
+            error: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          },
+        },
+      }));
+    }
+  };
+
+  const handleApiKeyChange = (provider: string, value: string) => {
+    setApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        apiKey: value,
+      },
+    }));
+  };
+
+  const renderApiKeyInput = (
+    provider: string,
+    label: string,
+    placeholder: string,
+    description: string,
+  ) => {
+    const state = apiKeyStates[provider];
+
+    return (
+      <div key={provider}>
+        <Label>{label}</Label>
+        <div className="flex gap-2 mt-1">
+          <Input
+            type="password"
+            placeholder={placeholder}
+            value={state.apiKey}
+            onChange={(e) => handleApiKeyChange(provider, e.target.value)}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => testApiKey(provider, state.apiKey)}
+            disabled={state.testing || !state.apiKey.trim()}
+            className="whitespace-nowrap"
+          >
+            {state.testing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Test...
+              </>
+            ) : (
+              'Tester'
+            )}
+          </Button>
+        </div>
+        {state.testResult && (
+          <div
+            className={`mt-2 p-3 rounded-lg flex items-start gap-2 ${state.testResult.success
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+              }`}
+          >
+            {state.testResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+            )}
+            <div>
+              <p
+                className={
+                  state.testResult.success
+                    ? 'text-sm text-green-800'
+                    : 'text-sm text-red-800'
+                }
+              >
+                {state.testResult.success
+                  ? state.testResult.message ||
+                  'Clé API valide'
+                  : state.testResult.error ||
+                  'Erreur de validation'}
+              </p>
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-gray-500 mt-1">{description}</p>
+      </div>
+    );
+  };
 
   const otherLLMModels = [
     { id: 'cohere', name: 'Cohere', description: 'Modèles de génération et classification de texte' },
@@ -199,83 +352,48 @@ export default function SettingsPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>OpenAI API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="sk-..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Votre clé API OpenAI pour accéder aux modèles GPT-4o, GPT-4, etc.
-                  </p>
-                </div>
-                <div>
-                  <Label>Anthropic API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="sk-ant-..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Claude 3 Opus, Sonnet et autres modèles Anthropic
-                  </p>
-                </div>
-                <div>
-                  <Label>Google Gemini API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="AIza..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API Google pour Gemini 2.0 et autres modèles Google
-                  </p>
-                </div>
-                <div>
-                  <Label>Deepseek API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="sk-..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Deepseek - Modèles d'IA haute performance et cost-effective
-                  </p>
-                </div>
-                <div>
-                  <Label>Mistral API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Mistral - Modèles optimisés pour la performance et la latence
-                  </p>
-                </div>
-                <div>
-                  <Label>Open Router API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="sk-or-..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Open Router - Accédez à plusieurs modèles via une seule API
-                  </p>
-                </div>
-                <div>
-                  <Label>Grok API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Grok (xAI) - Modèles d'IA avec compréhension du contexte en temps réel
-                  </p>
-                </div>
+                {renderApiKeyInput(
+                  'openai',
+                  'OpenAI API Key',
+                  'sk-...',
+                  'Votre clé API OpenAI pour accéder aux modèles GPT-4o, GPT-4, etc.',
+                )}
+                {renderApiKeyInput(
+                  'anthropic',
+                  'Anthropic API Key',
+                  'sk-ant-...',
+                  'Clé API pour Claude 3 Opus, Sonnet et autres modèles Anthropic',
+                )}
+                {renderApiKeyInput(
+                  'gemini',
+                  'Google Gemini API Key',
+                  'AIza...',
+                  'Clé API Google pour Gemini 2.0 et autres modèles Google',
+                )}
+                {renderApiKeyInput(
+                  'deepseek',
+                  'Deepseek API Key',
+                  'sk-...',
+                  'Clé API pour Deepseek - Modèles d\'IA haute performance et cost-effective',
+                )}
+                {renderApiKeyInput(
+                  'mistral',
+                  'Mistral API Key',
+                  '...',
+                  'Clé API pour Mistral - Modèles optimisés pour la performance et la latence',
+                )}
+                {renderApiKeyInput(
+                  'openrouter',
+                  'Open Router API Key',
+                  'sk-or-...',
+                  'Clé API pour Open Router - Accédez à plusieurs modèles via une seule API',
+                )}
+                {renderApiKeyInput(
+                  'grok',
+                  'Grok API Key',
+                  '...',
+                  'Clé API pour Grok (xAI) - Modèles d\'IA avec compréhension du contexte en temps réel',
+                )}
                 <div>
                   <Label>Autres Modèles LLM (BYOK)</Label>
                   <select
