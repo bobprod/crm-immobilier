@@ -26,6 +26,16 @@ interface ApiKeys {
   geminiApiKey?: string;
   deepseekApiKey?: string;
   openrouterApiKey?: string;
+  // New LLM Providers
+  mistralApiKey?: string;
+  grokApiKey?: string;
+  cohereApiKey?: string;
+  togetherAiApiKey?: string;
+  replicateApiKey?: string;
+  perplexityApiKey?: string;
+  huggingfaceApiKey?: string;
+  alephAlphaApiKey?: string;
+  nlpCloudApiKey?: string;
   // Scraping Providers
   serpApiKey?: string;
   firecrawlApiKey?: string;
@@ -68,6 +78,15 @@ export default function AIApiKeysPage() {
           geminiApiKey: data.geminiApiKey,
           deepseekApiKey: data.deepseekApiKey,
           openrouterApiKey: data.openrouterApiKey,
+          mistralApiKey: data.mistralApiKey,
+          grokApiKey: data.grokApiKey,
+          cohereApiKey: data.cohereApiKey,
+          togetherAiApiKey: data.togetherAiApiKey,
+          replicateApiKey: data.replicateApiKey,
+          perplexityApiKey: data.perplexityApiKey,
+          huggingfaceApiKey: data.huggingfaceApiKey,
+          alephAlphaApiKey: data.alephAlphaApiKey,
+          nlpCloudApiKey: data.nlpCloudApiKey,
         });
 
         setScrapingKeys({
@@ -272,6 +291,88 @@ export default function AIApiKeysPage() {
                   llmKeys.openrouterApiKey,
                   (val) => setLlmKeys({ ...llmKeys, openrouterApiKey: val }),
                   'Accès à plusieurs modèles via une seule API'
+                )}
+
+                {/* New LLM Providers */}
+                {renderKeyInput(
+                  'Mistral AI',
+                  'mistralApiKey',
+                  'mistral-...',
+                  llmKeys.mistralApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, mistralApiKey: val }),
+                  'Pour Mistral Small, Medium, Large'
+                )}
+
+                {renderKeyInput(
+                  'Grok (xAI)',
+                  'grokApiKey',
+                  'grok-...',
+                  llmKeys.grokApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, grokApiKey: val }),
+                  'Modèle Grok avec connaissance du web en temps réel'
+                )}
+
+                {renderKeyInput(
+                  'Cohere',
+                  'cohereApiKey',
+                  'cohere-...',
+                  llmKeys.cohereApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, cohereApiKey: val }),
+                  'Pour les modèles Command et Rerank'
+                )}
+
+                {renderKeyInput(
+                  'Together AI',
+                  'togetherAiApiKey',
+                  'together-...',
+                  llmKeys.togetherAiApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, togetherAiApiKey: val }),
+                  'Modèles open-source optimisés'
+                )}
+
+                {renderKeyInput(
+                  'Replicate',
+                  'replicateApiKey',
+                  'r8_...',
+                  llmKeys.replicateApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, replicateApiKey: val }),
+                  'Modèles open-source avec API simple'
+                )}
+
+                {renderKeyInput(
+                  'Perplexity',
+                  'perplexityApiKey',
+                  'pplx-...',
+                  llmKeys.perplexityApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, perplexityApiKey: val }),
+                  'Pour Perplexity avec recherche en temps réel'
+                )}
+
+                {renderKeyInput(
+                  'Hugging Face',
+                  'huggingfaceApiKey',
+                  'hf_...',
+                  llmKeys.huggingfaceApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, huggingfaceApiKey: val }),
+                  'Accès aux modèles du Hub Hugging Face'
+                )}
+
+                {renderKeyInput(
+                  'Aleph Alpha',
+                  'alephAlphaApiKey',
+                  'AA_...',
+                  llmKeys.alephAlphaApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, alephAlphaApiKey: val }),
+                  'Pour Luminous avec explainability'
+                )}
+
+                {renderKeyInput(
+                  'NLP Cloud',
+                  'nlpCloudApiKey',
+                  'nlpcloud-...',
+                  llmKeys.nlpCloudApiKey,
+                  (val) => setLlmKeys({ ...llmKeys, nlpCloudApiKey: val }),
+                  'Pour modèles GPT-J, Bloom et autres'
                 )}
 
                 <div className="pt-4">

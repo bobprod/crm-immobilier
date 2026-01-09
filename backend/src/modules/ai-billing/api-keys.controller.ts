@@ -15,7 +15,7 @@ export class ApiKeysController {
   constructor(
     private apiKeysService: ApiKeysService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * ═══════════════════════════════════════════════════════════
@@ -30,11 +30,22 @@ export class ApiKeysController {
     const settings = await this.prisma.ai_settings.findUnique({
       where: { userId: req.user.userId },
       select: {
+        // LLM Providers
         anthropicApiKey: true,
         openaiApiKey: true,
         geminiApiKey: true,
         deepseekApiKey: true,
         openrouterApiKey: true,
+        mistralApiKey: true,
+        grokApiKey: true,
+        cohereApiKey: true,
+        togetherAiApiKey: true,
+        replicateApiKey: true,
+        perplexityApiKey: true,
+        huggingfaceApiKey: true,
+        alephAlphaApiKey: true,
+        nlpCloudApiKey: true,
+        // Scraping & Data Providers
         serpApiKey: true,
         firecrawlApiKey: true,
         picaApiKey: true,
@@ -42,6 +53,7 @@ export class ApiKeysController {
         scrapingBeeApiKey: true,
         browserlessApiKey: true,
         rapidApiKey: true,
+        customApiKeys: true,
       },
     });
 
