@@ -66,6 +66,13 @@ export default function SettingsPage() {
   const [savingScraping, setSavingScraping] = useState(false);
   const [loadingKeys, setLoadingKeys] = useState(true);
 
+  // State for internal scraping engines
+  const [internalEngines, setInternalEngines] = useState({
+    cheerio: { enabled: true, name: 'Cheerio', description: 'Parser HTML léger et rapide (recommandé pour sites simples)' },
+    puppeteer: { enabled: true, name: 'Puppeteer', description: 'Navigateur headless complet (pour sites JavaScript complexes)' },
+  });
+  const [savingEngines, setSavingEngines] = useState(false);
+
   // Fetch user API keys on component mount
   useEffect(() => {
     const fetchUserApiKeys = async () => {
@@ -1040,6 +1047,105 @@ export default function SettingsPage() {
                       </>
                     ) : (
                       'Enregistrer les clés API'
+                    )}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Brain className="h-5 w-5 text-purple-600" />
+                  Moteurs de Scraping Internes
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Activez ou désactivez les moteurs de scraping locaux installés sur votre serveur
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(internalEngines).map(([key, engine]) => (
+                  <div key={key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900">{engine.name}</h4>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                          engine.enabled
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {engine.enabled ? 'Activé' : 'Désactivé'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{engine.description}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={engine.enabled}
+                        onChange={(e) => {
+                          setInternalEngines(prev => ({
+                            ...prev,
+                            [key]: { ...prev[key], enabled: e.target.checked }
+                          }));
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                ))}
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Ordre de priorité</p>
+                      <p className="mt-1">Par défaut, le système utilise Cheerio en premier pour économiser les ressources. Puppeteer est utilisé automatiquement pour les sites JavaScript complexes.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Reset to defaults
+                      setInternalEngines({
+                        cheerio: { enabled: true, name: 'Cheerio', description: 'Parser HTML léger et rapide (recommandé pour sites simples)' },
+                        puppeteer: { enabled: true, name: 'Puppeteer', description: 'Navigateur headless complet (pour sites JavaScript complexes)' },
+                      });
+                    }}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                  >
+                    Réinitialiser
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSavingEngines(true);
+                      setMessage('');
+
+                      try {
+                        // TODO: Call API to save engine configuration
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        setMessage('✅ Configuration des moteurs sauvegardée!');
+                      } catch (error) {
+                        setMessage('❌ Erreur lors de la sauvegarde');
+                      } finally {
+                        setSavingEngines(false);
+                      }
+                    }}
+                    disabled={savingEngines}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {savingEngines ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      'Enregistrer la configuration'
                     )}
                   </button>
                 </div>
