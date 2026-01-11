@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { ConfigService } from '@nestjs/config';
+import { ApiKeysService } from '../../../shared/services/api-keys.service';
 
 export interface FirecrawlScrapingOptions {
   onlyMainContent?: boolean;
@@ -47,41 +47,66 @@ export class FirecrawlService {
   private readonly logger = new Logger(FirecrawlService.name);
   private readonly baseUrl = 'https://api.firecrawl.dev';
 
-  constructor(private configService: ConfigService) {}
+  constructor(private apiKeysService: ApiKeysService) {}
 
   /**
    * Obtenir la clé API Firecrawl
-   * - Soit depuis les paramètres utilisateur (tenant)
-   * - Soit depuis les variables d'environnement
+   *
+   * Stratégie hiérarchique:
+   * 1. Clé au niveau USER (ai_settings) - PRIORITÉ 1
+   * 2. Clé au niveau AGENCY (agencyApiKeys) - PRIORITÉ 2
+   * 3. Clé SUPER ADMIN (globalSettings) - FALLBACK
+   *
+   * @param userId ID de l'utilisateur
+   * @param agencyId ID de l'agence (optionnel)
    */
-  private getApiKey(tenantId?: string): string {
-    // NOTE: La récupération depuis les settings du tenant n'est pas encore implémentée
-    // Cette fonctionnalité sera ajoutée dans le module SettingsModule
-    // Pour l'instant, utiliser uniquement la variable d'environnement
-    
-    const apiKey = this.configService.get<string>('FIRECRAWL_API_KEY');
-    
-    if (!apiKey) {
-      throw new Error(
-        'Clé API Firecrawl non configurée. Veuillez configurer FIRECRAWL_API_KEY dans les variables d\'environnement ou dans les paramètres utilisateur.',
-      );
-    }
+  private async getApiKey(userId: string, agencyId?: string): Promise<string> {
+    this.logger.log(`🔑 Getting Firecrawl API key for userId=${userId}, agencyId=${agencyId}`);
 
-    return apiKey;
+    try {
+      const apiKey = await this.apiKeysService.getApiKey(userId, 'firecrawl', agencyId);
+
+      if (!apiKey) {
+        throw new Error(
+          'Clé API Firecrawl non configurée. ' +
+          'Veuillez configurer votre clé Firecrawl dans les paramètres (Settings > API Keys) ' +
+          'ou contactez votre administrateur d\'agence.',
+        );
+      }
+
+      this.logger.log(`✅ Firecrawl API key retrieved successfully`);
+      return apiKey;
+    } catch (error) {
+      this.logger.error(`❌ Error getting Firecrawl API key: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
    * Scraper une URL avec Firecrawl
+   *
+   * @param url URL à scraper
+   * @param options Options de scraping
+   * @param userId ID de l'utilisateur (requis pour récupérer la clé API)
+   * @param agencyId ID de l'agence (optionnel, pour fallback agency)
    */
   async scrapeUrl(
     url: string,
-    options?: FirecrawlScrapingOptions,
-    tenantId?: string,
+    options?: FirecrawlScrapingOptions & { userId?: string; agencyId?: string },
+    tenantId?: string, // Deprecated: use options.userId instead
   ): Promise<FirecrawlScrapingResult> {
     this.logger.log(`Scraping URL avec Firecrawl: ${url}`);
 
     try {
-      const apiKey = this.getApiKey(tenantId);
+      // Extract userId and agencyId from options or use tenantId as fallback
+      const userId = options?.userId || tenantId;
+      const agencyId = options?.agencyId;
+
+      if (!userId) {
+        throw new Error('userId is required to fetch API key from settings');
+      }
+
+      const apiKey = await this.getApiKey(userId, agencyId);
 
       const response = await axios.post(
         `${this.baseUrl}/v0/scrape`,
