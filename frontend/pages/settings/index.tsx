@@ -17,7 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { validateApiKey, getAvailableModels } from '../../utils/api-key-validators';
+import { validateApiKey, getAvailableModels, validateScrapingApiKey } from '../../utils/api-key-validators';
 
 type TabType = 'profile' | 'api-keys' | 'llm' | 'security';
 
@@ -48,11 +48,18 @@ export default function SettingsPage() {
     grok: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
   });
 
-  // State for scraping API keys
+  // State for scraping API keys (legacy - kept for saving)
   const [scrapingKeys, setScrapingKeys] = useState({
     firecrawlApiKey: '',
     serpApiKey: '',
     picaApiKey: '',
+  });
+
+  // State for scraping API key testing
+  const [scrapingApiKeyStates, setScrapingApiKeyStates] = useState<Record<string, ApiKeyFieldState>>({
+    firecrawl: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    serpapi: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    pica: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
   });
 
   const [savingLLM, setSavingLLM] = useState(false);
@@ -165,6 +172,89 @@ export default function SettingsPage() {
         selectedModel: model,
       },
     }));
+  };
+
+  // Scraping API key handlers
+  const testScrapingApiKey = async (provider: string, apiKey: string) => {
+    if (!apiKey.trim()) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: false,
+            error: 'Veuillez entrer une clé API',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Start testing
+    setScrapingApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        testing: true,
+        testResult: null,
+      },
+    }));
+
+    try {
+      // Call the scraping API validator
+      const result = await validateScrapingApiKey(provider, apiKey);
+
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: result,
+        },
+      }));
+
+      // Update the legacy scrapingKeys state for saving
+      if (result.success) {
+        if (provider === 'firecrawl') {
+          setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: apiKey }));
+        } else if (provider === 'serpapi') {
+          setScrapingKeys((prev) => ({ ...prev, serpApiKey: apiKey }));
+        } else if (provider === 'pica') {
+          setScrapingKeys((prev) => ({ ...prev, picaApiKey: apiKey }));
+        }
+      }
+    } catch (error) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: {
+            success: false,
+            error: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          },
+        },
+      }));
+    }
+  };
+
+  const handleScrapingApiKeyChange = (provider: string, value: string) => {
+    setScrapingApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        apiKey: value,
+      },
+    }));
+
+    // Also update the legacy scrapingKeys state
+    if (provider === 'firecrawl') {
+      setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: value }));
+    } else if (provider === 'serpapi') {
+      setScrapingKeys((prev) => ({ ...prev, serpApiKey: value }));
+    } else if (provider === 'pica') {
+      setScrapingKeys((prev) => ({ ...prev, picaApiKey: value }));
+    }
   };
 
   const handleSaveLLMKeys = async () => {
@@ -401,6 +491,77 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        <p className="text-xs text-gray-500 mt-1">{description}</p>
+      </div>
+    );
+  };
+
+  const renderScrapingApiKeyInput = (
+    provider: string,
+    label: string,
+    placeholder: string,
+    description: string,
+  ) => {
+    const state = scrapingApiKeyStates[provider];
+
+    return (
+      <div key={provider}>
+        <Label>{label}</Label>
+        <div className="flex gap-2 mt-1">
+          <Input
+            type="password"
+            placeholder={placeholder}
+            value={state.apiKey}
+            onChange={(e) => handleScrapingApiKeyChange(provider, e.target.value)}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => testScrapingApiKey(provider, state.apiKey)}
+            disabled={state.testing || !state.apiKey.trim()}
+            className="whitespace-nowrap"
+          >
+            {state.testing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Test...
+              </>
+            ) : (
+              'Tester'
+            )}
+          </Button>
+        </div>
+        {state.testResult && (
+          <div
+            className={`mt-2 p-3 rounded-lg flex items-start gap-2 ${state.testResult.success
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+              }`}
+          >
+            {state.testResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+            )}
+            <div>
+              <p
+                className={
+                  state.testResult.success
+                    ? 'text-sm text-green-800'
+                    : 'text-sm text-red-800'
+                }
+              >
+                {state.testResult.success
+                  ? state.testResult.message ||
+                  'Clé API valide'
+                  : state.testResult.error ||
+                  'Erreur de validation'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -694,45 +855,24 @@ export default function SettingsPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Firecrawl API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="fcrawl-..."
-                    value={scrapingKeys.firecrawlApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, firecrawlApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Firecrawl - Web scraping LLM-friendly avec support des PDFs
-                  </p>
-                </div>
-                <div>
-                  <Label>SERP API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    value={scrapingKeys.serpApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, serpApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour SerpAPI - Scraping des résultats de recherche (Google, Bing, etc.)
-                  </p>
-                </div>
-                <div>
-                  <Label>Pica API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    value={scrapingKeys.picaApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, picaApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Pica - Scraping de données web structurées et non-structurées
-                  </p>
-                </div>
+                {renderScrapingApiKeyInput(
+                  'firecrawl',
+                  'Firecrawl API Key',
+                  'fcrawl-...',
+                  'Clé API pour Firecrawl - Web scraping LLM-friendly avec support des PDFs',
+                )}
+                {renderScrapingApiKeyInput(
+                  'serpapi',
+                  'SERP API Key',
+                  '...',
+                  'Clé API pour SerpAPI - Scraping des résultats de recherche (Google, Bing, etc.)',
+                )}
+                {renderScrapingApiKeyInput(
+                  'pica',
+                  'Pica API Key',
+                  '...',
+                  'Clé API pour Pica - Scraping de données web structurées et non-structurées',
+                )}
                 <div className="flex gap-2 justify-end pt-4">
                   <button
                     type="button"

@@ -563,7 +563,7 @@ export default function AIApiKeysPage() {
                         Enregistrer les clés LLM
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -646,7 +646,7 @@ export default function AIApiKeysPage() {
                         Enregistrer les clés Scraping
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>
