@@ -83,6 +83,50 @@ export class ApiKeysController {
     };
   }
 
+  @Get('scraping-engines')
+  @ApiOperation({ summary: 'Récupérer la configuration des moteurs de scraping internes' })
+  @ApiResponse({ status: 200, description: 'Configuration des moteurs récupérée' })
+  async getScrapingEnginesConfig(@Request() req) {
+    const settings = await this.prisma.ai_settings.findUnique({
+      where: { userId: req.user.userId },
+      select: {
+        cheerioEnabled: true,
+        puppeteerEnabled: true,
+      },
+    });
+
+    // Default values if no settings exist
+    return {
+      cheerioEnabled: settings?.cheerioEnabled ?? true,
+      puppeteerEnabled: settings?.puppeteerEnabled ?? true,
+    };
+  }
+
+  @Put('scraping-engines')
+  @ApiOperation({ summary: 'Mettre à jour la configuration des moteurs de scraping internes' })
+  @ApiResponse({ status: 200, description: 'Configuration mise à jour' })
+  async updateScrapingEnginesConfig(@Request() req, @Body() dto: { cheerioEnabled?: boolean; puppeteerEnabled?: boolean }) {
+    await this.prisma.ai_settings.upsert({
+      where: { userId: req.user.userId },
+      create: {
+        userId: req.user.userId,
+        cheerioEnabled: dto.cheerioEnabled ?? true,
+        puppeteerEnabled: dto.puppeteerEnabled ?? true,
+      },
+      update: {
+        cheerioEnabled: dto.cheerioEnabled,
+        puppeteerEnabled: dto.puppeteerEnabled,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Configuration des moteurs mise à jour avec succès',
+      cheerioEnabled: dto.cheerioEnabled,
+      puppeteerEnabled: dto.puppeteerEnabled,
+    };
+  }
+
   /**
    * ═══════════════════════════════════════════════════════════
    * AGENCY LEVEL - Clés API de l'agence

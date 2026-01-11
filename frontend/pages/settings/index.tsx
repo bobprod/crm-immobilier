@@ -182,7 +182,41 @@ export default function SettingsPage() {
       }
     };
 
+    const fetchEnginesConfig = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInternalEngines({
+            cheerio: {
+              enabled: data.cheerioEnabled,
+              name: 'Cheerio',
+              description: 'Parser HTML léger et rapide (recommandé pour sites simples)'
+            },
+            puppeteer: {
+              enabled: data.puppeteerEnabled,
+              name: 'Puppeteer',
+              description: 'Navigateur headless complet (pour sites JavaScript complexes)'
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching engines config:', error);
+      }
+    };
+
     fetchUserApiKeys();
+    fetchEnginesConfig();
   }, []);
 
   const testApiKey = async (provider: string, apiKey: string) => {
@@ -1127,11 +1161,33 @@ export default function SettingsPage() {
                       setMessage('');
 
                       try {
-                        // TODO: Call API to save engine configuration
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        setMessage('✅ Configuration des moteurs sauvegardée!');
+                        const token = localStorage.getItem('auth_token');
+                        if (!token) {
+                          setMessage('❌ Authentification requise. Veuillez vous connecter.');
+                          setSavingEngines(false);
+                          return;
+                        }
+
+                        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            cheerioEnabled: internalEngines.cheerio.enabled,
+                            puppeteerEnabled: internalEngines.puppeteer.enabled,
+                          }),
+                        });
+
+                        if (response.ok) {
+                          setMessage('✅ Configuration des moteurs sauvegardée!');
+                        } else {
+                          const errorData = await response.json().catch(() => ({}));
+                          setMessage(`❌ Erreur: ${errorData.message || 'Échec de la sauvegarde'}`);
+                        }
                       } catch (error) {
-                        setMessage('❌ Erreur lors de la sauvegarde');
+                        setMessage(`❌ Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
                       } finally {
                         setSavingEngines(false);
                       }
