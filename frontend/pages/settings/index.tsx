@@ -48,6 +48,16 @@ export default function SettingsPage() {
     grok: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
   });
 
+  // State for scraping API keys
+  const [scrapingKeys, setScrapingKeys] = useState({
+    firecrawlApiKey: '',
+    serpApiKey: '',
+    picaApiKey: '',
+  });
+
+  const [savingLLM, setSavingLLM] = useState(false);
+  const [savingScraping, setSavingScraping] = useState(false);
+
   const testApiKey = async (provider: string, apiKey: string) => {
     if (!apiKey.trim()) {
       setApiKeyStates((prev) => ({
@@ -155,6 +165,144 @@ export default function SettingsPage() {
         selectedModel: model,
       },
     }));
+  };
+
+  const handleSaveLLMKeys = async () => {
+    setSavingLLM(true);
+    setMessage('');
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setMessage('❌ Authentification requise. Veuillez vous connecter.');
+        setSavingLLM(false);
+        return;
+      }
+
+      // Préparer les données à envoyer
+      const dataToSend: any = {};
+
+      // Ajouter les clés API validées
+      if (apiKeyStates.openai.apiKey) {
+        dataToSend.openaiApiKey = apiKeyStates.openai.apiKey;
+        if (apiKeyStates.openai.selectedModel) {
+          dataToSend.defaultProvider = 'openai';
+          dataToSend.defaultModel = apiKeyStates.openai.selectedModel;
+        }
+      }
+      if (apiKeyStates.anthropic.apiKey) {
+        dataToSend.anthropicApiKey = apiKeyStates.anthropic.apiKey;
+        if (apiKeyStates.anthropic.selectedModel && !dataToSend.defaultProvider) {
+          dataToSend.defaultProvider = 'anthropic';
+          dataToSend.defaultModel = apiKeyStates.anthropic.selectedModel;
+        }
+      }
+      if (apiKeyStates.gemini.apiKey) {
+        dataToSend.geminiApiKey = apiKeyStates.gemini.apiKey;
+        if (apiKeyStates.gemini.selectedModel && !dataToSend.defaultProvider) {
+          dataToSend.defaultProvider = 'gemini';
+          dataToSend.defaultModel = apiKeyStates.gemini.selectedModel;
+        }
+      }
+      if (apiKeyStates.deepseek.apiKey) {
+        dataToSend.deepseekApiKey = apiKeyStates.deepseek.apiKey;
+        if (apiKeyStates.deepseek.selectedModel && !dataToSend.defaultProvider) {
+          dataToSend.defaultProvider = 'deepseek';
+          dataToSend.defaultModel = apiKeyStates.deepseek.selectedModel;
+        }
+      }
+      if (apiKeyStates.mistral.apiKey) dataToSend.mistralApiKey = apiKeyStates.mistral.apiKey;
+      if (apiKeyStates.openrouter.apiKey) dataToSend.openrouterApiKey = apiKeyStates.openrouter.apiKey;
+      if (apiKeyStates.grok.apiKey) dataToSend.grokApiKey = apiKeyStates.grok.apiKey;
+
+      // Vérifier qu'au moins une clé est remplie
+      if (Object.keys(dataToSend).length === 0) {
+        setMessage('⚠️ Veuillez entrer au moins une clé API');
+        setSavingLLM(false);
+        return;
+      }
+
+      console.log('📤 Sending LLM keys:', dataToSend);
+
+      const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Save response:', responseData);
+        setMessage('✅ Clés LLM sauvegardées avec succès!');
+      } else if (response.status === 401) {
+        setMessage('❌ Session expirée. Veuillez vous reconnecter.');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setMessage(`❌ Erreur: ${errorData.message || 'Erreur lors de la sauvegarde'}`);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      setMessage(`❌ Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setSavingLLM(false);
+    }
+  };
+
+  const handleSaveScrapingKeys = async () => {
+    setSavingScraping(true);
+    setMessage('');
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setMessage('❌ Authentification requise. Veuillez vous connecter.');
+        setSavingScraping(false);
+        return;
+      }
+
+      // Filtrer les clés vides
+      const dataToSend: any = {};
+      if (scrapingKeys.firecrawlApiKey) dataToSend.firecrawlApiKey = scrapingKeys.firecrawlApiKey;
+      if (scrapingKeys.serpApiKey) dataToSend.serpApiKey = scrapingKeys.serpApiKey;
+      if (scrapingKeys.picaApiKey) dataToSend.picaApiKey = scrapingKeys.picaApiKey;
+
+      // Vérifier qu'au moins une clé est remplie
+      if (Object.keys(dataToSend).length === 0) {
+        setMessage('⚠️ Veuillez entrer au moins une clé API');
+        setSavingScraping(false);
+        return;
+      }
+
+      console.log('📤 Sending Scraping keys:', dataToSend);
+
+      const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('✅ Save response:', responseData);
+        setMessage('✅ Clés Scraping sauvegardées avec succès!');
+      } else if (response.status === 401) {
+        setMessage('❌ Session expirée. Veuillez vous reconnecter.');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setMessage(`❌ Erreur: ${errorData.message || 'Erreur lors de la sauvegarde'}`);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      setMessage(`❌ Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setSavingScraping(false);
+    }
   };
 
   const renderApiKeyInput = (
@@ -371,16 +519,19 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="flex gap-2 justify-end pt-4">
-                    <Button type="button" variant="outline">
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                    >
                       Annuler
-                    </Button>
-                    <Button
+                    </button>
+                    <button
                       type="submit"
                       disabled={loading}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       {loading ? 'Enregistrement...' : 'Enregistrer'}
-                    </Button>
+                    </button>
                   </div>
                 </form>
               </CardContent>
@@ -506,12 +657,27 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 justify-end pt-4">
-                  <Button type="button" variant="outline">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                  >
                     Annuler
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Enregistrer les clés LLM
-                  </Button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveLLMKeys}
+                    disabled={savingLLM}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {savingLLM ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      'Enregistrer les clés LLM'
+                    )}
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -533,6 +699,8 @@ export default function SettingsPage() {
                   <Input
                     type="password"
                     placeholder="fcrawl-..."
+                    value={scrapingKeys.firecrawlApiKey}
+                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, firecrawlApiKey: e.target.value })}
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -544,6 +712,8 @@ export default function SettingsPage() {
                   <Input
                     type="password"
                     placeholder="..."
+                    value={scrapingKeys.serpApiKey}
+                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, serpApiKey: e.target.value })}
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -555,6 +725,8 @@ export default function SettingsPage() {
                   <Input
                     type="password"
                     placeholder="..."
+                    value={scrapingKeys.picaApiKey}
+                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, picaApiKey: e.target.value })}
                     className="mt-1"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -562,12 +734,27 @@ export default function SettingsPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 justify-end pt-4">
-                  <Button type="button" variant="outline">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                  >
                     Annuler
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Enregistrer les clés API
-                  </Button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveScrapingKeys}
+                    disabled={savingScraping}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {savingScraping ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      'Enregistrer les clés API'
+                    )}
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -671,12 +858,19 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex gap-2 justify-end pt-4">
-                  <Button type="button" variant="outline">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                  >
                     Annuler
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMessage('ℹ️ Configuration LLM - Cette fonctionnalité sera implémentée prochainement')}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
                     Enregistrer la configuration
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>

@@ -30,6 +30,9 @@ export class ApiKeysController {
     const settings = await this.prisma.ai_settings.findUnique({
       where: { userId: req.user.userId },
       select: {
+        // Configuration
+        defaultProvider: true,
+        defaultModel: true,
         // LLM Providers
         anthropicApiKey: true,
         openaiApiKey: true,
@@ -214,7 +217,12 @@ export class ApiKeysController {
     const masked = {};
     for (const [key, value] of Object.entries(keys)) {
       if (key !== 'id' && key !== 'userId' && key !== 'agencyId' && key !== 'createdAt' && key !== 'updatedAt') {
-        masked[key] = value ? this.maskKey(value as string) : null;
+        // Don't mask configuration fields like defaultProvider, defaultModel
+        if (key === 'defaultProvider' || key === 'defaultModel') {
+          masked[key] = value;
+        } else {
+          masked[key] = value ? this.maskKey(value as string) : null;
+        }
       }
     }
     return masked;
