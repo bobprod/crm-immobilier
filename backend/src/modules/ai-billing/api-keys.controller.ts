@@ -217,11 +217,12 @@ export class ApiKeysController {
     const masked = {};
     for (const [key, value] of Object.entries(keys)) {
       if (key !== 'id' && key !== 'userId' && key !== 'agencyId' && key !== 'createdAt' && key !== 'updatedAt') {
-        // Don't mask configuration fields like defaultProvider, defaultModel
-        if (key === 'defaultProvider' || key === 'defaultModel') {
+        // Don't mask configuration fields or JSON objects
+        if (key === 'defaultProvider' || key === 'defaultModel' || key === 'customApiKeys') {
           masked[key] = value;
         } else {
-          masked[key] = value ? this.maskKey(value as string) : null;
+          // Only mask if value is a string
+          masked[key] = (value && typeof value === 'string') ? this.maskKey(value) : value;
         }
       }
     }
@@ -230,6 +231,10 @@ export class ApiKeysController {
 
   private maskKey(key: string | null): string | null {
     if (!key || key === 'PLACEHOLDER_CONFIGURE_IN_ADMIN_PANEL') {
+      return null;
+    }
+    // Check if key is actually a string
+    if (typeof key !== 'string') {
       return null;
     }
     if (key.length <= 8) {
