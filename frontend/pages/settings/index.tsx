@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -64,6 +64,119 @@ export default function SettingsPage() {
 
   const [savingLLM, setSavingLLM] = useState(false);
   const [savingScraping, setSavingScraping] = useState(false);
+  const [loadingKeys, setLoadingKeys] = useState(true);
+
+  // Fetch user API keys on component mount
+  useEffect(() => {
+    const fetchUserApiKeys = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setLoadingKeys(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Populate LLM API keys states
+          if (data.openaiApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              openai: { ...prev.openai, apiKey: data.openaiApiKey },
+            }));
+          }
+          if (data.anthropicApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              anthropic: { ...prev.anthropic, apiKey: data.anthropicApiKey },
+            }));
+          }
+          if (data.geminiApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              gemini: { ...prev.gemini, apiKey: data.geminiApiKey },
+            }));
+          }
+          if (data.deepseekApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              deepseek: { ...prev.deepseek, apiKey: data.deepseekApiKey },
+            }));
+          }
+          if (data.mistralApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              mistral: { ...prev.mistral, apiKey: data.mistralApiKey },
+            }));
+          }
+          if (data.openrouterApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              openrouter: { ...prev.openrouter, apiKey: data.openrouterApiKey },
+            }));
+          }
+          if (data.grokApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              grok: { ...prev.grok, apiKey: data.grokApiKey },
+            }));
+          }
+
+          // Populate scraping API keys states
+          if (data.firecrawlApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              firecrawl: { ...prev.firecrawl, apiKey: data.firecrawlApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: data.firecrawlApiKey }));
+          }
+          if (data.serpApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              serpapi: { ...prev.serpapi, apiKey: data.serpApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, serpApiKey: data.serpApiKey }));
+          }
+          if (data.picaApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              pica: { ...prev.pica, apiKey: data.picaApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, picaApiKey: data.picaApiKey }));
+          }
+
+          // Set default provider and model if available
+          if (data.defaultProvider) {
+            const provider = data.defaultProvider;
+            if (data.defaultModel && apiKeyStates[provider]) {
+              setApiKeyStates((prev) => ({
+                ...prev,
+                [provider]: {
+                  ...prev[provider],
+                  selectedModel: data.defaultModel,
+                },
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user API keys:', error);
+      } finally {
+        setLoadingKeys(false);
+      }
+    };
+
+    fetchUserApiKeys();
+  }, []);
 
   const testApiKey = async (provider: string, apiKey: string) => {
     if (!apiKey.trim()) {
