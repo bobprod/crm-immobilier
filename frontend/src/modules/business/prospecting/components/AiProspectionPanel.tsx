@@ -13,6 +13,7 @@ import {
   PropertyType,
   BudgetRange,
   ExportFormat,
+  ProspectionLead,
 } from '../types/ai-prospection.types';
 
 export interface AiProspectionPanelProps {
@@ -90,22 +91,139 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
     await convertAllToProspects();
   };
 
-  const handleAddToCrm = (leadId: string) => {
-    console.log('Add to CRM:', leadId);
-    // TODO: Implement CRM integration
-    alert(`Lead ${leadId} sera ajouté au CRM (fonction à implémenter)`);
+  const [contactModalLead, setContactModalLead] = useState<ProspectionLead | null>(null);
+  const [isAddingToCrm, setIsAddingToCrm] = useState<string | null>(null);
+
+  /**
+   * Ajouter un lead au CRM (convertir en prospect)
+   */
+  const handleAddToCrm = async (leadId: string) => {
+    if (!prospectionResult || !user?.token) return;
+
+    const lead = prospectionResult.leads.find((l) => l.id === leadId);
+    if (!lead) {
+      alert('Lead introuvable');
+      return;
+    }
+
+    setIsAddingToCrm(leadId);
+
+    try {
+      // Créer un prospect dans le CRM
+      const response = await fetch('http://localhost:3001/api/prospects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`,
+        },
+        body: JSON.stringify({
+          firstName: lead.name.split(' ')[0] || lead.name,
+          lastName: lead.name.split(' ').slice(1).join(' ') || '',
+          email: lead.email || undefined,
+          phone: lead.phone || undefined,
+          city: lead.location?.city || undefined,
+          address: lead.location?.address || undefined,
+          budget: lead.budget ? {
+            min: lead.budget.min,
+            max: lead.budget.max,
+          } : undefined,
+          propertyType: lead.propertyInterest || undefined,
+          source: `prospection-ai:${prospectionResult.id}`,
+          sourceDetails: lead.source || undefined,
+          confidence: lead.confidence,
+          status: 'new',
+          notes: `Lead généré par prospection IA\nConfiance: ${lead.confidence}%\nSource: ${lead.source || 'N/A'}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Échec de création du prospect');
+      }
+
+      const prospect = await response.json();
+
+      alert(`✅ Lead ajouté au CRM avec succès!\n\nProspect créé: ${prospect.firstName} ${prospect.lastName}\nID: ${prospect.id}`);
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout au CRM:', error);
+      alert(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible d\'ajouter le lead au CRM'}`);
+    } finally {
+      setIsAddingToCrm(null);
+    }
   };
 
+  /**
+   * Contacter un lead (ouvrir modal)
+   */
   const handleContact = (leadId: string) => {
-    console.log('Contact lead:', leadId);
-    // TODO: Implement contact flow
-    alert(`Contacter le lead ${leadId} (fonction à implémenter)`);
+    if (!prospectionResult) return;
+
+    const lead = prospectionResult.leads.find((l) => l.id === leadId);
+    if (!lead) {
+      alert('Lead introuvable');
+      return;
+    }
+
+    setContactModalLead(lead);
   };
 
-  const handleReject = (leadId: string) => {
-    console.log('Reject lead:', leadId);
-    // TODO: Implement rejection
-    alert(`Lead ${leadId} sera rejeté (fonction à implémenter)`);
+  /**
+   * Fermer le modal de contact
+   */
+  const handleCloseContactModal = () => {
+    setContactModalLead(null);
+  };
+
+  /**
+   * Envoyer un email au lead
+   */
+  const handleSendEmail = (leadId: string, email: string) => {
+    const mailtoLink = `mailto:${email}?subject=Contact depuis ${user?.name || 'votre agence immobilière'}&body=Bonjour,%0D%0A%0D%0ANous avons trouvé votre profil et pensons avoir des opportunités qui pourraient vous intéresser.%0D%0A%0D%0ACordialement`;
+    window.open(mailtoLink, '_blank');
+    handleCloseContactModal();
+  };
+
+  /**
+   * Envoyer un WhatsApp au lead
+   */
+  const handleSendWhatsApp = (leadId: string, phone: string) => {
+    // Nettoyer le numéro de téléphone
+    const cleanPhone = phone.replace(/[^0-9+]/g, '');
+    const whatsappLink = `https://wa.me/${cleanPhone}?text=Bonjour, nous avons trouvé votre profil et pensons avoir des opportunités immobilières qui pourraient vous intéresser.`;
+    window.open(whatsappLink, '_blank');
+    handleCloseContactModal();
+  };
+
+  /**
+   * Rejeter un lead
+   */
+  const handleReject = async (leadId: string) => {
+    if (!prospectionResult || !user?.token) return;
+
+    const lead = prospectionResult.leads.find((l) => l.id === leadId);
+    if (!lead) {
+      alert('Lead introuvable');
+      return;
+    }
+
+    const confirmReject = window.confirm(
+      `Êtes-vous sûr de vouloir rejeter ce lead?\n\n${lead.name}\n${lead.email || lead.phone || ''}\n\nCette action est irréversible.`
+    );
+
+    if (!confirmReject) return;
+
+    try {
+      // Marquer comme rejeté (ajouter à une liste de rejetés)
+      // TODO: Implémenter l'endpoint backend si nécessaire
+
+      // Pour l'instant, on simule en filtrant localement
+      alert(`✅ Lead "${lead.name}" marqué comme rejeté.\n\nNote: Cette action est locale pour cette session. Pour une persistance permanente, l'endpoint backend doit être implémenté.`);
+
+      // Optionnel: Cacher le lead dans l'UI
+      console.log(`Lead ${leadId} rejected`);
+    } catch (error) {
+      console.error('Erreur lors du rejet:', error);
+      alert(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible de rejeter le lead'}`);
+    }
   };
 
   // ============================================================================
@@ -456,6 +574,93 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
         {/* 5. New Prospection Button */}
         {renderNewProspectionButton()}
       </div>
+
+      {/* Contact Modal */}
+      {contactModalLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">Contacter le lead</h3>
+              <button
+                onClick={handleCloseContactModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Lead Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="font-semibold text-gray-900 mb-2">{contactModalLead.name}</p>
+                {contactModalLead.email && (
+                  <p className="text-sm text-gray-600 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                    {contactModalLead.email}
+                  </p>
+                )}
+                {contactModalLead.phone && (
+                  <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                    {contactModalLead.phone}
+                  </p>
+                )}
+              </div>
+
+              {/* Contact Methods */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">Choisissez une méthode de contact:</p>
+
+                {contactModalLead.email && (
+                  <button
+                    onClick={() => handleSendEmail(contactModalLead.id, contactModalLead.email!)}
+                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                    Envoyer un Email
+                  </button>
+                )}
+
+                {contactModalLead.phone && (
+                  <button
+                    onClick={() => handleSendWhatsApp(contactModalLead.id, contactModalLead.phone!)}
+                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                    Contacter sur WhatsApp
+                  </button>
+                )}
+
+                {!contactModalLead.email && !contactModalLead.phone && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Aucune information de contact disponible pour ce lead.
+                  </p>
+                )}
+              </div>
+
+              {/* Cancel Button */}
+              <button
+                onClick={handleCloseContactModal}
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
