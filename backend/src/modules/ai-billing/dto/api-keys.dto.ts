@@ -110,6 +110,16 @@ export class UpdateUserApiKeysDto {
   @IsOptional()
   @IsString()
   nlpCloudApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Modèle par défaut sélectionné' })
+  @IsOptional()
+  @IsString()
+  defaultModel?: string;
+
+  @ApiPropertyOptional({ description: 'Provider par défaut (openai, gemini, deepseek, etc.)' })
+  @IsOptional()
+  @IsString()
+  defaultProvider?: string;
 }
 
 /**
@@ -221,6 +231,16 @@ export class UpdateAgencyApiKeysDto {
   @IsOptional()
   @IsString()
   nlpCloudApiKey?: string;
+
+  @ApiPropertyOptional({ description: 'Modèle par défaut sélectionné pour l\'agence' })
+  @IsOptional()
+  @IsString()
+  defaultModel?: string;
+
+  @ApiPropertyOptional({ description: 'Provider par défaut pour l\'agence' })
+  @IsOptional()
+  @IsString()
+  defaultProvider?: string;
 }
 
 /**

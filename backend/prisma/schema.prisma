@@ -285,6 +285,7 @@ model properties {
   @@index([status])
   @@index([deletedAt])
   @@index([userId, status, price])
+  @@index([userId, status, price], map: "properties_user_status_price_idx")
 }
 
 model PropertyHistory {
@@ -636,13 +637,25 @@ model ai_settings {
   userId            String   @unique
   defaultProvider   String   @default("openai")
   preferredProvider String?  @default("openai")
-
-  // LLM Providers
   openaiApiKey      String?
   geminiApiKey      String?
-  claudeApiKey      String?
+  anthropicApiKey   String?
   deepseekApiKey    String?
   openrouterApiKey  String?
+  customApiKeys     Json?
+  defaultModel      String?
+  temperature       Float    @default(0.7)
+  maxTokens         Int      @default(2000)
+  preferences       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  browserlessApiKey String?
+  firecrawlApiKey   String?
+  jinaReaderApiKey  String?
+  picaApiKey        String?
+  rapidApiKey       String?
+  scrapingBeeApiKey String?
+  serpApiKey        String?
   mistralApiKey     String?
   grokApiKey        String?
   cohereApiKey      String?
@@ -652,27 +665,6 @@ model ai_settings {
   huggingfaceApiKey String?
   alephAlphaApiKey  String?
   nlpCloudApiKey    String?
-
-  // Web Scraping & Data Providers
-  firecrawlApiKey   String?
-  serpApiKey        String?
-  picaApiKey        String?
-
-  // Other Providers
-  browserlessApiKey String?
-  jinaReaderApiKey  String?
-  rapidApiKey       String?
-  scrapingBeeApiKey String?
-
-  // Configuration
-  customApiKeys     Json?
-  defaultModel      String?
-  temperature       Float    @default(0.7)
-  maxTokens         Int      @default(2000)
-  preferences       Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
   users             users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
