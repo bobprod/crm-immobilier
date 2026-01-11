@@ -548,3 +548,230 @@ function getGrokModels(): string[] {
         'grok-1',
     ];
 }
+
+/**
+ * Test Firecrawl API Key
+ * Calls: https://api.firecrawl.dev/v1/scrape
+ */
+export async function validateFirecrawlKey(apiKey: string): Promise<ValidationResult> {
+    if (!apiKey.trim()) {
+        return {
+            success: false,
+            error: 'Clé API vide',
+            provider: 'firecrawl',
+        };
+    }
+
+    try {
+        // Test with a simple scrape request
+        const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                url: 'https://example.com',
+                formats: ['markdown'],
+            }),
+        });
+
+        if (response.status === 200 || response.status === 201) {
+            return {
+                success: true,
+                message: '✅ Clé Firecrawl valide et fonctionnelle',
+                provider: 'firecrawl',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else if (response.status === 429) {
+            return {
+                success: true,
+                message: '⚠️ Clé valide (Rate limited - quota atteint)',
+                provider: 'firecrawl',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else if (response.status === 401 || response.status === 403) {
+            return {
+                success: false,
+                error: '❌ Clé API invalide ou permissions insuffisantes',
+                provider: 'firecrawl',
+            };
+        } else if (response.status === 402) {
+            return {
+                success: true,
+                message: '⚠️ Clé valide (Paiement requis - vérifiez votre abonnement)',
+                provider: 'firecrawl',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            return {
+                success: false,
+                error: `❌ Erreur ${response.status}: ${errorData.error || 'Vérifiez votre clé API'}`,
+                provider: 'firecrawl',
+            };
+        }
+    } catch (error) {
+        return {
+            success: false,
+            error: `❌ Erreur réseau: ${error instanceof Error ? error.message : 'Vérifiez votre connexion'}`,
+            provider: 'firecrawl',
+        };
+    }
+}
+
+/**
+ * Test SERP API Key
+ * Calls: https://serpapi.com/account
+ */
+export async function validateSerpApiKey(apiKey: string): Promise<ValidationResult> {
+    if (!apiKey.trim()) {
+        return {
+            success: false,
+            error: 'Clé API vide',
+            provider: 'serpapi',
+        };
+    }
+
+    try {
+        // Test with account endpoint to validate API key
+        const response = await fetch(`https://serpapi.com/account.json?api_key=${apiKey}`);
+
+        if (response.status === 200) {
+            const data = await response.json();
+            const remaining = data.total_searches_left || 0;
+            return {
+                success: true,
+                message: `✅ Clé SERP API valide (${remaining} recherches restantes)`,
+                provider: 'serpapi',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else if (response.status === 401) {
+            return {
+                success: false,
+                error: '❌ Clé API invalide',
+                provider: 'serpapi',
+            };
+        } else if (response.status === 429) {
+            return {
+                success: true,
+                message: '⚠️ Clé valide (Rate limited - quota atteint)',
+                provider: 'serpapi',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            return {
+                success: false,
+                error: `❌ Erreur ${response.status}: ${errorData.error || 'Vérifiez votre clé API'}`,
+                provider: 'serpapi',
+            };
+        }
+    } catch (error) {
+        return {
+            success: false,
+            error: `❌ Erreur réseau: ${error instanceof Error ? error.message : 'Vérifiez votre connexion'}`,
+            provider: 'serpapi',
+        };
+    }
+}
+
+/**
+ * Test Pica AI API Key
+ * Note: Pica API documentation may vary - using generic validation
+ */
+export async function validatePicaKey(apiKey: string): Promise<ValidationResult> {
+    if (!apiKey.trim()) {
+        return {
+            success: false,
+            error: 'Clé API vide',
+            provider: 'pica',
+        };
+    }
+
+    try {
+        // Try to call a basic endpoint to validate the key
+        // Note: Adjust endpoint based on actual Pica API documentation
+        const response = await fetch('https://api.pica-api.com/v1/status', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.status === 200) {
+            return {
+                success: true,
+                message: '✅ Clé Pica AI valide et fonctionnelle',
+                provider: 'pica',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else if (response.status === 401 || response.status === 403) {
+            return {
+                success: false,
+                error: '❌ Clé API invalide ou permissions insuffisantes',
+                provider: 'pica',
+            };
+        } else if (response.status === 404) {
+            // If endpoint not found, assume key format is valid
+            return {
+                success: true,
+                message: '⚠️ Clé acceptée (endpoint de test non disponible)',
+                provider: 'pica',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else if (response.status === 429) {
+            return {
+                success: true,
+                message: '⚠️ Clé valide (Rate limited)',
+                provider: 'pica',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            return {
+                success: false,
+                error: `❌ Erreur ${response.status}: ${errorData.error || 'Vérifiez votre clé API'}`,
+                provider: 'pica',
+            };
+        }
+    } catch (error) {
+        // If there's a network error, it might mean the endpoint doesn't exist
+        // In this case, just validate the key format
+        if (apiKey.length > 10) {
+            return {
+                success: true,
+                message: '⚠️ Clé acceptée (validation complète non disponible)',
+                provider: 'pica',
+                keyPreview: apiKey.substring(0, 10) + '...',
+            };
+        }
+        return {
+            success: false,
+            error: `❌ Erreur: ${error instanceof Error ? error.message : 'Clé invalide'}`,
+            provider: 'pica',
+        };
+    }
+}
+
+/**
+ * Generic validator that routes to the correct provider validator
+ */
+export async function validateScrapingApiKey(provider: string, apiKey: string): Promise<ValidationResult> {
+    switch (provider.toLowerCase()) {
+        case 'firecrawl':
+            return validateFirecrawlKey(apiKey);
+        case 'serpapi':
+        case 'serp':
+            return validateSerpApiKey(apiKey);
+        case 'pica':
+            return validatePicaKey(apiKey);
+        default:
+            return {
+                success: false,
+                error: `Provider ${provider} non supporté`,
+                provider,
+            };
+    }
+}

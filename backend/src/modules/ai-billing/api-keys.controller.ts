@@ -83,6 +83,50 @@ export class ApiKeysController {
     };
   }
 
+  @Get('scraping-engines')
+  @ApiOperation({ summary: 'Récupérer la configuration des moteurs de scraping internes' })
+  @ApiResponse({ status: 200, description: 'Configuration des moteurs récupérée' })
+  async getScrapingEnginesConfig(@Request() req) {
+    const settings = await this.prisma.ai_settings.findUnique({
+      where: { userId: req.user.userId },
+      select: {
+        cheerioEnabled: true,
+        puppeteerEnabled: true,
+      },
+    });
+
+    // Default values if no settings exist
+    return {
+      cheerioEnabled: settings?.cheerioEnabled ?? true,
+      puppeteerEnabled: settings?.puppeteerEnabled ?? true,
+    };
+  }
+
+  @Put('scraping-engines')
+  @ApiOperation({ summary: 'Mettre à jour la configuration des moteurs de scraping internes' })
+  @ApiResponse({ status: 200, description: 'Configuration mise à jour' })
+  async updateScrapingEnginesConfig(@Request() req, @Body() dto: { cheerioEnabled?: boolean; puppeteerEnabled?: boolean }) {
+    await this.prisma.ai_settings.upsert({
+      where: { userId: req.user.userId },
+      create: {
+        userId: req.user.userId,
+        cheerioEnabled: dto.cheerioEnabled ?? true,
+        puppeteerEnabled: dto.puppeteerEnabled ?? true,
+      },
+      update: {
+        cheerioEnabled: dto.cheerioEnabled,
+        puppeteerEnabled: dto.puppeteerEnabled,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Configuration des moteurs mise à jour avec succès',
+      cheerioEnabled: dto.cheerioEnabled,
+      puppeteerEnabled: dto.puppeteerEnabled,
+    };
+  }
+
   /**
    * ═══════════════════════════════════════════════════════════
    * AGENCY LEVEL - Clés API de l'agence
@@ -217,11 +261,12 @@ export class ApiKeysController {
     const masked = {};
     for (const [key, value] of Object.entries(keys)) {
       if (key !== 'id' && key !== 'userId' && key !== 'agencyId' && key !== 'createdAt' && key !== 'updatedAt') {
-        // Don't mask configuration fields like defaultProvider, defaultModel
-        if (key === 'defaultProvider' || key === 'defaultModel') {
+        // Don't mask configuration fields or JSON objects
+        if (key === 'defaultProvider' || key === 'defaultModel' || key === 'customApiKeys') {
           masked[key] = value;
         } else {
-          masked[key] = value ? this.maskKey(value as string) : null;
+          // Only mask if value is a string
+          masked[key] = (value && typeof value === 'string') ? this.maskKey(value) : value;
         }
       }
     }
@@ -230,6 +275,10 @@ export class ApiKeysController {
 
   private maskKey(key: string | null): string | null {
     if (!key || key === 'PLACEHOLDER_CONFIGURE_IN_ADMIN_PANEL') {
+      return null;
+    }
+    // Check if key is actually a string
+    if (typeof key !== 'string') {
       return null;
     }
     if (key.length <= 8) {

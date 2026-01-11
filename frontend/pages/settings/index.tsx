@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '../../src/modules/core/layout/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -17,7 +17,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { validateApiKey, getAvailableModels } from '../../utils/api-key-validators';
+import { validateApiKey, getAvailableModels, validateScrapingApiKey } from '../../utils/api-key-validators';
 
 type TabType = 'profile' | 'api-keys' | 'llm' | 'security';
 
@@ -48,15 +48,176 @@ export default function SettingsPage() {
     grok: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
   });
 
-  // State for scraping API keys
+  // State for scraping API keys (legacy - kept for saving)
   const [scrapingKeys, setScrapingKeys] = useState({
     firecrawlApiKey: '',
     serpApiKey: '',
     picaApiKey: '',
   });
 
+  // State for scraping API key testing
+  const [scrapingApiKeyStates, setScrapingApiKeyStates] = useState<Record<string, ApiKeyFieldState>>({
+    firecrawl: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    serpapi: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+    pica: { apiKey: '', testing: false, testResult: null, models: [], loadingModels: false, selectedModel: '' },
+  });
+
   const [savingLLM, setSavingLLM] = useState(false);
   const [savingScraping, setSavingScraping] = useState(false);
+  const [loadingKeys, setLoadingKeys] = useState(true);
+
+  // State for internal scraping engines
+  const [internalEngines, setInternalEngines] = useState({
+    cheerio: { enabled: true, name: 'Cheerio', description: 'Parser HTML léger et rapide (recommandé pour sites simples)' },
+    puppeteer: { enabled: true, name: 'Puppeteer', description: 'Navigateur headless complet (pour sites JavaScript complexes)' },
+  });
+  const [savingEngines, setSavingEngines] = useState(false);
+
+  // Fetch user API keys on component mount
+  useEffect(() => {
+    const fetchUserApiKeys = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setLoadingKeys(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Populate LLM API keys states
+          if (data.openaiApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              openai: { ...prev.openai, apiKey: data.openaiApiKey },
+            }));
+          }
+          if (data.anthropicApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              anthropic: { ...prev.anthropic, apiKey: data.anthropicApiKey },
+            }));
+          }
+          if (data.geminiApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              gemini: { ...prev.gemini, apiKey: data.geminiApiKey },
+            }));
+          }
+          if (data.deepseekApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              deepseek: { ...prev.deepseek, apiKey: data.deepseekApiKey },
+            }));
+          }
+          if (data.mistralApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              mistral: { ...prev.mistral, apiKey: data.mistralApiKey },
+            }));
+          }
+          if (data.openrouterApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              openrouter: { ...prev.openrouter, apiKey: data.openrouterApiKey },
+            }));
+          }
+          if (data.grokApiKey) {
+            setApiKeyStates((prev) => ({
+              ...prev,
+              grok: { ...prev.grok, apiKey: data.grokApiKey },
+            }));
+          }
+
+          // Populate scraping API keys states
+          if (data.firecrawlApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              firecrawl: { ...prev.firecrawl, apiKey: data.firecrawlApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: data.firecrawlApiKey }));
+          }
+          if (data.serpApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              serpapi: { ...prev.serpapi, apiKey: data.serpApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, serpApiKey: data.serpApiKey }));
+          }
+          if (data.picaApiKey) {
+            setScrapingApiKeyStates((prev) => ({
+              ...prev,
+              pica: { ...prev.pica, apiKey: data.picaApiKey },
+            }));
+            setScrapingKeys((prev) => ({ ...prev, picaApiKey: data.picaApiKey }));
+          }
+
+          // Set default provider and model if available
+          if (data.defaultProvider) {
+            const provider = data.defaultProvider;
+            if (data.defaultModel && apiKeyStates[provider]) {
+              setApiKeyStates((prev) => ({
+                ...prev,
+                [provider]: {
+                  ...prev[provider],
+                  selectedModel: data.defaultModel,
+                },
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user API keys:', error);
+      } finally {
+        setLoadingKeys(false);
+      }
+    };
+
+    const fetchEnginesConfig = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInternalEngines({
+            cheerio: {
+              enabled: data.cheerioEnabled,
+              name: 'Cheerio',
+              description: 'Parser HTML léger et rapide (recommandé pour sites simples)'
+            },
+            puppeteer: {
+              enabled: data.puppeteerEnabled,
+              name: 'Puppeteer',
+              description: 'Navigateur headless complet (pour sites JavaScript complexes)'
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching engines config:', error);
+      }
+    };
+
+    fetchUserApiKeys();
+    fetchEnginesConfig();
+  }, []);
 
   const testApiKey = async (provider: string, apiKey: string) => {
     if (!apiKey.trim()) {
@@ -67,6 +228,21 @@ export default function SettingsPage() {
           testResult: {
             success: false,
             error: 'Veuillez entrer une clé API',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Check if API key is masked (contains ***)
+    if (apiKey.includes('*')) {
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: true,
+            message: '🔒 Clé déjà sauvegardée (masquée pour sécurité). Entrez une nouvelle clé pour tester.',
           },
         },
       }));
@@ -153,6 +329,8 @@ export default function SettingsPage() {
       [provider]: {
         ...prev[provider],
         apiKey: value,
+        // Clear test result when user changes the key
+        testResult: null,
       },
     }));
   };
@@ -165,6 +343,106 @@ export default function SettingsPage() {
         selectedModel: model,
       },
     }));
+  };
+
+  // Scraping API key handlers
+  const testScrapingApiKey = async (provider: string, apiKey: string) => {
+    if (!apiKey.trim()) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: false,
+            error: 'Veuillez entrer une clé API',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Check if API key is masked (contains ***)
+    if (apiKey.includes('*')) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: true,
+            message: '🔒 Clé déjà sauvegardée (masquée pour sécurité). Entrez une nouvelle clé pour tester.',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Start testing
+    setScrapingApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        testing: true,
+        testResult: null,
+      },
+    }));
+
+    try {
+      // Call the scraping API validator
+      const result = await validateScrapingApiKey(provider, apiKey);
+
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: result,
+        },
+      }));
+
+      // Update the legacy scrapingKeys state for saving
+      if (result.success) {
+        if (provider === 'firecrawl') {
+          setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: apiKey }));
+        } else if (provider === 'serpapi') {
+          setScrapingKeys((prev) => ({ ...prev, serpApiKey: apiKey }));
+        } else if (provider === 'pica') {
+          setScrapingKeys((prev) => ({ ...prev, picaApiKey: apiKey }));
+        }
+      }
+    } catch (error) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testing: false,
+          testResult: {
+            success: false,
+            error: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+          },
+        },
+      }));
+    }
+  };
+
+  const handleScrapingApiKeyChange = (provider: string, value: string) => {
+    setScrapingApiKeyStates((prev) => ({
+      ...prev,
+      [provider]: {
+        ...prev[provider],
+        apiKey: value,
+        // Clear test result when user changes the key
+        testResult: null,
+      },
+    }));
+
+    // Also update the legacy scrapingKeys state
+    if (provider === 'firecrawl') {
+      setScrapingKeys((prev) => ({ ...prev, firecrawlApiKey: value }));
+    } else if (provider === 'serpapi') {
+      setScrapingKeys((prev) => ({ ...prev, serpApiKey: value }));
+    } else if (provider === 'pica') {
+      setScrapingKeys((prev) => ({ ...prev, picaApiKey: value }));
+    }
   };
 
   const handleSaveLLMKeys = async () => {
@@ -401,6 +679,77 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        <p className="text-xs text-gray-500 mt-1">{description}</p>
+      </div>
+    );
+  };
+
+  const renderScrapingApiKeyInput = (
+    provider: string,
+    label: string,
+    placeholder: string,
+    description: string,
+  ) => {
+    const state = scrapingApiKeyStates[provider];
+
+    return (
+      <div key={provider}>
+        <Label>{label}</Label>
+        <div className="flex gap-2 mt-1">
+          <Input
+            type="password"
+            placeholder={placeholder}
+            value={state.apiKey}
+            onChange={(e) => handleScrapingApiKeyChange(provider, e.target.value)}
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => testScrapingApiKey(provider, state.apiKey)}
+            disabled={state.testing || !state.apiKey.trim()}
+            className="whitespace-nowrap"
+          >
+            {state.testing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Test...
+              </>
+            ) : (
+              'Tester'
+            )}
+          </Button>
+        </div>
+        {state.testResult && (
+          <div
+            className={`mt-2 p-3 rounded-lg flex items-start gap-2 ${state.testResult.success
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+              }`}
+          >
+            {state.testResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+            )}
+            <div>
+              <p
+                className={
+                  state.testResult.success
+                    ? 'text-sm text-green-800'
+                    : 'text-sm text-red-800'
+                }
+              >
+                {state.testResult.success
+                  ? state.testResult.message ||
+                  'Clé API valide'
+                  : state.testResult.error ||
+                  'Erreur de validation'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -694,45 +1043,24 @@ export default function SettingsPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Firecrawl API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="fcrawl-..."
-                    value={scrapingKeys.firecrawlApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, firecrawlApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Firecrawl - Web scraping LLM-friendly avec support des PDFs
-                  </p>
-                </div>
-                <div>
-                  <Label>SERP API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    value={scrapingKeys.serpApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, serpApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour SerpAPI - Scraping des résultats de recherche (Google, Bing, etc.)
-                  </p>
-                </div>
-                <div>
-                  <Label>Pica API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="..."
-                    value={scrapingKeys.picaApiKey}
-                    onChange={(e) => setScrapingKeys({ ...scrapingKeys, picaApiKey: e.target.value })}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Clé API pour Pica - Scraping de données web structurées et non-structurées
-                  </p>
-                </div>
+                {renderScrapingApiKeyInput(
+                  'firecrawl',
+                  'Firecrawl API Key',
+                  'fcrawl-...',
+                  'Clé API pour Firecrawl - Web scraping LLM-friendly avec support des PDFs',
+                )}
+                {renderScrapingApiKeyInput(
+                  'serpapi',
+                  'SERP API Key',
+                  '...',
+                  'Clé API pour SerpAPI - Scraping des résultats de recherche (Google, Bing, etc.)',
+                )}
+                {renderScrapingApiKeyInput(
+                  'pica',
+                  'Pica API Key',
+                  '...',
+                  'Clé API pour Pica - Scraping de données web structurées et non-structurées',
+                )}
                 <div className="flex gap-2 justify-end pt-4">
                   <button
                     type="button"
@@ -753,6 +1081,127 @@ export default function SettingsPage() {
                       </>
                     ) : (
                       'Enregistrer les clés API'
+                    )}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Brain className="h-5 w-5 text-purple-600" />
+                  Moteurs de Scraping Internes
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Activez ou désactivez les moteurs de scraping locaux installés sur votre serveur
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {Object.entries(internalEngines).map(([key, engine]) => (
+                  <div key={key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900">{engine.name}</h4>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                          engine.enabled
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {engine.enabled ? 'Activé' : 'Désactivé'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{engine.description}</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={engine.enabled}
+                        onChange={(e) => {
+                          setInternalEngines(prev => ({
+                            ...prev,
+                            [key]: { ...prev[key], enabled: e.target.checked }
+                          }));
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                ))}
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Ordre de priorité</p>
+                      <p className="mt-1">Par défaut, le système utilise Cheerio en premier pour économiser les ressources. Puppeteer est utilisé automatiquement pour les sites JavaScript complexes.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Reset to defaults
+                      setInternalEngines({
+                        cheerio: { enabled: true, name: 'Cheerio', description: 'Parser HTML léger et rapide (recommandé pour sites simples)' },
+                        puppeteer: { enabled: true, name: 'Puppeteer', description: 'Navigateur headless complet (pour sites JavaScript complexes)' },
+                      });
+                    }}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background h-10 py-2 px-4 border border-input hover:bg-accent hover:text-accent-foreground"
+                  >
+                    Réinitialiser
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSavingEngines(true);
+                      setMessage('');
+
+                      try {
+                        const token = localStorage.getItem('auth_token');
+                        if (!token) {
+                          setMessage('❌ Authentification requise. Veuillez vous connecter.');
+                          setSavingEngines(false);
+                          return;
+                        }
+
+                        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            cheerioEnabled: internalEngines.cheerio.enabled,
+                            puppeteerEnabled: internalEngines.puppeteer.enabled,
+                          }),
+                        });
+
+                        if (response.ok) {
+                          setMessage('✅ Configuration des moteurs sauvegardée!');
+                        } else {
+                          const errorData = await response.json().catch(() => ({}));
+                          setMessage(`❌ Erreur: ${errorData.message || 'Échec de la sauvegarde'}`);
+                        }
+                      } catch (error) {
+                        setMessage(`❌ Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+                      } finally {
+                        setSavingEngines(false);
+                      }
+                    }}
+                    disabled={savingEngines}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ring-offset-background h-10 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {savingEngines ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      'Enregistrer la configuration'
                     )}
                   </button>
                 </div>

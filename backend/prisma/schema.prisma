@@ -665,6 +665,8 @@ model ai_settings {
   huggingfaceApiKey String?
   alephAlphaApiKey  String?
   nlpCloudApiKey    String?
+  cheerioEnabled    Boolean  @default(true)
+  puppeteerEnabled  Boolean  @default(true)
   users             users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
