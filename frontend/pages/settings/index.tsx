@@ -193,6 +193,21 @@ export default function SettingsPage() {
       return;
     }
 
+    // Check if API key is masked (contains ***)
+    if (apiKey.includes('*')) {
+      setApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: true,
+            message: '🔒 Clé déjà sauvegardée (masquée pour sécurité). Entrez une nouvelle clé pour tester.',
+          },
+        },
+      }));
+      return;
+    }
+
     // Start testing
     setApiKeyStates((prev) => ({
       ...prev,
@@ -273,6 +288,8 @@ export default function SettingsPage() {
       [provider]: {
         ...prev[provider],
         apiKey: value,
+        // Clear test result when user changes the key
+        testResult: null,
       },
     }));
   };
@@ -297,6 +314,21 @@ export default function SettingsPage() {
           testResult: {
             success: false,
             error: 'Veuillez entrer une clé API',
+          },
+        },
+      }));
+      return;
+    }
+
+    // Check if API key is masked (contains ***)
+    if (apiKey.includes('*')) {
+      setScrapingApiKeyStates((prev) => ({
+        ...prev,
+        [provider]: {
+          ...prev[provider],
+          testResult: {
+            success: true,
+            message: '🔒 Clé déjà sauvegardée (masquée pour sécurité). Entrez une nouvelle clé pour tester.',
           },
         },
       }));
@@ -357,6 +389,8 @@ export default function SettingsPage() {
       [provider]: {
         ...prev[provider],
         apiKey: value,
+        // Clear test result when user changes the key
+        testResult: null,
       },
     }));
 
