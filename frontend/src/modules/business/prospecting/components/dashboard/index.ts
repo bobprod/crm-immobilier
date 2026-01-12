@@ -7,4 +7,5 @@
  * - Vue d'ensemble
  */
 
-export {};
+export { StatCard, type StatCardProps } from './StatCard';
+export { CampaignCard, type CampaignCardProps } from './CampaignCard';
