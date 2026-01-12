@@ -7,6 +7,22 @@ import { AutomationMode, AISuggestion, TrackingPlatform } from '../dto';
  */
 @Injectable()
 export class AutomationService {
+  // Configuration constants
+  private readonly BUDGET_INCREASE_MULTIPLIER = 1.2; // +20%
+  private readonly BUDGET_DECREASE_MULTIPLIER = 0.8; // -20%
+  private readonly HIGH_CONVERSION_THRESHOLD = 0.05; // 5%
+  private readonly LOW_CONVERSION_THRESHOLD = 0.01; // 1%
+  private readonly LOW_ENGAGEMENT_TIME_THRESHOLD = 30; // seconds
+  private readonly MIN_EVENT_COUNT_FOR_ANALYSIS = 50;
+  private readonly HIGH_EVENT_COUNT_THRESHOLD = 100;
+  private readonly HIGH_CONFIDENCE = 0.85;
+  private readonly MEDIUM_CONFIDENCE = 0.75;
+  private readonly LOW_CONFIDENCE = 0.65;
+  private readonly EXPECTED_IMPACT_CONVERSIONS = 20;
+  private readonly EXPECTED_IMPACT_COST_EFFICIENCY = 20;
+  private readonly EXPECTED_IMPACT_ENGAGEMENT = 30;
+  private readonly EXPECTED_IMPACT_REACH = 50;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getConfig(userId: string) {
@@ -67,7 +83,7 @@ export class AutomationService {
       // Générer des suggestions basées sur l'analyse
       for (const [platform, stats] of Object.entries(platformStats)) {
         // Suggestion 1: Augmenter le budget si forte performance
-        if (stats.conversionRate > 0.05 && stats.eventCount > 100) {
+        if (stats.conversionRate > this.HIGH_CONVERSION_THRESHOLD && stats.eventCount > this.HIGH_EVENT_COUNT_THRESHOLD) {
           // Valider que la plateforme est un TrackingPlatform valide
           const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
             ? (platform as TrackingPlatform) 
@@ -78,12 +94,12 @@ export class AutomationService {
             type: 'budget',
             platform: validPlatform,
             currentValue: stats.budget || 0,
-            suggestedValue: (stats.budget || 0) * 1.2,
+            suggestedValue: (stats.budget || 0) * this.BUDGET_INCREASE_MULTIPLIER,
             expectedImpact: {
               metric: 'conversions',
-              change: 20,
+              change: this.EXPECTED_IMPACT_CONVERSIONS,
             },
-            confidence: 0.85,
+            confidence: this.HIGH_CONFIDENCE,
             reasoning: `Taux de conversion élevé (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Augmenter le budget pourrait améliorer les résultats.`,
             status: 'pending',
             createdAt: new Date(),
@@ -91,7 +107,7 @@ export class AutomationService {
         }
 
         // Suggestion 2: Réduire le budget si faible performance
-        if (stats.conversionRate < 0.01 && stats.eventCount > 50) {
+        if (stats.conversionRate < this.LOW_CONVERSION_THRESHOLD && stats.eventCount > this.MIN_EVENT_COUNT_FOR_ANALYSIS) {
           const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
             ? (platform as TrackingPlatform) 
             : TrackingPlatform.FACEBOOK;
@@ -101,12 +117,12 @@ export class AutomationService {
             type: 'budget',
             platform: validPlatform,
             currentValue: stats.budget || 0,
-            suggestedValue: (stats.budget || 0) * 0.8,
+            suggestedValue: (stats.budget || 0) * this.BUDGET_DECREASE_MULTIPLIER,
             expectedImpact: {
               metric: 'cost_efficiency',
-              change: 20,
+              change: this.EXPECTED_IMPACT_COST_EFFICIENCY,
             },
-            confidence: 0.75,
+            confidence: this.MEDIUM_CONFIDENCE,
             reasoning: `Taux de conversion faible (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Réduire le budget et optimiser la stratégie.`,
             status: 'pending',
             createdAt: new Date(),
@@ -114,7 +130,7 @@ export class AutomationService {
         }
 
         // Suggestion 3: Changer l'audience si mauvais engagement
-        if (stats.avgTimeOnPage < 30 && stats.eventCount > 100) {
+        if (stats.avgTimeOnPage < this.LOW_ENGAGEMENT_TIME_THRESHOLD && stats.eventCount > this.HIGH_EVENT_COUNT_THRESHOLD) {
           const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
             ? (platform as TrackingPlatform) 
             : TrackingPlatform.FACEBOOK;
@@ -127,9 +143,9 @@ export class AutomationService {
             suggestedValue: 'Refined targeting',
             expectedImpact: {
               metric: 'engagement',
-              change: 30,
+              change: this.EXPECTED_IMPACT_ENGAGEMENT,
             },
-            confidence: 0.7,
+            confidence: this.MEDIUM_CONFIDENCE,
             reasoning: `Temps de visite moyen très faible (${stats.avgTimeOnPage}s) sur ${platform}. Affiner le ciblage de l'audience.`,
             status: 'pending',
             createdAt: new Date(),
@@ -164,9 +180,9 @@ export class AutomationService {
             suggestedValue: 1,
             expectedImpact: {
               metric: 'reach',
-              change: 50,
+              change: this.EXPECTED_IMPACT_REACH,
             },
-            confidence: 0.65,
+            confidence: this.LOW_CONFIDENCE,
             reasoning: `Seulement ${activePlatforms} plateformes actives. ${suggestedPlatform} peut apporter un nouveau public.`,
             status: 'pending',
             createdAt: new Date(),

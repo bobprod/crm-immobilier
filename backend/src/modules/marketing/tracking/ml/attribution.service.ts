@@ -44,14 +44,31 @@ export class AttributionService {
       // Calculer le crédit total pour normaliser
       const totalCredit = attribution.reduce((sum, weight) => sum + weight, 0);
 
+      // Protection contre division par zéro et valeurs invalides
+      if (totalCredit === 0 || !isFinite(totalCredit)) {
+        // Fallback: distribution égale si les poids sont invalides
+        const fallbackWeight = 1.0 / touchpoints.length;
+        return {
+          touchpoints: touchpoints.map(tp => ({
+            channel: tp.source,
+            platform: tp.platform,
+            timestamp: tp.timestamp,
+            credit: fallbackWeight,
+          })),
+          totalValue: 1.0,
+          conversionTime: touchpoints[touchpoints.length - 1]?.timestamp || new Date(),
+          model,
+        };
+      }
+
       return {
         touchpoints: touchpoints.map((tp, index) => ({
           channel: tp.source,
           platform: tp.platform,
           timestamp: tp.timestamp,
-          credit: totalCredit > 0 ? attribution[index] / totalCredit : 0,
+          credit: attribution[index] / totalCredit,
         })),
-        totalValue: 1.0, // Valeur normalisée
+        totalValue: 1.0,
         conversionTime: touchpoints[touchpoints.length - 1]?.timestamp || new Date(),
         model,
       };

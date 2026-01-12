@@ -49,10 +49,21 @@ export class CampaignsService {
     if (filters?.type) where.type = filters.type;
     if (filters?.status) where.status = filters.status;
 
-    const campaigns = await this.prisma.campaigns.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    // Pagination
+    const page = filters?.page ? parseInt(filters.page) : 1;
+    const limit = filters?.limit ? Math.min(parseInt(filters.limit), 100) : 30;
+    const skip = (page - 1) * limit;
+
+    // Query with pagination
+    const [campaigns, total] = await Promise.all([
+      this.prisma.campaigns.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.campaigns.count({ where }),
+    ]);
 
     // Transform campaigns to include message from content
     const transformedCampaigns = campaigns.map(campaign => ({
@@ -63,7 +74,10 @@ export class CampaignsService {
 
     return {
       campaigns: transformedCampaigns,
-      total: transformedCampaigns.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
