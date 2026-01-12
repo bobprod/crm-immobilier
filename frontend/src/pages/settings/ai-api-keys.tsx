@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -360,18 +361,14 @@ export default function AIApiKeysPage() {
   const availableModels = PROVIDER_MODELS[selectedProvider as keyof ProviderModels] || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <MainLayout
+      title="Clés API & Configuration LLM"
+      breadcrumbs={[
+        { label: 'Paramètres', href: '/settings' },
+        { label: 'Clés API' },
+      ]}
+    >
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Key className="h-8 w-8 text-blue-600" />
-            Mes Clés API & Configuration LLM
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Configurez vos clés API et sélectionnez votre modèle LLM par défaut
-          </p>
-        </div>
 
         {/* Info Alert */}
         <Alert className="border-blue-200 bg-blue-50">
@@ -664,6 +661,7 @@ export default function AIApiKeysPage() {
           />
         ))}
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 }
