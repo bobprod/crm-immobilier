@@ -12,15 +12,33 @@ export class CampaignsService {
   ) {}
 
   async create(userId: string, dto: CreateCampaignDto) {
+    // Construire le contenu de la campagne
+    const content = dto.content || {};
+    if (dto.message) {
+      content.message = dto.message;
+    }
+    if (dto.templateId) {
+      content.templateId = dto.templateId;
+    }
+
     return this.prisma.campaigns.create({
       data: {
         userId,
         name: dto.name,
         description: dto.description,
         type: dto.type,
-        content: dto.config || {}, // ✅ CORRIGÉ: utiliser 'content' au lieu de 'config'
-        recipients: [], // ✅ AJOUTÉ: recipients est requis
-        stats: dto.stats || {},
+        content: content,
+        recipients: dto.targetAudience || [],
+        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+        stats: dto.stats || {
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          converted: 0,
+          bounced: 0,
+          unsubscribed: 0,
+        },
       },
     });
   }
@@ -31,10 +49,22 @@ export class CampaignsService {
     if (filters?.type) where.type = filters.type;
     if (filters?.status) where.status = filters.status;
 
-    return this.prisma.campaigns.findMany({
+    const campaigns = await this.prisma.campaigns.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
+
+    // Transform campaigns to include message from content
+    const transformedCampaigns = campaigns.map(campaign => ({
+      ...campaign,
+      message: campaign.content?.message || '',
+      targetAudience: Array.isArray(campaign.recipients) ? campaign.recipients : [],
+    }));
+
+    return {
+      campaigns: transformedCampaigns,
+      total: transformedCampaigns.length,
+    };
   }
 
   async findOne(id: string, userId: string) {
@@ -42,7 +72,14 @@ export class CampaignsService {
       where: { id, userId },
     });
 
-    return ErrorHandler.ensureExists(campaign, 'Campaign', id);
+    const validated = ErrorHandler.ensureExists(campaign, 'Campaign', id);
+    
+    // Transform campaign to include message from content
+    return {
+      ...validated,
+      message: validated.content?.message || '',
+      targetAudience: Array.isArray(validated.recipients) ? validated.recipients : [],
+    };
   }
 
   async update(id: string, userId: string, dto: UpdateCampaignDto) {
