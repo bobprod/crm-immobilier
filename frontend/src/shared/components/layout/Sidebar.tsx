@@ -91,10 +91,170 @@ const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
+    id: 'prospects',
+    label: 'Prospects',
+    icon: '👤',
+    path: '/prospects',
+  },
+  {
+    id: 'properties',
+    label: 'Biens',
+    icon: '🏠',
+    path: '/properties',
+  },
+  {
+    id: 'matching',
+    label: 'Matching',
+    icon: '🎯',
+    path: '/matching',
+  },
+  {
+    id: 'appointments',
+    label: 'Rendez-vous',
+    icon: '📅',
+    path: '/appointments',
+  },
+  {
+    id: 'tasks',
+    label: 'Tâches',
+    icon: '📋',
+    path: '/tasks',
+  },
+  {
+    id: 'communications',
+    label: 'Communications',
+    icon: '💬',
+    subItems: [
+      {
+        id: 'communications-all',
+        label: 'Toutes',
+        icon: '📨',
+        path: '/communications',
+      },
+      {
+        id: 'communications-whatsapp',
+        label: 'WhatsApp',
+        icon: '📱',
+        path: '/communication/whatsapp',
+      },
+      {
+        id: 'communications-templates',
+        label: 'Templates',
+        icon: '📝',
+        path: '/communications/templates',
+      },
+    ],
+  },
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: '📄',
+    path: '/documents',
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    icon: '💰',
+    subItems: [
+      {
+        id: 'finance-overview',
+        label: 'Vue d\'ensemble',
+        icon: '💵',
+        path: '/finance',
+      },
+      {
+        id: 'finance-commissions',
+        label: 'Commissions',
+        icon: '💳',
+        path: '/finance/commissions',
+      },
+      {
+        id: 'finance-invoices',
+        label: 'Factures',
+        icon: '🧾',
+        path: '/finance/invoices',
+      },
+    ],
+  },
+  {
+    id: 'transactions',
+    label: 'Transactions',
+    icon: '🤝',
+    path: '/transactions',
+  },
+  {
+    id: 'mandates',
+    label: 'Mandats',
+    icon: '📜',
+    path: '/mandates',
+  },
+  {
+    id: 'owners',
+    label: 'Propriétaires',
+    icon: '👨‍💼',
+    path: '/owners',
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing',
+    icon: '📢',
+    subItems: [
+      {
+        id: 'marketing-campaigns',
+        label: 'Campagnes',
+        icon: '🎯',
+        path: '/marketing',
+      },
+      {
+        id: 'marketing-tracking',
+        label: 'Tracking',
+        icon: '📊',
+        path: '/marketing/tracking',
+      },
+      {
+        id: 'marketing-seo',
+        label: 'SEO',
+        icon: '🔍',
+        path: '/seo-ai',
+      },
+    ],
+  },
+  {
+    id: 'investment',
+    label: 'Investissement',
+    icon: '💎',
+    path: '/investment',
+  },
+  {
+    id: 'vitrine',
+    label: 'Sites Vitrines',
+    icon: '🌐',
+    subItems: [
+      {
+        id: 'vitrine-sites',
+        label: 'Mes Sites',
+        icon: '🏛️',
+        path: '/vitrine',
+      },
+      {
+        id: 'vitrine-builder',
+        label: 'Page Builder',
+        icon: '🎨',
+        path: '/page-builder',
+      },
+    ],
+  },
+  {
     id: 'analytics',
     label: 'Analytics',
     icon: '📈',
     subItems: [
+      {
+        id: 'analytics-overview',
+        label: 'Vue d\'ensemble',
+        icon: '📊',
+        path: '/analytics',
+      },
       {
         id: 'analytics-funnel',
         label: 'Funnel de Conversion',
@@ -103,8 +263,8 @@ const MENU_ITEMS: MenuItem[] = [
       },
       {
         id: 'analytics-performance',
-        label: 'Performance Campagnes',
-        icon: '📊',
+        label: 'Performance',
+        icon: '🚀',
         path: '/analytics/performance',
       },
       {
@@ -116,6 +276,18 @@ const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
+    id: 'ai-assistant',
+    label: 'Assistant IA',
+    icon: '🤖',
+    path: '/ai-assistant',
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: '🔔',
+    path: '/notifications',
+  },
+  {
     id: 'settings',
     label: 'Paramètres',
     icon: '⚙️',
@@ -125,6 +297,12 @@ const MENU_ITEMS: MenuItem[] = [
         label: 'Clés API',
         icon: '🔑',
         path: '/settings/ai-api-keys',
+      },
+      {
+        id: 'settings-modules',
+        label: 'Modules',
+        icon: '🧩',
+        path: '/settings/modules',
       },
       {
         id: 'settings-config',

@@ -661,7 +661,6 @@ export default function AIApiKeysPage() {
           />
         ))}
       </div>
-      </div>
     </MainLayout>
   );
 }

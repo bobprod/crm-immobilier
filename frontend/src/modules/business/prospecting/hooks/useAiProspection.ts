@@ -299,25 +299,28 @@ export function useAiProspection(authToken: string): UseAiProspectionReturn {
   // ============================================================================
 
   const updateConfiguration = useCallback((updates: Partial<ProspectionConfiguration>) => {
-    setConfiguration((prev) => ({
-      ...prev,
-      ...updates,
-      campaignSettings: {
-        ...prev.campaignSettings,
-        ...updates.campaignSettings,
-      } as any,
-    }));
+    setConfiguration((prev) => {
+      const newConfig = {
+        ...prev,
+        ...updates,
+        campaignSettings: {
+          ...(prev?.campaignSettings || {}),
+          ...(updates.campaignSettings || {}),
+        } as any,
+      };
 
-    // Update state based on validity
-    setPanelState((prevState) => {
-      if (prevState === 'CONFIGURING' || prevState === 'READY') {
-        const newConfig = { ...configuration, ...updates };
-        const validation = validateConfiguration(newConfig);
-        return validation.isValid ? 'READY' : 'CONFIGURING';
-      }
-      return prevState;
+      // Update panel state based on the new configuration validity
+      setPanelState((prevState) => {
+        if (prevState === 'CONFIGURING' || prevState === 'READY') {
+          const validation = validateConfiguration(newConfig);
+          return validation.isValid ? 'READY' : 'CONFIGURING';
+        }
+        return prevState;
+      });
+
+      return newConfig;
     });
-  }, [configuration]);
+  }, []);
 
   // ============================================================================
   // POLLING LOGIC
