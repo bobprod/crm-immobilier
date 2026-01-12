@@ -5,6 +5,7 @@ import { CheerioService } from './services/cheerio.service';
 import { PuppeteerService } from './services/puppeteer.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { WebDataService } from './services/web-data.service';
+import { AiBillingModule } from '../../shared/ai-billing/ai-billing.module';
 
 /**
  * Module de scraping web unifié
@@ -21,7 +22,7 @@ import { WebDataService } from './services/web-data.service';
  * dans les variables d'environnement.
  */
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, AiBillingModule],
   controllers: [ScrapingController],
   providers: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],
   exports: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],

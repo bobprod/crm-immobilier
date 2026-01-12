@@ -48,15 +48,26 @@ export function useMenu() {
 
       const items = await moduleRegistryApi.getMyMenu();
 
-      // Vérifier que items est bien un tableau
-      if (!Array.isArray(items)) {
-        console.warn('⚠️ Menu API response is not an array:', items);
+      // Supporter deux formes de réponse:
+      // 1) Array directly: [{...}, ...]
+      // 2) Object with `menu` property: { menu: [...], message?: '...' }
+      let menuArray: any[] = [];
+
+      if (Array.isArray(items)) {
+        menuArray = items;
+      } else if (items && Array.isArray((items as any).menu)) {
+        menuArray = (items as any).menu;
+        if ((items as any).message) {
+          console.info('ℹ️ Menu API message:', (items as any).message);
+        }
+      } else {
+        console.warn('⚠️ Menu API response is not an array or does not contain `menu`:', items);
         setMenuItems(getDefaultMenu());
         return;
       }
 
       // Trier les items par ordre
-      const sortedItems = items.sort((a, b) => (a.order || 0) - (b.order || 0));
+      const sortedItems = menuArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
       setMenuItems(sortedItems);
     } catch (err) {

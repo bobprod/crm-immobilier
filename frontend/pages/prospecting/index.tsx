@@ -1,34 +1,27 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import Layout from '../../src/modules/core/layout/components/Layout';
-import { ProspectingDashboard } from '@/modules/business/prospecting';
+
+/**
+ * Redirection: /prospecting → /dashboard
+ *
+ * L'ancienne interface avec tabs horizontaux a été remplacée par
+ * une nouvelle navigation avec sidebar. Cette page redirige vers
+ * le nouveau dashboard.
+ *
+ * Phase 2: UX/UI Restructuring
+ */
 
 export default function ProspectingPage() {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+    // Redirect to new dashboard with sidebar navigation
+    router.replace('/dashboard');
+  }, [router]);
 
   return (
-    <Layout>
-      <ProspectingDashboard language="fr" />
-    </Layout>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+    </div>
   );
 }
