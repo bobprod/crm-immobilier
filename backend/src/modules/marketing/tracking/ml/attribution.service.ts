@@ -41,15 +41,19 @@ export class AttributionService {
       // Calculer l'attribution selon le modèle choisi
       const attribution = this.calculateAttributionWeights(touchpoints, model);
 
+      // Calculer le crédit total pour normaliser
+      const totalCredit = attribution.reduce((sum, weight) => sum + weight, 0);
+
       return {
-        prospectId,
-        model,
         touchpoints: touchpoints.map((tp, index) => ({
-          ...tp,
-          weight: attribution[index] || 0,
+          channel: tp.source,
+          platform: tp.platform,
+          timestamp: tp.timestamp,
+          credit: totalCredit > 0 ? attribution[index] / totalCredit : 0,
         })),
-        summary: this.generateSummary(touchpoints, attribution),
-        calculatedAt: new Date(),
+        totalValue: 1.0, // Valeur normalisée
+        conversionTime: touchpoints[touchpoints.length - 1]?.timestamp || new Date(),
+        model,
       };
 
     } catch (error) {
@@ -100,28 +104,5 @@ export class AttributionService {
       default:
         return this.calculateAttributionWeights(touchpoints, 'linear');
     }
-  }
-
-  private generateSummary(touchpoints: any[], weights: number[]) {
-    const platformContributions = new Map<string, number>();
-    
-    touchpoints.forEach((tp, i) => {
-      const current = platformContributions.get(tp.platform) || 0;
-      platformContributions.set(tp.platform, current + weights[i]);
-    });
-
-    const contributions = Array.from(platformContributions.entries())
-      .map(([platform, weight]) => ({
-        platform,
-        contribution: Math.round(weight * 100) / 100,
-        percentage: Math.round((weight / weights.reduce((a, b) => a + b, 0)) * 100),
-      }))
-      .sort((a, b) => b.contribution - a.contribution);
-
-    return {
-      totalTouchpoints: touchpoints.length,
-      topContributor: contributions[0]?.platform || 'unknown',
-      contributions,
-    };
   }
 }

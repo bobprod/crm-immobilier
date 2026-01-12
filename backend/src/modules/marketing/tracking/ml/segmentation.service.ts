@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AudienceSegment } from '../dto';
+import { AudienceSegment, TrackingPlatform } from '../dto';
 
 /**
  * Service de segmentation d'audience
@@ -53,21 +53,20 @@ export class SegmentationService {
           id: `segment-engaged-${Date.now()}`,
           name: 'Prospects Très Engagés',
           description: '10+ événements dans les 30 derniers jours',
-          criteria: {
-            minEvents: 10,
+          size: highlyEngagedIds.size,
+          characteristics: {
+            engagement: 'high',
+            eventCount: '10+',
             period: '30days',
           },
-          size: highlyEngagedIds.size,
-          characteristics: [
-            'Interactions fréquentes',
-            'Potentiel de conversion élevé',
-            'Intérêt confirmé',
-          ],
-          recommendedActions: [
-            'Contacter directement',
-            'Proposer une visite personnalisée',
-            'Envoyer des offres premium',
-          ],
+          performance: {
+            conversionRate: 0.15, // 15% estimated
+            avgRevenue: 250000, // TND
+            costPerLead: 50,
+          },
+          platforms: [TrackingPlatform.FACEBOOK, TrackingPlatform.GA4],
+          createdAt: new Date(),
+          lastUpdated: new Date(),
         });
       }
 
@@ -81,21 +80,20 @@ export class SegmentationService {
           id: `segment-inactive-${Date.now()}`,
           name: 'Prospects Inactifs',
           description: 'Aucun événement dans les 30 derniers jours',
-          criteria: {
-            maxEvents: 0,
+          size: inactiveProspects.length,
+          characteristics: {
+            engagement: 'none',
+            eventCount: '0',
             period: '30days',
           },
-          size: inactiveProspects.length,
-          characteristics: [
-            'Pas d\'interaction récente',
-            'Risque de désengagement',
-            'Nécessite réactivation',
-          ],
-          recommendedActions: [
-            'Campagne de réengagement',
-            'Offres spéciales limitées',
-            'Enquête de satisfaction',
-          ],
+          performance: {
+            conversionRate: 0.02,
+            avgRevenue: 0,
+            costPerLead: 100,
+          },
+          platforms: [],
+          createdAt: new Date(),
+          lastUpdated: new Date(),
         });
       }
 
@@ -117,21 +115,20 @@ export class SegmentationService {
           id: `segment-buyer-intent-${Date.now()}`,
           name: 'Intention d\'Achat',
           description: 'Signaux d\'intention d\'achat détectés',
-          criteria: {
-            eventTypes: ['AddToCart', 'InitiateCheckout', 'ViewContent'],
+          size: buyerIntentIds.size,
+          characteristics: {
+            intent: 'high',
+            signals: ['AddToCart', 'InitiateCheckout', 'ViewContent'],
             period: '30days',
           },
-          size: buyerIntentIds.size,
-          characteristics: [
-            'Intérêt actif pour les biens',
-            'Consultation de propriétés',
-            'Forte probabilité de conversion',
-          ],
-          recommendedActions: [
-            'Contact prioritaire',
-            'Proposer des biens similaires',
-            'Organiser des visites',
-          ],
+          performance: {
+            conversionRate: 0.25,
+            avgRevenue: 400000,
+            costPerLead: 30,
+          },
+          platforms: [TrackingPlatform.FACEBOOK, TrackingPlatform.GA4, TrackingPlatform.GOOGLE_ADS],
+          createdAt: new Date(),
+          lastUpdated: new Date(),
         });
       }
 
@@ -148,22 +145,20 @@ export class SegmentationService {
           id: `segment-new-${Date.now()}`,
           name: 'Nouveaux Visiteurs',
           description: '1-2 événements dans les 30 derniers jours',
-          criteria: {
-            minEvents: 1,
-            maxEvents: 2,
+          size: newVisitorIds.size,
+          characteristics: {
+            engagement: 'new',
+            eventCount: '1-2',
             period: '30days',
           },
-          size: newVisitorIds.size,
-          characteristics: [
-            'Premier contact récent',
-            'En phase de découverte',
-            'Potentiel à développer',
-          ],
-          recommendedActions: [
-            'Campagne de bienvenue',
-            'Contenu éducatif',
-            'Faciliter la prise de contact',
-          ],
+          performance: {
+            conversionRate: 0.05,
+            avgRevenue: 150000,
+            costPerLead: 75,
+          },
+          platforms: [TrackingPlatform.FACEBOOK, TrackingPlatform.GA4],
+          createdAt: new Date(),
+          lastUpdated: new Date(),
         });
       }
 

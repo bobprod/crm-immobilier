@@ -85,10 +85,55 @@ export class CampaignsService {
   async update(id: string, userId: string, dto: UpdateCampaignDto) {
     await this.findOne(id, userId);
 
-    return this.prisma.campaigns.update({
+    // Préparer les données pour la mise à jour
+    const updateData: any = {};
+
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.stats !== undefined) updateData.stats = dto.stats;
+    if (dto.scheduledAt !== undefined) {
+      updateData.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
+    }
+    if (dto.targetAudience !== undefined) {
+      updateData.recipients = dto.targetAudience;
+    }
+
+    // Gérer le content avec message
+    if (dto.content !== undefined || dto.message !== undefined || dto.templateId !== undefined) {
+      // Récupérer le content actuel pour le fusionner
+      const currentCampaign = await this.prisma.campaigns.findUnique({
+        where: { id },
+        select: { content: true },
+      });
+      
+      const currentContent = (currentCampaign?.content as any) || {};
+      const newContent = { ...currentContent };
+
+      if (dto.content !== undefined) {
+        Object.assign(newContent, dto.content);
+      }
+      if (dto.message !== undefined) {
+        newContent.message = dto.message;
+      }
+      if (dto.templateId !== undefined) {
+        newContent.templateId = dto.templateId;
+      }
+
+      updateData.content = newContent;
+    }
+
+    const updated = await this.prisma.campaigns.update({
       where: { id },
-      data: dto,
+      data: updateData,
     });
+
+    // Retourner avec transformation
+    return {
+      ...updated,
+      message: updated.content?.message || '',
+      targetAudience: Array.isArray(updated.recipients) ? updated.recipients : [],
+    };
   }
 
   async delete(id: string, userId: string) {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AutomationMode, AISuggestion } from '../dto';
+import { AutomationMode, AISuggestion, TrackingPlatform } from '../dto';
 
 /**
  * Service d'automatisation IA
@@ -69,42 +69,57 @@ export class AutomationService {
         // Suggestion 1: Augmenter le budget si forte performance
         if (stats.conversionRate > 0.05 && stats.eventCount > 100) {
           suggestions.push({
-            type: 'budget_increase',
+            id: `suggestion-budget-inc-${Date.now()}-${platform}`,
+            type: 'budget',
             platform: platform as any,
             currentValue: stats.budget || 0,
             suggestedValue: (stats.budget || 0) * 1.2,
-            reasoning: `Taux de conversion élevé (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Augmenter le budget pourrait améliorer les résultats.`,
+            expectedImpact: {
+              metric: 'conversions',
+              change: 20,
+            },
             confidence: 0.85,
-            potentialImpact: 'high',
-            estimatedImprovement: '+20% conversions',
+            reasoning: `Taux de conversion élevé (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Augmenter le budget pourrait améliorer les résultats.`,
+            status: 'pending',
+            createdAt: new Date(),
           });
         }
 
         // Suggestion 2: Réduire le budget si faible performance
         if (stats.conversionRate < 0.01 && stats.eventCount > 50) {
           suggestions.push({
-            type: 'budget_decrease',
+            id: `suggestion-budget-dec-${Date.now()}-${platform}`,
+            type: 'budget',
             platform: platform as any,
             currentValue: stats.budget || 0,
             suggestedValue: (stats.budget || 0) * 0.8,
-            reasoning: `Taux de conversion faible (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Réduire le budget et optimiser la stratégie.`,
+            expectedImpact: {
+              metric: 'cost_efficiency',
+              change: 20,
+            },
             confidence: 0.75,
-            potentialImpact: 'medium',
-            estimatedImprovement: 'Économie budget',
+            reasoning: `Taux de conversion faible (${(stats.conversionRate * 100).toFixed(2)}%) sur ${platform}. Réduire le budget et optimiser la stratégie.`,
+            status: 'pending',
+            createdAt: new Date(),
           });
         }
 
         // Suggestion 3: Changer l'audience si mauvais engagement
         if (stats.avgTimeOnPage < 30 && stats.eventCount > 100) {
           suggestions.push({
-            type: 'audience_change',
+            id: `suggestion-targeting-${Date.now()}-${platform}`,
+            type: 'targeting',
             platform: platform as any,
             currentValue: 'Current audience',
             suggestedValue: 'Refined targeting',
-            reasoning: `Temps de visite moyen très faible (${stats.avgTimeOnPage}s) sur ${platform}. Affiner le ciblage de l'audience.`,
+            expectedImpact: {
+              metric: 'engagement',
+              change: 30,
+            },
             confidence: 0.7,
-            potentialImpact: 'high',
-            estimatedImprovement: '+30% engagement',
+            reasoning: `Temps de visite moyen très faible (${stats.avgTimeOnPage}s) sur ${platform}. Affiner le ciblage de l'audience.`,
+            status: 'pending',
+            createdAt: new Date(),
           });
         }
       }
@@ -113,14 +128,19 @@ export class AutomationService {
       const activePlatforms = trackingConfigs.filter(c => c.isActive).length;
       if (activePlatforms < 3) {
         suggestions.push({
-          type: 'platform_activation',
-          platform: 'tiktok',
+          id: `suggestion-platform-${Date.now()}`,
+          type: 'targeting',
+          platform: TrackingPlatform.TIKTOK,
           currentValue: 0,
           suggestedValue: 1,
-          reasoning: 'Seulement ' + activePlatforms + ' plateformes actives. TikTok peut apporter un nouveau public.',
+          expectedImpact: {
+            metric: 'reach',
+            change: 50,
+          },
           confidence: 0.65,
-          potentialImpact: 'medium',
-          estimatedImprovement: 'Nouvelle audience',
+          reasoning: 'Seulement ' + activePlatforms + ' plateformes actives. TikTok peut apporter un nouveau public.',
+          status: 'pending',
+          createdAt: new Date(),
         });
       }
 

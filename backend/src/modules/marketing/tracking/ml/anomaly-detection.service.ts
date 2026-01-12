@@ -39,19 +39,20 @@ export class AnomalyDetectionService {
       if (stats.hourlyRate < stats.avgHourlyRate * 0.3) {
         anomalies.push({
           id: `anomaly-volume-${Date.now()}`,
-          type: 'volume_drop',
+          type: 'conversion_drop',
           severity: 'critical',
           platform,
           metric: 'event_rate',
           expectedValue: stats.avgHourlyRate,
           actualValue: stats.hourlyRate,
+          deviation: ((stats.avgHourlyRate - stats.hourlyRate) / stats.avgHourlyRate) * 100,
+          timestamp: new Date(),
           description: `Baisse drastique du volume d'événements sur ${platform}`,
           recommendations: [
             'Vérifier que le pixel est toujours actif',
             'Vérifier les paramètres de configuration',
             'Consulter les logs du serveur',
           ],
-          detectedAt: new Date(),
         });
       }
 
@@ -59,19 +60,20 @@ export class AnomalyDetectionService {
       if (stats.hourlyRate > stats.avgHourlyRate * 3) {
         anomalies.push({
           id: `anomaly-spike-${Date.now()}`,
-          type: 'unusual_spike',
+          type: 'fraud_suspected',
           severity: 'high',
           platform,
           metric: 'event_rate',
           expectedValue: stats.avgHourlyRate,
           actualValue: stats.hourlyRate,
+          deviation: ((stats.hourlyRate - stats.avgHourlyRate) / stats.avgHourlyRate) * 100,
+          timestamp: new Date(),
           description: `Pic anormal d'événements sur ${platform}`,
           recommendations: [
             'Vérifier les sources de trafic pour détecter du trafic bot',
             'Analyser les adresses IP sources',
             'Considérer activer le filtrage anti-bot',
           ],
-          detectedAt: new Date(),
         });
       }
 
@@ -79,19 +81,20 @@ export class AnomalyDetectionService {
       if (stats.conversionRate < 0.01 && stats.totalEvents > 100) {
         anomalies.push({
           id: `anomaly-conversion-${Date.now()}`,
-          type: 'low_conversion',
+          type: 'conversion_drop',
           severity: 'medium',
           platform,
           metric: 'conversion_rate',
           expectedValue: 0.02,
           actualValue: stats.conversionRate,
+          deviation: ((0.02 - stats.conversionRate) / 0.02) * 100,
+          timestamp: new Date(),
           description: 'Taux de conversion inférieur à la normale',
           recommendations: [
             'Analyser le parcours utilisateur',
             'Vérifier les points de friction',
             'Tester les appels à l\'action',
           ],
-          detectedAt: new Date(),
         });
       }
 
