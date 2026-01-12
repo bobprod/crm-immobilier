@@ -12,15 +12,33 @@ export class CampaignsService {
   ) {}
 
   async create(userId: string, dto: CreateCampaignDto) {
+    // Construire le contenu de la campagne
+    const content = dto.content || {};
+    if (dto.message) {
+      content.message = dto.message;
+    }
+    if (dto.templateId) {
+      content.templateId = dto.templateId;
+    }
+
     return this.prisma.campaigns.create({
       data: {
         userId,
         name: dto.name,
         description: dto.description,
         type: dto.type,
-        content: dto.config || {}, // ✅ CORRIGÉ: utiliser 'content' au lieu de 'config'
-        recipients: [], // ✅ AJOUTÉ: recipients est requis
-        stats: dto.stats || {},
+        content: content,
+        recipients: dto.targetAudience || [],
+        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+        stats: dto.stats || {
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          converted: 0,
+          bounced: 0,
+          unsubscribed: 0,
+        },
       },
     });
   }
@@ -31,10 +49,36 @@ export class CampaignsService {
     if (filters?.type) where.type = filters.type;
     if (filters?.status) where.status = filters.status;
 
-    return this.prisma.campaigns.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    // Pagination
+    const page = filters?.page ? parseInt(filters.page) : 1;
+    const limit = filters?.limit ? Math.min(parseInt(filters.limit), 100) : 30;
+    const skip = (page - 1) * limit;
+
+    // Query with pagination
+    const [campaigns, total] = await Promise.all([
+      this.prisma.campaigns.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.campaigns.count({ where }),
+    ]);
+
+    // Transform campaigns to include message from content
+    const transformedCampaigns = campaigns.map(campaign => ({
+      ...campaign,
+      message: campaign.content?.message || '',
+      targetAudience: Array.isArray(campaign.recipients) ? campaign.recipients : [],
+    }));
+
+    return {
+      campaigns: transformedCampaigns,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string, userId: string) {
@@ -42,16 +86,68 @@ export class CampaignsService {
       where: { id, userId },
     });
 
-    return ErrorHandler.ensureExists(campaign, 'Campaign', id);
+    const validated = ErrorHandler.ensureExists(campaign, 'Campaign', id);
+    
+    // Transform campaign to include message from content
+    return {
+      ...validated,
+      message: validated.content?.message || '',
+      targetAudience: Array.isArray(validated.recipients) ? validated.recipients : [],
+    };
   }
 
   async update(id: string, userId: string, dto: UpdateCampaignDto) {
     await this.findOne(id, userId);
 
-    return this.prisma.campaigns.update({
+    // Préparer les données pour la mise à jour
+    const updateData: any = {};
+
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.type !== undefined) updateData.type = dto.type;
+    if (dto.stats !== undefined) updateData.stats = dto.stats;
+    if (dto.scheduledAt !== undefined) {
+      updateData.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
+    }
+    if (dto.targetAudience !== undefined) {
+      updateData.recipients = dto.targetAudience;
+    }
+
+    // Gérer le content avec message
+    if (dto.content !== undefined || dto.message !== undefined || dto.templateId !== undefined) {
+      // Récupérer le content actuel pour le fusionner
+      const currentCampaign = await this.prisma.campaigns.findUnique({
+        where: { id },
+        select: { content: true },
+      });
+      
+      const currentContent = (currentCampaign?.content as any) || {};
+      const newContent = { ...currentContent };
+
+      if (dto.content !== undefined) {
+        Object.assign(newContent, dto.content);
+      }
+      if (dto.message !== undefined) {
+        newContent.message = dto.message;
+      }
+      if (dto.templateId !== undefined) {
+        newContent.templateId = dto.templateId;
+      }
+
+      updateData.content = newContent;
+    }
+
+    const updated = await this.prisma.campaigns.update({
       where: { id },
-      data: dto,
+      data: updateData,
     });
+
+    // Retourner avec transformation
+    return {
+      ...updated,
+      message: updated.content?.message || '',
+      targetAudience: Array.isArray(updated.recipients) ? updated.recipients : [],
+    };
   }
 
   async delete(id: string, userId: string) {
