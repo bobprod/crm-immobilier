@@ -25,6 +25,7 @@ import { DemographicTargeting } from './DemographicTargeting';
 import { SalesFunnel } from './SalesFunnel';
 import { LeadValidator } from './LeadValidator';
 import { AiProspectionPanel } from './AiProspectionPanel';
+import { StatCard, CampaignCard } from './dashboard';
 
 // ============================================
 // TYPES
@@ -37,112 +38,10 @@ interface ProspectingDashboardProps {
 type TabType = 'dashboard' | 'ai-prospection' | 'targeting' | 'funnel' | 'validation' | 'campaigns' | 'scraping';
 
 // ============================================
-// SUB-COMPONENTS
+// EXTRACTED COMPONENTS
 // ============================================
-
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  icon: string;
-  change?: number;
-  color?: string;
-}> = ({ title, value, icon, change, color = 'purple' }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-        {change !== undefined && (
-          <p
-            className={`text-sm mt-2 flex items-center gap-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}
-          >
-            <span>{change >= 0 ? '↗' : '↘'}</span>
-            {Math.abs(change)}% vs mois dernier
-          </p>
-        )}
-      </div>
-      <div className={`p-4 rounded-2xl bg-gradient-to-br from-${color}-100 to-${color}-200`}>
-        <span className="text-3xl">{icon}</span>
-      </div>
-    </div>
-  </div>
-);
-
-const CampaignCard: React.FC<{
-  campaign: ProspectingCampaign;
-  onSelect: (id: string) => void;
-  onStart: (id: string) => void;
-  onPause: (id: string) => void;
-}> = ({ campaign, onSelect, onStart, onPause }) => (
-  <div
-    className="bg-white rounded-xl shadow-lg p-5 hover:shadow-xl transition-all cursor-pointer border border-gray-100 group"
-    onClick={() => onSelect(campaign.id)}
-  >
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h3 className="font-bold text-gray-900 text-lg group-hover:text-purple-600 transition-colors">
-          {campaign.name}
-        </h3>
-        <p className="text-sm text-gray-500 mt-1">{campaign.description || 'Pas de description'}</p>
-      </div>
-      <span
-        className={`px-3 py-1 rounded-full text-xs font-medium ${getCampaignStatusColor(campaign.status)}`}
-      >
-        {getCampaignStatusLabel(campaign.status)}
-      </span>
-    </div>
-
-    <div className="flex items-center gap-4 mb-4">
-      <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
-          style={{
-            width: `${Math.min((campaign.foundCount / (campaign.targetCount || 100)) * 100, 100)}%`,
-          }}
-        />
-      </div>
-      <span className="text-sm font-medium text-gray-600">
-        {campaign.foundCount}/{campaign.targetCount || '∞'}
-      </span>
-    </div>
-
-    <div className="flex items-center justify-between">
-      <div className="flex gap-3">
-        <span className="inline-flex items-center gap-1 text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
-          👥 {campaign.foundCount} leads
-        </span>
-        <span className="inline-flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-lg">
-          🎯 {campaign.matchedCount} matchs
-        </span>
-      </div>
-
-      <div className="flex gap-2">
-        {(campaign.status === 'draft' || campaign.status === 'paused') && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onStart(campaign.id);
-            }}
-            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-md"
-          >
-            ▶ Lancer
-          </button>
-        )}
-        {campaign.status === 'active' && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPause(campaign.id);
-            }}
-            className="px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-all shadow-md"
-          >
-            ⏸ Pause
-          </button>
-        )}
-      </div>
-    </div>
-  </div>
-);
+// StatCard and CampaignCard are now imported from ./dashboard/
+// See: components/dashboard/StatCard.tsx and CampaignCard.tsx
 
 // ============================================
 // MAIN COMPONENT
