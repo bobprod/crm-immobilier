@@ -94,12 +94,20 @@ export class AttributionService {
       case 'markov':
         // Approximation simple pour modèles complexes
         // Dans une vraie implémentation, il faudrait des calculs plus sophistiqués
-        const weights = touchpoints.map((_, i) => {
-          if (i === 0) return 0.3; // Premier contact
-          if (i === count - 1) return 0.4; // Dernier contact
-          return 0.3 / (count - 2); // Contacts intermédiaires
-        });
-        return weights;
+        if (count === 1) {
+          return [1.0];
+        } else if (count === 2) {
+          // Cas spécial : 2 touchpoints
+          return [0.4, 0.6]; // Premier contact 40%, dernier 60%
+        } else {
+          // 3+ touchpoints
+          const weights = touchpoints.map((_, i) => {
+            if (i === 0) return 0.3; // Premier contact
+            if (i === count - 1) return 0.4; // Dernier contact
+            return 0.3 / (count - 2); // Contacts intermédiaires
+          });
+          return weights;
+        }
 
       default:
         return this.calculateAttributionWeights(touchpoints, 'linear');

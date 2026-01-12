@@ -68,10 +68,15 @@ export class AutomationService {
       for (const [platform, stats] of Object.entries(platformStats)) {
         // Suggestion 1: Augmenter le budget si forte performance
         if (stats.conversionRate > 0.05 && stats.eventCount > 100) {
+          // Valider que la plateforme est un TrackingPlatform valide
+          const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
+            ? (platform as TrackingPlatform) 
+            : TrackingPlatform.FACEBOOK;
+            
           suggestions.push({
             id: `suggestion-budget-inc-${Date.now()}-${platform}`,
             type: 'budget',
-            platform: platform as any,
+            platform: validPlatform,
             currentValue: stats.budget || 0,
             suggestedValue: (stats.budget || 0) * 1.2,
             expectedImpact: {
@@ -87,10 +92,14 @@ export class AutomationService {
 
         // Suggestion 2: Réduire le budget si faible performance
         if (stats.conversionRate < 0.01 && stats.eventCount > 50) {
+          const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
+            ? (platform as TrackingPlatform) 
+            : TrackingPlatform.FACEBOOK;
+            
           suggestions.push({
             id: `suggestion-budget-dec-${Date.now()}-${platform}`,
             type: 'budget',
-            platform: platform as any,
+            platform: validPlatform,
             currentValue: stats.budget || 0,
             suggestedValue: (stats.budget || 0) * 0.8,
             expectedImpact: {
@@ -106,10 +115,14 @@ export class AutomationService {
 
         // Suggestion 3: Changer l'audience si mauvais engagement
         if (stats.avgTimeOnPage < 30 && stats.eventCount > 100) {
+          const validPlatform = Object.values(TrackingPlatform).includes(platform as TrackingPlatform) 
+            ? (platform as TrackingPlatform) 
+            : TrackingPlatform.FACEBOOK;
+            
           suggestions.push({
             id: `suggestion-targeting-${Date.now()}-${platform}`,
             type: 'targeting',
-            platform: platform as any,
+            platform: validPlatform,
             currentValue: 'Current audience',
             suggestedValue: 'Refined targeting',
             expectedImpact: {
@@ -127,21 +140,38 @@ export class AutomationService {
       // Suggestion 4: Activer de nouvelles plateformes si sous-utilisé
       const activePlatforms = trackingConfigs.filter(c => c.isActive).length;
       if (activePlatforms < 3) {
-        suggestions.push({
-          id: `suggestion-platform-${Date.now()}`,
-          type: 'targeting',
-          platform: TrackingPlatform.TIKTOK,
-          currentValue: 0,
-          suggestedValue: 1,
-          expectedImpact: {
-            metric: 'reach',
-            change: 50,
-          },
-          confidence: 0.65,
-          reasoning: 'Seulement ' + activePlatforms + ' plateformes actives. TikTok peut apporter un nouveau public.',
-          status: 'pending',
-          createdAt: new Date(),
-        });
+        // Trouver une plateforme inactive à suggérer
+        const allPlatforms = Object.values(TrackingPlatform);
+        const activePlatformNames = trackingConfigs
+          .filter(c => c.isActive)
+          .map(c => c.platform);
+        
+        const inactivePlatforms = allPlatforms.filter(
+          p => !activePlatformNames.includes(p)
+        );
+
+        if (inactivePlatforms.length > 0) {
+          // Prioriser TikTok et LinkedIn pour l'immobilier
+          const suggestedPlatform = inactivePlatforms.find(p => 
+            p === TrackingPlatform.TIKTOK || p === TrackingPlatform.LINKEDIN
+          ) || inactivePlatforms[0];
+
+          suggestions.push({
+            id: `suggestion-platform-${Date.now()}`,
+            type: 'targeting',
+            platform: suggestedPlatform,
+            currentValue: 0,
+            suggestedValue: 1,
+            expectedImpact: {
+              metric: 'reach',
+              change: 50,
+            },
+            confidence: 0.65,
+            reasoning: `Seulement ${activePlatforms} plateformes actives. ${suggestedPlatform} peut apporter un nouveau public.`,
+            status: 'pending',
+            createdAt: new Date(),
+          });
+        }
       }
 
     } catch (error) {
