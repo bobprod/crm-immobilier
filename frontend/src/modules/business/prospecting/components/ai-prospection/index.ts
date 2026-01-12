@@ -8,4 +8,6 @@
  * - Gestion des leads générés
  */
 
-export {};
+export { ConfigurationSection, type ConfigurationSectionProps } from './ConfigurationSection';
+export { LauncherSection, type LauncherSectionProps } from './LauncherSection';
+export { ResultsSection, type ResultsSectionProps } from './ResultsSection';
