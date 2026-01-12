@@ -166,7 +166,7 @@ export const ConfigurationSection: React.FC<ConfigurationSectionProps> = ({
                         ? ['invest']
                         : ['rent'],
                 propertyTypes: [configuration.propertyType],
-                budgetRange: configuration.budget || undefined,
+                ...(configuration.budget && { budgetRange: configuration.budget }),
               }}
               onChange={handleDemographicChange}
               disabled={isLocked}
