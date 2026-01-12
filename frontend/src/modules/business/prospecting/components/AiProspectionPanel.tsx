@@ -5,6 +5,8 @@ import { ConfigurationSection, LauncherSection, ResultsSection } from './ai-pros
 import {
   ExportFormat,
   ProspectionLead,
+  GeographicZone,
+  TargetType,
 } from '../types/ai-prospection.types';
 
 export interface AiProspectionPanelProps {
