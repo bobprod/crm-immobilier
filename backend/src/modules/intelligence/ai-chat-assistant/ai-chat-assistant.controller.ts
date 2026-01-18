@@ -41,10 +41,18 @@ export class AIChatAssistantController {
    */
   @Get('conversations')
   async getConversations(@Request() req, @Query('limit') limit?: string) {
-    const userId = req.user.userId;
-    const limitNumber = limit ? parseInt(limit) : 50;
-    this.logger.log(`Fetching conversations for user ${userId}`);
-    return this.chatService.getConversations(userId, limitNumber);
+    try {
+      const userId = req.user.userId;
+      const limitNumber = limit ? parseInt(limit) : 50;
+      this.logger.log(`Fetching conversations for user ${userId}`);
+      const conversations = await this.chatService.getConversations(userId, limitNumber);
+      return conversations || [];
+    } catch (error: any) {
+      // Log and fail gracefully to avoid frontend 500 crash
+      const msg = error?.message || 'Unknown server error';
+      this.logger.error(`Error fetching conversations: ${msg}`, error?.stack);
+      return [];
+    }
   }
 
   /**

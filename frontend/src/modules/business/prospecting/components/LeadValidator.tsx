@@ -270,57 +270,67 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-6 text-white">
-        <div className="flex items-center justify-between">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      {/* Header amélioré */}
+      <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-8 text-white">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <span>🛡️</span> Validation Anti-Spam
+            <h2 className="text-2xl font-bold flex items-center gap-3">
+              <span className="text-3xl">🛡️</span>
+              <span>Nettoyage & Validation</span>
             </h2>
-            <p className="text-teal-100 text-sm mt-1">
-              Verifiez la qualite de vos leads avant de les contacter
+            <p className="text-emerald-100 text-sm mt-2">
+              Validez emails, téléphones, détectez spams et doublons
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 flex-col sm:flex-row">
             <button
               onClick={handleValidateSelected}
               disabled={isValidating || selectedLeads.size === 0}
-              className="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition disabled:opacity-50"
+              className="px-4 py-2.5 bg-white/20 text-white rounded-lg hover:bg-white/30 transition disabled:opacity-50 font-semibold flex items-center gap-2"
             >
-              {isValidating ? '⏳ Validation...' : `Valider selection (${selectedLeads.size})`}
+              {isValidating ? (
+                <>
+                  <span className="animate-spin">⏳</span> Validation...
+                </>
+              ) : (
+                <>
+                  <span>✓</span>
+                  <span>{selectedLeads.size > 0 ? `Valider ${selectedLeads.size}` : 'Valider selection'}</span>
+                </>
+              )}
             </button>
             <button
               onClick={handleValidateAll}
               disabled={isValidating}
-              className="px-4 py-2 bg-white text-teal-600 rounded-lg hover:bg-teal-50 transition font-medium disabled:opacity-50"
+              className="px-4 py-2.5 bg-white text-emerald-700 rounded-lg hover:bg-emerald-50 transition font-semibold disabled:opacity-50 flex items-center gap-2"
             >
-              Valider tout
+              <span>🚀</span> Valider tout
             </button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-5 gap-3 mt-4">
-          <div className="bg-white/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-teal-100 text-xs">Total</div>
+        {/* Stats améliorées */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+          <div className="bg-white/15 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+            <div className="text-2xl sm:text-3xl font-bold">{stats.total}</div>
+            <div className="text-emerald-100 text-xs font-medium mt-1">📊 Total</div>
           </div>
-          <div className="bg-white/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{stats.validated}</div>
-            <div className="text-teal-100 text-xs">Valides</div>
+          <div className="bg-blue-400/20 backdrop-blur-sm rounded-lg p-3 border border-blue-200/30">
+            <div className="text-2xl sm:text-3xl font-bold">{stats.validated}</div>
+            <div className="text-blue-100 text-xs font-medium mt-1">✔ Validés</div>
           </div>
-          <div className="bg-green-400/30 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{stats.valid}</div>
-            <div className="text-green-100 text-xs">✓ OK</div>
+          <div className="bg-green-400/25 backdrop-blur-sm rounded-lg p-3 border border-green-200/30">
+            <div className="text-2xl sm:text-3xl font-bold">{stats.valid}</div>
+            <div className="text-green-100 text-xs font-medium mt-1">✅ Prêts</div>
           </div>
-          <div className="bg-yellow-400/30 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{stats.suspicious}</div>
-            <div className="text-yellow-100 text-xs">⚠ Suspects</div>
+          <div className="bg-yellow-400/25 backdrop-blur-sm rounded-lg p-3 border border-yellow-200/30">
+            <div className="text-2xl sm:text-3xl font-bold">{stats.suspicious}</div>
+            <div className="text-yellow-100 text-xs font-medium mt-1">⚠️ Suspects</div>
           </div>
-          <div className="bg-red-400/30 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{stats.spam}</div>
-            <div className="text-red-100 text-xs">🚫 Spam</div>
+          <div className="bg-red-400/25 backdrop-blur-sm rounded-lg p-3 border border-red-200/30">
+            <div className="text-2xl sm:text-3xl font-bold">{stats.spam}</div>
+            <div className="text-red-100 text-xs font-medium mt-1">🚫 Spam</div>
           </div>
         </div>
       </div>
@@ -333,8 +343,8 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filter === f
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-white border text-gray-700 hover:bg-gray-50'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white border text-gray-700 hover:bg-gray-50'
                 }`}
             >
               {f === 'all'
@@ -425,10 +435,10 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all ${result.overall.score >= 70
-                                ? 'bg-green-500'
-                                : result.overall.score >= 40
-                                  ? 'bg-yellow-500'
-                                  : 'bg-red-500'
+                              ? 'bg-green-500'
+                              : result.overall.score >= 40
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
                               }`}
                             style={{ width: `${result.overall.score}%` }}
                           />
@@ -454,22 +464,60 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-1 flex-col sm:flex-row">
                   {result?.overall.status === 'spam' && (
-                    <button
-                      onClick={() => onUpdateLead(lead.id, { status: 'rejected' })}
-                      className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
-                    >
-                      Rejeter
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { status: 'rejected', spam: true })}
+                        className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Marquer comme spam"
+                      >
+                        <span>🚫</span> Spam
+                      </button>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { validated: true, status: 'validated' })}
+                        className="px-3 py-1.5 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Valider manuellement"
+                      >
+                        <span>✓</span> Garder
+                      </button>
+                    </>
+                  )}
+                  {result?.overall.status === 'suspicious' && (
+                    <>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { status: 'validated', validated: true })}
+                        className="px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Valider manuellement"
+                      >
+                        <span>✓</span> OK
+                      </button>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { status: 'rejected', spam: true })}
+                        className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Rejeter"
+                      >
+                        <span>✗</span> Spam
+                      </button>
+                    </>
                   )}
                   {result?.overall.status === 'valid' && (
-                    <button
-                      onClick={() => onUpdateLead(lead.id, { status: 'qualified' })}
-                      className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
-                    >
-                      Qualifier
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { status: 'qualified', qualified: true })}
+                        className="px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Qualifier pour contact"
+                      >
+                        <span>⭐</span> Qualifier
+                      </button>
+                      <button
+                        onClick={() => onUpdateLead(lead.id, { status: 'hold' })}
+                        className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
+                        title="Mettre en attente"
+                      >
+                        <span>⏸</span> Attente
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -485,35 +533,95 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
         )}
       </div>
 
-      {/* Footer actions */}
-      <div className="p-4 bg-gray-50 border-t flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">{stats.spam}</span> leads identifies comme spam
+      {/* Footer actions - Enhanced */}
+      <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200 flex items-center justify-between flex-wrap gap-4">
+        <div className="text-sm text-gray-700">
+          <span className="font-bold text-red-600">{stats.spam}</span> spams identifiés •
+          <span className="font-bold text-green-600 ml-2">{stats.valid}</span> leads prêts
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Bulk Actions */}
+          <button
+            onClick={() => {
+              const csvContent = [
+                ['Nom', 'Email', 'Téléphone', 'Statut', 'Score'].join(','),
+                ...leads.map(lead => {
+                  const result = validationResults.get(lead.id);
+                  return [
+                    `"${lead.firstName || ''} ${lead.lastName || ''}"`,
+                    `"${lead.email || ''}"`,
+                    `"${lead.phone || ''}"`,
+                    result?.overall.status || 'unknown',
+                    result?.overall.score || 0
+                  ].join(',');
+                })
+              ].join('\n');
+
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+            }}
+            className="px-4 py-2 text-sm border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium flex items-center gap-2"
+            title="Exporter les leads en CSV"
+          >
+            <span>📥</span> Exporter CSV
+          </button>
+
           <button
             onClick={() => {
               validationResults.forEach((result, leadId) => {
                 if (result.overall.status === 'spam') {
-                  onUpdateLead(leadId, { status: 'rejected' });
+                  onUpdateLead(leadId, { status: 'rejected', spam: true });
                 }
               });
+              alert(`${stats.spam} spams supprimés!`);
             }}
-            className="px-4 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition"
+            className="px-4 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition font-medium flex items-center gap-2"
+            title="Rejeter tous les spams détectés"
           >
-            🗑️ Rejeter tous les spams
+            <span>🗑️</span> Rejeter Spams
           </button>
+
+          <button
+            onClick={() => {
+              let duplicateCount = 0;
+              const emailMap = new Map<string, string>();
+
+              leads.forEach(lead => {
+                if (lead.email) {
+                  if (emailMap.has(lead.email)) {
+                    // Marquer comme doublon
+                    onUpdateLead(lead.id, { status: 'duplicate', spam: true });
+                    duplicateCount++;
+                  } else {
+                    emailMap.set(lead.email, lead.id);
+                  }
+                }
+              });
+              alert(`${duplicateCount} doublon(s) détecté(s) et marqué(s)!`);
+            }}
+            className="px-4 py-2 text-sm border border-purple-200 text-purple-600 rounded-lg hover:bg-purple-50 transition font-medium flex items-center gap-2"
+            title="Détecter et marquer les doublons"
+          >
+            <span>🔄</span> Doublon
+          </button>
+
           <button
             onClick={() => {
               validationResults.forEach((result, leadId) => {
                 if (result.overall.status === 'valid') {
-                  onUpdateLead(leadId, { status: 'qualified' });
+                  onUpdateLead(leadId, { status: 'qualified', qualified: true });
                 }
               });
+              alert(`${stats.valid} leads qualifiés!`);
             }}
-            className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            className="px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition font-medium flex items-center gap-2"
+            title="Qualifier tous les leads valides"
           >
-            ✓ Qualifier tous les valides
+            <span>✓</span> Qualifier Valides
           </button>
         </div>
       </div>

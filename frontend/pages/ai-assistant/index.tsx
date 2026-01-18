@@ -20,6 +20,13 @@ interface Conversation {
   messageCount?: number;
 }
 
+type ErrorType = 'auth' | 'network' | 'server' | 'unknown';
+
+interface ErrorState {
+  type: ErrorType;
+  message: string;
+}
+
 export default function AIAssistant() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
@@ -27,6 +34,7 @@ export default function AIAssistant() {
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<ErrorState | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,18 +49,60 @@ export default function AIAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const getErrorInfo = (err: any): ErrorState => {
+    if (err.response?.status === 401) {
+      return {
+        type: 'auth',
+        message: 'Vous devez être connecté pour utiliser l\'assistant IA.',
+      };
+    }
+    if (err.response?.status === 403) {
+      return {
+        type: 'auth',
+        message: 'Vous n\'avez pas les permissions pour accéder à cette fonctionnalité.',
+      };
+    }
+    if (err.response?.status === 404) {
+      return {
+        type: 'server',
+        message: 'Le service d\'assistant IA n\'est pas disponible.',
+      };
+    }
+    if (err.response?.status >= 500) {
+      return {
+        type: 'server',
+        message: 'Erreur serveur. Veuillez réessayer plus tard.',
+      };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+      return {
+        type: 'network',
+        message: 'Impossible de se connecter au serveur. Vérifiez que le backend est démarré.',
+      };
+    }
+    return {
+      type: 'unknown',
+      message: err.message || 'Une erreur inattendue s\'est produite.',
+    };
+  };
+
   const fetchConversations = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await apiClient.get('/ai-chat-assistant/conversations');
-      setConversations(response.data);
-      
+      const data = response.data || [];
+      setConversations(Array.isArray(data) ? data : []);
+
       // If we have conversations but no current one, select the first
-      if (response.data.length > 0 && !currentConversation) {
-        await selectConversation(response.data[0]);
+      if (Array.isArray(data) && data.length > 0 && !currentConversation) {
+        await selectConversation(data[0]);
       }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
+    } catch (err: any) {
+      console.error('Error fetching conversations:', err);
+      const errorInfo = getErrorInfo(err);
+      setError(errorInfo);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -60,6 +110,7 @@ export default function AIAssistant() {
 
   const createNewConversation = async () => {
     try {
+      setError(null);
       const response = await apiClient.post('/ai-chat-assistant/conversation', {
         title: DEFAULT_CONVERSATION_TITLE,
       });
@@ -67,8 +118,10 @@ export default function AIAssistant() {
       setConversations([newConv, ...conversations]);
       setCurrentConversation(newConv);
       setMessages([]);
-    } catch (error) {
-      console.error('Error creating conversation:', error);
+    } catch (err: any) {
+      console.error('Error creating conversation:', err);
+      const errorInfo = getErrorInfo(err);
+      setError(errorInfo);
     }
   };
 
@@ -76,10 +129,13 @@ export default function AIAssistant() {
     try {
       setCurrentConversation(conversation);
       setLoading(true);
+      setError(null);
       const response = await apiClient.get(`/ai-chat-assistant/messages/${conversation.id}`);
-      setMessages(response.data);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+      const data = response.data || [];
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -89,23 +145,25 @@ export default function AIAssistant() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation ?')) {
       return;
     }
-    
+
     try {
       await apiClient.delete(`/ai-chat-assistant/conversation/${conversationId}`);
-      setConversations(conversations.filter(c => c.id !== conversationId));
-      
+      setConversations(conversations.filter((c) => c.id !== conversationId));
+
       if (currentConversation?.id === conversationId) {
         setCurrentConversation(null);
         setMessages([]);
       }
-    } catch (error) {
-      console.error('Error deleting conversation:', error);
+    } catch (err: any) {
+      console.error('Error deleting conversation:', err);
+      const errorInfo = getErrorInfo(err);
+      alert(`Erreur: ${errorInfo.message}`);
     }
   };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!inputMessage.trim() || !currentConversation) {
       return;
     }
@@ -122,33 +180,116 @@ export default function AIAssistant() {
 
       // Add both user and AI messages
       setMessages([...messages, response.data.userMessage, response.data.aiMessage]);
-      
+
       // Update conversation message count locally
-      setConversations(conversations.map(conv => 
-        conv.id === currentConversation.id 
-          ? { ...conv, messageCount: (conv.messageCount || 0) + 2, updatedAt: new Date().toISOString() }
-          : conv
-      ));
-    } catch (error: any) {
-      console.error('Error sending message:', error);
+      setConversations(
+        conversations.map((conv) =>
+          conv.id === currentConversation.id
+            ? {
+                ...conv,
+                messageCount: (conv.messageCount || 0) + 2,
+                updatedAt: new Date().toISOString(),
+              }
+            : conv
+        )
+      );
+    } catch (err: any) {
+      console.error('Error sending message:', err);
       // Re-add the message to input on error
       setInputMessage(messageText);
-      // Show error to user
-      alert(`Erreur lors de l'envoi du message: ${error.response?.data?.message || error.message || 'Erreur inconnue'}`);
+      const errorInfo = getErrorInfo(err);
+      alert(`Erreur lors de l'envoi du message: ${errorInfo.message}`);
     } finally {
       setSending(false);
     }
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    } catch {
+      return '';
+    }
   };
+
+  const renderError = () => {
+    if (!error) return null;
+
+    const getIcon = () => {
+      switch (error.type) {
+        case 'auth':
+          return '🔐';
+        case 'network':
+          return '🌐';
+        case 'server':
+          return '⚠️';
+        default:
+          return '❌';
+      }
+    };
+
+    const getAction = () => {
+      switch (error.type) {
+        case 'auth':
+          return (
+            <a
+              href="/login"
+              className="mt-3 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Se connecter
+            </a>
+          );
+        case 'network':
+        case 'server':
+          return (
+            <button
+              onClick={fetchConversations}
+              className="mt-3 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            >
+              Réessayer
+            </button>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center p-8 max-w-md">
+          <div className="text-6xl mb-4">{getIcon()}</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {error.type === 'auth' ? 'Authentification requise' : 'Erreur de connexion'}
+          </h3>
+          <p className="text-gray-600">{error.message}</p>
+          {getAction()}
+        </div>
+      </div>
+    );
+  };
+
+  // Show error state if there's an error and no conversations
+  if (error && conversations.length === 0) {
+    return (
+      <Layout>
+        <div className="h-[calc(100vh-8rem)] flex gap-4">
+          <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200">
+            {renderError()}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -157,7 +298,7 @@ export default function AIAssistant() {
         <div className="w-80 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">🤖 Copilot Immobilier</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Copilot Immobilier</h2>
             </div>
             <button
               onClick={createNewConversation}
@@ -191,12 +332,10 @@ export default function AIAssistant() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-gray-900 truncate">
-                          {conv.title}
-                        </p>
+                        <p className="font-medium text-sm text-gray-900 truncate">{conv.title}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(conv.updatedAt)}
-                          {conv.messageCount && ` • ${conv.messageCount} messages`}
+                          {conv.messageCount ? ` • ${conv.messageCount} messages` : ''}
                         </p>
                       </div>
                       <button
@@ -249,9 +388,7 @@ export default function AIAssistant() {
                       </div>
                       <div className="p-4 bg-gray-50 rounded-lg text-left">
                         <p className="font-medium text-sm text-gray-900">📊 Rapports</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          "Résume mes ventes du mois"
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">"Résume mes ventes du mois"</p>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-lg text-left">
                         <p className="font-medium text-sm text-gray-900">✉️ Emails</p>
@@ -282,9 +419,7 @@ export default function AIAssistant() {
                           }`}
                         >
                           <div className="flex items-start gap-2">
-                            <span className="text-lg">
-                              {message.role === 'user' ? '👤' : '🤖'}
-                            </span>
+                            <span className="text-lg">{message.role === 'user' ? '👤' : '🤖'}</span>
                             <div className="flex-1">
                               <p className="whitespace-pre-wrap">{message.content}</p>
                               <p
@@ -306,8 +441,14 @@ export default function AIAssistant() {
                             <span className="text-lg">🤖</span>
                             <div className="flex gap-1">
                               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.1s' }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.2s' }}
+                              ></div>
                             </div>
                           </div>
                         </div>

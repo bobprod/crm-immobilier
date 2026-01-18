@@ -1,0 +1,633 @@
+{
+  "connection": {
+    "command": "SELECT",
+    "rowCount": 1,
+    "oid": null,
+    "rows": [
+      {
+        "db": "crm_immobilier",
+        "user": "postgres"
+      }
+    ],
+    "fields": [
+      {
+        "name": "db",
+        "tableID": 0,
+        "columnID": 0,
+        "dataTypeID": 19,
+        "dataTypeSize": 64,
+        "dataTypeModifier": -1,
+        "format": "text"
+      },
+      {
+        "name": "user",
+        "tableID": 0,
+        "columnID": 0,
+        "dataTypeID": 19,
+        "dataTypeSize": 64,
+        "dataTypeModifier": -1,
+        "format": "text"
+      }
+    ],
+    "_parsers": [
+      null,
+      null
+    ],
+    "_types": {
+      "_types": {
+        "arrayParser": {},
+        "builtins": {
+          "BOOL": 16,
+          "BYTEA": 17,
+          "CHAR": 18,
+          "INT8": 20,
+          "INT2": 21,
+          "INT4": 23,
+          "REGPROC": 24,
+          "TEXT": 25,
+          "OID": 26,
+          "TID": 27,
+          "XID": 28,
+          "CID": 29,
+          "JSON": 114,
+          "XML": 142,
+          "PG_NODE_TREE": 194,
+          "SMGR": 210,
+          "PATH": 602,
+          "POLYGON": 604,
+          "CIDR": 650,
+          "FLOAT4": 700,
+          "FLOAT8": 701,
+          "ABSTIME": 702,
+          "RELTIME": 703,
+          "TINTERVAL": 704,
+          "CIRCLE": 718,
+          "MACADDR8": 774,
+          "MONEY": 790,
+          "MACADDR": 829,
+          "INET": 869,
+          "ACLITEM": 1033,
+          "BPCHAR": 1042,
+          "VARCHAR": 1043,
+          "DATE": 1082,
+          "TIME": 1083,
+          "TIMESTAMP": 1114,
+          "TIMESTAMPTZ": 1184,
+          "INTERVAL": 1186,
+          "TIMETZ": 1266,
+          "BIT": 1560,
+          "VARBIT": 1562,
+          "NUMERIC": 1700,
+          "REFCURSOR": 1790,
+          "REGPROCEDURE": 2202,
+          "REGOPER": 2203,
+          "REGOPERATOR": 2204,
+          "REGCLASS": 2205,
+          "REGTYPE": 2206,
+          "UUID": 2950,
+          "TXID_SNAPSHOT": 2970,
+          "PG_LSN": 3220,
+          "PG_NDISTINCT": 3361,
+          "PG_DEPENDENCIES": 3402,
+          "TSVECTOR": 3614,
+          "TSQUERY": 3615,
+          "GTSVECTOR": 3642,
+          "REGCONFIG": 3734,
+          "REGDICTIONARY": 3769,
+          "JSONB": 3802,
+          "REGNAMESPACE": 4089,
+          "REGROLE": 4096
+        }
+      },
+      "text": {},
+      "binary": {}
+    },
+    "RowCtor": null,
+    "rowAsArray": false,
+    "_prebuiltEmptyResultObject": {
+      "db": null,
+      "user": null
+    }
+  },
+  "tables": {
+    "command": "SELECT",
+    "rowCount": 96,
+    "oid": null,
+    "rows": [
+      {
+        "table_schema": "public",
+        "table_name": "AiSuggestion"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "DetectedAnomaly"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "MlConfig"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "Page"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "PropertySeo"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ProspectingSource"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "PublishedProperty"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "SeoBlogPost"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "SeoConfig"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "TrackingConfig"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "TrackingEvent"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "VitrineAnalytics"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "VitrineConfig"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "_prisma_migrations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "activities"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "agencies"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "agency_api_keys"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_credits"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_error_log"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_generations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_orchestrations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_pricing"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_settings"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_usage"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ai_usage_metrics"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "analytics_events"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "appointments"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "business_modules"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "campaigns"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "commissions"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "communication_templates"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "communications"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "contact_validations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "conversion_events"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "disposable_domains"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "document_categories"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "document_templates"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "documents"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "dynamic_menu_items"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "dynamic_schemas"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "global_settings"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "heatmap_events"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "investment_alerts"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "investment_analyses"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "investment_comparisons"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "investment_projects"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "invoices"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "llm_configs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "llm_usage_logs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "mandates"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "matches"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "module_agency_subscriptions"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "module_ai_actions"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "notification_preferences"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "notifications"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "ocr_results"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "owners"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "payments"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "properties"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "property_history"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospect_history"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospect_interactions"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospect_preferences"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospect_properties_shown"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospect_timeline"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospecting_campaigns"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospecting_lead_properties"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospecting_leads"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospecting_matches"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "prospects"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "provider_configs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "provider_metrics"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "provider_performance"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "provider_usage_logs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "settings"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "sync_logs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "tasks"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "tool_call_logs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "tracking_ab_test_assignments"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "tracking_ab_test_results"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "tracking_ab_tests"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "transaction_steps"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "transactions"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "user_ai_credits"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "user_integrations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "user_llm_providers"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "users"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "validation_blacklist"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "validation_whitelist"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_campaign_recipients"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_campaigns"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_configs"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_contacts"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_conversations"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_messages"
+      },
+      {
+        "table_schema": "public",
+        "table_name": "whatsapp_templates"
+      }
+    ],
+    "fields": [
+      {
+        "name": "table_schema",
+        "tableID": 14968,
+        "columnID": 2,
+        "dataTypeID": 19,
+        "dataTypeSize": 64,
+        "dataTypeModifier": -1,
+        "format": "text"
+      },
+      {
+        "name": "table_name",
+        "tableID": 14968,
+        "columnID": 3,
+        "dataTypeID": 19,
+        "dataTypeSize": 64,
+        "dataTypeModifier": -1,
+        "format": "text"
+      }
+    ],
+    "_parsers": [
+      null,
+      null
+    ],
+    "_types": {
+      "_types": {
+        "arrayParser": {},
+        "builtins": {
+          "BOOL": 16,
+          "BYTEA": 17,
+          "CHAR": 18,
+          "INT8": 20,
+          "INT2": 21,
+          "INT4": 23,
+          "REGPROC": 24,
+          "TEXT": 25,
+          "OID": 26,
+          "TID": 27,
+          "XID": 28,
+          "CID": 29,
+          "JSON": 114,
+          "XML": 142,
+          "PG_NODE_TREE": 194,
+          "SMGR": 210,
+          "PATH": 602,
+          "POLYGON": 604,
+          "CIDR": 650,
+          "FLOAT4": 700,
+          "FLOAT8": 701,
+          "ABSTIME": 702,
+          "RELTIME": 703,
+          "TINTERVAL": 704,
+          "CIRCLE": 718,
+          "MACADDR8": 774,
+          "MONEY": 790,
+          "MACADDR": 829,
+          "INET": 869,
+          "ACLITEM": 1033,
+          "BPCHAR": 1042,
+          "VARCHAR": 1043,
+          "DATE": 1082,
+          "TIME": 1083,
+          "TIMESTAMP": 1114,
+          "TIMESTAMPTZ": 1184,
+          "INTERVAL": 1186,
+          "TIMETZ": 1266,
+          "BIT": 1560,
+          "VARBIT": 1562,
+          "NUMERIC": 1700,
+          "REFCURSOR": 1790,
+          "REGPROCEDURE": 2202,
+          "REGOPER": 2203,
+          "REGOPERATOR": 2204,
+          "REGCLASS": 2205,
+          "REGTYPE": 2206,
+          "UUID": 2950,
+          "TXID_SNAPSHOT": 2970,
+          "PG_LSN": 3220,
+          "PG_NDISTINCT": 3361,
+          "PG_DEPENDENCIES": 3402,
+          "TSVECTOR": 3614,
+          "TSQUERY": 3615,
+          "GTSVECTOR": 3642,
+          "REGCONFIG": 3734,
+          "REGDICTIONARY": 3769,
+          "JSONB": 3802,
+          "REGNAMESPACE": 4089,
+          "REGROLE": 4096
+        }
+      },
+      "text": {},
+      "binary": {}
+    },
+    "RowCtor": null,
+    "rowAsArray": false,
+    "_prebuiltEmptyResultObject": {
+      "table_schema": null,
+      "table_name": null
+    }
+  },
+  "counts": {
+    "provider_configs": "0",
+    "whatsapp_configs": "0",
+    "agency_api_keys": "1"
+  },
+  "samples": {
+    "provider_configs": [],
+    "whatsapp_configs": [],
+    "agency_api_keys": [
+      {
+        "id": "cmk5fdg3n0002v5qc1p1wg4b3",
+        "agencyId": "cmk5fdg2f0000v5qcmie0wjpn",
+        "llmProvider": "anthropic",
+        "llmApiKey": null,
+        "anthropicApiKey": null,
+        "openaiApiKey": null,
+        "geminiApiKey": null,
+        "deepseekApiKey": null,
+        "openrouterApiKey": null,
+        "serpApiKey": "4d1adc7a4c06ae306b4dea7cba496a87644a262689809b93d6250036be786fa8",
+        "firecrawlApiKey": "fc-5155e16eacdd413c9ca43947ed4c4434",
+        "picaApiKey": null,
+        "jinaReaderApiKey": null,
+        "scrapingBeeApiKey": null,
+        "browserlessApiKey": null,
+        "rapidApiKey": null,
+        "createdAt": "2026-01-08T11:30:09.347Z",
+        "updatedAt": "2026-01-08T11:30:09.347Z"
+      }
+    ]
+  }
+}

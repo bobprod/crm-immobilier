@@ -1,0 +1,381 @@
+# Frontend modules inventory
+
+Top level entries in `frontend/src`:
+
+- components
+- env.d.ts
+- lib
+- modules
+- pages
+- shared
+
+Pages/app structure (partial):
+
+[
+  {
+    "dir": "ai-assistant",
+    "children": [
+      "index.tsx"
+    ]
+  },
+  {
+    "dir": "analytics",
+    "children": [
+      "funnel.tsx",
+      "index.tsx",
+      "performance.tsx",
+      "providers.tsx",
+      "roi.tsx"
+    ]
+  },
+  {
+    "dir": "appointments",
+    "children": [
+      "index.tsx",
+      "new.tsx",
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "auth",
+    "children": [
+      "login.tsx"
+    ]
+  },
+  {
+    "dir": "communication",
+    "children": [
+      {
+        "dir": "whatsapp",
+        "children": [
+          {
+            "dir": "analytics",
+            "children": [
+              "index.tsx",
+              "reports.tsx"
+            ]
+          },
+          {
+            "dir": "campaigns",
+            "children": [
+              "create.tsx",
+              "index.tsx"
+            ]
+          },
+          "config.tsx",
+          {
+            "dir": "contacts",
+            "children": [
+              "index.tsx",
+              "[id].tsx"
+            ]
+          },
+          {
+            "dir": "conversations",
+            "children": [
+              "index.tsx",
+              "[id].tsx"
+            ]
+          },
+          "index.tsx",
+          {
+            "dir": "templates",
+            "children": [
+              "create.tsx",
+              "index.tsx"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "communications",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "templates",
+        "children": [
+          "index.tsx"
+        ]
+      }
+    ]
+  },
+  "dashboard.tsx",
+  {
+    "dir": "documents",
+    "children": [
+      "index.tsx"
+    ]
+  },
+  {
+    "dir": "finance",
+    "children": [
+      {
+        "dir": "commissions",
+        "children": [
+          "new.tsx",
+          "[id].tsx"
+        ]
+      },
+      "index.tsx",
+      {
+        "dir": "invoices",
+        "children": [
+          "new.tsx",
+          "[id].tsx"
+        ]
+      },
+      {
+        "dir": "payments",
+        "children": [
+          "new.tsx",
+          "[id].tsx"
+        ]
+      }
+    ]
+  },
+  "index.tsx",
+  {
+    "dir": "investment",
+    "children": [
+      "auto-import.tsx",
+      "import.tsx",
+      "index.tsx",
+      {
+        "dir": "projects",
+        "children": [
+          "index.tsx",
+          "[id].tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "leads",
+    "children": [
+      "all.tsx",
+      "qualified.tsx",
+      "validate.tsx"
+    ]
+  },
+  "login.tsx",
+  {
+    "dir": "mandates",
+    "children": [
+      "index.tsx",
+      "new.tsx",
+      {
+        "dir": "[id]",
+        "children": [
+          "edit.tsx"
+        ]
+      },
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "marketing",
+    "children": [
+      {
+        "dir": "campaigns",
+        "children": [
+          "index.tsx",
+          "new.tsx",
+          "[id].tsx"
+        ]
+      },
+      {
+        "dir": "tracking",
+        "children": [
+          "index.tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "matching",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "matching",
+        "children": [
+          "index.tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "notifications",
+    "children": [
+      "analytics.tsx",
+      "settings.tsx"
+    ]
+  },
+  {
+    "dir": "owners",
+    "children": [
+      "index.tsx",
+      "new.tsx",
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "page-builder",
+    "children": [
+      {
+        "dir": "edit",
+        "children": [
+          "[id].tsx"
+        ]
+      },
+      "index.tsx"
+    ]
+  },
+  {
+    "dir": "properties",
+    "children": [
+      "index.tsx",
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "prospecting",
+    "children": [
+      "index.tsx"
+    ]
+  },
+  {
+    "dir": "prospection",
+    "children": [
+      "campaigns.tsx",
+      "history.tsx",
+      "new.tsx"
+    ]
+  },
+  {
+    "dir": "prospects",
+    "children": [
+      "index.tsx",
+      "new.tsx",
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "scraping",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "jobs",
+        "children": [
+          "index.tsx",
+          "[id].tsx"
+        ]
+      },
+      "providers.tsx"
+    ]
+  },
+  {
+    "dir": "seo-ai",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "property",
+        "children": [
+          "[id].tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "settings",
+    "children": [
+      "ai-api-keys.tsx",
+      {
+        "dir": "ai-billing",
+        "children": [
+          "api-keys.tsx",
+          "credits.tsx",
+          "index.tsx",
+          "pricing.tsx",
+          "usage.tsx"
+        ]
+      },
+      {
+        "dir": "ai-orchestrator",
+        "children": [
+          "index.tsx",
+          "providers.tsx",
+          "requests.tsx"
+        ]
+      },
+      "config.tsx",
+      "index.tsx",
+      "llm-config.tsx",
+      "llm-providers.tsx",
+      {
+        "dir": "modules",
+        "children": [
+          "index.tsx",
+          "[slug].tsx"
+        ]
+      },
+      {
+        "dir": "providers",
+        "children": [
+          "index.tsx"
+        ]
+      }
+    ]
+  },
+  {
+    "dir": "tasks",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "tasks",
+        "children": [
+          "index.tsx"
+        ]
+      }
+    ]
+  },
+  "test.tsx",
+  {
+    "dir": "transactions",
+    "children": [
+      "index.tsx",
+      "new.tsx",
+      "[id].tsx"
+    ]
+  },
+  {
+    "dir": "vitrine",
+    "children": [
+      "index.tsx",
+      {
+        "dir": "public",
+        "children": [
+          {
+            "dir": "[agencyId]",
+            "children": [
+              "index.tsx"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "_app.tsx",
+  "_document.tsx"
+]
+
+Components dir listing:
+
+[
+  "layout",
+  "NotificationCenter.tsx",
+  "NotificationToast.tsx",
+  "ProspectionProviderSelector.tsx",
+  "ui"
+]

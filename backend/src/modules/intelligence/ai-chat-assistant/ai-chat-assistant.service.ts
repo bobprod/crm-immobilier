@@ -46,26 +46,31 @@ export class AIChatAssistantService {
     userId: string,
     limit: number = 50,
   ): Promise<ChatConversation[]> {
-    const conversations = await this.prisma.aiChatConversation.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-      take: limit,
-      include: {
-        _count: {
-          select: { messages: true },
+    try {
+      const conversations = await this.prisma.aiChatConversation.findMany({
+        where: {
+          userId,
+          deletedAt: null,
         },
-      },
-    });
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        take: limit,
+        include: {
+          _count: {
+            select: { messages: true },
+          },
+        },
+      });
 
-    return conversations.map((conv) => ({
-      ...this.mapConversation(conv),
-      messageCount: conv._count.messages,
-    }));
+      return conversations.map((conv) => ({
+        ...this.mapConversation(conv),
+        messageCount: conv._count.messages,
+      }));
+    } catch (error) {
+      this.logger.error(`Error fetching conversations for user ${userId}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -781,8 +786,8 @@ Règles:
       userId: conversation.userId,
       title: conversation.title,
       context: (conversation.context as any) || {},
-      createdAt: conversation.createdAt.toISOString(),
-      updatedAt: conversation.updatedAt.toISOString(),
+      createdAt: conversation.createdAt instanceof Date ? conversation.createdAt.toISOString() : conversation.createdAt,
+      updatedAt: conversation.updatedAt instanceof Date ? conversation.updatedAt.toISOString() : conversation.updatedAt,
     };
   }
 
