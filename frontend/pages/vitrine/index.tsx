@@ -27,18 +27,18 @@ export default function VitrinePage() {
     try {
       setLoading(true);
       const [configData, propertiesData, analyticsData, leadsData] = await Promise.all([
-        vitrineAPI.getConfig(),
-        vitrineAPI.getPublishedProperties(),
-        vitrineAPI.getAnalytics(30),
-        vitrineAPI.getVitrineLeads(),
+        vitrineAPI.getConfig().catch(() => null),
+        vitrineAPI.getPublishedProperties().catch(() => []),
+        vitrineAPI.getAnalytics(30).catch(() => null),
+        vitrineAPI.getVitrineLeads().catch(() => []),
       ]);
 
       setConfig(configData);
-      setPublishedProperties(propertiesData);
+      setPublishedProperties(propertiesData || []);
       setAnalytics(analyticsData);
-      setLeads(leadsData);
+      setLeads(leadsData || []);
     } catch (error) {
-      console.error('Erreur chargement données vitrine:', error);
+      // Erreurs API gérées silencieusement
     } finally {
       setLoading(false);
     }

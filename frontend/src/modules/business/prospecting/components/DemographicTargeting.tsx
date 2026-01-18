@@ -98,15 +98,13 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
     ...initialCriteria,
   });
 
-  useEffect(() => {
-    onChange(criteria);
-  }, [criteria, onChange]);
-
   const toggleArrayItem = <K extends keyof DemographicCriteria>(key: K, value: string) => {
     setCriteria((prev) => {
       const arr = prev[key] as string[];
       const newArr = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
-      return { ...prev, [key]: newArr };
+      const updated = { ...prev, [key]: newArr };
+      onChange(updated); // Call onChange immediately when criteria changes
+      return updated;
     });
   };
 
@@ -209,8 +207,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={intent.id}
                 onClick={() => toggleArrayItem('propertyIntent', intent.id)}
                 className={`p-4 rounded-xl border-2 transition-all ${criteria.propertyIntent.includes(intent.id as any)
-                    ? `border-${intent.color}-500 bg-${intent.color}-50 shadow-md`
-                    : 'border-gray-200 hover:border-gray-300'
+                  ? `border-${intent.color}-500 bg-${intent.color}-50 shadow-md`
+                  : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
                 <div className="text-3xl mb-2">{intent.icon}</div>
@@ -231,8 +229,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={type.id}
                 onClick={() => toggleArrayItem('propertyTypes', type.id)}
                 className={`p-3 rounded-lg border-2 transition-all flex items-center gap-2 ${criteria.propertyTypes.includes(type.id)
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
                 <span className="text-xl">{type.icon}</span>
@@ -312,8 +310,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={status.id}
                 onClick={() => toggleArrayItem('familyStatus', status.id)}
                 className={`px-4 py-2 rounded-full border-2 transition-all flex items-center gap-2 ${criteria.familyStatus.includes(status.id)
-                    ? 'border-purple-500 bg-purple-50 text-purple-700'
-                    : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-purple-500 bg-purple-50 text-purple-700'
+                  : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
                 <span>{status.icon}</span>
@@ -334,8 +332,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={level.id}
                 onClick={() => toggleArrayItem('urgency', level.id)}
                 className={`p-4 rounded-xl border-2 transition-all ${criteria.urgency.includes(level.id as any)
-                    ? `border-${level.color}-500 bg-${level.color}-50`
-                    : 'border-gray-200 hover:border-gray-300'
+                  ? `border-${level.color}-500 bg-${level.color}-50`
+                  : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
                 <div className="text-2xl mb-1">{level.icon}</div>
@@ -356,8 +354,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={prof}
                 onClick={() => toggleArrayItem('professions', prof)}
                 className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${criteria.professions.includes(prof)
-                    ? 'border-purple-500 bg-purple-100 text-purple-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  ? 'border-purple-500 bg-purple-100 text-purple-700'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
               >
                 {prof}
@@ -377,8 +375,8 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
                 key={interest}
                 onClick={() => toggleArrayItem('interests', interest)}
                 className={`px-3 py-1.5 rounded-lg border text-sm transition-all ${criteria.interests.includes(interest)
-                    ? 'border-pink-500 bg-pink-100 text-pink-700'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  ? 'border-pink-500 bg-pink-100 text-pink-700'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
               >
                 {interest}

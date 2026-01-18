@@ -440,6 +440,7 @@ model users {
   whatsappConfigs         WhatsAppConfig?           @relation("UserWhatsAppConfig")
   whatsappConversations   WhatsAppConversation[]    @relation("UserWhatsAppConversations")
   whatsappMessages        WhatsAppMessage[]         @relation("UserWhatsAppMessages")
+  aiChatConversations     AiChatConversation[]      @relation("UserAiChatConversations")
 }
 
 model communications {
@@ -2739,4 +2740,36 @@ enum ProviderStatus {
   inactive
   error
   testing
+}
+
+// AI Chat Assistant Models
+model AiChatConversation {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String           @default("Nouvelle conversation")
+  context   Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  deletedAt DateTime?
+  user      users            @relation("UserAiChatConversations", fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiChatMessage[]  @relation("ConversationAiMessages")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("ai_chat_conversations")
+}
+
+model AiChatMessage {
+  id             String             @id @default(cuid())
+  conversationId String
+  role           String             // 'user' or 'assistant'
+  content        String
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  conversation   AiChatConversation @relation("ConversationAiMessages", fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_chat_messages")
 }

@@ -3,7 +3,7 @@
  * Architecture DDD - Shared Infrastructure
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Configuration de base
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
@@ -19,7 +19,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // Intercepteur de requête pour ajouter automatiquement le token JWT
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+  (config: any): any => {
     // Ajouter le token JWT si disponible
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token');
@@ -39,8 +39,8 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
-  async (error) => {
-    const originalRequest = error.config;
+  async (error: any) => {
+    const originalRequest: any = error.config;
 
     // Si erreur 401 et que ce n'est pas une requête de refresh
     if (

@@ -42,108 +42,25 @@ const MENU_ITEMS: MenuItem[] = [
     id: 'prospection',
     label: 'Prospection',
     icon: '🤖',
-    subItems: [
-      {
-        id: 'prospection-new',
-        label: 'Nouvelle Prospection',
-        icon: '✨',
-        path: '/prospection/new',
-      },
-      {
-        id: 'prospection-campaigns',
-        label: 'Mes Campagnes',
-        icon: '📋',
-        path: '/prospection/campaigns',
-      },
-      {
-        id: 'prospection-history',
-        label: 'Historique',
-        icon: '🕐',
-        path: '/prospection/history',
-      },
-    ],
-  },
-  {
-    id: 'leads',
-    label: 'Leads',
-    icon: '👥',
-    badge: 12, // Dynamic count
-    subItems: [
-      {
-        id: 'leads-validate',
-        label: 'À Valider',
-        icon: '✓',
-        path: '/leads/validate',
-        badge: 12,
-      },
-      {
-        id: 'leads-qualified',
-        label: 'Qualifiés',
-        icon: '⭐',
-        path: '/leads/qualified',
-      },
-      {
-        id: 'leads-all',
-        label: 'Tous les Leads',
-        icon: '📝',
-        path: '/leads/all',
-      },
-    ],
-  },
-  {
-    id: 'prospects',
-    label: 'Prospects',
-    icon: '👤',
-    path: '/prospects',
-  },
-  {
-    id: 'properties',
-    label: 'Biens',
-    icon: '🏠',
-    path: '/properties',
+    path: '/prospection',
   },
   {
     id: 'matching',
     label: 'Matching',
     icon: '🎯',
-    path: '/matching',
+    path: '/matching-dashboard',
   },
   {
-    id: 'appointments',
-    label: 'Rendez-vous',
+    id: 'planification',
+    label: 'Planification',
     icon: '📅',
-    path: '/appointments',
-  },
-  {
-    id: 'tasks',
-    label: 'Tâches',
-    icon: '📋',
-    path: '/tasks',
+    path: '/planification',
   },
   {
     id: 'communications',
     label: 'Communications',
     icon: '💬',
-    subItems: [
-      {
-        id: 'communications-all',
-        label: 'Toutes',
-        icon: '📨',
-        path: '/communications',
-      },
-      {
-        id: 'communications-whatsapp',
-        label: 'WhatsApp',
-        icon: '📱',
-        path: '/communication/whatsapp',
-      },
-      {
-        id: 'communications-templates',
-        label: 'Templates',
-        icon: '📝',
-        path: '/communications/templates',
-      },
-    ],
+    path: '/communications-dashboard',
   },
   {
     id: 'documents',
@@ -152,72 +69,16 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/documents',
   },
   {
-    id: 'finance',
-    label: 'Finance',
-    icon: '💰',
-    subItems: [
-      {
-        id: 'finance-overview',
-        label: 'Vue d\'ensemble',
-        icon: '💵',
-        path: '/finance',
-      },
-      {
-        id: 'finance-commissions',
-        label: 'Commissions',
-        icon: '💳',
-        path: '/finance/commissions',
-      },
-      {
-        id: 'finance-invoices',
-        label: 'Factures',
-        icon: '🧾',
-        path: '/finance/invoices',
-      },
-    ],
-  },
-  {
     id: 'transactions',
     label: 'Transactions',
     icon: '🤝',
-    path: '/transactions',
-  },
-  {
-    id: 'mandates',
-    label: 'Mandats',
-    icon: '📜',
-    path: '/mandates',
-  },
-  {
-    id: 'owners',
-    label: 'Propriétaires',
-    icon: '👨‍💼',
-    path: '/owners',
+    path: '/transactions-dashboard',
   },
   {
     id: 'marketing',
     label: 'Marketing',
     icon: '📢',
-    subItems: [
-      {
-        id: 'marketing-campaigns',
-        label: 'Campagnes',
-        icon: '🎯',
-        path: '/marketing',
-      },
-      {
-        id: 'marketing-tracking',
-        label: 'Tracking',
-        icon: '📊',
-        path: '/marketing/tracking',
-      },
-      {
-        id: 'marketing-seo',
-        label: 'SEO',
-        icon: '🔍',
-        path: '/seo-ai',
-      },
-    ],
+    path: '/marketing-dashboard',
   },
   {
     id: 'investment',
@@ -229,51 +90,13 @@ const MENU_ITEMS: MenuItem[] = [
     id: 'vitrine',
     label: 'Sites Vitrines',
     icon: '🌐',
-    subItems: [
-      {
-        id: 'vitrine-sites',
-        label: 'Mes Sites',
-        icon: '🏛️',
-        path: '/vitrine',
-      },
-      {
-        id: 'vitrine-builder',
-        label: 'Page Builder',
-        icon: '🎨',
-        path: '/page-builder',
-      },
-    ],
+    path: '/sites-vitrines-dashboard',
   },
   {
     id: 'analytics',
     label: 'Analytics',
     icon: '📈',
-    subItems: [
-      {
-        id: 'analytics-overview',
-        label: 'Vue d\'ensemble',
-        icon: '📊',
-        path: '/analytics',
-      },
-      {
-        id: 'analytics-funnel',
-        label: 'Funnel de Conversion',
-        icon: '🎯',
-        path: '/analytics/funnel',
-      },
-      {
-        id: 'analytics-performance',
-        label: 'Performance',
-        icon: '🚀',
-        path: '/analytics/performance',
-      },
-      {
-        id: 'analytics-roi',
-        label: 'ROI',
-        icon: '💰',
-        path: '/analytics/roi',
-      },
-    ],
+    path: '/analytics',
   },
   {
     id: 'ai-assistant',
