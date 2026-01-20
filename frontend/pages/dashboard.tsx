@@ -1,6 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/shared/components/layout';
 import { useProspecting } from '@/shared/hooks/useProspecting';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Dashboard Principal - Nouvelle Architecture
@@ -45,6 +46,7 @@ const DashboardPage: React.FC = () => {
   const { globalStats, loading } = useProspecting();
 
   return (
+    <ProtectedRoute>
     <MainLayout
       title="Tableau de Bord"
       breadcrumbs={[{ label: 'Dashboard' }]}
@@ -209,6 +211,7 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 };
 

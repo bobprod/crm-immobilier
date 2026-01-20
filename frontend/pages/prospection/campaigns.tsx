@@ -1,6 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/shared/components/layout';
 import { ProspectingDashboard } from '@/modules/business/prospecting/components/ProspectingDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Mes Campagnes Page
@@ -13,15 +14,17 @@ import { ProspectingDashboard } from '@/modules/business/prospecting/components/
 
 const CampaignsPage: React.FC = () => {
   return (
-    <MainLayout
-      title="Mes Campagnes"
-      breadcrumbs={[
-        { label: 'Prospection', href: '/prospection' },
-        { label: 'Mes Campagnes' },
-      ]}
-    >
-      <ProspectingDashboard />
-    </MainLayout>
+    <ProtectedRoute>
+      <MainLayout
+        title="Mes Campagnes"
+        breadcrumbs={[
+          { label: 'Prospection', href: '/prospection' },
+          { label: 'Mes Campagnes' },
+        ]}
+      >
+        <ProspectingDashboard />
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 
