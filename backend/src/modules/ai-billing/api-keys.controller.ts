@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { AgencyAdminGuard } from '../../shared/guards/agency-admin.guard';
@@ -62,6 +62,77 @@ export class ApiKeysController {
 
     // Masquer les clés (afficher seulement les 4 derniers caractères)
     return this.maskApiKeys(settings || {});
+  }
+
+  @Get('user/full')
+  @ApiOperation({ summary: 'Récupérer les clés API complètes pour édition (non masquées)' })
+  @ApiResponse({ status: 200, description: 'Clés API complètes (attention: données sensibles)' })
+  async getUserApiKeysFull(@Request() req) {
+    const settings = await this.prisma.ai_settings.findUnique({
+      where: { userId: req.user.userId },
+      select: {
+        // Configuration
+        defaultProvider: true,
+        defaultModel: true,
+        // LLM Providers
+        anthropicApiKey: true,
+        openaiApiKey: true,
+        geminiApiKey: true,
+        deepseekApiKey: true,
+        openrouterApiKey: true,
+        mistralApiKey: true,
+        grokApiKey: true,
+        cohereApiKey: true,
+        togetherAiApiKey: true,
+        replicateApiKey: true,
+        perplexityApiKey: true,
+        huggingfaceApiKey: true,
+        alephAlphaApiKey: true,
+        nlpCloudApiKey: true,
+        // Scraping & Data Providers
+        serpApiKey: true,
+        firecrawlApiKey: true,
+        picaApiKey: true,
+        jinaReaderApiKey: true,
+        scrapingBeeApiKey: true,
+        browserlessApiKey: true,
+        rapidApiKey: true,
+        customApiKeys: true,
+      },
+    });
+
+    // Retourner les clés complètes (non masquées)
+    return settings || {};
+  }
+
+  @Post('validate')
+  @ApiOperation({ summary: 'Valider une clé API et retourner les modèles disponibles' })
+  @ApiResponse({ status: 200, description: 'Clé valide - modèles retournés' })
+  async validateApiKey(@Request() req, @Body() dto: { provider: string; apiKey: string }) {
+    const { provider, apiKey } = dto;
+
+    if (!provider || !apiKey) {
+      return {
+        valid: false,
+        message: 'Provider et apiKey sont requis',
+      };
+    }
+
+    // Valider la clé selon le provider
+    const result = await this.apiKeysService.validateApiKey(provider, apiKey);
+
+    if (result.valid) {
+      return {
+        valid: true,
+        provider,
+        models: result.models || this.getDefaultModelsForProvider(provider),
+      };
+    } else {
+      return {
+        valid: false,
+        message: result.message || 'Clé API invalide',
+      };
+    }
   }
 
   @Put('user')
@@ -295,5 +366,33 @@ export class ApiKeysController {
       }
     }
     return filtered;
+  }
+
+  private getDefaultModelsForProvider(provider: string): string[] {
+    const models: Record<string, string[]> = {
+      openai: [
+        'gpt-4o',
+        'gpt-4-turbo',
+        'gpt-4',
+        'gpt-3.5-turbo',
+      ],
+      gemini: [
+        'gemini-2.0-flash',
+        'gemini-1.5-pro',
+        'gemini-1.5-flash',
+        'gemini-pro',
+      ],
+      deepseek: [
+        'deepseek-chat',
+        'deepseek-coder',
+      ],
+      anthropic: [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+      ],
+    };
+
+    return models[provider] || [];
   }
 }

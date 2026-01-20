@@ -1,5 +1,6 @@
 import React from 'react';
 import { MainLayout } from '@/shared/components/layout';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Page Configuration
@@ -11,13 +12,14 @@ import { MainLayout } from '@/shared/components/layout';
 
 const ConfigPage: React.FC = () => {
   return (
-    <MainLayout
-      title="Configuration"
-      breadcrumbs={[
-        { label: 'Paramètres', href: '/settings' },
-        { label: 'Configuration' },
-      ]}
-    >
+    <ProtectedRoute>
+      <MainLayout
+        title="Configuration"
+        breadcrumbs={[
+          { label: 'Paramètres', href: '/settings' },
+          { label: 'Configuration' },
+        ]}
+      >
       <div className="space-y-6">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
@@ -78,6 +80,7 @@ const ConfigPage: React.FC = () => {
         </div>
       </div>
     </MainLayout>
+    </ProtectedRoute>
   );
 };
 

@@ -7,6 +7,8 @@ import {
   ProspectionLead,
   GeographicZone,
   TargetType,
+  BudgetRange,
+  PropertyType,
 } from '../types/ai-prospection.types';
 
 export interface AiProspectionPanelProps {
@@ -170,7 +172,8 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
    * Envoyer un email au lead
    */
   const handleSendEmail = (leadId: string, email: string) => {
-    const mailtoLink = `mailto:${email}?subject=Contact depuis ${user?.name || 'votre agence immobilière'}&body=Bonjour,%0D%0A%0D%0ANous avons trouvé votre profil et pensons avoir des opportunités qui pourraient vous intéresser.%0D%0A%0D%0ACordialement`;
+    const userName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'votre agence immobilière';
+    const mailtoLink = `mailto:${email}?subject=Contact depuis ${userName}&body=Bonjour,%0D%0A%0D%0ANous avons trouvé votre profil et pensons avoir des opportunités qui pourraient vous intéresser.%0D%0A%0D%0ACordialement`;
     window.open(mailtoLink, '_blank');
     handleCloseContactModal();
   };

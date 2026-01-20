@@ -1,6 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/shared/components/layout';
 import { AiProspectionPanel } from '@/modules/business/prospecting/components/AiProspectionPanel';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Nouvelle Prospection Page
@@ -13,15 +14,17 @@ import { AiProspectionPanel } from '@/modules/business/prospecting/components/Ai
 
 const NewProspectionPage: React.FC = () => {
   return (
-    <MainLayout
-      title="Nouvelle Prospection IA"
-      breadcrumbs={[
-        { label: 'Prospection', href: '/prospection' },
-        { label: 'Nouvelle Prospection' },
-      ]}
-    >
-      <AiProspectionPanel />
-    </MainLayout>
+    <ProtectedRoute>
+      <MainLayout
+        title="Nouvelle Prospection IA"
+        breadcrumbs={[
+          { label: 'Prospection', href: '/prospection' },
+          { label: 'Nouvelle Prospection' },
+        ]}
+      >
+        <AiProspectionPanel />
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

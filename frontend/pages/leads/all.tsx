@@ -1,5 +1,6 @@
 import React from 'react';
 import { MainLayout } from '@/shared/components/layout';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Page Tous les Leads
@@ -11,38 +12,40 @@ import { MainLayout } from '@/shared/components/layout';
 
 const AllLeadsPage: React.FC = () => {
   return (
-    <MainLayout
-      title="Tous les Leads"
-      breadcrumbs={[
-        { label: 'Leads', href: '/leads' },
-        { label: 'Tous les Leads' },
-      ]}
-    >
-      <div className="space-y-6">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl">📝</div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Base Complète des Leads</h3>
-              <p className="text-sm text-gray-600">
-                Vue d'ensemble de tous vos prospects, tous statuts confondus.
-              </p>
+    <ProtectedRoute>
+      <MainLayout
+        title="Tous les Leads"
+        breadcrumbs={[
+          { label: 'Leads', href: '/leads' },
+          { label: 'Tous les Leads' },
+        ]}
+      >
+        <div className="space-y-6">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">📝</div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Base Complète des Leads</h3>
+                <p className="text-sm text-gray-600">
+                  Vue d'ensemble de tous vos prospects, tous statuts confondus.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <div className="text-6xl mb-4">📝</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Tous les Leads</h2>
-          <p className="text-gray-600">
-            Base de données complète de tous vos prospects.
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            À implémenter: Table complète, filtres avancés, recherche, tri, export.
-          </p>
+          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+            <div className="text-6xl mb-4">📝</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Tous les Leads</h2>
+            <p className="text-gray-600">
+              Base de données complète de tous vos prospects.
+            </p>
+            <p className="text-sm text-gray-500 mt-4">
+              À implémenter: Table complète, filtres avancés, recherche, tri, export.
+            </p>
+          </div>
         </div>
-      </div>
-    </MainLayout>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 

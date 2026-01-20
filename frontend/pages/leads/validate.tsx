@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/shared/components/layout';
 import { LeadValidator } from '@/modules/business/prospecting/components/LeadValidator';
 import { prospectingAPI, ProspectingLead } from '@/shared/utils/prospecting-api';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Page de Validation des Leads
@@ -110,25 +111,53 @@ const LeadsValidationPage: React.FC = () => {
 
   if (loading) {
     return (
-      <MainLayout
-        title="Leads à Valider"
-        breadcrumbs={[
-          { label: 'Leads', href: '/leads' },
-          { label: 'À Valider' },
-        ]}
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Chargement des leads...</p>
+      <ProtectedRoute>
+        <MainLayout
+          title="Leads à Valider"
+          breadcrumbs={[
+            { label: 'Leads', href: '/leads' },
+            { label: 'À Valider' },
+          ]}
+        >
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Chargement des leads...</p>
+            </div>
           </div>
-        </div>
-      </MainLayout>
+        </MainLayout>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
+      <ProtectedRoute>
+        <MainLayout
+          title="Leads à Valider"
+          breadcrumbs={[
+            { label: 'Leads', href: '/leads' },
+            { label: 'À Valider' },
+          ]}
+        >
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
+            <p className="text-sm text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={loadLeads}
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+            >
+              Réessayer
+            </button>
+          </div>
+        </MainLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  return (
+    <ProtectedRoute>
       <MainLayout
         title="Leads à Valider"
         breadcrumbs={[
@@ -136,49 +165,27 @@ const LeadsValidationPage: React.FC = () => {
           { label: 'À Valider' },
         ]}
       >
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <div className="text-4xl mb-3">⚠️</div>
-          <h3 className="font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
-          <p className="text-sm text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={loadLeads}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
-          >
-            Réessayer
-          </button>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  return (
-    <MainLayout
-      title="Leads à Valider"
-      breadcrumbs={[
-        { label: 'Leads', href: '/leads' },
-        { label: 'À Valider' },
-      ]}
-    >
-      <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl">ℹ️</div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Validation des Leads</h3>
-              <p className="text-sm text-gray-600">
-                Examinez et qualifiez les leads générés par vos campagnes de prospection.
-              </p>
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">ℹ️</div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Validation des Leads</h3>
+                <p className="text-sm text-gray-600">
+                  Examinez et qualifiez les leads générés par vos campagnes de prospection.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <LeadValidator
-          leads={leads}
-          onValidate={handleValidate}
-          onUpdateLead={handleUpdateLead}
-        />
-      </div>
-    </MainLayout>
+          <LeadValidator
+            leads={leads}
+            onValidate={handleValidate}
+            onUpdateLead={handleUpdateLead}
+          />
+        </div>
+      </MainLayout>
+    </ProtectedRoute>
   );
 };
 
