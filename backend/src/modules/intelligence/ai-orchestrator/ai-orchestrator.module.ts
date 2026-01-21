@@ -4,10 +4,10 @@ import { ScrapingModule } from '../../../modules/scraping/scraping.module';
 import { LLMConfigModule } from '../llm-config/llm-config.module';
 import { CommunicationsModule } from '../../communications/communications.module';
 import { AiBillingModule } from '../../../shared/ai-billing/ai-billing.module';
+import { ProspectingModule } from '../../prospecting/prospecting.module';
 
 // Services d'outils
 import { LlmService } from './services/llm.service';
-import { SerpApiService } from './services/serpapi.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { IntegrationKeysService } from './services/integrations/integration-keys.service';
 import { ProviderSelectorService } from './services/provider-selector.service';
@@ -33,6 +33,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
     CommunicationsModule,
     AiBillingModule, // Pour ApiKeysService (utilisé par SerpApiService et FirecrawlService)
     ScrapingModule,
+    ProspectingModule, // Pour utiliser les services Prospecting dans ToolExecutor
   ],
   providers: [
     // Guards
@@ -46,8 +47,8 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
 
     // Services d'outils externes
     LlmService,
-    SerpApiService,
     FirecrawlService,
+    // Note: SerpService vient du ScrapingModule (centralisé)
 
     // Services orchestrateur
     IntentAnalyzerService,
@@ -62,8 +63,7 @@ import { AiOrchestratorController } from './ai-orchestrator.controller';
   exports: [
     IntegrationKeysService,
     LlmService,
-    SerpApiService,
-    FirecrawlService,
+    // SerpService et FirecrawlService réexportés depuis ScrapingModule
     ProviderSelectorService,
     MetricsService,
     IntentAnalyzerService,

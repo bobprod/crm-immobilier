@@ -139,15 +139,89 @@ export class LLMRouterService {
    * 🔍 Récupérer tous les providers actifs d'un utilisateur
    */
   private async getUserActiveProviders(userId: string) {
-    return this.prisma.userLlmProvider.findMany({
+    // 1. Providers explicitement configurés dans UserLlmProvider
+    const configuredProviders = await this.prisma.userLlmProvider.findMany({
       where: {
         userId,
         isActive: true,
       },
       orderBy: {
-        priority: 'asc', // Ordre de priorité (0 = plus haute)
+        priority: 'asc',
       },
     });
+
+    // 2. Vérifier les clés API dans AiSettings et AgencyApiKeys pour ajouter des providers virtuels
+    const aiSettings = await this.prisma.ai_settings.findUnique({
+      where: { userId },
+    });
+
+    // Check agency
+    let agencyKeys = null;
+    const user = await this.prisma.users.findUnique({ where: { id: userId }, select: { agencyId: true } });
+    if (user?.agencyId) {
+      agencyKeys = await this.prisma.agencyApiKeys.findUnique({ where: { agencyId: user.agencyId } });
+    }
+
+    // Liste des providers supportés à vérifier
+    const supportedProviders = [
+      { name: 'openai', keyField: 'openaiApiKey' },
+      { name: 'anthropic', keyField: 'anthropicApiKey' },
+      { name: 'gemini', keyField: 'geminiApiKey' },
+      { name: 'deepseek', keyField: 'deepseekApiKey' },
+      { name: 'mistral', keyField: 'mistralApiKey' },
+      { name: 'openrouter', keyField: 'openrouterApiKey' },
+      { name: 'qwen', keyField: 'qwenApiKey' },
+      { name: 'kimi', keyField: 'kimiApiKey' },
+    ];
+
+    const activeProviders = [...configuredProviders];
+
+    for (const p of supportedProviders) {
+      // Si le provider est déjà dans la liste configurée, on saute
+      if (activeProviders.some(cp => cp.provider === p.name)) continue;
+
+      // Sinon on vérifie si une clé existe
+      let hasKey = false;
+
+      // Check user settings
+      if (aiSettings) {
+        if (aiSettings[p.keyField]) hasKey = true;
+        // Compatibilité pour anthropic/claude
+        if (p.name === 'anthropic' && (aiSettings as any).claudeApiKey) hasKey = true;
+      }
+
+      // Check agency settings
+      if (!hasKey && agencyKeys && agencyKeys[p.keyField]) hasKey = true;
+
+      // Check global settings (Super Admin fallback) - Optionnel
+      // Pour l'instant on se limite à User + Agency pour l'activation automatique
+
+      if (hasKey) {
+        // Add virtual provider
+        activeProviders.push({
+          id: `virtual-${p.name}`,
+          userId,
+          provider: p.name,
+          apiKey: 'managed-by-apikeys-service', // Placeholder
+          model: null,
+          isActive: true,
+          priority: 50, // Priorité par défaut pour les providers auto-découverts
+          monthlyBudget: null,
+          monthlyTokensUsed: 0,
+          estimatedMonthCost: 0,
+          quotaRemainingTokens: null,
+          rateLimitPerMinute: null,
+          lastUsedAt: new Date(),
+          successRate: 100,
+          failureCount: 0,
+          totalApiCalls: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+    }
+
+    return activeProviders.sort((a, b) => a.priority - b.priority);
   }
 
   /**

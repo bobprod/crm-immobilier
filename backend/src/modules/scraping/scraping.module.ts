@@ -5,6 +5,7 @@ import { CheerioService } from './services/cheerio.service';
 import { PuppeteerService } from './services/puppeteer.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { WebDataService } from './services/web-data.service';
+import { SerpService } from './services/serp.service';
 import { AiBillingModule } from '../../shared/ai-billing/ai-billing.module';
 
 /**
@@ -16,6 +17,7 @@ import { AiBillingModule } from '../../shared/ai-billing/ai-billing.module';
  * - CheerioService: Parsing HTML simple (gratuit, rapide)
  * - PuppeteerService: Browser automation (gratuit, sites JS)
  * - FirecrawlService: IA intégrée (API payante, sites complexes)
+ * - SerpService: Recherche Google/Maps
  * - WebDataService: Orchestrateur qui sélectionne le meilleur provider
  *
  * Les clés API se configurent dans les paramètres utilisateur ou
@@ -24,7 +26,7 @@ import { AiBillingModule } from '../../shared/ai-billing/ai-billing.module';
 @Module({
   imports: [ConfigModule, AiBillingModule],
   controllers: [ScrapingController],
-  providers: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],
-  exports: [CheerioService, PuppeteerService, FirecrawlService, WebDataService],
+  providers: [CheerioService, PuppeteerService, FirecrawlService, WebDataService, SerpService],
+  exports: [CheerioService, PuppeteerService, FirecrawlService, WebDataService, SerpService],
 })
 export class ScrapingModule { }

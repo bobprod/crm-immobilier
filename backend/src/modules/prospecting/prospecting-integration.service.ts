@@ -1,10 +1,12 @@
 import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { ApiKeysService } from '../../shared/services/api-keys.service';
 import { LLMProspectingService } from './llm-prospecting.service';
 import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
 import { RawScrapedItem, ProspectingLeadCreateInput } from './dto';
 import { WebDataService } from '../scraping/services/web-data.service';
+import { UnifiedValidationService } from '../../shared/validation/unified-validation.service';
 import axios from 'axios';
 
 interface LeadData {
@@ -43,9 +45,12 @@ export class ProspectingIntegrationService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private apiKeysService: ApiKeysService,
     @Inject(forwardRef(() => LLMProspectingService))
     private llmProspectingService: LLMProspectingService,
     private llmRouter: LLMRouterService,
+    private validationService: UnifiedValidationService,
+    private webDataService: WebDataService,
   ) { }
 
   // ============================================
@@ -53,7 +58,13 @@ export class ProspectingIntegrationService {
   // ============================================
 
   private async getApiConfig(userId: string, provider: string): Promise<any> {
-    // Chercher dans les settings utilisateur
+    // 1. ApiKeysService (Nouveau standard pour clés simples)
+    if (['pica', 'serp', 'firecrawl'].includes(provider)) {
+      const apiKey = await this.apiKeysService.getApiKey(userId, provider as any);
+      if (apiKey) return { apiKey };
+    }
+
+    // 2. Settings Legacy (pour meta, linkedin qui ont des configs complexes ou vieilles tables)
     const settings = await this.prisma.settings.findFirst({
       where: { userId, key: `api_${provider}` },
     });
@@ -62,7 +73,7 @@ export class ProspectingIntegrationService {
       return typeof settings.value === 'string' ? JSON.parse(settings.value) : settings.value;
     }
 
-    // Fallback sur les variables d'environnement
+    // 3. Fallback sur les variables d'environnement
     const envKey = this.configService.get(`${provider.toUpperCase()}_API_KEY`);
     if (envKey) {
       return { apiKey: envKey };
@@ -469,7 +480,7 @@ export class ProspectingIntegrationService {
       const allLeads: LeadData[] = [];
 
       // Utiliser WebDataService avec le provider Firecrawl
-      const results = await (this as any).webDataService.fetchMultipleUrls(urls, {
+      const results = await this.webDataService.fetchMultipleUrls(urls, {
         provider: 'firecrawl',
         tenantId: userId,
         extractionPrompt: `Extraire les informations de contact et les détails immobiliers:
@@ -648,7 +659,7 @@ export class ProspectingIntegrationService {
     try {
       // Utiliser le WebDataService unifié qui sélectionne automatiquement
       // le meilleur provider (Cheerio, Puppeteer, ou Firecrawl)
-      const results = await (this as any).webDataService.fetchMultipleUrls(urls, {
+      const results = await this.webDataService.fetchMultipleUrls(urls, {
         tenantId: userId,
       });
 
@@ -1037,19 +1048,25 @@ export class ProspectingIntegrationService {
       throw new BadRequestException('Lead non trouve');
     }
 
-    // Enrichir via diverses sources
+    // Enrichir via diverses sources avec UnifiedValidationService
     const enrichments: any = {};
 
-    // Validation email
-    if (lead.email) {
-      enrichments.emailValid = this.isValidEmail(lead.email);
-    }
+    // Validation avancée email + téléphone + spam
+    const fullValidation = await this.validationService.validateFull(
+      lead.email || undefined,
+      lead.phone || undefined,
+      lead.metadata?.rawText || undefined,
+      { country: 'TN', detectSpam: true }
+    );
 
-    // Validation telephone
-    if (lead.phone) {
-      enrichments.phoneValid = this.isValidPhone(lead.phone);
-      enrichments.phoneFormatted = this.formatPhone(lead.phone);
-    }
+    enrichments.validation = {
+      email: fullValidation.email,
+      phone: fullValidation.phone,
+      spam: fullValidation.spam,
+      globalScore: fullValidation.globalScore,
+      isValid: fullValidation.isValid,
+      validatedAt: fullValidation.validatedAt,
+    };
 
     // Mise a jour
     await this.prisma.prospecting_leads.update({
@@ -1211,13 +1228,16 @@ export class ProspectingIntegrationService {
   }
 
 
-  private isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
+  // Validation déplacée vers UnifiedValidationService
 
-  private isValidPhone(phone: string): boolean {
+  // Méthode publique pour compatibilité
+  public isValidPhone(phone: string): boolean {
     const cleaned = phone.replace(/[\s.-]/g, '');
     return /^(?:\+216|00216)?[2579]\d{7}$/.test(cleaned);
+  }
+
+  public isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
   private formatPhone(phone: string): string {

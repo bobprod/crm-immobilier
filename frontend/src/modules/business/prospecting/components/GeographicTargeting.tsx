@@ -256,18 +256,43 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
     setZones((prev) => prev.map((z) => (z.id === zoneId ? { ...z, selected: !z.selected } : z)));
   }, []);
 
+  // Refs pour les callbacks afin d'éviter les boucles infinies
+  const onZonesChangeRef = React.useRef(onZonesChange);
+  const onChangeRef = React.useRef(onChange);
+  onZonesChangeRef.current = onZonesChange;
+  onChangeRef.current = onChange;
+
   // Mettre a jour les zones selectionnees
+  const isFirstRender = React.useRef(true);
   useEffect(() => {
     const selected = zones.filter((z) => z.selected);
     setSelectedZones(selected);
-    if (onZonesChange) onZonesChange(selected);
+
+    // Ne pas appeler les callbacks au premier rendu
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (onZonesChangeRef.current) onZonesChangeRef.current(selected);
     // If consumer expects a single zone value, call onChange with the first selected zone
-    if (onChange) onChange(selected[0]);
-  }, [zones, onZonesChange]);
+    if (onChangeRef.current) onChangeRef.current(selected[0]);
+  }, [zones]);
 
   // Support receiving a single `value` prop to mark a zone as selected (compat for Prospection)
+  // On utilise une ref pour tracker si on a déjà traité cette value
+  const processedValueRef = React.useRef<any>(null);
   useEffect(() => {
     if (!value) return;
+
+    // Éviter de re-traiter la même value
+    if (processedValueRef.current === value ||
+        (processedValueRef.current && value &&
+         processedValueRef.current.name === value.name &&
+         processedValueRef.current.coordinates?.lat === value.coordinates?.lat)) {
+      return;
+    }
+    processedValueRef.current = value;
 
     // Try to find an existing zone that matches by name or coordinates
     const match = zones.find((z) => z.name === value.name || (z.coordinates && value.coordinates && z.coordinates.lat === value.coordinates.lat && z.coordinates.lng === value.coordinates.lng));
@@ -286,7 +311,7 @@ export const GeographicTargeting: React.FC<GeographicTargetingProps> = ({
       selected: true,
     };
     setZones((prev) => [...prev, newZone]);
-  }, [value]);
+  }, [value, zones]);
 
   // Ajouter une zone de rayon personnalise
   const addRadiusZone = useCallback(

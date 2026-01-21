@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
+import { ApiKeysService } from '../../shared/services/api-keys.service';
 
 /**
  * Service de scraping avancé avec Puppeteer/Browserless
@@ -51,70 +52,68 @@ export interface FacebookMarketplaceSearch {
 @Injectable()
 export class BrowserlessService {
   private readonly logger = new Logger(BrowserlessService.name);
-  private browser: Browser | null = null;
   private readonly browserlessEndpoint: string;
   private readonly browserlessToken: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly apiKeysService: ApiKeysService,
+  ) {
     this.browserlessEndpoint =
       configService.get('BROWSERLESS_ENDPOINT') || 'wss://chrome.browserless.io';
     this.browserlessToken = configService.get('BROWSERLESS_TOKEN') || '';
   }
 
   /**
-   * Initialiser une session de browser
+   * Initialiser une session de browser pour un utilisateur spécifique
    */
-  private async initBrowser(): Promise<Browser> {
-    if (this.browser && this.browser.isConnected()) {
-      return this.browser;
+  private async getBrowser(userId?: string): Promise<Browser> {
+    let token = this.browserlessToken;
+
+    if (userId) {
+      const userKey = await this.apiKeysService.getApiKey(userId, 'browserless');
+      if (userKey) {
+        token = userKey;
+      }
     }
 
     try {
       // Connexion à Browserless cloud
-      if (this.browserlessToken) {
-        this.browser = await puppeteer.connect({
-          browserWSEndpoint: `${this.browserlessEndpoint}?token=${this.browserlessToken}`,
+      if (token) {
+        const browser = await puppeteer.connect({
+          browserWSEndpoint: `${this.browserlessEndpoint}?token=${token}`,
         });
-        this.logger.log('Connected to Browserless cloud');
+        // this.logger.log(`Connected to Browserless cloud for user ${userId || 'system'}`);
+        return browser;
       } else {
         // Fallback: utiliser Puppeteer local (dev uniquement)
         this.logger.warn('No Browserless token, using local Puppeteer (dev mode)');
-        // Note: nécessite Chrome/Chromium installé
         throw new Error(
           'Local Puppeteer not configured. Set BROWSERLESS_TOKEN environment variable.',
         );
       }
-
-      return this.browser;
     } catch (error) {
       this.logger.error(`Failed to init browser: ${error.message}`);
       throw error;
     }
   }
 
-  /**
-   * Fermer le browser
-   */
-  async closeBrowser(): Promise<void> {
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = null;
-      this.logger.log('Browser closed');
-    }
-  }
+  // Legacy method removed: closeBrowser (browsers are now per-request handled)
 
   /**
    * Scraper Facebook Marketplace pour annonces immobilières
    */
   async scrapeFacebookMarketplace(
     search: FacebookMarketplaceSearch,
+    userId?: string,
   ): Promise<ScrapingResult> {
     const startTime = Date.now();
     const listings: FacebookMarketplaceListing[] = [];
     const errors: string[] = [];
+    let browser: Browser | null = null;
 
     try {
-      const browser = await this.initBrowser();
+      browser = await this.getBrowser(userId);
       const page = await browser.newPage();
 
       // Configuration page
@@ -202,15 +201,20 @@ export class BrowserlessService {
         count: 0,
         errors: [error.message],
       };
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
     }
   }
 
   /**
    * Scraper profil utilisateur Facebook (public uniquement)
    */
-  async scrapeFacebookProfile(profileUrl: string): Promise<any> {
+  async scrapeFacebookProfile(profileUrl: string, userId?: string): Promise<any> {
+    let browser: Browser | null = null;
     try {
-      const browser = await this.initBrowser();
+      browser = await this.getBrowser(userId);
       const page = await browser.newPage();
 
       await page.goto(profileUrl, { waitUntil: 'networkidle2' });
@@ -228,6 +232,8 @@ export class BrowserlessService {
     } catch (error) {
       this.logger.error(`Facebook profile scraping failed: ${error.message}`);
       return null;
+    } finally {
+      if (browser) await browser.close();
     }
   }
 
@@ -237,11 +243,13 @@ export class BrowserlessService {
   async scrapeWebsite(
     url: string,
     selectors: { [key: string]: string },
+    userId?: string,
   ): Promise<ScrapingResult> {
     const startTime = Date.now();
+    let browser: Browser | null = null;
 
     try {
-      const browser = await this.initBrowser();
+      browser = await this.getBrowser(userId);
       const page = await browser.newPage();
 
       await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
@@ -280,6 +288,8 @@ export class BrowserlessService {
         count: 0,
         errors: [error.message],
       };
+    } finally {
+      if (browser) await browser.close();
     }
   }
 
@@ -288,7 +298,7 @@ export class BrowserlessService {
    */
   async takeScreenshot(url: string, fullPage: boolean = true): Promise<Buffer> {
     try {
-      const browser = await this.initBrowser();
+      const browser = await this.getBrowser();
       const page = await browser.newPage();
 
       await page.goto(url, { waitUntil: 'networkidle2' });
@@ -311,7 +321,7 @@ export class BrowserlessService {
    */
   async generatePDF(url: string): Promise<Buffer> {
     try {
-      const browser = await this.initBrowser();
+      const browser = await this.getBrowser();
       const page = await browser.newPage();
 
       await page.goto(url, { waitUntil: 'networkidle2' });
@@ -441,8 +451,10 @@ export class BrowserlessService {
 
   /**
    * Cleanup à la destruction du service
+   * Note: Les browsers sont créés et fermés par appel, pas de browser persistant
    */
   async onModuleDestroy() {
-    await this.closeBrowser();
+    // Les browsers sont fermés après chaque utilisation, pas besoin de cleanup global
+    this.logger.log('BrowserlessService destroyed');
   }
 }

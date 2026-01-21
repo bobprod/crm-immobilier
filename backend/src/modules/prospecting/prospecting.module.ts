@@ -11,9 +11,17 @@ import { BehavioralSignalsService } from './behavioral-signals.service';
 import { ScrapingQueueService } from './scraping-queue.service';
 import { BehavioralProspectingController } from './behavioral-prospecting.controller';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { ApiKeysService } from '../../shared/services/api-keys.service';
 import { SeoAiModule } from '../content/seo-ai/seo-ai.module';
 import { LLMConfigModule } from '../intelligence/llm-config/llm-config.module';
 import { CommunicationsModule } from '../communications/communications.module';
+import { ScrapingModule } from '../scraping/scraping.module';
+import { ValidationModule } from '../../shared/validation/validation.module';
+import { CampaignService } from './services/campaign.service';
+import { LeadManagementService } from './services/lead-management.service';
+import { MatchingService } from './services/matching.service';
+import { ProspectingValidationService } from './services/prospecting-validation.service';
+import { ProspectingOrchestratorService } from './services/prospecting-orchestrator.service';
 
 @Module({
   imports: [
@@ -22,6 +30,8 @@ import { CommunicationsModule } from '../communications/communications.module';
     CommunicationsModule,
     SeoAiModule,
     LLMConfigModule,
+    ScrapingModule,
+    ValidationModule,
     BullModule.registerQueue(
       { name: 'scraping' },
       { name: 'scoring' },
@@ -39,6 +49,12 @@ import { CommunicationsModule } from '../communications/communications.module';
     BehavioralSignalsService,
     ScrapingQueueService,
     PrismaService,
+    ApiKeysService,
+    CampaignService,
+    LeadManagementService,
+    MatchingService,
+    ProspectingValidationService,
+    ProspectingOrchestratorService,
   ],
   exports: [
     ProspectingService,
@@ -47,6 +63,11 @@ import { CommunicationsModule } from '../communications/communications.module';
     BrowserlessService,
     BehavioralSignalsService,
     ScrapingQueueService,
+    CampaignService,
+    LeadManagementService,
+    MatchingService,
+    ProspectingValidationService,
+    ProspectingOrchestratorService,
   ],
 })
-export class ProspectingModule {}
+export class ProspectingModule { }

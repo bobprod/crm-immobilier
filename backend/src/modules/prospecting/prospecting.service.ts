@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
@@ -14,6 +14,8 @@ import {
 import { CreateCampaignDto, UpdateLeadDto } from './dto';
 import { ProspectingIntegrationService } from './prospecting-integration.service';
 import { RawScrapedItem } from './dto/llm-prospecting.dto';
+import { CampaignService } from './services/campaign.service';
+import { LeadManagementService } from './services/lead-management.service';
 
 interface CampaignFilters {
   status?: string;
@@ -33,6 +35,8 @@ export class ProspectingService {
 
   constructor(
     private prisma: PrismaService,
+    private campaignService: CampaignService,
+    private leadManagementService: LeadManagementService,
     @Inject(forwardRef(() => ProspectingIntegrationService))
     private integrationService: ProspectingIntegrationService,
   ) { }
@@ -45,127 +49,54 @@ export class ProspectingService {
    * Créer une campagne de prospection
    */
   async createCampaign(userId: string, data: CreateCampaignDto) {
-    this.logger.log(`Creating prospecting campaign for user ${userId}`);
-
-    return this.prisma.prospecting_campaigns.create({
-      data: {
-        userId,
-        name: data.name,
-        description: data.description,
-        type: data.type || 'geographic',
-        config: data.config || {},
-        targetCount: data.targetCount,
-      },
-    });
+    return this.campaignService.createCampaign(userId, data);
   }
 
   /**
    * Récupérer toutes les campagnes
    */
   async getCampaigns(userId: string, filters?: CampaignFilters) {
-    const where: Record<string, unknown> = { userId };
-
-    if (filters?.status) where.status = filters.status;
-    if (filters?.type) where.type = filters.type;
-
-    return this.prisma.prospecting_campaigns.findMany({
-      where,
-      include: {
-        _count: {
-          select: { leads: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.campaignService.getCampaigns(userId, filters);
   }
 
   /**
    * Récupérer une campagne par ID
    */
   async getCampaignById(userId: string, campaignId: string) {
-    const campaign = await this.prisma.prospecting_campaigns.findFirst({
-      where: { id: campaignId, userId },
-      include: {
-        leads: {
-          take: 10,
-          orderBy: { score: 'desc' },
-        },
-        _count: {
-          select: { leads: true },
-        },
-      },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Campagne non trouvée');
-    }
-
-    return campaign;
+    return this.campaignService.getCampaignById(userId, campaignId);
   }
 
   /**
    * Démarrer une campagne
    */
   async startCampaign(userId: string, campaignId: string) {
-    const campaign = await this.getCampaignById(userId, campaignId);
-
-    if (campaign.status !== 'draft' && campaign.status !== 'paused') {
-      throw new BadRequestException('Cette campagne ne peut pas être démarrée');
-    }
+    const campaign = await this.campaignService.startCampaign(userId, campaignId);
 
     // Démarrer le scraping en arrière-plan
     this.runCampaignScraping(userId, campaign);
 
-    return this.prisma.prospecting_campaigns.update({
-      where: { id: campaignId },
-      data: {
-        status: 'active',
-        startedAt: new Date(),
-      },
-    });
+    return campaign;
   }
 
   /**
    * Mettre en pause une campagne
    */
   async pauseCampaign(userId: string, campaignId: string) {
-    await this.getCampaignById(userId, campaignId);
-
-    return this.prisma.prospecting_campaigns.update({
-      where: { id: campaignId },
-      data: { status: 'paused' },
-    });
+    return this.campaignService.pauseCampaign(userId, campaignId);
   }
 
   /**
    * Reprendre une campagne en pause
    */
   async resumeCampaign(userId: string, campaignId: string) {
-    const campaign = await this.getCampaignById(userId, campaignId);
-
-    if (campaign.status !== 'paused') {
-      throw new BadRequestException(
-        'Cette campagne n\'est pas en pause. Status actuel: ' + campaign.status,
-      );
-    }
-
-    return this.prisma.prospecting_campaigns.update({
-      where: { id: campaignId },
-      data: { status: 'active' }, // Important: ne pas modifier startedAt
-    });
+    return this.campaignService.resumeCampaign(userId, campaignId);
   }
 
   /**
    * Supprimer une campagne
    */
   async deleteCampaign(userId: string, campaignId: string) {
-    await this.getCampaignById(userId, campaignId);
-
-    await this.prisma.prospecting_campaigns.delete({
-      where: { id: campaignId },
-    });
-
-    return { success: true };
+    return this.campaignService.deleteCampaign(userId, campaignId);
   }
 
   // ============================================
@@ -176,315 +107,70 @@ export class ProspectingService {
    * Récupérer tous les leads d'une campagne
    */
   async getLeads(userId: string, campaignId: string, filters?: LeadFilters) {
-    const where: Record<string, unknown> = { campaignId, userId };
-
-    if (filters?.status) where.status = filters.status;
-    if (filters?.minScore) where.score = { gte: parseInt(filters.minScore) };
-    if (filters?.leadType) where.prospectType = filters.leadType;
-
-    return this.prisma.prospecting_leads.findMany({
-      where,
-      orderBy: { score: 'desc' },
-      take: filters?.limit ? parseInt(filters.limit) : 50,
-    });
+    return this.leadManagementService.getLeads(userId, campaignId, filters);
   }
 
   /**
    * Récupérer un lead par ID
    */
   async getLeadById(userId: string, leadId: string) {
-    const lead = await this.prisma.prospecting_leads.findFirst({
-      where: { id: leadId, userId },
-      include: {
-        campaigns: true,
-        convertedProspect: true,
-      },
-    });
-
-    if (!lead) {
-      throw new NotFoundException('Lead non trouvé');
-    }
-
-    return lead;
+    return this.leadManagementService.getLeadById(userId, leadId);
   }
 
   /**
    * Mettre à jour un lead
    */
   async updateLead(userId: string, leadId: string, data: UpdateLeadDto) {
-    await this.getLeadById(userId, leadId);
+    return this.leadManagementService.updateLead(userId, leadId, data);
+  }
 
-    return this.prisma.prospecting_leads.update({
-      where: { id: leadId },
-      data,
-    });
+  /**
+   * Supprimer un lead
+   */
+  async deleteLead(userId: string, leadId: string) {
+    return this.leadManagementService.deleteLead(userId, leadId);
   }
 
   /**
    * Convertir un lead en prospect
-   * - Vérifie si un prospect existe déjà (déduplication)
-   * - Préserve toutes les métadonnées de prospection
-   * - Log l'activité
    */
   async convertLeadToProspect(userId: string, leadId: string) {
-    const lead = await this.getLeadById(userId, leadId);
-
-    // 1. Vérifier si le lead a déjà été converti
-    if (lead.convertedProspectId) {
-      const existingProspect = await this.prisma.prospects.findUnique({
-        where: { id: lead.convertedProspectId },
-      });
-      if (existingProspect) {
-        this.logger.warn(
-          `Lead ${leadId} already converted to prospect ${lead.convertedProspectId}`,
-        );
-        return existingProspect;
-      }
-    }
-
-    // 2. Vérifier si un prospect existe avec le même email ou téléphone (déduplication)
-    const existingProspect = await this.findExistingProspect(userId, lead);
-    if (existingProspect) {
-      this.logger.log(`Found existing prospect ${existingProspect.id} matching lead ${leadId}`);
-
-      // Fusionner les données du lead avec le prospect existant
-      const mergedProspect = await this.mergeLeadIntoProspect(existingProspect, lead);
-
-      // Mettre à jour le lead
-      await this.prisma.prospecting_leads.update({
-        where: { id: leadId },
-        data: {
-          status: 'converted',
-          convertedProspectId: mergedProspect.id,
-          convertedAt: new Date(),
-        },
-      });
-
-      // Logger l'activité
-      await this.logActivity(userId, 'lead_merged', leadId, mergedProspect.id);
-
-      return mergedProspect;
-    }
-
-    // 3. Construire les métadonnées enrichies à préserver
-    const prospectingMetadata = {
-      leadType: lead.leadType,
-      intention: lead.intention,
-      urgency: lead.urgency,
-      seriousnessScore: lead.seriousnessScore,
-      validationStatus: lead.validationStatus,
-      qualificationNotes: lead.qualificationNotes,
-      propertyTypes: lead.propertyTypes,
-      surfaceM2: lead.surfaceM2,
-      rooms: lead.rooms,
-      budgetMin: lead.budgetMin,
-      budgetMax: lead.budgetMax,
-      sourceUrl: lead.sourceUrl,
-      rawText: lead.rawText,
-      originalCampaignId: lead.campaignId,
-      convertedFromLeadId: lead.id,
-      convertedAt: new Date().toISOString(),
-    };
-
-    // 4. Créer le prospect avec toutes les métadonnées
-    const prospect = await this.prisma.prospects.create({
-      data: {
-        userId,
-        firstName: lead.firstName,
-        lastName: lead.lastName,
-        email: lead.email,
-        phone: lead.phone,
-        address: lead.address,
-        city: lead.city,
-        zipCode: lead.zipCode,
-        type: this.mapLeadTypeToProspectType(lead.leadType, lead.intention),
-        budget:
-          lead.budget ||
-          (lead.budgetMin || lead.budgetMax ? { min: lead.budgetMin, max: lead.budgetMax } : null),
-        preferences: lead.metadata,
-        source: `Prospection: ${lead.source}`,
-        status: 'active',
-        score: lead.seriousnessScore || lead.score || 50,
-        notes: lead.qualificationNotes || `Converti depuis lead ${leadId}`,
-        metadata: prospectingMetadata,
-      },
-    });
-
-    // 5. Mettre à jour le lead
-    await this.prisma.prospecting_leads.update({
-      where: { id: leadId },
-      data: {
-        status: 'converted',
-        convertedProspectId: prospect.id,
-        convertedAt: new Date(),
-      },
-    });
-
-    // 6. Mettre à jour les prospecting_matches existants avec le prospectId
-    await this.prisma.prospecting_matches.updateMany({
-      where: { leadId: lead.id },
-      data: { prospectId: prospect.id },
-    });
-
-    // 7. Logger l'activité
-    await this.logActivity(userId, 'lead_converted', leadId, prospect.id);
-
-    this.logger.log(`Lead ${leadId} converted to prospect ${prospect.id}`);
-    return prospect;
+    return this.leadManagementService.convertLeadToProspect(userId, leadId);
   }
 
   /**
-   * Rechercher un prospect existant par email ou téléphone
+   * Dédupliquer les leads
    */
-  private async findExistingProspect(userId: string, lead: any) {
-    const conditions = [];
-
-    if (lead.email) {
-      conditions.push({ email: lead.email.toLowerCase() });
-    }
-    if (lead.phone) {
-      const normalizedPhone = this.normalizePhone(lead.phone);
-      conditions.push({ phone: normalizedPhone });
-      conditions.push({ phone: lead.phone });
-    }
-
-    if (conditions.length === 0) return null;
-
-    return this.prisma.prospects.findFirst({
-      where: {
-        userId,
-        OR: conditions,
-      },
-    });
+  async deduplicateLeads(userId: string, campaignId?: string) {
+    return this.leadManagementService.deduplicateLeads(userId, campaignId);
   }
 
   /**
-   * Fusionner les données d'un lead dans un prospect existant
+   * Trouver des doublons potentiels pour un lead
    */
-  private async mergeLeadIntoProspect(prospect: any, lead: any) {
-    const updates: any = {};
-
-    // Compléter les champs manquants
-    if (!prospect.firstName && lead.firstName) updates.firstName = lead.firstName;
-    if (!prospect.lastName && lead.lastName) updates.lastName = lead.lastName;
-    if (!prospect.phone && lead.phone) updates.phone = lead.phone;
-    if (!prospect.email && lead.email) updates.email = lead.email;
-    if (!prospect.city && lead.city) updates.city = lead.city;
-    if (!prospect.address && lead.address) updates.address = lead.address;
-
-    // Mettre à jour le score si le lead a un meilleur score
-    const leadScore = lead.seriousnessScore || lead.score || 0;
-    if (leadScore > (prospect.score || 0)) {
-      updates.score = leadScore;
-    }
-
-    // Fusionner les métadonnées
-    const existingMetadata = prospect.metadata || {};
-    updates.metadata = {
-      ...existingMetadata,
-      mergedFromLeads: [...(existingMetadata.mergedFromLeads || []), lead.id],
-      lastMergedAt: new Date().toISOString(),
-      leadType: lead.leadType,
-      intention: lead.intention,
-      urgency: lead.urgency,
-      seriousnessScore: lead.seriousnessScore,
-    };
-
-    // Ajouter une note sur la fusion
-    const mergeNote = `\n[${new Date().toLocaleDateString('fr-FR')}] Fusionné avec lead ${lead.id} (${lead.source})`;
-    updates.notes = (prospect.notes || '') + mergeNote;
-
-    if (Object.keys(updates).length > 0) {
-      return this.prisma.prospects.update({
-        where: { id: prospect.id },
-        data: updates,
-      });
-    }
-
-    return prospect;
+  async findPotentialDuplicates(userId: string, leadId: string) {
+    return this.leadManagementService.findPotentialDuplicates(userId, leadId);
   }
 
   /**
-   * Mapper le type de lead vers le type de prospect
+   * Exporter les leads
    */
-  private mapLeadTypeToProspectType(leadType: string | null, intention: string | null): string {
-    if (intention === 'acheter' || intention === 'investir') return 'buyer';
-    if (intention === 'louer') return 'tenant';
-    if (intention === 'vendre' || leadType === 'mandat') return 'seller';
-    if (leadType === 'requete') return 'buyer';
-    return 'buyer'; // default
+  async exportLeads(userId: string, campaignId: string, format: string) {
+    return this.leadManagementService.exportLeads(userId, campaignId, format);
   }
 
   /**
-   * Logger une activité de prospection
+   * Importer des leads
    */
-  private async logActivity(userId: string, type: string, leadId: string, prospectId?: string) {
-    try {
-      await this.prisma.activity.create({
-        data: {
-          userId,
-          type,
-          entityType: 'prospecting_lead',
-          entityId: leadId,
-          description:
-            type === 'lead_converted'
-              ? `Lead converti en prospect ${prospectId}`
-              : `Lead fusionné avec prospect existant ${prospectId}`,
-          metadata: { leadId, prospectId },
-        },
-      });
-    } catch (error) {
-      // Ne pas bloquer si le logging échoue
-      this.logger.warn(`Failed to log activity: ${error.message}`);
-    }
+  async importLeads(userId: string, campaignId: string, leads: any[]) {
+    return this.leadManagementService.importLeads(userId, campaignId, leads);
   }
 
   /**
    * Calculer le score d'un lead
    */
-  calculateLeadScore(lead: any): number {
-    let score = 0;
-
-    // Email valide: +20
-    if (lead.email && this.isValidEmail(lead.email)) {
-      score += 20;
-    }
-
-    // Téléphone valide: +15
-    if (lead.phone) {
-      score += 15;
-    }
-
-    // Nom complet: +10
-    if (lead.firstName && lead.lastName) {
-      score += 10;
-    }
-
-    // Budget défini: +20
-    if (lead.budget) {
-      const budgetValue =
-        typeof lead.budget === 'object' ? lead.budget.max || lead.budget.min || 0 : lead.budget;
-      if (budgetValue > 0) {
-        score += 20;
-      }
-    }
-
-    // Ville définie: +10
-    if (lead.city) {
-      score += 10;
-    }
-
-    // Type de propriété: +10
-    if (lead.propertyType) {
-      score += 10;
-    }
-
-    // Source fiable: +15
-    if (lead.source && ['linkedin', 'facebook', 'website'].includes(lead.source)) {
-      score += 15;
-    }
-
-    return Math.min(score, 100);
+  async calculateLeadScore(lead: any): Promise<number> {
+    return this.leadManagementService.calculateLeadScore(lead);
   }
 
   // ============================================
@@ -1131,7 +817,7 @@ export class ProspectingService {
         const mockLeads = this.generateMockLeads(campaign);
 
         for (const leadData of mockLeads) {
-          const score = this.calculateLeadScore(leadData);
+          const score = await this.calculateLeadScore(leadData);
           await this.prisma.prospecting_leads.create({
             data: {
               ...leadData,
@@ -1200,8 +886,7 @@ export class ProspectingService {
       });
 
       this.logger.log(
-        `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${
-          autoMatch ? 'auto-matching enabled' : 'manual matching'
+        `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${autoMatch ? 'auto-matching enabled' : 'manual matching'
         } (Provider: ${llmProviderOverride})`,
       );
     } catch (error) {
@@ -1259,87 +944,14 @@ export class ProspectingService {
    * Statistiques d'une campagne
    */
   async getCampaignStats(userId: string, campaignId: string) {
-    await this.getCampaignById(userId, campaignId);
-
-    const [total, byStatus, avgScore, converted] = await Promise.all([
-      this.prisma.prospecting_leads.count({ where: { campaignId } }),
-      this.prisma.prospecting_leads.groupBy({
-        by: ['status'],
-        where: { campaignId },
-        _count: true,
-      }),
-      this.prisma.prospecting_leads.aggregate({
-        where: { campaignId },
-        _avg: { score: true },
-      }),
-      this.prisma.prospecting_leads.count({
-        where: { campaignId, status: 'converted' },
-      }),
-    ]);
-
-    const conversionRate = total > 0 ? (converted / total) * 100 : 0;
-
-    return {
-      total,
-      byStatus,
-      avgScore: Math.round(avgScore._avg.score || 0),
-      converted,
-      conversionRate: Math.round(conversionRate),
-    };
+    return this.campaignService.getCampaignStats(userId, campaignId);
   }
 
   /**
    * Statistiques globales
    */
   async getGlobalStats(userId: string) {
-    try {
-      // First get all lead IDs for this user
-      const userLeads = await this.prisma.prospecting_leads.findMany({
-        where: { userId },
-        select: { id: true },
-      });
-      const leadIds = userLeads.map((l) => l.id);
-
-      const [totalCampaigns, totalLeads, totalMatches, topLeads] = await Promise.all([
-        this.prisma.prospecting_campaigns.count({ where: { userId } }),
-        this.prisma.prospecting_leads.count({ where: { userId } }),
-        // Use leadId IN array instead of relation filtering
-        leadIds.length > 0
-          ? this.prisma.prospecting_matches.count({
-              where: {
-                leadId: { in: leadIds },
-              },
-            })
-          : Promise.resolve(0),
-        this.prisma.prospecting_leads.findMany({
-          where: { userId },
-          orderBy: { score: 'desc' },
-          take: 5,
-          include: {
-            campaigns: {
-              select: { name: true },
-            },
-          },
-        }),
-      ]);
-
-      return {
-        totalCampaigns,
-        totalLeads,
-        totalMatches,
-        topLeads,
-      };
-    } catch (error) {
-      this.logger.error(`Error in getGlobalStats: ${error.message}`);
-      this.logger.error(error.stack);
-      // Return default values instead of crashing
-      return {
-        totalCampaigns: 0,
-        totalLeads: 0,
-        totalMatches: 0,
-        topLeads: [],
-      };
-    }
+    return this.campaignService.getGlobalStats(userId);
   }
 
   // ============================================
@@ -1437,25 +1049,7 @@ export class ProspectingService {
    * Mettre à jour une campagne
    */
   async updateCampaign(userId: string, campaignId: string, data: any) {
-    await this.getCampaignById(userId, campaignId);
-
-    return this.prisma.prospecting_campaigns.update({
-      where: { id: campaignId },
-      data,
-    });
-  }
-
-  /**
-   * Supprimer un lead
-   */
-  async deleteLead(userId: string, leadId: string) {
-    await this.getLeadById(userId, leadId);
-
-    await this.prisma.prospecting_leads.delete({
-      where: { id: leadId },
-    });
-
-    return { success: true };
+    return this.campaignService.updateCampaign(userId, campaignId, data);
   }
 
   /**
@@ -1481,76 +1075,14 @@ export class ProspectingService {
    * Statistiques par source
    */
   async getStatsBySource(userId: string) {
-    const leads = await this.prisma.prospecting_leads.findMany({
-      where: { userId },
-      select: { source: true, score: true },
-    });
-
-    interface GroupedData {
-      count: number;
-      totalScore: number;
-    }
-    const grouped: Record<string, GroupedData> = {};
-
-    for (const lead of leads) {
-      const source = lead.source || 'unknown';
-      if (!grouped[source]) {
-        grouped[source] = { count: 0, totalScore: 0 };
-      }
-      grouped[source].count++;
-      grouped[source].totalScore += lead.score || 0;
-    }
-
-    return Object.entries(grouped).map(([source, data]) => ({
-      source,
-      count: data.count,
-      avgScore: Math.round(data.totalScore / data.count),
-    }));
+    return this.campaignService.getStatsBySource(userId);
   }
 
   /**
    * Statistiques de conversion
    */
   async getConversionStats(userId: string) {
-    const [total, converted, leads] = await Promise.all([
-      this.prisma.prospecting_leads.count({ where: { userId } }),
-      this.prisma.prospecting_leads.count({ where: { userId, status: 'converted' } }),
-      this.prisma.prospecting_leads.findMany({
-        where: { userId },
-        select: { status: true },
-      }),
-    ]);
-
-    const grouped: Record<string, number> = {};
-    for (const lead of leads) {
-      const status = lead.status;
-      grouped[status] = (grouped[status] || 0) + 1;
-    }
-
-    const byStage = Object.entries(grouped).map(([status, count]) => ({
-      status,
-      count,
-    }));
-
-    const conversionRate = total > 0 ? (converted / total) * 100 : 0;
-
-    return {
-      total,
-      converted,
-      conversionRate: Math.round(conversionRate * 10) / 10,
-      byStage: byStage.map((s) => ({
-        stage: s.status,
-        count: s.count,
-        percentage: Math.round((s.count / total) * 100 * 10) / 10,
-      })),
-      funnel: {
-        new: byStage.find((s) => s.status === 'new')?.count || 0,
-        contacted: byStage.find((s) => s.status === 'contacted')?.count || 0,
-        qualified: byStage.find((s) => s.status === 'qualified')?.count || 0,
-        converted: byStage.find((s) => s.status === 'converted')?.count || 0,
-        rejected: byStage.find((s) => s.status === 'rejected')?.count || 0,
-      },
-    };
+    return this.campaignService.getConversionStats(userId);
   }
 
   /**
@@ -1627,349 +1159,4 @@ export class ProspectingService {
     };
   }
 
-  /**
-   * Dédupliquer les leads avec matching intelligent
-   */
-  async deduplicateLeads(userId: string, campaignId?: string) {
-    const where: any = { userId };
-    if (campaignId) where.campaignId = campaignId;
-
-    const leads = await this.prisma.prospecting_leads.findMany({
-      where,
-      orderBy: { score: 'desc' }, // Garder le lead avec le meilleur score
-    });
-
-    const uniqueLeads = new Map<string, any>();
-    const duplicates: string[] = [];
-    const mergedData: any[] = [];
-
-    for (const lead of leads) {
-      // Générer plusieurs clés pour la déduplication
-      const keys = this.generateDeduplicationKeys(lead);
-      let foundDuplicate = false;
-      let originalLeadId: string | null = null;
-
-      for (const key of keys) {
-        if (uniqueLeads.has(key)) {
-          foundDuplicate = true;
-          originalLeadId = uniqueLeads.get(key).id;
-          break;
-        }
-      }
-
-      if (foundDuplicate && originalLeadId) {
-        duplicates.push(lead.id);
-        // Fusionner les données du doublon avec l'original
-        const original = uniqueLeads.get(keys[0]);
-        if (original) {
-          mergedData.push({
-            id: originalLeadId,
-            data: this.mergeLeadData(original, lead),
-          });
-        }
-      } else {
-        // Ajouter toutes les clés pour ce lead
-        keys.forEach((key) => uniqueLeads.set(key, lead));
-      }
-    }
-
-    // Mettre à jour les leads originaux avec les données fusionnées
-    for (const merge of mergedData) {
-      await this.prisma.prospecting_leads.update({
-        where: { id: merge.id },
-        data: merge.data,
-      });
-    }
-
-    // Supprimer les doublons
-    if (duplicates.length > 0) {
-      await this.prisma.prospecting_leads.deleteMany({
-        where: { id: { in: duplicates } },
-      });
-    }
-
-    return {
-      success: true,
-      totalProcessed: leads.length,
-      duplicatesRemoved: duplicates.length,
-      uniqueLeads: leads.length - duplicates.length,
-      mergedRecords: mergedData.length,
-    };
-  }
-
-  /**
-   * Générer des clés de déduplication pour un lead
-   */
-  private generateDeduplicationKeys(lead: any): string[] {
-    const keys: string[] = [];
-
-    // Clé email (normalisée)
-    if (lead.email) {
-      keys.push(`email:${lead.email.toLowerCase().trim()}`);
-    }
-
-    // Clé téléphone (normalisé)
-    if (lead.phone) {
-      const normalizedPhone = this.normalizePhone(lead.phone);
-      keys.push(`phone:${normalizedPhone}`);
-    }
-
-    // Clé nom+ville (pour matcher les doublons sans contact)
-    if (lead.firstName && lead.lastName && lead.city) {
-      const nameKey = `name:${this.normalizeText(lead.firstName)}_${this.normalizeText(lead.lastName)}_${this.normalizeText(lead.city)}`;
-      keys.push(nameKey);
-    }
-
-    return keys;
-  }
-
-  /**
-   * Normaliser un numéro de téléphone
-   */
-  private normalizePhone(phone: string): string {
-    // Supprimer tout sauf les chiffres
-    let normalized = phone.replace(/[^0-9]/g, '');
-
-    // Gérer le préfixe tunisien
-    if (normalized.startsWith('00216')) {
-      normalized = normalized.substring(5);
-    } else if (normalized.startsWith('216')) {
-      normalized = normalized.substring(3);
-    } else if (normalized.startsWith('0')) {
-      normalized = normalized.substring(1);
-    }
-
-    return normalized;
-  }
-
-  /**
-   * Normaliser du texte pour comparaison
-   */
-  private normalizeText(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
-      .replace(/[^a-z0-9]/g, '');
-  }
-
-  /**
-   * Fusionner les données de deux leads
-   */
-  private mergeLeadData(original: any, duplicate: any): any {
-    const merged: any = {};
-
-    // Prendre la valeur non-nulle ou la plus récente
-    const fields = ['firstName', 'lastName', 'email', 'phone', 'city', 'zipCode', 'propertyType'];
-
-    for (const field of fields) {
-      if (!original[field] && duplicate[field]) {
-        merged[field] = duplicate[field];
-      }
-    }
-
-    // Fusionner les metadata
-    if (duplicate.metadata) {
-      merged.metadata = {
-        ...original.metadata,
-        ...duplicate.metadata,
-        mergedFrom: [...(original.metadata?.mergedFrom || []), duplicate.id],
-        mergedAt: new Date().toISOString(),
-      };
-    }
-
-    // Garder le meilleur score
-    if (duplicate.score > original.score) {
-      merged.score = duplicate.score;
-    }
-
-    return merged;
-  }
-
-  /**
-   * Calculer la distance de Levenshtein entre deux chaînes
-   */
-  private levenshteinDistance(str1: string, str2: string): number {
-    const m = str1.length;
-    const n = str2.length;
-    const dp: number[][] = Array(m + 1)
-      .fill(null)
-      .map(() => Array(n + 1).fill(0));
-
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        if (str1[i - 1] === str2[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1];
-        } else {
-          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-        }
-      }
-    }
-
-    return dp[m][n];
-  }
-
-  /**
-   * Trouver les doublons potentiels avec fuzzy matching
-   */
-  async findPotentialDuplicates(userId: string, leadId: string) {
-    const lead = await this.getLeadById(userId, leadId);
-
-    const allLeads = await this.prisma.prospecting_leads.findMany({
-      where: { userId, id: { not: leadId } },
-    });
-
-    const potentialDuplicates: any[] = [];
-
-    for (const other of allLeads) {
-      let similarity = 0;
-      const reasons: string[] = [];
-
-      // Comparer les emails
-      if (lead.email && other.email) {
-        if (lead.email.toLowerCase() === other.email.toLowerCase()) {
-          similarity += 50;
-          reasons.push('Email identique');
-        }
-      }
-
-      // Comparer les téléphones
-      if (lead.phone && other.phone) {
-        const phone1 = this.normalizePhone(lead.phone);
-        const phone2 = this.normalizePhone(other.phone);
-        if (phone1 === phone2) {
-          similarity += 40;
-          reasons.push('Téléphone identique');
-        }
-      }
-
-      // Comparer les noms (fuzzy)
-      if (lead.firstName && lead.lastName && other.firstName && other.lastName) {
-        const name1 = `${this.normalizeText(lead.firstName)} ${this.normalizeText(lead.lastName)}`;
-        const name2 = `${this.normalizeText(other.firstName)} ${this.normalizeText(other.lastName)}`;
-        const distance = this.levenshteinDistance(name1, name2);
-        const maxLen = Math.max(name1.length, name2.length);
-        const nameSimilarity = 1 - distance / maxLen;
-
-        if (nameSimilarity > 0.8) {
-          similarity += 30 * nameSimilarity;
-          reasons.push(`Nom similaire (${Math.round(nameSimilarity * 100)}%)`);
-        }
-      }
-
-      if (similarity >= 40) {
-        potentialDuplicates.push({
-          lead: other,
-          similarity: Math.round(similarity),
-          reasons,
-        });
-      }
-    }
-
-    return potentialDuplicates.sort((a, b) => b.similarity - a.similarity);
-  }
-
-  /**
-   * Exporter les leads
-   */
-  async exportLeads(userId: string, campaignId: string, format: string) {
-    const leads = await this.prisma.prospecting_leads.findMany({
-      where: { campaignId, userId },
-      orderBy: { score: 'desc' },
-    });
-
-    if (format === 'json') {
-      return { data: leads, format: 'json' };
-    }
-
-    // Format CSV
-    const headers = [
-      'Prénom',
-      'Nom',
-      'Email',
-      'Téléphone',
-      'Ville',
-      'Type',
-      'Budget',
-      'Score',
-      'Statut',
-      'Source',
-    ];
-    const rows = leads.map((lead) => [
-      lead.firstName || '',
-      lead.lastName || '',
-      lead.email || '',
-      lead.phone || '',
-      lead.city || '',
-      lead.propertyType || '',
-      JSON.stringify(lead.budget) || '',
-      lead.score,
-      lead.status,
-      lead.source || '',
-    ]);
-
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-
-    return {
-      data: csv,
-      format: 'csv',
-      filename: `leads-${campaignId}-${Date.now()}.csv`,
-    };
-  }
-
-  /**
-   * Importer des leads
-   */
-  async importLeads(userId: string, campaignId: string, leads: any[]) {
-    await this.getCampaignById(userId, campaignId);
-
-    const created: any[] = [];
-    const errors: any[] = [];
-
-    for (const leadData of leads) {
-      try {
-        const score = this.calculateLeadScore(leadData);
-
-        const lead = await this.prisma.prospecting_leads.create({
-          data: {
-            campaignId,
-            userId,
-            firstName: leadData.firstName || leadData.prenom,
-            lastName: leadData.lastName || leadData.nom,
-            email: leadData.email,
-            phone: leadData.phone || leadData.telephone,
-            city: leadData.city || leadData.ville,
-            propertyType: leadData.propertyType || leadData.typeBien,
-            budget: leadData.budget,
-            source: 'import',
-            score,
-            status: 'new',
-          },
-        });
-
-        created.push(lead);
-      } catch (error) {
-        errors.push({ data: leadData, error: error.message });
-      }
-    }
-
-    // Mettre à jour le compteur de la campagne
-    await this.prisma.prospecting_campaigns.update({
-      where: { id: campaignId },
-      data: {
-        foundCount: { increment: created.length },
-      },
-    });
-
-    return {
-      success: true,
-      imported: created.length,
-      errors: errors.length,
-      errorDetails: errors,
-    };
-  }
 }

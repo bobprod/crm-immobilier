@@ -109,6 +109,10 @@ export interface ProspectingLead {
   seriousnessScore?: number; // 0-100 estimation du sérieux
   validationStatus?: ValidationStatus; // pending, valid, suspicious, spam
   qualificationNotes?: string;
+  validated?: boolean; // Lead has been validated
+  qualified?: boolean; // Lead has been qualified as good
+  spam?: boolean; // Lead is marked as spam
+  company?: string; // Company name
   // Status
   status: LeadStatus;
   matchedPropertyIds?: string[];

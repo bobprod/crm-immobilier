@@ -9,6 +9,7 @@ export type ToolType =
   | 'llm'               // Appel à un LLM (extraction, analyse, etc.)
   | 'investment-import' // Import de projet d'investissement
   | 'prospection-internal' // Moteur de prospection interne
+  | 'prospecting'       // Outils du module Prospecting (scraping, qualification, matching, validation)
   | 'custom';           // Outil custom (pour extensions futures)
 
 /**

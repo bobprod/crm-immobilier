@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, UseGuards, Request, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { AgencyAdminGuard } from '../../shared/guards/agency-admin.guard';
 import { SuperAdminGuard } from '../../shared/guards/super-admin.guard';
@@ -7,11 +8,43 @@ import { ApiKeysService } from '../../shared/services/api-keys.service';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { UpdateUserApiKeysDto, UpdateAgencyApiKeysDto, UpdateGlobalApiKeysDto } from './dto';
 
+const API_KEY_SELECT_FIELDS = {
+  // Configuration
+  defaultProvider: true,
+  defaultModel: true,
+  // LLM Providers
+  anthropicApiKey: true,
+  openaiApiKey: true,
+  geminiApiKey: true,
+  deepseekApiKey: true,
+  openrouterApiKey: true,
+  mistralApiKey: true,
+  grokApiKey: true,
+  cohereApiKey: true,
+  togetherAiApiKey: true,
+  replicateApiKey: true,
+  perplexityApiKey: true,
+  huggingfaceApiKey: true,
+  alephAlphaApiKey: true,
+  nlpCloudApiKey: true,
+  // Scraping & Data Providers
+  serpApiKey: true,
+  firecrawlApiKey: true,
+  picaApiKey: true,
+  jinaReaderApiKey: true,
+  scrapingBeeApiKey: true,
+  browserlessApiKey: true,
+  rapidApiKey: true,
+  customApiKeys: true,
+};
+
 @ApiTags('AI Billing - API Keys')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('ai-billing/api-keys')
 export class ApiKeysController {
+  private readonly logger = new Logger(ApiKeysController.name);
+
   constructor(
     private apiKeysService: ApiKeysService,
     private prisma: PrismaService,
@@ -29,35 +62,7 @@ export class ApiKeysController {
   async getUserApiKeys(@Request() req) {
     const settings = await this.prisma.ai_settings.findUnique({
       where: { userId: req.user.userId },
-      select: {
-        // Configuration
-        defaultProvider: true,
-        defaultModel: true,
-        // LLM Providers
-        anthropicApiKey: true,
-        openaiApiKey: true,
-        geminiApiKey: true,
-        deepseekApiKey: true,
-        openrouterApiKey: true,
-        mistralApiKey: true,
-        grokApiKey: true,
-        cohereApiKey: true,
-        togetherAiApiKey: true,
-        replicateApiKey: true,
-        perplexityApiKey: true,
-        huggingfaceApiKey: true,
-        alephAlphaApiKey: true,
-        nlpCloudApiKey: true,
-        // Scraping & Data Providers
-        serpApiKey: true,
-        firecrawlApiKey: true,
-        picaApiKey: true,
-        jinaReaderApiKey: true,
-        scrapingBeeApiKey: true,
-        browserlessApiKey: true,
-        rapidApiKey: true,
-        customApiKeys: true,
-      },
+      select: API_KEY_SELECT_FIELDS,
     });
 
     // Masquer les clés (afficher seulement les 4 derniers caractères)
@@ -65,44 +70,21 @@ export class ApiKeysController {
   }
 
   @Get('user/full')
-  @ApiOperation({ summary: 'Récupérer les clés API complètes pour édition (non masquées)' })
-  @ApiResponse({ status: 200, description: 'Clés API complètes (attention: données sensibles)' })
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } }) // Max 30 requests per minute
+  @ApiOperation({ summary: 'Récupérer les clés API pour édition' })
+  @ApiResponse({ status: 200, description: 'Clés API récupérées (valeurs masquées pour sécurité)' })
   async getUserApiKeysFull(@Request() req) {
+    // Audit log for accessing keys
+    this.logger.log(`AUDIT: User ${req.user.userId} accessed API keys details via getUserApiKeysFull from IP ${req.ip || 'unknown'} - RequestID: ${req.id || 'N/A'}`);
+
     const settings = await this.prisma.ai_settings.findUnique({
       where: { userId: req.user.userId },
-      select: {
-        // Configuration
-        defaultProvider: true,
-        defaultModel: true,
-        // LLM Providers
-        anthropicApiKey: true,
-        openaiApiKey: true,
-        geminiApiKey: true,
-        deepseekApiKey: true,
-        openrouterApiKey: true,
-        mistralApiKey: true,
-        grokApiKey: true,
-        cohereApiKey: true,
-        togetherAiApiKey: true,
-        replicateApiKey: true,
-        perplexityApiKey: true,
-        huggingfaceApiKey: true,
-        alephAlphaApiKey: true,
-        nlpCloudApiKey: true,
-        // Scraping & Data Providers
-        serpApiKey: true,
-        firecrawlApiKey: true,
-        picaApiKey: true,
-        jinaReaderApiKey: true,
-        scrapingBeeApiKey: true,
-        browserlessApiKey: true,
-        rapidApiKey: true,
-        customApiKeys: true,
-      },
+      select: API_KEY_SELECT_FIELDS,
     });
 
-    // Retourner les clés complètes (non masquées)
-    return settings || {};
+    // Masquer les clés pour éviter l'exposition directe
+    return this.maskApiKeys(settings || {});
   }
 
   @Post('validate')
@@ -118,8 +100,33 @@ export class ApiKeysController {
       };
     }
 
-    // Valider la clé selon le provider
-    const result = await this.apiKeysService.validateApiKey(provider, apiKey);
+    let keyToTest = apiKey;
+
+    // Si la clé reçue est masquée (contient ***), on tente de récupérer la clé stockée
+    // Cela permet de tester une clé déjà sauvegardée sans avoir à la ressaisir
+    if (apiKey.includes('***')) {
+      this.logger.log(`Validation request for ${provider} with masked key. Fetching stored key for user ${req.user.userId}...`);
+
+      // On récupère la clé active pour cet utilisateur (User Level Priority)
+      // Note: getApiKey suit la hiérarchie User > Agency > Global
+      // Puisque le masque vient de l'UI utilisateur, il y a de fortes chances que ce soit une clé User,
+      // mais même si c'est une surcharge par défaut, valider la clé active est le comportement attendu.
+      const storedKey = await this.apiKeysService.getApiKey(req.user.userId, provider as any);
+
+      if (storedKey) {
+        keyToTest = storedKey;
+        this.logger.log(`Stored key found for ${provider}, proceeding with validation.`);
+      } else {
+        this.logger.warn(`No stored key found for ${provider} despite masked input.`);
+        return {
+          valid: false,
+          message: 'Impossible de valider la clé masquée (clé non trouvée en base)',
+        };
+      }
+    }
+
+    // Valider la clé
+    const result = await this.apiKeysService.validateApiKey(provider, keyToTest);
 
     if (result.valid) {
       return {
@@ -362,6 +369,10 @@ export class ApiKeysController {
     const filtered = {};
     for (const [key, value] of Object.entries(dto)) {
       if (value !== undefined && value !== null && value !== '') {
+        // Ignorer les clés qui semblent masquées
+        if (typeof value === 'string' && (value.includes('****') || value === '***')) {
+          continue;
+        }
         filtered[key] = value;
       }
     }
