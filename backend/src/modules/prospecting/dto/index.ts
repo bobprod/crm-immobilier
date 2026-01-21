@@ -23,9 +23,10 @@ export class CreateCampaignDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ enum: ['geographic', 'demographic', 'behavioral', 'mixed'] })
-  @IsEnum(['geographic', 'demographic', 'behavioral', 'mixed'])
-  type: string;
+  @ApiPropertyOptional({ enum: ['geographic', 'demographic', 'behavioral', 'mixed', 'requete', 'mandat', 'custom'], default: 'geographic' })
+  @IsOptional()
+  @IsEnum(['geographic', 'demographic', 'behavioral', 'mixed', 'requete', 'mandat', 'custom'])
+  type?: string;
 
   @ApiPropertyOptional({ description: 'Configuration de la campagne' })
   @IsOptional()
@@ -36,23 +37,37 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsNumber()
   targetCount?: number;
+
+  // Champs additionnels du frontend (ignorés mais acceptés)
+  @ApiPropertyOptional({ description: 'Moteurs de scraping' })
+  @IsOptional()
+  @IsArray()
+  scrapingEngines?: string[];
+
+  @ApiPropertyOptional({ description: 'Configuration du scraping' })
+  @IsOptional()
+  @IsObject()
+  scrapingConfig?: any;
 }
 
 /**
  * DTO pour configuration du funnel
  */
 export class FunnelConfigDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  location: string;
+  location?: string;
 
-  @ApiProperty({ type: [String] })
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
-  propertyType: string[];
+  propertyType?: string[];
 
-  @ApiProperty({ type: [String] })
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
-  targetType: string[];
+  targetType?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -168,6 +183,26 @@ export class UpdateLeadDto {
   @IsOptional()
   @IsNumber()
   budgetMax?: number;
+
+  @ApiPropertyOptional({ description: 'Lead validé' })
+  @IsOptional()
+  @IsBoolean()
+  validated?: boolean;
+
+  @ApiPropertyOptional({ description: 'Lead qualifié' })
+  @IsOptional()
+  @IsBoolean()
+  qualified?: boolean;
+
+  @ApiPropertyOptional({ description: 'Lead marqué comme spam' })
+  @IsOptional()
+  @IsBoolean()
+  spam?: boolean;
+
+  @ApiPropertyOptional({ description: 'Nom de l\'entreprise' })
+  @IsOptional()
+  @IsString()
+  company?: string;
 
   @ApiPropertyOptional({ description: 'Métadonnées du lead' })
   @IsOptional()

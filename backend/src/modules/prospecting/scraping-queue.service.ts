@@ -146,7 +146,7 @@ export class ScrapingQueueService {
 
     try {
       // 1. Scraper Facebook Marketplace
-      const result = await this.browserlessService.scrapeFacebookMarketplace(search!);
+      const result = await this.browserlessService.scrapeFacebookMarketplace(search!, userId);
 
       if (!result.success) {
         throw new Error(`Scraping failed: ${result.errors?.join(', ')}`);
@@ -194,7 +194,7 @@ export class ScrapingQueueService {
     this.logger.log(`Processing generic scraping job ${job.id}: ${url}`);
 
     try {
-      const result = await this.browserlessService.scrapeWebsite(url!, selectors!);
+      const result = await this.browserlessService.scrapeWebsite(url!, selectors!, userId);
 
       if (!result.success) {
         throw new Error(`Scraping failed: ${result.errors?.join(', ')}`);

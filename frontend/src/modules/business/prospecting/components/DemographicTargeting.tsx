@@ -85,7 +85,7 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
   onChange,
   initialCriteria,
 }) => {
-  const [criteria, setCriteria] = useState<DemographicCriteria>({
+  const [criteria, setCriteria] = useState<DemographicCriteria>(() => ({
     ageRange: { min: 25, max: 65 },
     incomeRange: { min: 2000, max: 15000 },
     familyStatus: [],
@@ -96,15 +96,29 @@ export const DemographicTargeting: React.FC<DemographicTargetingProps> = ({
     interests: [],
     professions: [],
     ...initialCriteria,
-  });
+  }));
+
+  // Utiliser une ref pour onChange afin d'éviter les re-renders infinis
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+
+  // Notifier le parent quand les critères changent (via useEffect pour éviter la boucle infinie)
+  const isFirstRender = React.useRef(true);
+  useEffect(() => {
+    // Ne pas appeler onChange au premier rendu
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    // Utiliser la ref pour toujours avoir la dernière version de onChange
+    onChangeRef.current(criteria);
+  }, [criteria]);
 
   const toggleArrayItem = <K extends keyof DemographicCriteria>(key: K, value: string) => {
     setCriteria((prev) => {
       const arr = prev[key] as string[];
       const newArr = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
-      const updated = { ...prev, [key]: newArr };
-      onChange(updated); // Call onChange immediately when criteria changes
-      return updated;
+      return { ...prev, [key]: newArr };
     });
   };
 

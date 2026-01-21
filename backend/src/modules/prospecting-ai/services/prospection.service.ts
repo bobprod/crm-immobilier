@@ -17,7 +17,7 @@ import {
 export class ProspectionService {
   private readonly logger = new Logger(ProspectionService.name);
 
-  constructor(private readonly aiOrchestrator: AiOrchestratorService) {}
+  constructor(private readonly aiOrchestrator: AiOrchestratorService) { }
 
   /**
    * Lancer une prospection
@@ -73,6 +73,7 @@ export class ProspectionService {
 
   /**
    * Moteur de prospection interne (via AI Orchestrator)
+   * ✅ Phase 1: Utilise les services du module Prospecting via AI Orchestrator
    */
   private async runInternalProspection(
     prospectionId: string,
@@ -81,10 +82,11 @@ export class ProspectionService {
     request: StartProspectionDto,
     startTime: number,
   ): Promise<ProspectionResult> {
-    this.logger.log('Running internal prospection engine...');
+    this.logger.log('Running internal prospection engine via AI Orchestrator...');
 
-    // Appeler l'AI Orchestrator avec objectif 'prospection'
-    const orchestrationResult = await this.aiOrchestrator.orchestrate({
+    // ✅ NOUVEAU: Workflow multi-étapes via AI Orchestrator
+    // Étape 1: Scraping via outil 'prospecting:scrape'
+    const scrapingResult = await this.aiOrchestrator.orchestrate({
       tenantId,
       userId,
       objective: OrchestrationObjective.PROSPECTION,
@@ -95,6 +97,7 @@ export class ProspectionService {
         budget: request.budget,
         keywords: request.keywords?.join(' '),
         maxResults: request.maxLeads || 20,
+        step: 'scraping', // Indiquer l'étape
       },
       options: {
         executionMode: 'auto',
@@ -103,17 +106,114 @@ export class ProspectionService {
       },
     });
 
-    // Mapper le résultat de l'orchestrateur vers ProspectionResult
-    const leads = this.extractLeadsFromOrchestration(orchestrationResult);
+    // Vérifier si le scraping a réussi
+    if (scrapingResult.status === OrchestrationStatus.FAILED) {
+      return this.buildFailedResult(
+        prospectionId,
+        request,
+        startTime,
+        scrapingResult.errors || ['Scraping failed'],
+      );
+    }
 
-    const stats = this.calculateStats(leads);
+    // Extraire les leads bruts du résultat de scraping
+    const rawItems = this.extractRawItemsFromOrchestration(scrapingResult);
 
-    const status = this.mapOrchestrationStatus(orchestrationResult.status);
+    if (rawItems.length === 0) {
+      this.logger.warn('No raw items found from scraping');
+      return this.buildEmptyResult(prospectionId, request, startTime);
+    }
+
+    this.logger.log(`Scraped ${rawItems.length} raw items, now analyzing with LLM...`);
+
+    // Étape 2: Analyse LLM via outil 'prospecting:analyze'
+    const analysisResult = await this.aiOrchestrator.orchestrate({
+      tenantId,
+      userId,
+      objective: OrchestrationObjective.PROSPECTION,
+      context: {
+        rawItems,
+        step: 'analysis',
+      },
+      options: {
+        executionMode: 'auto',
+        maxCost: request.options?.maxCost || 5,
+        timeout: 300000,
+      },
+    });
+
+    // Extraire les leads analysés
+    const analyzedLeads = this.extractAnalyzedLeadsFromOrchestration(analysisResult);
+
+    if (analyzedLeads.length === 0) {
+      this.logger.warn('No valid leads after LLM analysis');
+      return this.buildEmptyResult(prospectionId, request, startTime);
+    }
+
+    this.logger.log(`Analyzed ${analyzedLeads.length} leads, now qualifying and matching...`);
+
+    // Étape 3: Qualification et Matching via outils 'prospecting:qualify' et 'prospecting:match'
+    const qualifiedLeads: ProspectionLead[] = [];
+
+    for (const analyzedLead of analyzedLeads.slice(0, request.maxLeads || 20)) {
+      try {
+        // Qualifier le lead
+        const qualificationResult = await this.aiOrchestrator.orchestrate({
+          tenantId,
+          userId,
+          objective: OrchestrationObjective.PROSPECTION,
+          context: {
+            leadId: analyzedLead.id,
+            step: 'qualification',
+          },
+          options: {
+            executionMode: 'auto',
+            maxCost: 1,
+            timeout: 30000,
+          },
+        });
+
+        // Extraire le score et enrichir les infos
+        const qualificationData = qualificationResult.finalResult;
+
+        qualifiedLeads.push({
+          name: analyzedLead.name || 'Unknown',
+          email: analyzedLead.email,
+          phone: analyzedLead.phone,
+          company: analyzedLead.company,
+          role: analyzedLead.role,
+          context: analyzedLead.context || '',
+          source: analyzedLead.source || 'Unknown',
+          confidence: qualificationData?.score ? qualificationData.score / 100 : 0.7,
+        });
+      } catch (error) {
+        this.logger.warn(`Failed to qualify lead ${analyzedLead.id}: ${error.message}`);
+        // Ajouter le lead sans qualification complète
+        qualifiedLeads.push({
+          name: analyzedLead.name || 'Unknown',
+          email: analyzedLead.email,
+          phone: analyzedLead.phone,
+          company: analyzedLead.company,
+          role: analyzedLead.role,
+          context: analyzedLead.context || '',
+          source: analyzedLead.source || 'Unknown',
+          confidence: 0.5, // Score par défaut
+        });
+      }
+    }
+
+    // Calculer les statistiques
+    const stats = this.calculateStats(qualifiedLeads);
+
+    // Calculer le coût total (somme des coûts de toutes les étapes)
+    const totalCost =
+      (scrapingResult.metrics?.totalCost || 0) +
+      (analysisResult.metrics?.totalCost || 0);
 
     return {
       id: prospectionId,
-      status,
-      leads,
+      status: ProspectionStatus.COMPLETED,
+      leads: qualifiedLeads,
       stats,
       metadata: {
         zone: request.zone,
@@ -122,11 +222,11 @@ export class ProspectionService {
         budget: request.budget,
         keywords: request.keywords,
         executionTimeMs: Date.now() - startTime,
-        cost: orchestrationResult.metrics?.totalCost,
+        cost: totalCost,
       },
-      errors: orchestrationResult.errors,
+      errors: [],
       createdAt: new Date(),
-      completedAt: status !== ProspectionStatus.RUNNING ? new Date() : undefined,
+      completedAt: new Date(),
     };
   }
 
@@ -149,6 +249,120 @@ export class ProspectionService {
       request,
       Date.now(),
     );
+  }
+
+  /**
+   * Extraire les items bruts du résultat d'orchestration (étape scraping)
+   */
+  private extractRawItemsFromOrchestration(orchestrationResult: any): any[] {
+    const finalResult = orchestrationResult.finalResult;
+
+    if (!finalResult || !finalResult.data) {
+      return [];
+    }
+
+    // Le résultat du scraping devrait contenir un tableau de données brutes
+    const data = finalResult.data;
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    // Si c'est un objet avec une propriété items ou leads
+    if (data.items && Array.isArray(data.items)) {
+      return data.items;
+    }
+
+    if (data.leads && Array.isArray(data.leads)) {
+      return data.leads;
+    }
+
+    return [];
+  }
+
+  /**
+   * Extraire les leads analysés du résultat d'orchestration (étape analysis)
+   */
+  private extractAnalyzedLeadsFromOrchestration(orchestrationResult: any): any[] {
+    const finalResult = orchestrationResult.finalResult;
+
+    if (!finalResult || !finalResult.analyzed) {
+      this.logger.warn('No analyzed data found in orchestration result');
+      return [];
+    }
+
+    const analyzed = finalResult.analyzed;
+
+    if (!Array.isArray(analyzed)) {
+      this.logger.warn('Invalid analyzed format in orchestration result');
+      return [];
+    }
+
+    return analyzed.filter((item: any) => item && item.name);
+  }
+
+  /**
+   * Construire un résultat d'échec
+   */
+  private buildFailedResult(
+    prospectionId: string,
+    request: StartProspectionDto,
+    startTime: number,
+    errors: string[],
+  ): ProspectionResult {
+    return {
+      id: prospectionId,
+      status: ProspectionStatus.FAILED,
+      leads: [],
+      stats: {
+        totalLeads: 0,
+        withEmail: 0,
+        withPhone: 0,
+        avgConfidence: 0,
+      },
+      metadata: {
+        zone: request.zone,
+        targetType: request.targetType,
+        propertyType: request.propertyType,
+        budget: request.budget,
+        keywords: request.keywords,
+        executionTimeMs: Date.now() - startTime,
+      },
+      errors,
+      createdAt: new Date(),
+    };
+  }
+
+  /**
+   * Construire un résultat vide (aucun lead trouvé)
+   */
+  private buildEmptyResult(
+    prospectionId: string,
+    request: StartProspectionDto,
+    startTime: number,
+  ): ProspectionResult {
+    return {
+      id: prospectionId,
+      status: ProspectionStatus.COMPLETED,
+      leads: [],
+      stats: {
+        totalLeads: 0,
+        withEmail: 0,
+        withPhone: 0,
+        avgConfidence: 0,
+      },
+      metadata: {
+        zone: request.zone,
+        targetType: request.targetType,
+        propertyType: request.propertyType,
+        budget: request.budget,
+        keywords: request.keywords,
+        executionTimeMs: Date.now() - startTime,
+      },
+      errors: [],
+      createdAt: new Date(),
+      completedAt: new Date(),
+    };
   }
 
   /**

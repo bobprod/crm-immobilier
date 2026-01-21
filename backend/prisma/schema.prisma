@@ -791,6 +791,10 @@ model prospecting_leads {
   validationStatus      ValidationStatus              @default(pending)
   status                LeadStatus                    @default(new)
   matchedPropertyIds    String[]
+  validated             Boolean?                      @default(false)
+  qualified             Boolean?                      @default(false)
+  spam                  Boolean?                      @default(false)
+  company               String?
   aiModelVersion        String?
   lastContactedAt       DateTime?
   nextActionDate        DateTime?

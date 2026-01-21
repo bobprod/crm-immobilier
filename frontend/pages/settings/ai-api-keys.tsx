@@ -247,10 +247,16 @@ export default function AIApiKeysPage() {
         }
       } else if (response.status === 401) {
         addToast('Session expirée, veuillez vous reconnecter', 'error');
+      } else if (response.status === 429) {
+        addToast('Trop de requêtes. Veuillez patienter un instant.', 'warning');
+      } else {
+        const text = await response.text();
+        console.error('Failed to load keys:', response.status, text);
+        addToast('Erreur lors du chargement des clés API', 'error');
       }
     } catch (error) {
       console.error('Error loading API keys:', error);
-      addToast('Erreur lors du chargement des clés API', 'error');
+      addToast('Erreur lors du chargement des clés API. Vérifiez votre connexion.', 'error');
     } finally {
       setLoadingKeys(false);
     }
@@ -346,7 +352,7 @@ export default function AIApiKeysPage() {
   };
 
   /**
-   * Teste la validité d'une clé API directement avec l'API du provider
+   * Teste la validité d'une clé API via le backend pour éviter les problèmes CORS
    */
   const handleTestApiKey = async (provider: string, apiKey: string) => {
     if (!apiKey || apiKey.trim() === '') {
@@ -355,138 +361,84 @@ export default function AIApiKeysPage() {
     }
 
     setTestingKeys(prev => ({ ...prev, [provider]: true }));
-    console.log(`🔍 Testing ${provider} API key...`);
+    console.log(`🔍 Testing ${provider} API key via backend...`);
 
     try {
-      let isValid = false;
-      let models: string[] = [];
-
-      if (provider === 'openai') {
-        const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id).filter((id: string) =>
-            id.includes('gpt')
-          ) || [];
-          isValid = true;
-        }
-      } else if (provider === 'gemini') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
-        if (response.ok) {
-          const data = await response.json();
-          models = data.models?.map((m: any) => m.name.replace('models/', '')).filter((name: string) =>
-            name.includes('gemini')
-          ) || [];
-          isValid = true;
-        }
-      } else if (provider === 'anthropic') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }]
-          })
-        });
-        isValid = response.ok || response.status === 400;
-        models = PROVIDER_MODELS.anthropic;
-      } else if (provider === 'deepseek') {
-        const response = await fetch('https://api.deepseek.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || PROVIDER_MODELS.deepseek;
-          isValid = true;
-        }
-      } else if (provider === 'mistral') {
-        const response = await fetch('https://api.mistral.ai/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || [];
-          isValid = true;
-        }
-      } else if (provider === 'openrouter') {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || [];
-          isValid = true;
-        }
-      } else if (provider === 'serp') {
-        // Test SERP API
-        const response = await fetch(`https://serpapi.com/search.json?engine=google&q=test&num=1&api_key=${apiKey}`);
-        isValid = response.ok;
-      } else if (provider === 'firecrawl') {
-        // Test Firecrawl - Try a simple scrape of example.com
-        const response = await fetch('https://api.firecrawl.dev/v0/scrape', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({ url: 'https://example.com' })
-        });
-        isValid = response.ok;
-      } else if (provider === 'jina') {
-        // Test Jina Reader
-        const response = await fetch('https://r.jina.ai/https://example.com', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        isValid = response.ok;
-      } else if (provider === 'scrapingbee') {
-        // Test ScrapingBee
-        const response = await fetch(`https://app.scrapingbee.com/api/v1?api_key=${apiKey}&url=https://example.com`);
-        isValid = response.ok;
-      } else if (provider === 'browserless') {
-        // Test Browserless
-        const response = await fetch(`https://chrome.browserless.io/content?token=${apiKey}&url=https://example.com`);
-        isValid = response.ok;
-      } else if (provider === 'pica') {
-        // Validation simplifiée pour Pica (vérification de format uniquement)
-        // Les appels API directs depuis le navigateur sont souvent bloqués (CORS) ou l'endpoint api.pica.dev peut être instable
-        // On vérifie que la clé ressemble à une clé Pica (commence souvent par pica_ ou sk_) et a une longueur suffisante
-        if (apiKey && apiKey.length > 5) {
-          isValid = true;
-          // Simulation d'un délai pour l'UX
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } else {
-          isValid = false;
-        }
+      const token = getAuthToken();
+      if (!token) {
+        addToast('Authentification requise', 'error');
+        setTestingKeys(prev => ({ ...prev, [provider]: false }));
+        return;
       }
 
-      if (isValid) {
-        setValidatedKeys(prev => ({ ...prev, [provider]: true }));
-        if (models.length > 0) {
-          setAvailableModelsPerKey(prev => ({ ...prev, [provider]: models }));
+      // Cas spécial pour Pica (validation simple côté client car souvent pas implémenté côté backend ou instable)
+      if (provider === 'pica') {
+        if (apiKey && apiKey.length > 5) {
+          // Simulation d'un délai pour l'UX
+          await new Promise(resolve => setTimeout(resolve, 800));
+          setValidatedKeys(prev => ({ ...prev, [provider]: true }));
+          addToast(`✅ Clé PICA format valide`, 'success');
+        } else {
+          setValidatedKeys(prev => ({ ...prev, [provider]: false }));
+          addToast(`❌ Clé PICA invalide (trop courte)`, 'error');
         }
-        addToast(`✅ Clé ${provider.toUpperCase()} validée! ${models.length} modèles disponibles`, 'success');
-        console.log(`✅ ${provider} validated with ${models.length} models`);
+        setTestingKeys(prev => ({ ...prev, [provider]: false }));
+        return;
+      }
 
-        // Mettre à jour le provider et modèle sélectionnés
-        setSelectedProvider(provider);
-        if (models.length > 0) {
-          setSelectedModel(models[0]);
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      apiUrl = apiUrl.replace(/\/api$/, '');
+
+      const targetUrl = `${apiUrl}/api/ai-billing/api-keys/validate`;
+      console.log(`📡 Fetching: ${targetUrl}`);
+
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ provider, apiKey }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.valid) {
+          const models = data.models || [];
+          setValidatedKeys(prev => ({ ...prev, [provider]: true }));
+
+          if (models.length > 0) {
+            setAvailableModelsPerKey(prev => ({ ...prev, [provider]: models }));
+            // Si c'est le provider sélectionné, sélectionner le premier modèle par défaut
+            if (selectedProvider === provider) {
+              setSelectedModel(models[0]);
+            }
+          }
+
+          addToast(`✅ Clé ${provider.toUpperCase()} validée! ${models.length > 0 ? models.length + ' modèles' : ''}`, 'success');
+        } else {
+          setValidatedKeys(prev => ({ ...prev, [provider]: false }));
+          addToast(`❌ Clé ${provider.toUpperCase()} invalide: ${data.message || 'Erreur inconnue'}`, 'error');
         }
       } else {
-        setValidatedKeys(prev => ({ ...prev, [provider]: false }));
-        addToast(`❌ Clé ${provider.toUpperCase()} invalide`, 'error');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Erreur serveur');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error testing ${provider}:`, error);
       setValidatedKeys(prev => ({ ...prev, [provider]: false }));
-      addToast(`❌ Erreur lors du test de la clé ${provider.toUpperCase()}`, 'error');
+
+      let errorMessage = 'Erreur réseau';
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erreur de connexion (CORS, AdBlock ou backend éteint)';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      addToast(`❌ Erreur lors du test de la clé ${provider.toUpperCase()}: ${errorMessage}`, 'error');
     } finally {
       setTestingKeys(prev => ({ ...prev, [provider]: false }));
     }

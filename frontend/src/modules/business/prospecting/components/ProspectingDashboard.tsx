@@ -24,6 +24,7 @@ import { GeographicTargeting } from './GeographicTargeting';
 import { DemographicTargeting } from './DemographicTargeting';
 import { SalesFunnel } from './SalesFunnel';
 import { LeadValidator } from './LeadValidator';
+import { LeadQualificationPanel } from './LeadQualificationPanel';
 import { AiProspectionPanel } from './AiProspectionPanel';
 import { StatCard, CampaignCard } from './dashboard';
 
@@ -35,7 +36,7 @@ interface ProspectingDashboardProps {
   language?: 'fr' | 'en';
 }
 
-type TabType = 'campaigns' | 'ai-prospection' | 'leads' | 'historique';
+type TabType = 'campaigns' | 'ai-prospection' | 'leads' | 'historique' | 'targeting' | 'funnel' | 'scraping';
 
 // ============================================
 // EXTRACTED COMPONENTS
@@ -229,13 +230,6 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
     const campaign = await createCampaign({
       ...newCampaign,
       config: newCampaign.config,
-      scrapingEngines: newCampaign.scrapingEngines || [],
-      scrapingConfig: newCampaign.scrapingConfig || {
-        query: '',
-        urls: [],
-        maxResults: 50,
-        engine: '',
-      },
     });
     if (campaign) {
       setShowCampaignForm(false);
@@ -445,6 +439,108 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
     [updateLead]
   );
 
+  // Handle verify emails
+  const handleVerifyEmails = useCallback(async () => {
+    if (!selectedCampaignId) return;
+    const campaignLeads = leads.filter(l => !l.spam && l.email);
+    const leadIds = campaignLeads.map(l => l.id);
+    if (leadIds.length > 0) {
+      await handleLeadValidation(leadIds);
+    }
+  }, [selectedCampaignId, leads, handleLeadValidation]);
+
+  // Handle verify phones
+  const handleVerifyPhones = useCallback(async () => {
+    if (!selectedCampaignId) return;
+    const campaignLeads = leads.filter(l => !l.spam && l.phone);
+    for (const lead of campaignLeads) {
+      // Simple phone validation
+      const phoneValid = /^\+?[0-9\s\-\(\)]+$/.test(lead.phone || '');
+      if (!phoneValid) {
+        await updateLead(lead.id, { qualified: false });
+      }
+    }
+  }, [selectedCampaignId, leads, updateLead]);
+
+  // Handle detect spam
+  const handleDetectSpam = useCallback(async () => {
+    if (!selectedCampaignId) return;
+    const campaignLeads = leads.filter(l => !l.spam);
+
+    for (const lead of campaignLeads) {
+      let isSpam = false;
+
+      // Check email patterns
+      if (lead.email) {
+        const spamEmailPatterns = [
+          /^test\d*@/i,
+          /^fake\d*@/i,
+          /^spam\d*@/i,
+          /\d{8,}@/,
+          /@(mailinator|guerrillamail|tempmail|throwaway)/i,
+        ];
+        isSpam = spamEmailPatterns.some(p => p.test(lead.email!));
+      }
+
+      // Check name patterns
+      if (!isSpam && (lead.firstName || lead.lastName)) {
+        const spamNamePatterns = [
+          /^(test|fake|spam|xxx|asdf|qwerty)/i,
+          /\d{4,}/,
+          /^[a-z]{1,2}$/i,
+        ];
+        isSpam = spamNamePatterns.some(p =>
+          p.test(lead.firstName || '') || p.test(lead.lastName || '')
+        );
+      }
+
+      if (isSpam) {
+        await updateLead(lead.id, { spam: true, qualified: false });
+      }
+    }
+  }, [selectedCampaignId, leads, updateLead]);
+
+  // Handle remove duplicates
+  const handleRemoveDuplicates = useCallback(async () => {
+    if (!selectedCampaignId) return;
+    const campaignLeads = leads.filter(l => !l.spam);
+
+    const emailMap = new Map<string, ProspectingLead>();
+    const phoneMap = new Map<string, ProspectingLead>();
+    const duplicates = new Set<string>();
+
+    for (const lead of campaignLeads) {
+      if (lead.email) {
+        const existing = emailMap.get(lead.email.toLowerCase());
+        if (existing) {
+          // Keep the one with more data or higher score
+          const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
+          const removeLead = keepLead === lead ? existing : lead;
+          duplicates.add(removeLead.id);
+          emailMap.set(lead.email.toLowerCase(), keepLead);
+        } else {
+          emailMap.set(lead.email.toLowerCase(), lead);
+        }
+      }
+
+      if (lead.phone && !duplicates.has(lead.id)) {
+        const existing = phoneMap.get(lead.phone);
+        if (existing && !duplicates.has(existing.id)) {
+          const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
+          const removeLead = keepLead === lead ? existing : lead;
+          duplicates.add(removeLead.id);
+        } else if (!existing) {
+          phoneMap.set(lead.phone, lead);
+        }
+      }
+    }
+
+    // Mark duplicates as spam
+    for (const duplicateId of duplicates) {
+      await updateLead(duplicateId, { spam: true, qualified: false });
+    }
+  }, [selectedCampaignId, leads, updateLead]);
+
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'campaigns', label: 'Mes Campagnes', icon: '📋' },
     { id: 'ai-prospection', label: 'Prospection IA', icon: '🤖' },
@@ -598,36 +694,45 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
             {/* Other Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <button
-                onClick={() => setActiveTab('targeting')}
+                onClick={() => {
+                  setActiveTab('leads');
+                  setActiveLeadsSubTab('funnel');
+                }}
                 className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white text-left hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg group"
               >
                 <div className="text-3xl mb-3">📍</div>
-                <h3 className="font-bold text-lg">Ciblage Geographique</h3>
-                <p className="text-blue-100 text-sm mt-1">Definir les zones de prospection</p>
+                <h3 className="font-bold text-lg">Pipeline de Leads</h3>
+                <p className="text-blue-100 text-sm mt-1">Visualisez vos leads par étape</p>
                 <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  Configurer →
+                  Voir le pipeline →
                 </span>
               </button>
 
               <button
-                onClick={() => setActiveTab('funnel')}
+                onClick={() => {
+                  setActiveTab('leads');
+                  setActiveLeadsSubTab('funnel');
+                }}
                 className="p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white text-left hover:from-purple-600 hover:to-pink-700 transition-all shadow-lg group"
               >
                 <div className="text-3xl mb-3">🔄</div>
-                <h3 className="font-bold text-lg">Tunnel de Vente</h3>
+                <h3 className="font-bold text-lg">Stages de Conversion</h3>
                 <p className="text-purple-100 text-sm mt-1">Suivre la progression des leads</p>
                 <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  Voir le tunnel →
+                  Voir les stages →
                 </span>
               </button>
 
               <button
-                onClick={() => setActiveTab('validation')}
+                onClick={() => {
+                  setActiveTab('leads');
+                  setActiveLeadsSubTab('validation');
+                }}
                 className="p-6 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl text-white text-left hover:from-teal-600 hover:to-cyan-700 transition-all shadow-lg group"
               >
                 <div className="text-3xl mb-3">🛡️</div>
                 <h3 className="font-bold text-lg">Validation Anti-Spam</h3>
-                <p className="text-teal-100 text-sm mt-1">Verifier la qualite des leads</p>
+                <p className="text-teal-100 text-sm mt-1">Nettoyer et qualifier les leads</p>
                 <span className="inline-block mt-3 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
                   Valider →
                 </span>
@@ -718,22 +823,48 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 📊 Tableau de bord
               </button>
               <button
-                onClick={() => setActiveLeadsSubTab('funnel')}
-                className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${activeLeadsSubTab === 'funnel'
+                onClick={() => {
+                  // Vérifier si validation minimale effectuée
+                  const validationRate = leads.length > 0
+                    ? (leads.filter(l => l.validated).length / leads.length) * 100
+                    : 0;
+
+                  if (validationRate < 30 && leads.length > 0) {
+                    alert("⚠️ Attention: Vous devez d'abord valider vos leads dans l'onglet \"Nettoyage & Validation\" avant d'accéder aux Stages.");
+                    setActiveLeadsSubTab('validation');
+                  } else {
+                    setActiveLeadsSubTab('funnel');
+                  }
+                }}
+                className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap relative ${activeLeadsSubTab === 'funnel'
                   ? 'text-blue-600 border-blue-600'
                   : 'text-gray-600 border-transparent hover:text-blue-600'
                   }`}
               >
                 🔄 Stages
+                {leads.length > 0 && leads.filter(l => l.validated).length === 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                )}
+                {leads.length > 0 && leads.filter(l => l.validated).length > 0 && leads.filter(l => l.validated).length < leads.length * 0.5 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full"></span>
+                )}
               </button>
               <button
                 onClick={() => setActiveLeadsSubTab('validation')}
-                className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${activeLeadsSubTab === 'validation'
+                className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap relative ${activeLeadsSubTab === 'validation'
                   ? 'text-green-600 border-green-600'
                   : 'text-gray-600 border-transparent hover:text-green-600'
                   }`}
               >
                 ✓ Nettoyage & Validation
+                {leads.length > 0 && leads.filter(l => l.validated).length < leads.length * 0.8 && (
+                  <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full font-bold">
+                    {leads.filter(l => !l.validated).length} à traiter
+                  </span>
+                )}
+                {leads.length > 0 && leads.filter(l => l.validated).length >= leads.length * 0.8 && (
+                  <span className="ml-2 text-green-500">✓</span>
+                )}
               </button>
             </div>
 
@@ -794,9 +925,85 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
             {/* Tunnel Sub-tab - Stages de conversion */}
             {activeLeadsSubTab === 'funnel' && (
               <div className="space-y-6">
+                {/* Vérification workflow - Validation requise avant Stages */}
+                {leads.length > 0 && leads.filter(l => l.validated).length === 0 ? (
+                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-8 text-center">
+                    <div className="text-6xl mb-4">⚠️</div>
+                    <h3 className="text-2xl font-bold text-yellow-800 mb-3">
+                      Validation requise avant passage aux Stages
+                    </h3>
+                    <p className="text-yellow-700 mb-6 max-w-2xl mx-auto">
+                      Vous devez d'abord nettoyer et valider vos leads dans l'onglet
+                      <strong> "Nettoyage & Validation" </strong>
+                      pour garantir la qualité de votre pipeline de conversion.
+                    </p>
+                    <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl mx-auto">
+                      <div className="bg-white rounded-lg p-4 border border-yellow-200">
+                        <div className="text-2xl font-bold text-gray-900">{leads.length}</div>
+                        <div className="text-xs text-gray-600">Leads bruts</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border border-yellow-200">
+                        <div className="text-2xl font-bold text-yellow-600">0</div>
+                        <div className="text-xs text-gray-600">Validés</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 border border-yellow-200">
+                        <div className="text-2xl font-bold text-red-600">
+                          {Math.round((leads.filter(l => l.validated).length / leads.length) * 100) || 0}%
+                        </div>
+                        <div className="text-xs text-gray-600">Taux validation</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveLeadsSubTab('validation')}
+                      className="px-8 py-4 bg-yellow-600 text-white rounded-xl font-bold hover:bg-yellow-700 transition shadow-lg inline-flex items-center gap-2"
+                    >
+                      <span>✅</span>
+                      Aller à Nettoyage & Validation
+                    </button>
+                  </div>
+                ) : leads.filter(l => l.validated).length < leads.length * 0.5 && leads.length > 0 ? (
+                  <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="text-4xl">🚧</div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-orange-800 mb-2">
+                          Attention: Taux de validation faible
+                        </h4>
+                        <p className="text-orange-700 mb-3">
+                          Seulement <strong>{leads.filter(l => l.validated).length}/{leads.length}</strong> leads validés
+                          ({Math.round((leads.filter(l => l.validated).length / leads.length) * 100)}%).
+                          Nous recommandons de valider au moins 50% des leads avant de passer aux stages.
+                        </p>
+                        <button
+                          onClick={() => setActiveLeadsSubTab('validation')}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition"
+                        >
+                          Améliorer la validation
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
                   <h3 className="text-xl font-bold mb-2">Pipeline de Leads</h3>
                   <p className="text-blue-100">Gérez le flux de conversion: Validation → Qualification → Prêt pour contact</p>
+                  <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="font-bold text-2xl">{leads.filter(l => l.validated).length}</div>
+                      <div className="text-blue-100">Leads validés</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="font-bold text-2xl">{leads.filter(l => l.qualified).length}</div>
+                      <div className="text-blue-100">Leads qualifiés</div>
+                    </div>
+                    <div className="bg-white/20 rounded-lg p-3">
+                      <div className="font-bold text-2xl">
+                        {leads.length > 0 ? Math.round((leads.filter(l => l.validated && l.qualified).length / leads.length) * 100) : 0}%
+                      </div>
+                      <div className="text-blue-100">Taux de conversion</div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Stage Filter Buttons */}
@@ -857,68 +1064,216 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
 
                 {/* Validation Tools */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <button className="bg-white border-2 border-green-200 rounded-xl p-4 hover:bg-green-50 transition">
+                  <button
+                    onClick={handleVerifyEmails}
+                    disabled={!selectedCampaignId || loading}
+                    className="bg-white border-2 border-green-200 rounded-xl p-4 hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">✉️</div>
                     <div className="font-bold text-gray-900">Vérifier Emails</div>
                     <div className="text-sm text-gray-600">Validez la syntaxe & domaines</div>
                   </button>
-                  <button className="bg-white border-2 border-blue-200 rounded-xl p-4 hover:bg-blue-50 transition">
+                  <button
+                    onClick={handleVerifyPhones}
+                    disabled={!selectedCampaignId || loading}
+                    className="bg-white border-2 border-blue-200 rounded-xl p-4 hover:bg-blue-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">📱</div>
                     <div className="font-bold text-gray-900">Vérifier Téléphones</div>
                     <div className="text-sm text-gray-600">Validez les numéros</div>
                   </button>
-                  <button className="bg-white border-2 border-red-200 rounded-xl p-4 hover:bg-red-50 transition">
+                  <button
+                    onClick={handleDetectSpam}
+                    disabled={!selectedCampaignId || loading}
+                    className="bg-white border-2 border-red-200 rounded-xl p-4 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">🚫</div>
                     <div className="font-bold text-gray-900">Détecter Spams</div>
                     <div className="text-sm text-gray-600">Trouvez les leads suspects</div>
                   </button>
-                  <button className="bg-white border-2 border-purple-200 rounded-xl p-4 hover:bg-purple-50 transition">
+                  <button
+                    onClick={handleRemoveDuplicates}
+                    disabled={!selectedCampaignId || loading}
+                    className="bg-white border-2 border-purple-200 rounded-xl p-4 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">🔄</div>
                     <div className="font-bold text-gray-900">Supprim. Doublons</div>
                     <div className="text-sm text-gray-600">Fusionnez les copies</div>
                   </button>
                 </div>
 
-                {/* Quality Score Indicator */}
+                {/* Quality Score Indicator - Statistiques en temps réel */}
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h4 className="font-bold text-gray-900 mb-4">📊 Qualité des Leads</h4>
+                  <h4 className="font-bold text-gray-900 mb-4">📊 Qualité des Leads en Temps Réel</h4>
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-semibold text-gray-700">Emails Valides</span>
-                        <span className="text-sm font-bold text-green-600">87%</span>
+                        <span className={`text-sm font-bold ${leads.length > 0 && leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length >= 0.8
+                          ? 'text-green-600'
+                          : leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length >= 0.5
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                          }`}>
+                          {leads.length > 0
+                            ? Math.round((leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length) * 100)
+                            : 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                        <div
+                          className={`h-2 rounded-full transition-all ${leads.length > 0 && leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length >= 0.8
+                            ? 'bg-green-500'
+                            : leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length >= 0.5
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                            }`}
+                          style={{ width: `${leads.length > 0 ? Math.round((leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length) * 100) : 0}%` }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-semibold text-gray-700">Téléphones Valides</span>
-                        <span className="text-sm font-bold text-blue-600">92%</span>
+                        <span className={`text-sm font-bold ${leads.length > 0 && leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length >= 0.8
+                          ? 'text-blue-600'
+                          : leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length >= 0.5
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                          }`}>
+                          {leads.length > 0
+                            ? Math.round((leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length) * 100)
+                            : 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                        <div
+                          className={`h-2 rounded-full transition-all ${leads.length > 0 && leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length >= 0.8
+                            ? 'bg-blue-500'
+                            : leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length >= 0.5
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                            }`}
+                          style={{ width: `${leads.length > 0 ? Math.round((leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length) * 100) : 0}%` }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-semibold text-gray-700">Sans Spam</span>
-                        <span className="text-sm font-bold text-purple-600">95%</span>
+                        <span className={`text-sm font-bold ${leads.length > 0 && leads.filter(l => !l.spam).length / leads.length >= 0.9
+                          ? 'text-purple-600'
+                          : leads.filter(l => !l.spam).length / leads.length >= 0.7
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                          }`}>
+                          {leads.length > 0
+                            ? Math.round((leads.filter(l => !l.spam).length / leads.length) * 100)
+                            : 0}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: '95%' }}></div>
+                        <div
+                          className={`h-2 rounded-full transition-all ${leads.length > 0 && leads.filter(l => !l.spam).length / leads.length >= 0.9
+                            ? 'bg-purple-500'
+                            : leads.filter(l => !l.spam).length / leads.length >= 0.7
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                            }`}
+                          style={{ width: `${leads.length > 0 ? Math.round((leads.filter(l => !l.spam).length / leads.length) * 100) : 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-700">Taux de Validation Global</span>
+                        <span className={`text-sm font-bold ${leads.length > 0 && leads.filter(l => l.validated).length / leads.length >= 0.8
+                          ? 'text-green-600'
+                          : leads.filter(l => l.validated).length / leads.length >= 0.5
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                          }`}>
+                          {leads.length > 0
+                            ? Math.round((leads.filter(l => l.validated).length / leads.length) * 100)
+                            : 0}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${leads.length > 0 && leads.filter(l => l.validated).length / leads.length >= 0.8
+                            ? 'bg-green-500'
+                            : leads.filter(l => l.validated).length / leads.length >= 0.5
+                              ? 'bg-yellow-500'
+                              : 'bg-red-500'
+                            }`}
+                          style={{ width: `${leads.length > 0 ? Math.round((leads.filter(l => l.validated).length / leads.length) * 100) : 0}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Indicateur de crédibilité */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-900">Score de Crédibilité</span>
+                      <div className="flex items-center gap-2">
+                        {leads.length > 0 && (() => {
+                          const emailScore = leads.filter(l => l.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(l.email)).length / leads.length;
+                          const phoneScore = leads.filter(l => l.phone && /^\+?[0-9\s\-\(\)]{8,}$/.test(l.phone)).length / leads.length;
+                          const spamScore = leads.filter(l => !l.spam).length / leads.length;
+                          const validationScore = leads.filter(l => l.validated).length / leads.length;
+                          const overallScore = Math.round(((emailScore + phoneScore + spamScore + validationScore) / 4) * 100);
+
+                          return (
+                            <>
+                              <span className={`text-2xl font-bold ${overallScore >= 80 ? 'text-green-600' :
+                                overallScore >= 60 ? 'text-yellow-600' :
+                                  overallScore >= 40 ? 'text-orange-600' : 'text-red-600'
+                                }`}>
+                                {overallScore}%
+                              </span>
+                              <span className="text-2xl">
+                                {overallScore >= 80 ? '🌟' : overallScore >= 60 ? '✅' : overallScore >= 40 ? '⚠️' : '❌'}
+                              </span>
+                            </>
+                          );
+                        })()}
+                        {leads.length === 0 && <span className="text-gray-400">N/A</span>}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {selectedCampaignId ? (
-                  <LeadValidator
-                    leads={leads}
-                    onValidate={handleLeadValidation}
-                    onUpdateLead={handleLeadUpdate}
-                  />
+                  <>
+                    {/* Nouveau panneau de qualification intelligente */}
+                    <LeadQualificationPanel
+                      leads={leads}
+                      onLeadQualified={(leadId, qualified) => {
+                        updateLead(leadId, {
+                          qualified,
+                          validated: true,
+                          status: qualified ? 'qualified' : 'new'
+                        });
+                      }}
+                      onLeadRejected={(leadId) => {
+                        updateLead(leadId, {
+                          spam: true,
+                          qualified: false,
+                          validated: false
+                        });
+                      }}
+                    />
+
+                    {/* Ancien validateur pour les actions manuelles */}
+                    <div className="mt-6">
+                      <LeadValidator
+                        leads={leads}
+                        onValidate={handleLeadValidation}
+                        onUpdateLead={handleLeadUpdate}
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div className="bg-white rounded-xl shadow-lg p-12 text-center border border-gray-200">
                     <div className="text-5xl mb-4">🧹</div>
@@ -948,7 +1303,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
               </div>
             )}
           </div>
-        )}
+        )
+        }
 
         {/* Scraping Tab */}
         {

@@ -1,0 +1,11 @@
+
+> crm-immobilier-backend@1.0.0 test
+> jest
+
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+No files found in C:\Users\DELL\Desktop\project dev\CRM_IMMOBILIER_COMPLET_FINAL\.git\crm-immobilier\backend.
+Make sure Jest's configuration does not exclude this directory.
+To set up Jest, make sure a package.json file exists.
+Jest Documentation: https://jestjs.io/docs/configuration
+Pattern:  - 0 matches

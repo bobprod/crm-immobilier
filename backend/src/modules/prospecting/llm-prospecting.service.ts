@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/database/prisma.service';
 import { LLMRouterService } from '../intelligence/llm-config/llm-router.service';
+import { UnifiedValidationService } from '../../shared/validation/unified-validation.service';
 import {
   RawScrapedItem,
   LLMAnalyzedLead,
@@ -58,6 +59,7 @@ TYPES DE BIENS:
     private prisma: PrismaService,
     private configService: ConfigService,
     private llmRouter: LLMRouterService,
+    private validationService: UnifiedValidationService,
   ) { }
 
   // ============================================
@@ -347,8 +349,8 @@ Retourne au format:
     // 1. Analyser avec le LLM (avec routing intelligent)
     const analyzed = await this.analyzeRawItem(raw, userId, providerOverride);
 
-    // 2. Valider les donnees
-    const validation = this.validateLead(analyzed);
+    // 2. Valider les donnees avec detection spam (async)
+    const validation = await this.validateLead(analyzed, raw.text);
 
     // 3. Calculer le score global
     const score = this.calculateGlobalScore(analyzed, validation);
@@ -437,8 +439,8 @@ Retourne au format:
           const analyzed = analyzedBatch[j];
 
           try {
-            // Valider et enrichir
-            const validation = await this.validateLead(analyzed);
+            // Valider et enrichir avec detection spam
+            const validation = await this.validateLead(analyzed, raw.text);
             const score = this.calculateGlobalScore(analyzed, validation);
 
             const lead: ProspectingLeadCreateInput = {
@@ -1019,16 +1021,24 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
   // ============================================
 
   /**
-   * Valider un lead analyse
+   * Valider un lead analyse avec UnifiedValidationService
    */
-  private validateLead(analyzed: LLMAnalyzedLead): ValidationResult {
+  private async validateLead(analyzed: LLMAnalyzedLead, rawText?: string): Promise<ValidationResult> {
+    // Validation avancée avec UnifiedValidationService
+    const validation = await this.validationService.validateFull(
+      analyzed.email,
+      analyzed.phone,
+      rawText, // Texte brut optionnel pour detection spam
+      { country: 'TN', detectSpam: !!rawText, strictMode: true }
+    );
+
     const flags = {
-      hasValidEmail: this.isValidEmail(analyzed.email),
-      hasValidPhone: this.isValidPhone(analyzed.phone),
+      hasValidEmail: validation.email?.isValid || false,
+      hasValidPhone: validation.phone?.isValid || false,
       hasName: !!(analyzed.firstName || analyzed.lastName),
       hasBudget: !!(analyzed.budget?.min || analyzed.budget?.max),
       hasLocation: !!analyzed.city,
-      isSpam: this.isSpam(analyzed),
+      isSpam: validation.spam?.isSpam || false,
       isDuplicate: false, // A verifier en base
     };
 
@@ -1038,12 +1048,23 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     // Points positifs
     if (flags.hasValidEmail) {
       score += 25;
+      // Bonus pour email professionnel
+      if (validation.email && !validation.email.format.isFreeProvider) {
+        score += 5;
+      }
     } else if (analyzed.email) {
       reasons.push('Email invalide');
+      if (validation.email?.errors) {
+        reasons.push(...validation.email.errors);
+      }
     }
 
     if (flags.hasValidPhone) {
       score += 25;
+      // Bonus pour mobile
+      if (validation.phone?.details.type === 'mobile') {
+        score += 5;
+      }
     } else if (analyzed.phone) {
       reasons.push('Telephone invalide');
     }
@@ -1052,10 +1073,13 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     if (flags.hasBudget) score += 20;
     if (flags.hasLocation) score += 15;
 
-    // Points negatifs
+    // Points negatifs - Spam (utilise UnifiedValidationService)
     if (flags.isSpam) {
       score -= 50;
-      reasons.push('Detecte comme spam');
+      reasons.push('Détecté comme spam');
+      if (validation.spam?.reasons) {
+        reasons.push(...validation.spam.reasons);
+      }
     }
 
     // Determiner le statut
@@ -1076,16 +1100,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure:
     };
   }
 
-  private isValidEmail(email?: string): boolean {
-    if (!email) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  private isValidPhone(phone?: string): boolean {
-    if (!phone) return false;
-    const cleaned = phone.replace(/[\s.-]/g, '');
-    return /^(?:\+216|00216)?[2579]\d{7}$/.test(cleaned);
-  }
+  // Validation déplacée vers UnifiedValidationService
 
   private isSpam(analyzed: LLMAnalyzedLead): boolean {
     // Detecter les patterns de spam

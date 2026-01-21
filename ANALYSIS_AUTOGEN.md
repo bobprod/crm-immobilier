@@ -1,8 +1,8 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-19T11:05:59.733Z
+Generated: 2026-01-20T16:58:54.428Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-18T17:42:13.518Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-19T11:05:59.785Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
@@ -10,8 +10,24 @@ Generated: 2026-01-19T11:05:59.733Z
 - ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-01-01T20:00:57.976Z
 - ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-01-11T23:34:25.899Z
 - ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-01-11T23:34:25.902Z
+- BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-20T00:56:12.931Z
+- BUTTON_FIX.md  —  mtime: 2026-01-19T23:11:48.935Z
+- FINAL_SUMMARY.md  —  mtime: 2026-01-20T00:39:35.737Z
+- FIX_BOUTONS_TEST.md  —  mtime: 2026-01-20T01:18:05.782Z
+- FLUX_UTILISATEUR.md  —  mtime: 2026-01-19T22:58:28.036Z
+- IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-20T00:39:35.723Z
+- IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-19T22:52:32.255Z
+- IMPROVEMENTS.md  —  mtime: 2026-01-19T23:04:30.681Z
 - INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
 - MAJ_2026-01-17.md  —  mtime: 2026-01-17T14:14:36.727Z
+- PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-19T23:37:13.007Z
+- QUICK_SUMMARY.md  —  mtime: 2026-01-20T00:49:53.044Z
+- README_SOLUTION.md  —  mtime: 2026-01-19T22:58:28.036Z
+- RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-20T00:49:22.561Z
+- TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-19T22:52:32.242Z
+- TEST_GUIDE.md  —  mtime: 2026-01-20T00:39:35.736Z
+- TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-01-20T00:48:25.789Z
+- TROUBLESHOOTING.md  —  mtime: 2026-01-19T22:58:28.036Z
 - VISUAL_ARCHITECTURE_GUIDE.md  —  mtime: 2026-01-11T23:34:26.095Z
 - analysis\db-read-rows.md  —  mtime: 2026-01-17T14:43:47.511Z
 - analysis\db-read-tests.md  —  mtime: 2026-01-17T17:53:52.392Z
@@ -20,8 +36,8 @@ Generated: 2026-01-19T11:05:59.733Z
 - analysis\sensitive-fields.md  —  mtime: 2026-01-17T17:53:52.584Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-01-18T17:39:26.109Z
-- frontend  —  mtime: 2026-01-17T14:00:43.058Z
+- backend  —  mtime: 2026-01-20T16:50:12.827Z
+- frontend  —  mtime: 2026-01-20T01:09:20.940Z
 - backend\prisma\schema.prisma  —  mtime: 2026-01-18T16:32:00.350Z
 
 ## Top of selected files
@@ -29,10 +45,10 @@ Generated: 2026-01-19T11:05:59.733Z
 ### ANALYSIS_AUTOGEN.md
 ```
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-18T17:42:13.506Z
+Generated: 2026-01-19T11:05:59.733Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-18T15:14:53.139Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-18T17:42:13.518Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
@@ -194,130 +210,119 @@ Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
 ## 🔴 Architecture
 ```
 
-### INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md
+### BOUTONS_TEST_AJOUTES.md
 ```
-# Architecture Multi-Sources - Investment Intelligence Module
+# ✅ Boutons de Test API Ajoutés - Résumé
 
-## 🌍 Vue d'Ensemble
+## 🎯 Problème Résolu
 
-Le module Investment Intelligence doit supporter **plusieurs plateformes d'investissement immobilier** de différents pays/régions, avec un système flexible permettant d'ajouter de nouvelles sources facilement.
+**Problème:** Les boutons de test à côté des champs API key avaient été supprimés.
+
+**Solution:** Réimplémentation complète des boutons de test avec validation directe des providers.
 
 ---
 
-## 📍 Plateformes Supportées (Roadmap)
+## 🔧 Modifications Effectuées
 
-### Phase 1 - France (MVP)
-- ✅ **Bricks.co** - Crowdfunding immobilier résidentiel
-- ✅ **Homunity** - Investissement participatif immobilier
-- ✅ **Anaxago** - Crowdfunding equity & immobilier
-
-### Phase 2 - France (Extension)
-- 🔄 **Fundimmo** - SCPI & crowdfunding
-- 🔄 **Lymo** - Investissement fractionné
-- 🔄 **Raizers** - Crowdfunding immobilier & énergies renouvelables
-- 🔄 **Wiseed** - Crowdfunding startup & immobilier
-
-### Phase
+### 1. Import de l'icône TestTube
+```typescript
+import { TestTube } from 'lucide-react';
 ```
 
-### MAJ_2026-01-17.md
-```
-# MAJ 2026-01-17 — Architecture & Cartographie des modules
-
-Date: 2026-01-17
-
-Résumé exécutif
-- Ce document centralise l'architecture actuelle du projet, les modules backend/frontend/BDD et les correctifs prioritaires identifiés lors des analyses.
-
-## 1) Vue d'ensemble (haut niveau)
-```mermaid
-flowchart LR
-  subgraph Frontend
-    FE[Next.js Frontend]
-  end
-  subgraph Backend
-    API[NestJS API]
-    AUTH[Auth Module]
-    USERS[Users]
-    PROPS[Properties]
-    PROSPECTS[Prospects]
-    NOTIFS[Notifications]
-    AI[AI / LLM Orchestrator]
-    WHATSAPP[WhatsApp / Messaging]
-    BILLING[Billing]
-    INTEGR[3rd-party Integrations]
-    SCRAP[Scraping / Orchestrator]
-  end
-  subgraph DB[PostgreSQL + Prisma]
-    PG[(crm_immobilier DB)]
-  end
-  FE -->|HTTP / REST / GraphQL| API
-  API --> PG
-  API --> 
+### 2. États ajoutés
+```typescript
+const [testingKeys, setTestingKeys] = useState<Record<string, boolean>>({});
+const [validatedKeys, setValidatedKeys] = useState<Record<string, boolean>>({});
+const [availableModelsPerKey, setAvailableModelsPerKey] = useState<Record<string, string[]>>({});
 ```
 
-### VISUAL_ARCHITECTURE_GUIDE.md
-```
-# 📐 API Key Test Button - Visual Architecture
-
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (React/Next.js)                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  Settings Page (/settings)                                        │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ API Keys Tab                                              │    │
-│  │ ─────────────────────────────────────────────────────── │    │
-│  │                                                             │    │
-│  │ Google Gemini API Key [AIzaSyB6...            ] [Tester] │    │
-│  │          
+### 3. Fonction getProviderFromKeyName()
+Mappe les noms de clés aux providers:
+- `openaiApiKey` → `openai`
+- `geminiApiKey` 
 ```
 
-### analysis\db-read-rows.md
+### BUTTON_FIX.md
 ```
-# DB Read Rows Capture — 2026-01-17T14:43:47.510Z
+# ✅ CORRECTION FINALE - Bouton "Tester" Visible Partout
 
-## Connection
-[
-  {
-    "db": "crm_immobilier",
-    "user": "postgres"
-  }
-]
+## 🎯 Problème Identifié
 
-## Tables (first 100)
-- public.AiSuggestion
-- public.DetectedAnomaly
-- public.MlConfig
-- public.Page
-- public.PropertySeo
-- public.ProspectingSource
-- public.PublishedProperty
-- public.SeoBlogPost
-- public.SeoConfig
-- public.TrackingConfig
-- public.TrackingEvent
-- public.VitrineAnalytics
-- public.VitrineConfig
-- public._prisma_migrations
-- public.activities
-- public.agencies
-- public.agency_api_keys
-- public.ai_credits
-- public.ai_error_log
-- public.ai_generations
-- public.ai_orchestrations
-- public.ai_pricing
-- public.ai_settings
-- public.ai_usage
-- public.ai_usage_metrics
-- public.analytics_events
-- public.appointments
-- public.business_modules
-- public.campaig
+L'utilisateur n'y voit pas le bouton "Tester" à côté de chaque input de clé API.
+
+**Cause Racine**:
+- La fonction `getProviderFromKeyName()` ne reconnaissait que 4 providers (OpenAI, Gemini, DeepSeek, Anthropic)
+- OpenRouter et Mistral n'avaient pas de mapping
+- Le paramètre `isLLMKey` était `false` pour OpenRouter et Mistral
+- Le bouton ne s'affichait donc QUE pour les 4 premiers providers
+
+## ✅ Corrections Appliquées
+
+### 1. Mapping Complet des Providers
+
+**Avant**: 4 providers seulement
+```typescript
+const mapping: Record<string, string> = {
+  'openaiApiKey': 'openai',
+  'geminiApiKey': 'gemini',
+  'deepseekApiKey': 'deepseek',
+  'anthropicApiKey': 'anthropic',
+};
+```
+
+**Après**: 12 providers (tous reconn
+```
+
+### FINAL_SUMMARY.md
+```
+# ✅ IMPLÉMENTATION COMPLÈTE - AI API Keys Configuration
+
+## 🎯 Objectifs Réalisés
+
+### ✅ 1. Champs API Optionnels
+- Tous les champs de clé API sont **optionnels**
+- Au moins une clé requise avant sauvegarde
+- Aucune validation de format (accepte n'importe quelle entrée)
+
+### ✅ 2. Test Direct des Providers
+- Test n'utilise PAS le backend
+- Appels directs aux APIs:
+  - OpenAI: `https://api.openai.com/v1/models`
+  - Gemini: `https://generativelanguage.googleapis.com/v1/models`
+  - Anthropic: `https://api.anthropic.com/v1/messages`
+  - DeepSeek: `https://api.deepseek.com/v1/models`
+  - Mistral: `https://api.mistral.ai/v1/models`
+  - OpenRouter: `https://openrouter.ai/api/v1/models`
+
+### ✅ 3. Dropdown des Modèles
+- Affiche **SEULEMENT** quand la clé API est validée
+- Dropdown est `required` (do
+```
+
+### FIX_BOUTONS_TEST.md
+```
+# 🔧 FIX: Boutons de Test API + Layout Menu
+
+## 🎯 Problèmes Identifiés et Résolus
+
+### ❌ Problème 1: Boutons de test non visibles
+**Cause:** Le mauvais fichier était servi
+- URL: `http://localhost:3000/settings/ai-api-keys`
+- Next.js priorise: `/src/pages/` > `/pages/`
+- Fichier modifié: `/pages/settings/ai-api-keys.tsx` ❌
+- Fichier servi: `/src/pages/settings/ai-api-keys.tsx` ✅
+
+**Solution:** Mise à jour du bon fichier (`/src/pages/settings/ai-api-keys.tsx`)
+
+### ❌ Problème 2: Tests via backend au lieu de direct
+**Cause:** `handleTestApiKey()` appelait `/api/ai-billing/api-keys/validate`
+- ❌ Ancienne méthode: Backend proxy
+- ✅ Nouvelle méthode: Appels directs aux providers
+
+**Solution:** Remplacé la fonction pour tester directement avec les APIs
+
+### ✅ Problème 3: Menu layout présent
+Le 
 ```
 
 ## Backend src top-level (if exists)

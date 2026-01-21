@@ -11,6 +11,14 @@ export type ProviderType =
   | 'qwen'          // Alibaba Cloud Qwen
   | 'kimi'          // Moonshot AI Kimi
   | 'mistral'       // Mistral AI
+  | 'grok'
+  | 'cohere'
+  | 'togetherai'
+  | 'replicate'
+  | 'perplexity'
+  | 'huggingface'
+  | 'alephAlpha'
+  | 'nlpCloud'
   | 'serp'          // Google SERP API
   | 'firecrawl'
   | 'pica'
@@ -68,8 +76,8 @@ export class ApiKeysService {
     if (!aiSettings) return null;
 
     const keyMap: Record<ProviderType, string | null> = {
-      llm: aiSettings.openaiApiKey || aiSettings.claudeApiKey || aiSettings.geminiApiKey,
-      anthropic: aiSettings.claudeApiKey,
+      llm: aiSettings.openaiApiKey || aiSettings.anthropicApiKey || aiSettings.geminiApiKey,
+      anthropic: aiSettings.anthropicApiKey || (aiSettings as any).claudeApiKey,
       openai: aiSettings.openaiApiKey,
       gemini: aiSettings.geminiApiKey,
       deepseek: aiSettings.deepseekApiKey,
@@ -77,14 +85,22 @@ export class ApiKeysService {
       qwen: aiSettings.qwenApiKey || null,
       kimi: aiSettings.kimiApiKey || null,
       mistral: aiSettings.mistralApiKey || null,
-      // Pas de scraping keys dans ai_settings
-      serp: null,
-      firecrawl: null,
-      pica: null,
-      jina: null,
-      scrapingbee: null,
-      browserless: null,
-      rapidapi: null,
+      grok: aiSettings.grokApiKey || null,
+      cohere: aiSettings.cohereApiKey || null,
+      togetherai: aiSettings.togetherAiApiKey || null,
+      replicate: aiSettings.replicateApiKey || null,
+      perplexity: aiSettings.perplexityApiKey || null,
+      huggingface: aiSettings.huggingfaceApiKey || null,
+      alephAlpha: aiSettings.alephAlphaApiKey || null,
+      nlpCloud: aiSettings.nlpCloudApiKey || null,
+      // Scraping keys dans ai_settings
+      serp: aiSettings.serpApiKey,
+      firecrawl: aiSettings.firecrawlApiKey,
+      pica: aiSettings.picaApiKey,
+      jina: aiSettings.jinaReaderApiKey,
+      scrapingbee: aiSettings.scrapingBeeApiKey,
+      browserless: aiSettings.browserlessApiKey,
+      rapidapi: aiSettings.rapidApiKey,
     };
 
     return keyMap[provider] || null;
@@ -113,6 +129,15 @@ export class ApiKeysService {
       qwen: agencyKeys.qwenApiKey || null,
       kimi: agencyKeys.kimiApiKey || null,
       mistral: agencyKeys.mistralApiKey || null,
+      // Missing specific keys in Agency model but keep generic mapping safe
+      grok: null,
+      cohere: null,
+      togetherai: null,
+      replicate: null,
+      perplexity: null,
+      huggingface: null,
+      alephAlpha: null,
+      nlpCloud: null,
       serp: agencyKeys.serpApiKey,
       firecrawl: agencyKeys.firecrawlApiKey,
       pica: agencyKeys.picaApiKey,
@@ -222,8 +247,29 @@ export class ApiKeysService {
           return await this.validateDeepseekKey(apiKey);
         case 'anthropic':
           return await this.validateAnthropicKey(apiKey);
+        case 'mistral':
+          return await this.validateMistralKey(apiKey);
+        case 'openrouter':
+          return await this.validateOpenRouterKey(apiKey);
+        case 'serp':
+          return await this.validateSerpKey(apiKey);
+        case 'firecrawl':
+          return await this.validateFirecrawlKey(apiKey);
+        case 'jina':
+        case 'jinareader':
+          return await this.validateJinaKey(apiKey);
+        case 'scrapingbee':
+          return await this.validateScrapingBeeKey(apiKey);
+        case 'browserless':
+          return await this.validateBrowserlessKey(apiKey);
+        case 'pica':
+          return { valid: apiKey.length > 5, message: 'Format valide (validation simple)' };
         default:
-          return { valid: false, message: 'Provider non supporté' };
+          // Fallback pour les nouveaux providers non explicitement gérés
+          if (apiKey && apiKey.length > 10) {
+            return { valid: true, message: 'Format de clé valide (validation générique)' };
+          }
+          return { valid: false, message: 'Provider non supporté ou clé trop courte' };
       }
     } catch (error) {
       console.error(`Error validating ${provider} key:`, error);
@@ -297,6 +343,75 @@ export class ApiKeysService {
       }
     } catch (error) {
       return { valid: false, message: 'Erreur lors de la validation Anthropic' };
+    }
+  }
+
+  private async validateMistralKey(apiKey: string): Promise<{ valid: boolean; message?: string; models?: string[] }> {
+    try {
+      const response = await fetch('https://api.mistral.ai/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (response.ok) {
+        return { valid: true, models: ['mistral-large-latest', 'mistral-medium', 'mistral-small'] };
+      }
+      return { valid: false, message: 'Clé Mistral invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation Mistral' }; }
+  }
+
+  private async validateOpenRouterKey(apiKey: string): Promise<{ valid: boolean; message?: string; models?: string[] }> {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (response.ok) {
+        return { valid: true };
+      }
+      return { valid: false, message: 'Clé OpenRouter invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation OpenRouter' }; }
+  }
+
+  private async validateSerpKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      const response = await fetch(`https://serpapi.com/account?api_key=${apiKey}`);
+      if (response.ok) return { valid: true };
+      return { valid: false, message: 'Clé SerpApi invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation SerpApi' }; }
+  }
+
+  private async validateFirecrawlKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      // Simple format check + length, as Firecrawl scrape calls are expensive/slow for validation
+      if (apiKey.startsWith('fc-') && apiKey.length > 10) return { valid: true };
+      return { valid: false, message: 'Format de clé Firecrawl invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation Firecrawl' }; }
+  }
+
+  private async validateJinaKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      const response = await fetch('https://r.jina.ai/https://example.com', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (response.ok) return { valid: true };
+      return { valid: false, message: 'Clé Jina invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation Jina' }; }
+  }
+
+  private async validateScrapingBeeKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      const response = await fetch(`https://app.scrapingbee.com/api/v1?api_key=${apiKey}&url=https://example.com`);
+      if (response.ok) return { valid: true };
+      return { valid: false, message: 'Clé ScrapingBee invalide' };
+    } catch (e) { return { valid: false, message: 'Erreur validation ScrapingBee' }; }
+  }
+
+  private async validateBrowserlessKey(apiKey: string): Promise<{ valid: boolean; message?: string }> {
+    try {
+      const response = await fetch(`https://chrome.browserless.io/content?token=${apiKey}&url=https://example.com`);
+      if (response.ok) return { valid: true };
+      return { valid: false, message: 'Clé Browserless invalide' };
+    } catch (e) {
+      if (typeof apiKey === 'string' && apiKey.length > 20) return { valid: true, message: 'Format accepté (validation impossible)' };
+      return { valid: false, message: 'Erreur validation Browserless' };
     }
   }
 }
