@@ -105,6 +105,21 @@
   animation: slideIn 0.3s ease-in-out;
 }
 
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
 /* Toggle switch */
 .toggle {
   @apply relative w-11 h-6 bg-gray-200 rounded-full cursor-pointer transition-colors;

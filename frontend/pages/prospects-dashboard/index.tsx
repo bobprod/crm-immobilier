@@ -1,14 +1,18 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import ProspectsDashboard from '@/modules/business/prospects/components/ProspectsDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { ProspectsDashboard } from '@/modules/business/prospects/components/ProspectsDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Page Prospects - Module Dashboard avec Prospects et Mandats
+ * Mise à jour pour utiliser MainLayout (Phase 2)
  */
 export default function ProspectsPage() {
     return (
-        <Layout>
-            <ProspectsDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Prospects">
+                <ProspectsDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

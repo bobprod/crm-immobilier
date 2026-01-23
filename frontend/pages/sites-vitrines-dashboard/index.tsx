@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import SitesVitriniesDashboard from '@/modules/business/vitrine/components/SitesVitriniesDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { SitesVitriniesDashboard } from '@/modules/business/vitrine/components/SitesVitriniesDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function SitesVitriniesDashboardPage() {
     return (
-        <Layout>
-            <SitesVitriniesDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Sites Vitrines">
+                <SitesVitriniesDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import MarketingDashboard from '@/modules/business/marketing/components/MarketingDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { MarketingDashboard } from '@/modules/business/marketing/components/MarketingDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function MarketingDashboardPage() {
     return (
-        <Layout>
-            <MarketingDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Marketing">
+                <MarketingDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

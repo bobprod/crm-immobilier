@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import TransactionsDashboard from '@/modules/business/transactions/components/TransactionsDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { TransactionsDashboard } from '@/modules/business/transactions/components/TransactionsDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function TransactionsDashboardPage() {
     return (
-        <Layout>
-            <TransactionsDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Transactions">
+                <TransactionsDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

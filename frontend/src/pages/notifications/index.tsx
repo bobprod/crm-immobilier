@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import { MainLayout } from '@/shared/components/layout';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -51,10 +53,10 @@ export default function NotificationsPage() {
   useEffect(() => {
     const handleNewNotification = (e: CustomEvent) => {
       const notif = e.detail;
-      
+
       // Add notification to list
       setNotifications(prev => [notif, ...prev]);
-      
+
       // Show desktop notification
       DesktopNotificationService.show(notif.title, {
         body: notif.message,
@@ -63,24 +65,24 @@ export default function NotificationsPage() {
       });
 
       // Play sound based on notification type
-      const soundType = notif.type.includes('error') ? 'error' 
+      const soundType = notif.type.includes('error') ? 'error'
         : notif.type.includes('warning') ? 'warning'
-        : notif.type.includes('success') || notif.type.includes('converted') ? 'success'
-        : 'default';
-      
+          : notif.type.includes('success') || notif.type.includes('converted') ? 'success'
+            : 'default';
+
       AudioNotificationService.play(soundType);
     };
 
     const handleNotificationRead = (e: CustomEvent) => {
       const notificationId = e.detail;
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
     };
 
     window.addEventListener('newNotification', handleNewNotification as EventListener);
     window.addEventListener('notificationRead', handleNotificationRead as EventListener);
-    
+
     return () => {
       window.removeEventListener('newNotification', handleNewNotification as EventListener);
       window.removeEventListener('notificationRead', handleNotificationRead as EventListener);
@@ -177,9 +179,11 @@ export default function NotificationsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
-      </div>
+      <MainLayout title="Notifications">
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+        </div>
+      </MainLayout>
     );
   }
 
@@ -188,25 +192,24 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50" data-testid="notifications-page">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <ProtectedRoute>
+      <MainLayout
+        title="Notifications"
+        breadcrumbs={[
+          { label: 'Notifications' },
+        ]}
+      >
+        <div className="max-w-4xl mx-auto p-4 space-y-6" data-testid="notifications-page">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-gray-500 hover:text-gray-700">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Bell className="h-6 w-6 text-purple-600" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <Badge className="bg-red-500 text-white ml-2">{unreadCount}</Badge>
-                  )}
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">Restez informé de vos activités CRM</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Bell className="h-6 w-6 text-purple-600" />
+                Notifications
+                {unreadCount > 0 && (
+                  <Badge className="bg-red-500 text-white ml-2">{unreadCount}</Badge>
+                )}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">Restez informé de vos activités CRM</p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={loadNotifications} disabled={loading}>
@@ -231,98 +234,96 @@ export default function NotificationsPage() {
               )}
             </div>
           </div>
+
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex items-center gap-1 mr-4">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Filtrer:</span>
+              </div>
+
+              {/* Read/Unread filter */}
+              <div className="flex bg-white rounded-lg border shadow-sm">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-l-lg transition ${filter === 'all' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  Toutes
+                </button>
+                <button
+                  onClick={() => setFilter('unread')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition ${filter === 'unread' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  data-testid="filter-unread"
+                >
+                  Non lues
+                </button>
+              </div>
+
+              {/* Type filter */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as NotificationType | 'all')}
+                className="px-3 py-1.5 text-sm border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="all">Tous les types</option>
+                {notificationTypes
+                  .filter((t) => t !== 'all')
+                  .map((type) => (
+                    <option key={type} value={type}>
+                      {getNotificationTypeIcon(type as NotificationType)}{' '}
+                      {getNotificationTypeLabel(type as NotificationType)}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Notifications List */}
+          <main className="max-w-4xl mx-auto px-4 pb-8">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                {error}
+                <button onClick={loadNotifications} className="ml-2 underline hover:no-underline">
+                  Réessayer
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              </div>
+            ) : filteredNotifications.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <BellOff className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune notification</h3>
+                  <p className="text-gray-500">
+                    {filter === 'unread'
+                      ? 'Vous avez lu toutes vos notifications'
+                      : "Vous n'avez pas encore de notifications"}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3" data-testid="notifications-list">
+                {filteredNotifications.map((notification) => (
+                  <NotificationCard
+                    key={notification.id}
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
         </div>
-      </header>
-
-      {/* Filters */}
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex items-center gap-1 mr-4">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Filtrer:</span>
-          </div>
-
-          {/* Read/Unread filter */}
-          <div className="flex bg-white rounded-lg border shadow-sm">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-l-lg transition ${
-                filter === 'all' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Toutes
-            </button>
-            <button
-              onClick={() => setFilter('unread')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-r-lg transition ${
-                filter === 'unread' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              data-testid="filter-unread"
-            >
-              Non lues
-            </button>
-          </div>
-
-          {/* Type filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as NotificationType | 'all')}
-            className="px-3 py-1.5 text-sm border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="all">Tous les types</option>
-            {notificationTypes
-              .filter((t) => t !== 'all')
-              .map((type) => (
-                <option key={type} value={type}>
-                  {getNotificationTypeIcon(type as NotificationType)}{' '}
-                  {getNotificationTypeLabel(type as NotificationType)}
-                </option>
-              ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Notifications List */}
-      <main className="max-w-4xl mx-auto px-4 pb-8">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-            {error}
-            <button onClick={loadNotifications} className="ml-2 underline hover:no-underline">
-              Réessayer
-            </button>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-          </div>
-        ) : filteredNotifications.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <BellOff className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune notification</h3>
-              <p className="text-gray-500">
-                {filter === 'unread'
-                  ? 'Vous avez lu toutes vos notifications'
-                  : "Vous n'avez pas encore de notifications"}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3" data-testid="notifications-list">
-            {filteredNotifications.map((notification) => (
-              <NotificationCard
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={handleMarkAsRead}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+      </MainLayout>
+    </ProtectedRoute>
   );
 }
 
@@ -341,9 +342,8 @@ function NotificationCard({ notification, onMarkAsRead, onDelete }: Notification
 
   return (
     <Card
-      className={`transition-all hover:shadow-md ${
-        !notification.read ? 'border-l-4 border-l-purple-500 bg-purple-50/50' : ''
-      }`}
+      className={`transition-all hover:shadow-md ${!notification.read ? 'border-l-4 border-l-purple-500 bg-purple-50/50' : ''
+        }`}
       data-testid="notification-item"
     >
       <CardContent className="p-4">
@@ -360,9 +360,8 @@ function NotificationCard({ notification, onMarkAsRead, onDelete }: Notification
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h4
-                  className={`font-medium text-gray-900 ${
-                    !notification.read ? 'font-semibold' : ''
-                  }`}
+                  className={`font-medium text-gray-900 ${!notification.read ? 'font-semibold' : ''
+                    }`}
                 >
                   {notification.title}
                 </h4>

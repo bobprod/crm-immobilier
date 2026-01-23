@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Vary: Origin
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: Content-Disposition
+Content-Type: application/json; charset=utf-8
+Content-Length: 739
+ETag: W/"2e3-Dn4ETYb7B6TxnybfzJXWq99XbbI"
+Date: Wed, 21 Jan 2026 20:03:13 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWl4ZXdlZWwwMDAwMTJ1eXNiOW9vYWkzIiwiZW1haWwiOiJhZG1pbkBjcm0uY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzY5MDI1NzkzLCJleHAiOjE3NjkwMjkzOTN9.dBuV_AJTWn-4KU4cqDUiZli1uTSmQ8Q7qaq7si5NKBg","refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWl4ZXdlZWwwMDAwMTJ1eXNiOW9vYWkzIiwidHlwZSI6InJlZnJlc2giLCJpYXQiOjE3NjkwMjU3OTMsImV4cCI6MTc2OTYzMDU5M30.Djb-CMxxPrRliaFl0eH2mxz4wnQTJ56bXTAbRXyVAkw","user":{"id":"cmixeweel000012uysb9ooai3","email":"admin@crm.com","firstName":"Admin","lastName":"CRM","agencyId":null,"createdAt":"2025-12-08T16:15:02.253Z","updatedAt":"2026-01-21T00:03:34.924Z","wordpressPassword":null,"wordpressUrl":null,"wordpressUsername":null,"role":"ADMIN"}}

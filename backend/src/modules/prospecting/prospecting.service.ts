@@ -1089,74 +1089,87 @@ export class ProspectingService {
    * ROI de la prospection
    */
   async getROIStats(userId: string) {
-    const [campaigns, convertedLeads, allLeads] = await Promise.all([
-      this.prisma.prospecting_campaigns.findMany({
-        where: { userId },
-        include: {
-          _count: { select: { leads: true } },
-        },
-      }),
-      this.prisma.prospecting_leads.findMany({
-        where: { userId, status: 'converted' },
-        include: { convertedProspect: true },
-      }),
-      this.prisma.prospecting_leads.findMany({
-        where: { userId },
-        select: { metadata: true, source: true },
-      }),
-    ]);
+    try {
+      const [campaigns, convertedLeads, allLeads] = await Promise.all([
+        this.prisma.prospecting_campaigns.findMany({
+          where: { userId },
+          include: {
+            _count: { select: { leads: true } },
+          },
+        }),
+        this.prisma.prospecting_leads.findMany({
+          where: { userId, status: 'converted' },
+        }),
+        this.prisma.prospecting_leads.findMany({
+          where: { userId },
+          select: { metadata: true, source: true, budget: true, budgetMin: true, budgetMax: true },
+        }),
+      ]);
 
-    // Calculer les valeurs estimées
-    const totalLeads = campaigns.reduce((sum, c) => sum + c._count.leads, 0);
-    const totalConverted = convertedLeads.length;
-    const estimatedValue = convertedLeads.reduce((sum, lead) => {
-      const budget = lead.budget as any;
-      return sum + (budget?.max || budget?.min || budget || 0);
-    }, 0);
+      // Calculer les valeurs estimées
+      const totalLeads = campaigns.reduce((sum, c) => sum + c._count.leads, 0);
+      const totalConverted = convertedLeads.length;
+      const estimatedValue = convertedLeads.reduce((sum, lead) => {
+        const budget = lead.budget as any;
+        const budgetValue = budget?.max || budget?.min || lead.budgetMax || lead.budgetMin || 0;
+        return sum + (typeof budgetValue === 'number' ? budgetValue : 0);
+      }, 0);
 
-    // Calculer les coûts par source (estimation basée sur les coûts API typiques)
-    const apiCosts: Record<string, number> = {
-      pica: 0.05, // ~0.05 TND par lead
-      serp: 0.02, // ~0.02 TND par requête
-      meta: 0.03, // ~0.03 TND par lead (Facebook/Instagram)
-      linkedin: 0.1, // ~0.10 TND par lead
-      firecrawl: 0.01, // ~0.01 TND par page
-      website: 0.005, // ~0.005 TND par scrape
-      manual: 0, // Gratuit
-    };
+      // Calculer les coûts par source (estimation basée sur les coûts API typiques)
+      const apiCosts: Record<string, number> = {
+        pica: 0.05,
+        serp: 0.02,
+        meta: 0.03,
+        linkedin: 0.1,
+        firecrawl: 0.01,
+        website: 0.005,
+        manual: 0,
+      };
 
-    // Calculer le coût total basé sur les sources des leads
-    const totalCost = allLeads.reduce((sum, lead) => {
-      const source = (lead.source || 'manual').toLowerCase();
-      const metadata = lead.metadata as any;
-      // Vérifier si un coût est stocké dans les métadonnées
-      if (metadata?.apiCost) {
-        return sum + metadata.apiCost;
-      }
-      return sum + (apiCosts[source] || 0);
-    }, 0);
+      // Calculer le coût total basé sur les sources des leads
+      const totalCost = allLeads.reduce((sum, lead) => {
+        const source = (lead.source || 'manual').toLowerCase();
+        const metadata = lead.metadata as any;
+        if (metadata?.apiCost) {
+          return sum + metadata.apiCost;
+        }
+        return sum + (apiCosts[source] || 0);
+      }, 0);
 
-    const costPerLead = totalLeads > 0 ? Math.round((totalCost / totalLeads) * 100) / 100 : 0;
+      const costPerLead = totalLeads > 0 ? Math.round((totalCost / totalLeads) * 100) / 100 : 0;
 
-    // Calculer le ROI: (Valeur générée - Coût) / Coût * 100
-    const roi =
-      totalCost > 0
-        ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
-        : estimatedValue > 0
-          ? 100
-          : 0;
+      const roi =
+        totalCost > 0
+          ? Math.round(((estimatedValue - totalCost) / totalCost) * 100)
+          : estimatedValue > 0
+            ? 100
+            : 0;
 
-    return {
-      totalCampaigns: campaigns.length,
-      totalLeads,
-      totalConverted,
-      conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
-      estimatedValue,
-      avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
-      totalCost: Math.round(totalCost * 100) / 100,
-      costPerLead,
-      roi,
-    };
+      return {
+        totalCampaigns: campaigns.length,
+        totalLeads,
+        totalConverted,
+        conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
+        estimatedValue,
+        avgLeadValue: totalConverted > 0 ? Math.round(estimatedValue / totalConverted) : 0,
+        totalCost: Math.round(totalCost * 100) / 100,
+        costPerLead,
+        roi,
+      };
+    } catch (error) {
+      this.logger.error(`Error in getROIStats: ${error.message}`);
+      return {
+        totalCampaigns: 0,
+        totalLeads: 0,
+        totalConverted: 0,
+        conversionRate: 0,
+        estimatedValue: 0,
+        avgLeadValue: 0,
+        totalCost: 0,
+        costPerLead: 0,
+        roi: 0,
+      };
+    }
   }
 
 }

@@ -21,7 +21,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private communicationsService: CommunicationsService,
-  ) {}
+  ) { }
 
   async register(registerDto: any) {
     // Vérifier si l'email existe déjà
@@ -76,8 +76,9 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    const normalizedEmail = email.toLowerCase().trim();
     const user = await this.prisma.users.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {

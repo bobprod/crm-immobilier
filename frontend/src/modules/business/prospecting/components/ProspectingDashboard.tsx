@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import { useProspecting } from '@/shared/hooks/useProspecting';
+import apiClient from '@/shared/utils/backend-api';
 import {
   getCampaignStatusLabel,
   getCampaignStatusColor,
@@ -29,6 +31,66 @@ import { AiProspectionPanel } from './AiProspectionPanel';
 import { StatCard, CampaignCard } from './dashboard';
 
 // ============================================
+// VALIDATION TYPES
+// ============================================
+
+interface ValidationProgress {
+  current: number;
+  total: number;
+  type: 'email' | 'phone' | 'spam' | 'duplicate' | 'ai-clean';
+  status: 'idle' | 'running' | 'completed' | 'error';
+  message?: string;
+}
+
+interface ValidationResult {
+  emailsValidated: number;
+  emailsInvalid: number;
+  phonesValidated: number;
+  phonesInvalid: number;
+  spamDetected: number;
+  duplicatesRemoved: number;
+}
+
+// ============================================
+// TOAST NOTIFICATION COMPONENT
+// ============================================
+
+interface ToastProps {
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  onClose: () => void;
+}
+
+const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColors = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    info: 'bg-blue-500',
+    warning: 'bg-yellow-500',
+  };
+
+  const icons = {
+    success: '✓',
+    error: '✕',
+    info: 'ℹ',
+    warning: '⚠',
+  };
+
+  return (
+    <div className={`fixed bottom-4 right-4 ${bgColors[type]} text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-slide-up`}>
+      <span className="text-xl">{icons[type]}</span>
+      <span className="font-medium">{message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-75">×</button>
+    </div>
+  );
+};
+
+// ============================================
 // TYPES
 // ============================================
 
@@ -49,11 +111,31 @@ type TabType = 'campaigns' | 'ai-prospection' | 'leads' | 'historique' | 'target
 // ============================================
 
 export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ language = 'fr' }) => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('campaigns');
   const [activeLeadsSubTab, setActiveLeadsSubTab] = useState<'list' | 'funnel' | 'validation'>('list');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [campaignStep, setCampaignStep] = useState(1);
+
+  // Validation state
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationProgress, setValidationProgress] = useState<ValidationProgress>({
+    current: 0,
+    total: 0,
+    type: 'email',
+    status: 'idle',
+  });
+  const [validationResults, setValidationResults] = useState<ValidationResult>({
+    emailsValidated: 0,
+    emailsInvalid: 0,
+    phonesValidated: 0,
+    phonesInvalid: 0,
+    spamDetected: 0,
+    duplicatesRemoved: 0,
+  });
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
+  const [isCleaningWithAI, setIsCleaningWithAI] = useState(false);
   const [newCampaign, setNewCampaign] = useState<{
     name: string;
     description: string;
@@ -120,6 +202,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
     startCampaign,
     pauseCampaign,
     updateLead,
+    deleteLead,
     convertLead,
     qualifyLead,
     scrapePica,
@@ -218,6 +301,54 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
     loadSources();
     loadAllStats();
   }, []);
+
+  // Initialize from URL params
+  useEffect(() => {
+    const { tab, subtab, campaign } = router.query;
+
+    if (tab && typeof tab === 'string') {
+      const validTabs: TabType[] = ['campaigns', 'ai-prospection', 'leads', 'historique', 'targeting', 'funnel', 'scraping'];
+      if (validTabs.includes(tab as TabType)) {
+        setActiveTab(tab as TabType);
+      }
+    }
+
+    if (subtab && typeof subtab === 'string') {
+      const validSubTabs = ['list', 'funnel', 'validation'];
+      if (validSubTabs.includes(subtab)) {
+        setActiveLeadsSubTab(subtab as 'list' | 'funnel' | 'validation');
+      }
+    }
+
+    if (campaign && typeof campaign === 'string') {
+      setSelectedCampaignId(campaign);
+    }
+  }, [router.query]);
+
+  // Update URL when tab changes
+  const handleTabChange = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    const query: Record<string, string> = { tab };
+    if (selectedCampaignId) query.campaign = selectedCampaignId;
+    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [router, selectedCampaignId]);
+
+  // Update URL when subtab changes
+  const handleSubTabChange = useCallback((subtab: 'list' | 'funnel' | 'validation') => {
+    setActiveLeadsSubTab(subtab);
+    const query: Record<string, string> = { tab: activeTab, subtab };
+    if (selectedCampaignId) query.campaign = selectedCampaignId;
+    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [router, activeTab, selectedCampaignId]);
+
+  // Update URL when campaign changes
+  const handleCampaignSelect = useCallback((campaignId: string | null) => {
+    setSelectedCampaignId(campaignId);
+    const query: Record<string, string> = { tab: activeTab };
+    if (activeLeadsSubTab !== 'list') query.subtab = activeLeadsSubTab;
+    if (campaignId) query.campaign = campaignId;
+    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [router, activeTab, activeLeadsSubTab]);
 
   // Load leads when campaign selected
   useEffect(() => {
@@ -439,107 +570,462 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
     [updateLead]
   );
 
-  // Handle verify emails
+  // Helper to show toast notification
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'warning') => {
+    setToast({ message, type });
+  }, []);
+
+  // Handle verify emails - connected to backend validation service
   const handleVerifyEmails = useCallback(async () => {
-    if (!selectedCampaignId) return;
+    if (!selectedCampaignId) {
+      showToast('Veuillez sélectionner une campagne', 'warning');
+      return;
+    }
+
     const campaignLeads = leads.filter(l => !l.spam && l.email);
-    const leadIds = campaignLeads.map(l => l.id);
-    if (leadIds.length > 0) {
-      await handleLeadValidation(leadIds);
+    if (campaignLeads.length === 0) {
+      showToast('Aucun lead avec email à valider', 'info');
+      return;
     }
-  }, [selectedCampaignId, leads, handleLeadValidation]);
 
-  // Handle verify phones
+    setIsValidating(true);
+    setValidationProgress({
+      current: 0,
+      total: campaignLeads.length,
+      type: 'email',
+      status: 'running',
+      message: 'Validation des emails en cours...',
+    });
+
+    let validCount = 0;
+    let invalidCount = 0;
+
+    try {
+      // Process in batches of 10 for better performance
+      const batchSize = 10;
+      for (let i = 0; i < campaignLeads.length; i += batchSize) {
+        const batch = campaignLeads.slice(i, i + batchSize);
+        const emails = batch.map(l => l.email!).filter(Boolean);
+
+        try {
+          // Call backend validation API
+          const response = await apiClient.post('/validation/emails', { emails });
+          const results = response.data.results || [];
+
+          // Update each lead based on validation results
+          for (const result of results) {
+            const lead = batch.find(l => l.email === result.email);
+            if (lead) {
+              if (result.isValid && !result.isSpam) {
+                validCount++;
+                await updateLead(lead.id, {
+                  validated: true,
+                  score: Math.max(lead.score || 0, result.score || 70),
+                });
+              } else {
+                invalidCount++;
+                await updateLead(lead.id, {
+                  validated: false,
+                  qualified: false,
+                  spam: result.isSpam || result.isDisposable,
+                });
+              }
+            }
+          }
+        } catch (batchError) {
+          console.error('Batch validation error:', batchError);
+          // Fallback to local validation if API fails
+          for (const lead of batch) {
+            const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email || '');
+            if (isValidEmail) {
+              validCount++;
+              await updateLead(lead.id, { validated: true });
+            } else {
+              invalidCount++;
+            }
+          }
+        }
+
+        setValidationProgress(prev => ({
+          ...prev,
+          current: Math.min(i + batchSize, campaignLeads.length),
+        }));
+      }
+
+      setValidationResults(prev => ({
+        ...prev,
+        emailsValidated: validCount,
+        emailsInvalid: invalidCount,
+      }));
+
+      setValidationProgress(prev => ({ ...prev, status: 'completed' }));
+      showToast(`Emails validés: ${validCount} valides, ${invalidCount} invalides`, 'success');
+
+      // Reload leads to refresh the list
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } catch (error) {
+      console.error('Email validation error:', error);
+      setValidationProgress(prev => ({ ...prev, status: 'error', message: 'Erreur de validation' }));
+      showToast('Erreur lors de la validation des emails', 'error');
+    } finally {
+      setIsValidating(false);
+    }
+  }, [selectedCampaignId, leads, updateLead, loadLeads, showToast]);
+
+  // Handle verify phones - connected to backend validation service
   const handleVerifyPhones = useCallback(async () => {
-    if (!selectedCampaignId) return;
+    if (!selectedCampaignId) {
+      showToast('Veuillez sélectionner une campagne', 'warning');
+      return;
+    }
+
     const campaignLeads = leads.filter(l => !l.spam && l.phone);
-    for (const lead of campaignLeads) {
-      // Simple phone validation
-      const phoneValid = /^\+?[0-9\s\-\(\)]+$/.test(lead.phone || '');
-      if (!phoneValid) {
-        await updateLead(lead.id, { qualified: false });
-      }
+    if (campaignLeads.length === 0) {
+      showToast('Aucun lead avec téléphone à valider', 'info');
+      return;
     }
-  }, [selectedCampaignId, leads, updateLead]);
 
-  // Handle detect spam
+    setIsValidating(true);
+    setValidationProgress({
+      current: 0,
+      total: campaignLeads.length,
+      type: 'phone',
+      status: 'running',
+      message: 'Validation des téléphones en cours...',
+    });
+
+    let validCount = 0;
+    let invalidCount = 0;
+
+    try {
+      // Process in batches
+      const batchSize = 10;
+      for (let i = 0; i < campaignLeads.length; i += batchSize) {
+        const batch = campaignLeads.slice(i, i + batchSize);
+
+        for (const lead of batch) {
+          try {
+            // Call backend phone validation API
+            const response = await apiClient.post('/validation/phone', { phone: lead.phone });
+            const result = response.data;
+
+            if (result.isValid && !result.isSpam) {
+              validCount++;
+              // Normalize phone to E.164 format if available
+              const normalizedPhone = result.metadata?.cleanPhone || lead.phone;
+              await updateLead(lead.id, {
+                validated: true,
+                phone: normalizedPhone,
+                score: Math.max(lead.score || 0, result.score || 70),
+              });
+            } else {
+              invalidCount++;
+              await updateLead(lead.id, {
+                validated: false,
+                qualified: false,
+              });
+            }
+          } catch (phoneError) {
+            // Fallback to regex validation
+            const phoneValid = /^\+?[0-9\s\-\(\)]{8,}$/.test(lead.phone || '');
+            if (phoneValid) {
+              validCount++;
+              await updateLead(lead.id, { validated: true });
+            } else {
+              invalidCount++;
+            }
+          }
+        }
+
+        setValidationProgress(prev => ({
+          ...prev,
+          current: Math.min(i + batchSize, campaignLeads.length),
+        }));
+      }
+
+      setValidationResults(prev => ({
+        ...prev,
+        phonesValidated: validCount,
+        phonesInvalid: invalidCount,
+      }));
+
+      setValidationProgress(prev => ({ ...prev, status: 'completed' }));
+      showToast(`Téléphones validés: ${validCount} valides, ${invalidCount} invalides`, 'success');
+
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } catch (error) {
+      console.error('Phone validation error:', error);
+      setValidationProgress(prev => ({ ...prev, status: 'error' }));
+      showToast('Erreur lors de la validation des téléphones', 'error');
+    } finally {
+      setIsValidating(false);
+    }
+  }, [selectedCampaignId, leads, updateLead, loadLeads, showToast]);
+
+  // Handle detect spam - connected to backend AI spam detection
   const handleDetectSpam = useCallback(async () => {
-    if (!selectedCampaignId) return;
-    const campaignLeads = leads.filter(l => !l.spam);
-
-    for (const lead of campaignLeads) {
-      let isSpam = false;
-
-      // Check email patterns
-      if (lead.email) {
-        const spamEmailPatterns = [
-          /^test\d*@/i,
-          /^fake\d*@/i,
-          /^spam\d*@/i,
-          /\d{8,}@/,
-          /@(mailinator|guerrillamail|tempmail|throwaway)/i,
-        ];
-        isSpam = spamEmailPatterns.some(p => p.test(lead.email!));
-      }
-
-      // Check name patterns
-      if (!isSpam && (lead.firstName || lead.lastName)) {
-        const spamNamePatterns = [
-          /^(test|fake|spam|xxx|asdf|qwerty)/i,
-          /\d{4,}/,
-          /^[a-z]{1,2}$/i,
-        ];
-        isSpam = spamNamePatterns.some(p =>
-          p.test(lead.firstName || '') || p.test(lead.lastName || '')
-        );
-      }
-
-      if (isSpam) {
-        await updateLead(lead.id, { spam: true, qualified: false });
-      }
+    if (!selectedCampaignId) {
+      showToast('Veuillez sélectionner une campagne', 'warning');
+      return;
     }
-  }, [selectedCampaignId, leads, updateLead]);
 
-  // Handle remove duplicates
+    const campaignLeads = leads.filter(l => !l.spam);
+    if (campaignLeads.length === 0) {
+      showToast('Aucun lead à analyser', 'info');
+      return;
+    }
+
+    setIsValidating(true);
+    setValidationProgress({
+      current: 0,
+      total: campaignLeads.length,
+      type: 'spam',
+      status: 'running',
+      message: 'Détection des spams en cours...',
+    });
+
+    let spamCount = 0;
+
+    try {
+      for (let i = 0; i < campaignLeads.length; i++) {
+        const lead = campaignLeads[i];
+        let isSpam = false;
+
+        try {
+          // Try AI spam detection if rawText is available
+          if (lead.rawText || lead.email) {
+            const response = await apiClient.post('/validation/spam/ai', {
+              email: lead.email,
+              name: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
+              message: lead.rawText || '',
+            });
+            isSpam = response.data.isSpam || response.data.spamScore > 70;
+          }
+        } catch (aiError) {
+          // Fallback to pattern-based detection
+          // Check email patterns
+          if (lead.email) {
+            const spamEmailPatterns = [
+              /^test\d*@/i,
+              /^fake\d*@/i,
+              /^spam\d*@/i,
+              /\d{8,}@/,
+              /@(mailinator|guerrillamail|tempmail|throwaway|yopmail|10minutemail)/i,
+            ];
+            isSpam = spamEmailPatterns.some(p => p.test(lead.email!));
+          }
+
+          // Check name patterns
+          if (!isSpam && (lead.firstName || lead.lastName)) {
+            const spamNamePatterns = [
+              /^(test|fake|spam|xxx|asdf|qwerty)/i,
+              /\d{4,}/,
+              /^[a-z]{1,2}$/i,
+            ];
+            isSpam = spamNamePatterns.some(p =>
+              p.test(lead.firstName || '') || p.test(lead.lastName || '')
+            );
+          }
+        }
+
+        if (isSpam) {
+          spamCount++;
+          await updateLead(lead.id, {
+            spam: true,
+            qualified: false,
+            validationStatus: 'spam',
+          });
+        }
+
+        setValidationProgress(prev => ({
+          ...prev,
+          current: i + 1,
+        }));
+      }
+
+      setValidationResults(prev => ({
+        ...prev,
+        spamDetected: prev.spamDetected + spamCount,
+      }));
+
+      setValidationProgress(prev => ({ ...prev, status: 'completed' }));
+      showToast(`Détection terminée: ${spamCount} spams détectés`, spamCount > 0 ? 'warning' : 'success');
+
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } catch (error) {
+      console.error('Spam detection error:', error);
+      setValidationProgress(prev => ({ ...prev, status: 'error' }));
+      showToast('Erreur lors de la détection des spams', 'error');
+    } finally {
+      setIsValidating(false);
+    }
+  }, [selectedCampaignId, leads, updateLead, loadLeads, showToast]);
+
+  // Handle remove duplicates - connected to backend deduplication
   const handleRemoveDuplicates = useCallback(async () => {
-    if (!selectedCampaignId) return;
-    const campaignLeads = leads.filter(l => !l.spam);
+    if (!selectedCampaignId) {
+      showToast('Veuillez sélectionner une campagne', 'warning');
+      return;
+    }
 
-    const emailMap = new Map<string, ProspectingLead>();
-    const phoneMap = new Map<string, ProspectingLead>();
-    const duplicates = new Set<string>();
+    setIsValidating(true);
+    setValidationProgress({
+      current: 0,
+      total: 1,
+      type: 'duplicate',
+      status: 'running',
+      message: 'Suppression des doublons en cours...',
+    });
 
-    for (const lead of campaignLeads) {
-      if (lead.email) {
-        const existing = emailMap.get(lead.email.toLowerCase());
-        if (existing) {
-          // Keep the one with more data or higher score
-          const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
-          const removeLead = keepLead === lead ? existing : lead;
-          duplicates.add(removeLead.id);
-          emailMap.set(lead.email.toLowerCase(), keepLead);
-        } else {
-          emailMap.set(lead.email.toLowerCase(), lead);
+    try {
+      // Call backend deduplication endpoint
+      const response = await apiClient.post('/prospecting/deduplicate', {
+        campaignId: selectedCampaignId,
+      });
+
+      const { removed, remaining } = response.data;
+
+      setValidationResults(prev => ({
+        ...prev,
+        duplicatesRemoved: prev.duplicatesRemoved + removed,
+      }));
+
+      setValidationProgress(prev => ({ ...prev, current: 1, status: 'completed' }));
+      showToast(`${removed} doublons supprimés, ${remaining} leads restants`, 'success');
+
+      // Reload leads to refresh the list
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } catch (error) {
+      console.error('Deduplication error:', error);
+
+      // Fallback to local deduplication
+      const campaignLeads = leads.filter(l => !l.spam);
+      const emailMap = new Map<string, ProspectingLead>();
+      const phoneMap = new Map<string, ProspectingLead>();
+      const duplicates = new Set<string>();
+
+      for (const lead of campaignLeads) {
+        if (lead.email) {
+          const existing = emailMap.get(lead.email.toLowerCase());
+          if (existing) {
+            const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
+            const removeLead = keepLead === lead ? existing : lead;
+            duplicates.add(removeLead.id);
+            emailMap.set(lead.email.toLowerCase(), keepLead);
+          } else {
+            emailMap.set(lead.email.toLowerCase(), lead);
+          }
+        }
+
+        if (lead.phone && !duplicates.has(lead.id)) {
+          const normalizedPhone = lead.phone.replace(/[^\d+]/g, '');
+          const existing = phoneMap.get(normalizedPhone);
+          if (existing && !duplicates.has(existing.id)) {
+            const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
+            const removeLead = keepLead === lead ? existing : lead;
+            duplicates.add(removeLead.id);
+          } else if (!existing) {
+            phoneMap.set(normalizedPhone, lead);
+          }
         }
       }
 
-      if (lead.phone && !duplicates.has(lead.id)) {
-        const existing = phoneMap.get(lead.phone);
-        if (existing && !duplicates.has(existing.id)) {
-          const keepLead = (lead.score || 0) > (existing.score || 0) ? lead : existing;
-          const removeLead = keepLead === lead ? existing : lead;
-          duplicates.add(removeLead.id);
-        } else if (!existing) {
-          phoneMap.set(lead.phone, lead);
-        }
+      // Mark duplicates as spam
+      for (const duplicateId of duplicates) {
+        await updateLead(duplicateId, { spam: true, qualified: false });
       }
+
+      setValidationResults(prev => ({
+        ...prev,
+        duplicatesRemoved: prev.duplicatesRemoved + duplicates.size,
+      }));
+
+      setValidationProgress(prev => ({ ...prev, status: 'completed' }));
+      showToast(`${duplicates.size} doublons supprimés (local)`, 'success');
+
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  }, [selectedCampaignId, leads, updateLead, loadLeads, showToast]);
+
+  // Handle AI cleaning of leads
+  const handleAICleanLeads = useCallback(async () => {
+    if (!selectedCampaignId) {
+      showToast('Veuillez sélectionner une campagne', 'warning');
+      return;
     }
 
-    // Mark duplicates as spam
-    for (const duplicateId of duplicates) {
-      await updateLead(duplicateId, { spam: true, qualified: false });
+    const campaignLeads = leads.filter(l => !l.spam && !l.validated);
+    if (campaignLeads.length === 0) {
+      showToast('Aucun lead à nettoyer', 'info');
+      return;
     }
-  }, [selectedCampaignId, leads, updateLead]);
+
+    setIsCleaningWithAI(true);
+    setValidationProgress({
+      current: 0,
+      total: campaignLeads.length,
+      type: 'ai-clean',
+      status: 'running',
+      message: 'Nettoyage IA en cours...',
+    });
+
+    try {
+      // Process in batches of 5 for LLM efficiency
+      const batchSize = 5;
+      let cleanedCount = 0;
+
+      for (let i = 0; i < campaignLeads.length; i += batchSize) {
+        const batch = campaignLeads.slice(i, i + batchSize);
+        const leadIds = batch.map(l => l.id);
+
+        try {
+          const response = await apiClient.post('/prospecting/leads/clean-batch', {
+            leadIds,
+          });
+
+          if (response.data.results) {
+            for (const result of response.data.results) {
+              if (result.success) {
+                cleanedCount++;
+              }
+            }
+          }
+        } catch (batchError) {
+          console.error('AI cleaning batch error:', batchError);
+        }
+
+        setValidationProgress(prev => ({
+          ...prev,
+          current: Math.min(i + batchSize, campaignLeads.length),
+        }));
+      }
+
+      setValidationProgress(prev => ({ ...prev, status: 'completed' }));
+      showToast(`${cleanedCount} leads nettoyés avec l'IA`, 'success');
+
+      if (selectedCampaignId) {
+        await loadLeads(selectedCampaignId);
+      }
+    } catch (error) {
+      console.error('AI cleaning error:', error);
+      setValidationProgress(prev => ({ ...prev, status: 'error' }));
+      showToast('Erreur lors du nettoyage IA', 'error');
+    } finally {
+      setIsCleaningWithAI(false);
+    }
+  }, [selectedCampaignId, leads, loadLeads, showToast]);
 
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'campaigns', label: 'Mes Campagnes', icon: '📋' },
@@ -644,7 +1130,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
             {/* Quick Actions */}
             {/* Featured: AI Prospection */}
             <button
-              onClick={() => setActiveTab('ai-prospection')}
+              onClick={() => handleTabChange('ai-prospection')}
               className="p-8 bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 rounded-2xl text-white text-left hover:from-purple-700 hover:via-purple-800 hover:to-pink-700 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-[1.02] group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/10 transform -skew-y-3"></div>
@@ -695,8 +1181,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <button
                 onClick={() => {
-                  setActiveTab('leads');
-                  setActiveLeadsSubTab('funnel');
+                  handleTabChange('leads');
+                  handleSubTabChange('funnel');
                 }}
                 className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white text-left hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg group"
               >
@@ -710,7 +1196,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
 
               <button
                 onClick={() => {
-                  setActiveTab('leads');
+                  handleTabChange('leads');
                   setActiveLeadsSubTab('funnel');
                 }}
                 className="p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white text-left hover:from-purple-600 hover:to-pink-700 transition-all shadow-lg group"
@@ -814,7 +1300,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
             {/* Sub-tab Navigation */}
             <div className="flex gap-4 mb-6 border-b overflow-x-auto">
               <button
-                onClick={() => setActiveLeadsSubTab('list')}
+                onClick={() => handleSubTabChange('list')}
                 className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap ${activeLeadsSubTab === 'list'
                   ? 'text-purple-600 border-purple-600'
                   : 'text-gray-600 border-transparent hover:text-purple-600'
@@ -830,10 +1316,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                     : 0;
 
                   if (validationRate < 30 && leads.length > 0) {
-                    alert("⚠️ Attention: Vous devez d'abord valider vos leads dans l'onglet \"Nettoyage & Validation\" avant d'accéder aux Stages.");
-                    setActiveLeadsSubTab('validation');
+                    showToast("Vous devez d'abord valider vos leads dans l'onglet 'Nettoyage & Validation' avant d'accéder aux Stages.", 'warning');
+                    handleSubTabChange('validation');
                   } else {
-                    setActiveLeadsSubTab('funnel');
+                    handleSubTabChange('funnel');
                   }
                 }}
                 className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap relative ${activeLeadsSubTab === 'funnel'
@@ -850,7 +1336,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 )}
               </button>
               <button
-                onClick={() => setActiveLeadsSubTab('validation')}
+                onClick={() => handleSubTabChange('validation')}
                 className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap relative ${activeLeadsSubTab === 'validation'
                   ? 'text-green-600 border-green-600'
                   : 'text-gray-600 border-transparent hover:text-green-600'
@@ -954,7 +1440,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                       </div>
                     </div>
                     <button
-                      onClick={() => setActiveLeadsSubTab('validation')}
+                      onClick={() => handleSubTabChange('validation')}
                       className="px-8 py-4 bg-yellow-600 text-white rounded-xl font-bold hover:bg-yellow-700 transition shadow-lg inline-flex items-center gap-2"
                     >
                       <span>✅</span>
@@ -1062,43 +1548,151 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <p className="text-green-100">Validez les emails, téléphones, supprimez les spams et doublons</p>
                 </div>
 
+                {/* Validation Progress Bar */}
+                {isValidating && validationProgress.status === 'running' && (
+                  <div className="bg-white border-2 border-blue-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-gray-700 flex items-center gap-2">
+                        <span className="animate-spin">⏳</span>
+                        {validationProgress.message || 'Validation en cours...'}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {validationProgress.current}/{validationProgress.total}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${validationProgress.total > 0 ? (validationProgress.current / validationProgress.total) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Validation Tools */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                   <button
                     onClick={handleVerifyEmails}
-                    disabled={!selectedCampaignId || loading}
-                    className="bg-white border-2 border-green-200 rounded-xl p-4 hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCampaignId || loading || isValidating}
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
+                      isValidating && validationProgress.type === 'email'
+                        ? 'border-green-400 bg-green-50'
+                        : 'border-green-200 hover:bg-green-50'
+                    }`}
                   >
-                    <div className="text-2xl mb-2">✉️</div>
-                    <div className="font-bold text-gray-900">Vérifier Emails</div>
-                    <div className="text-sm text-gray-600">Validez la syntaxe & domaines</div>
+                    {isValidating && validationProgress.type === 'email' && (
+                      <div className="absolute inset-0 bg-green-100 opacity-50 animate-pulse" />
+                    )}
+                    <div className="relative">
+                      <div className="text-2xl mb-2">
+                        {isValidating && validationProgress.type === 'email' ? '⏳' : '✉️'}
+                      </div>
+                      <div className="font-bold text-gray-900">Vérifier Emails</div>
+                      <div className="text-sm text-gray-600">Validez syntaxe & domaines</div>
+                      {validationResults.emailsValidated > 0 && (
+                        <div className="mt-2 text-xs text-green-600 font-semibold">
+                          ✓ {validationResults.emailsValidated} validés
+                        </div>
+                      )}
+                    </div>
                   </button>
                   <button
                     onClick={handleVerifyPhones}
-                    disabled={!selectedCampaignId || loading}
-                    className="bg-white border-2 border-blue-200 rounded-xl p-4 hover:bg-blue-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCampaignId || loading || isValidating}
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
+                      isValidating && validationProgress.type === 'phone'
+                        ? 'border-blue-400 bg-blue-50'
+                        : 'border-blue-200 hover:bg-blue-50'
+                    }`}
                   >
-                    <div className="text-2xl mb-2">📱</div>
-                    <div className="font-bold text-gray-900">Vérifier Téléphones</div>
-                    <div className="text-sm text-gray-600">Validez les numéros</div>
+                    {isValidating && validationProgress.type === 'phone' && (
+                      <div className="absolute inset-0 bg-blue-100 opacity-50 animate-pulse" />
+                    )}
+                    <div className="relative">
+                      <div className="text-2xl mb-2">
+                        {isValidating && validationProgress.type === 'phone' ? '⏳' : '📱'}
+                      </div>
+                      <div className="font-bold text-gray-900">Vérifier Téléphones</div>
+                      <div className="text-sm text-gray-600">Format E.164</div>
+                      {validationResults.phonesValidated > 0 && (
+                        <div className="mt-2 text-xs text-blue-600 font-semibold">
+                          ✓ {validationResults.phonesValidated} validés
+                        </div>
+                      )}
+                    </div>
                   </button>
                   <button
                     onClick={handleDetectSpam}
-                    disabled={!selectedCampaignId || loading}
-                    className="bg-white border-2 border-red-200 rounded-xl p-4 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCampaignId || loading || isValidating}
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
+                      isValidating && validationProgress.type === 'spam'
+                        ? 'border-red-400 bg-red-50'
+                        : 'border-red-200 hover:bg-red-50'
+                    }`}
                   >
-                    <div className="text-2xl mb-2">🚫</div>
-                    <div className="font-bold text-gray-900">Détecter Spams</div>
-                    <div className="text-sm text-gray-600">Trouvez les leads suspects</div>
+                    {isValidating && validationProgress.type === 'spam' && (
+                      <div className="absolute inset-0 bg-red-100 opacity-50 animate-pulse" />
+                    )}
+                    <div className="relative">
+                      <div className="text-2xl mb-2">
+                        {isValidating && validationProgress.type === 'spam' ? '⏳' : '🚫'}
+                      </div>
+                      <div className="font-bold text-gray-900">Détecter Spams</div>
+                      <div className="text-sm text-gray-600">IA + Patterns</div>
+                      {validationResults.spamDetected > 0 && (
+                        <div className="mt-2 text-xs text-red-600 font-semibold">
+                          ⚠ {validationResults.spamDetected} détectés
+                        </div>
+                      )}
+                    </div>
                   </button>
                   <button
                     onClick={handleRemoveDuplicates}
-                    disabled={!selectedCampaignId || loading}
-                    className="bg-white border-2 border-purple-200 rounded-xl p-4 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCampaignId || loading || isValidating}
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
+                      isValidating && validationProgress.type === 'duplicate'
+                        ? 'border-purple-400 bg-purple-50'
+                        : 'border-purple-200 hover:bg-purple-50'
+                    }`}
                   >
-                    <div className="text-2xl mb-2">🔄</div>
-                    <div className="font-bold text-gray-900">Supprim. Doublons</div>
-                    <div className="text-sm text-gray-600">Fusionnez les copies</div>
+                    {isValidating && validationProgress.type === 'duplicate' && (
+                      <div className="absolute inset-0 bg-purple-100 opacity-50 animate-pulse" />
+                    )}
+                    <div className="relative">
+                      <div className="text-2xl mb-2">
+                        {isValidating && validationProgress.type === 'duplicate' ? '⏳' : '🔄'}
+                      </div>
+                      <div className="font-bold text-gray-900">Suppr. Doublons</div>
+                      <div className="text-sm text-gray-600">Dédupliquer</div>
+                      {validationResults.duplicatesRemoved > 0 && (
+                        <div className="mt-2 text-xs text-purple-600 font-semibold">
+                          ✓ {validationResults.duplicatesRemoved} supprimés
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={handleAICleanLeads}
+                    disabled={!selectedCampaignId || loading || isValidating || isCleaningWithAI}
+                    className={`bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-transparent rounded-xl p-4 text-white transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden hover:from-indigo-600 hover:to-purple-700 ${
+                      isCleaningWithAI ? 'animate-pulse' : ''
+                    }`}
+                  >
+                    {isCleaningWithAI && (
+                      <div className="absolute inset-0 bg-white opacity-20 animate-pulse" />
+                    )}
+                    <div className="relative">
+                      <div className="text-2xl mb-2">
+                        {isCleaningWithAI ? '⏳' : '🧹'}
+                      </div>
+                      <div className="font-bold">Nettoyer avec IA</div>
+                      <div className="text-sm text-indigo-100">Enrichir & corriger</div>
+                      <div className="mt-2 text-xs text-indigo-200 font-semibold">
+                        ⭐ Recommandé
+                      </div>
+                    </div>
                   </button>
                 </div>
 
@@ -1244,6 +1838,41 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   </div>
                 </div>
 
+                {/* Résultats de la session de validation */}
+                {(validationResults.emailsValidated > 0 || validationResults.phonesValidated > 0 ||
+                  validationResults.spamDetected > 0 || validationResults.duplicatesRemoved > 0) && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <span className="text-xl">📋</span>
+                      Résultats de la Session
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                        <div className="text-2xl font-bold text-green-600">{validationResults.emailsValidated}</div>
+                        <div className="text-xs text-gray-600">Emails validés</div>
+                        {validationResults.emailsInvalid > 0 && (
+                          <div className="text-xs text-red-500 mt-1">({validationResults.emailsInvalid} invalides)</div>
+                        )}
+                      </div>
+                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                        <div className="text-2xl font-bold text-blue-600">{validationResults.phonesValidated}</div>
+                        <div className="text-xs text-gray-600">Téléphones validés</div>
+                        {validationResults.phonesInvalid > 0 && (
+                          <div className="text-xs text-red-500 mt-1">({validationResults.phonesInvalid} invalides)</div>
+                        )}
+                      </div>
+                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                        <div className="text-2xl font-bold text-orange-600">{validationResults.spamDetected}</div>
+                        <div className="text-xs text-gray-600">Spams détectés</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                        <div className="text-2xl font-bold text-purple-600">{validationResults.duplicatesRemoved}</div>
+                        <div className="text-xs text-gray-600">Doublons supprimés</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {selectedCampaignId ? (
                   <>
                     {/* Nouveau panneau de qualification intelligente */}
@@ -1260,8 +1889,12 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                         updateLead(leadId, {
                           spam: true,
                           qualified: false,
-                          validated: false
+                          validated: false,
+                          status: 'rejected'
                         });
+                      }}
+                      onLeadDeleted={(leadId) => {
+                        deleteLead(leadId);
                       }}
                     />
 
@@ -2249,6 +2882,15 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
           </div>
         )
       }
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div >
   );
 };
