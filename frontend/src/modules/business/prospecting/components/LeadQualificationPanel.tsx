@@ -9,17 +9,39 @@ interface LeadQualificationPanelProps {
     leads: ProspectingLead[];
     onLeadQualified: (leadId: string, qualified: boolean) => void;
     onLeadRejected: (leadId: string) => void;
+    onLeadDeleted: (leadId: string) => void;
 }
 
 export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
     leads,
     onLeadQualified,
     onLeadRejected,
+    onLeadDeleted,
 }) => {
     const [qualificationResults, setQualificationResults] = useState<QualificationResult[]>([]);
     const [processing, setProcessing] = useState(false);
     const [filter, setFilter] = useState<'all' | 'qualified' | 'needs-review' | 'rejected'>('all');
     const [selectedLead, setSelectedLead] = useState<QualificationResult | null>(null);
+
+    const updateLocalStatus = (
+        leadId: string,
+        status: QualificationResult['status'],
+    ) => {
+        setQualificationResults((prev) =>
+            prev.map((result) =>
+                result.leadId === leadId ? { ...result, status } : result,
+            ),
+        );
+
+        setSelectedLead((prev) =>
+            prev && prev.leadId === leadId ? { ...prev, status } : prev,
+        );
+    };
+
+    const removeLeadFromResults = (leadId: string) => {
+        setQualificationResults((prev) => prev.filter((result) => result.leadId !== leadId));
+        setSelectedLead((prev) => (prev && prev.leadId === leadId ? null : prev));
+    };
 
     // Auto-qualification au chargement
     useEffect(() => {
@@ -136,8 +158,8 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                 <button
                     onClick={() => setFilter('all')}
                     className={`px-4 py-2 rounded-lg font-semibold transition ${filter === 'all'
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     Tous ({qualificationResults.length})
@@ -145,8 +167,8 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                 <button
                     onClick={() => setFilter('qualified')}
                     className={`px-4 py-2 rounded-lg font-semibold transition ${filter === 'qualified'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     ✅ Qualifiés ({qualificationResults.filter(r => r.status === 'qualified').length})
@@ -154,8 +176,8 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                 <button
                     onClick={() => setFilter('needs-review')}
                     className={`px-4 py-2 rounded-lg font-semibold transition ${filter === 'needs-review'
-                            ? 'bg-yellow-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-yellow-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     ⚠️ À vérifier ({qualificationResults.filter(r => r.status === 'needs-review').length})
@@ -163,8 +185,8 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                 <button
                     onClick={() => setFilter('rejected')}
                     className={`px-4 py-2 rounded-lg font-semibold transition ${filter === 'rejected'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     🚫 Rejetés ({qualificationResults.filter(r => r.status === 'rejected').length})
@@ -296,6 +318,7 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
+                                            updateLocalStatus(result.leadId, 'qualified');
                                             onLeadQualified(result.leadId, true);
                                         }}
                                         className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition"
@@ -308,6 +331,7 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                updateLocalStatus(result.leadId, 'qualified');
                                                 onLeadQualified(result.leadId, true);
                                             }}
                                             className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700 transition"
@@ -317,6 +341,7 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                updateLocalStatus(result.leadId, 'rejected');
                                                 onLeadRejected(result.leadId);
                                             }}
                                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-300 transition"
@@ -329,7 +354,8 @@ export const LeadQualificationPanel: React.FC<LeadQualificationPanelProps> = ({
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onLeadRejected(result.leadId);
+                                            removeLeadFromResults(result.leadId);
+                                            onLeadDeleted(result.leadId);
                                         }}
                                         className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition"
                                     >

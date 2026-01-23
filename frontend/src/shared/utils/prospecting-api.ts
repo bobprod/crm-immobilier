@@ -708,6 +708,69 @@ export const prospectingAPI = {
   },
 
   // ============================================
+  // LEAD CLEANING - Nettoyage IA des leads
+  // ============================================
+
+  /**
+   * Nettoyer un lead avec normalisation et enrichissement IA
+   */
+  cleanLead: async (leadId: string): Promise<{
+    leadId: string;
+    success: boolean;
+    changes: { field: string; before: any; after: any }[];
+    qualityScoreBefore: number;
+    qualityScoreAfter: number;
+    errors?: string[];
+  }> => {
+    const response = await apiClient.post(`/prospecting/leads/${leadId}/clean`);
+    return response.data;
+  },
+
+  /**
+   * Nettoyer un batch de leads (5 par appel LLM)
+   */
+  cleanLeadsBatch: async (leadIds: string[]): Promise<{
+    total: number;
+    successful: number;
+    failed: number;
+    results: {
+      leadId: string;
+      success: boolean;
+      changes: { field: string; before: any; after: any }[];
+      qualityScoreBefore: number;
+      qualityScoreAfter: number;
+    }[];
+    averageScoreImprovement: number;
+  }> => {
+    const response = await apiClient.post('/prospecting/leads/clean-batch', { leadIds });
+    return response.data;
+  },
+
+  /**
+   * Nettoyer tous les leads d'une campagne
+   */
+  cleanCampaignLeads: async (campaignId: string): Promise<{
+    total: number;
+    successful: number;
+    failed: number;
+    averageScoreImprovement: number;
+  }> => {
+    const response = await apiClient.post(`/prospecting/campaigns/${campaignId}/clean-all`);
+    return response.data;
+  },
+
+  /**
+   * Obtenir le score de qualité d'un lead
+   */
+  getLeadQualityScore: async (leadId: string): Promise<{
+    leadId: string;
+    qualityScore: number;
+  }> => {
+    const response = await apiClient.get(`/prospecting/leads/${leadId}/quality-score`);
+    return response.data;
+  },
+
+  // ============================================
   // EXPORT/IMPORT
   // ============================================
 

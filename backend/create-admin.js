@@ -11,10 +11,13 @@ async function createAdminUser() {
     });
 
     if (existingUser) {
-      console.log('✅ Utilisateur admin existe déjà!');
-      console.log('📧 Email: admin@crm.com');
-      console.log('🔑 Mot de passe: admin123');
-      console.log('\nℹ️  Si vous avez oublié le mot de passe, supprimez cet utilisateur et relancez ce script.');
+      console.log('🔄 Mise à jour de l\'utilisateur admin...');
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await prisma.users.update({
+        where: { email: 'admin@crm.com' },
+        data: { password: hashedPassword, role: 'ADMIN' }
+      });
+      console.log('✅ Utilisateur admin mis à jour!');
       return;
     }
 

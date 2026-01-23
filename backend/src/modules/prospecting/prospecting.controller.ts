@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { ProspectingService } from './prospecting.service';
 import { ProspectingIntegrationService } from './prospecting-integration.service';
 import { LLMProspectingService } from './llm-prospecting.service';
+import { LeadCleaningService, CleaningResult, BatchCleaningResult } from './services/lead-cleaning.service';
 import {
   CreateCampaignDto,
   UpdateLeadDto,
@@ -32,7 +33,8 @@ export class ProspectingController {
     private readonly prospectingService: ProspectingService,
     private readonly integrationService: ProspectingIntegrationService,
     private readonly llmService: LLMProspectingService,
-  ) {}
+    private readonly leadCleaningService: LeadCleaningService,
+  ) { }
 
   // ============================================
   // CAMPAIGNS - Campagnes de prospection
@@ -158,6 +160,45 @@ export class ProspectingController {
   @ApiOperation({ summary: 'Enrichir les donnees d un lead' })
   enrichLead(@Request() req, @Param('id') id: string) {
     return this.integrationService.enrichLead(req.user.userId, id);
+  }
+
+  // ============================================
+  // LEAD CLEANING - Nettoyage IA des leads
+  // ============================================
+
+  @Post('leads/:id/clean')
+  @ApiOperation({ summary: 'Nettoyer un lead avec normalisation et enrichissement IA' })
+  cleanLead(@Request() req, @Param('id') id: string): Promise<CleaningResult> {
+    return this.leadCleaningService.cleanLead(req.user.userId, id);
+  }
+
+  @Post('leads/clean-batch')
+  @ApiOperation({ summary: 'Nettoyer un batch de leads (5 par appel LLM)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        leadIds: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['leadIds'],
+    },
+  })
+  cleanLeadsBatch(@Request() req, @Body() data: { leadIds: string[] }): Promise<BatchCleaningResult> {
+    return this.leadCleaningService.cleanLeadsBatch(req.user.userId, data.leadIds);
+  }
+
+  @Post('campaigns/:campaignId/clean-all')
+  @ApiOperation({ summary: 'Nettoyer tous les leads d une campagne' })
+  cleanCampaignLeads(@Request() req, @Param('campaignId') campaignId: string): Promise<BatchCleaningResult> {
+    return this.leadCleaningService.cleanCampaignLeads(req.user.userId, campaignId);
+  }
+
+  @Get('leads/:id/quality-score')
+  @ApiOperation({ summary: 'Calculer le score de qualite d un lead' })
+  async getLeadQualityScore(@Request() req, @Param('id') id: string) {
+    const lead = await this.prospectingService.getLeadById(req.user.userId, id);
+    const score = this.leadCleaningService.calculateDataQualityScore(lead);
+    return { leadId: id, qualityScore: score };
   }
 
   // ============================================

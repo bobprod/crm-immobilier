@@ -235,15 +235,27 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       create: async (args: { data: any; select?: any }) => {
         // Auto-generate defaults if not provided (mimics Prisma @default())
         const now = new Date();
-        const dataWithDefaults = {
+        const initialData = {
           id: args.data.id || createId(),
           createdAt: args.data.createdAt || now,
           updatedAt: args.data.updatedAt || now,
           ...args.data,
         };
 
-        const keys = Object.keys(dataWithDefaults);
-        const values = Object.values(dataWithDefaults);
+        const finalData: any = {};
+        for (const [key, value] of Object.entries(initialData)) {
+          if (value !== null && typeof value === 'object' && 'connect' in (value as any)) {
+            const valObj = value as any;
+            if (valObj.connect.id) {
+              finalData[`${key}Id`] = valObj.connect.id;
+              continue;
+            }
+          }
+          finalData[key] = value;
+        }
+
+        const keys = Object.keys(finalData);
+        const values = Object.values(finalData);
         const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
         const columns = keys.map((k) => `"${k}"`).join(', ');
 
@@ -253,18 +265,42 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       },
 
       update: async (args: { where: any; data: any; select?: any }) => {
-        // Auto-update updatedAt timestamp (mimics Prisma @updatedAt)
-        const dataWithTimestamp = {
-          ...args.data,
-          updatedAt: args.data.updatedAt || new Date(),
-        };
+        const setClauses: string[] = [];
+        const values: any[] = [];
+        let i = 1;
 
-        const keys = Object.keys(dataWithTimestamp);
-        const values = Object.values(dataWithTimestamp);
-        const setClause = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        // Auto-update updatedAt timestamp
+        const data = { ...args.data };
+        if (!data.updatedAt) data.updatedAt = new Date();
+
+        for (const [key, value] of Object.entries(data)) {
+          if (value !== null && typeof value === 'object') {
+            const valObj = value as any;
+            if ('increment' in valObj) {
+              setClauses.push(`"${key}" = "${key}" + $${i++}`);
+              values.push(valObj.increment);
+              continue;
+            }
+            if ('decrement' in valObj) {
+              setClauses.push(`"${key}" = "${key}" - $${i++}`);
+              values.push(valObj.decrement);
+              continue;
+            }
+            if ('connect' in valObj && valObj.connect.id) {
+              // Guessing column name from relation name (common Prisma pattern)
+              const colName = `${key}Id`;
+              setClauses.push(`"${colName}" = $${i++}`);
+              values.push(valObj.connect.id);
+              continue;
+            }
+          }
+
+          setClauses.push(`"${key}" = $${i++}`);
+          values.push(value);
+        }
+
         const whereClause = self.buildWhereClause(args.where);
-
-        const query = `UPDATE "${actualTableName}" SET ${setClause} WHERE ${whereClause} RETURNING *`;
+        const query = `UPDATE "${actualTableName}" SET ${setClauses.join(', ')} WHERE ${whereClause} RETURNING *`;
         const result = await self.pool.query(query, values);
         return result.rows[0];
       },
@@ -331,29 +367,164 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           _count: parseInt(row._count || '0', 10),
           _sum: args._sum
             ? Object.keys(args._sum).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+              {},
+            )
             : null,
           _avg: args._avg
             ? Object.keys(args._avg).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+              {},
+            )
             : null,
           _min: args._min
             ? Object.keys(args._min).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+              {},
+            )
             : null,
           _max: args._max
             ? Object.keys(args._max).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+              {},
+            )
             : null,
         };
+      },
+
+      groupBy: async (args: {
+        by: string[];
+        where?: any;
+        orderBy?: any;
+        take?: number;
+        skip?: number;
+        _sum?: any;
+        _count?: any;
+        _avg?: any;
+        _min?: any;
+        _max?: any;
+      }) => {
+        const selects: string[] = args.by.map((field) => `"${field}"`);
+        const groupBys: string[] = args.by.map((field) => `"${field}"`);
+
+        if (args._count) {
+          if (typeof args._count === 'boolean') {
+            selects.push('COUNT(*) as "_count"');
+          } else {
+            Object.keys(args._count).forEach((field) => {
+              selects.push(`COUNT("${field}") as "count_${field}"`);
+            });
+          }
+        }
+
+        if (args._sum) {
+          Object.keys(args._sum).forEach((field) => {
+            selects.push(`SUM("${field}") as "sum_${field}"`);
+          });
+        }
+
+        if (args._avg) {
+          Object.keys(args._avg).forEach((field) => {
+            selects.push(`AVG("${field}") as "avg_${field}"`);
+          });
+        }
+
+        if (args._min) {
+          Object.keys(args._min).forEach((field) => {
+            selects.push(`MIN("${field}") as "min_${field}"`);
+          });
+        }
+
+        if (args._max) {
+          Object.keys(args._max).forEach((field) => {
+            selects.push(`MAX("${field}") as "max_${field}"`);
+          });
+        }
+
+        let query = `SELECT ${selects.join(', ')} FROM "${actualTableName}"`;
+
+        if (args.where) {
+          query += ` WHERE ${self.buildWhereClause(args.where)}`;
+        }
+
+        query += ` GROUP BY ${groupBys.join(', ')}`;
+
+        if (args.orderBy) {
+          query += ` ORDER BY ${self.buildOrderByClause(args.orderBy)}`;
+        }
+
+        if (args.take) {
+          query += ` LIMIT ${args.take}`;
+        }
+
+        if (args.skip) {
+          query += ` OFFSET ${args.skip}`;
+        }
+
+        const result = await self.pool.query(query);
+
+        return result.rows.map((row) => {
+          const item: any = {};
+          args.by.forEach((field) => {
+            item[field] = row[field];
+          });
+
+          if (args._count) {
+            if (typeof args._count === 'boolean') {
+              item._count = parseInt(row._count || '0', 10);
+            } else {
+              item._count = Object.keys(args._count).reduce(
+                (acc, k) => ({
+                  ...acc,
+                  [k]: parseInt(row[`count_${k}`]) || 0,
+                }),
+                {},
+              );
+            }
+          }
+
+          if (args._sum) {
+            item._sum = Object.keys(args._sum).reduce(
+              (acc, k) => ({
+                ...acc,
+                [k]: parseFloat(row[`sum_${k}`]) || 0,
+              }),
+              {},
+            );
+          }
+
+          if (args._avg) {
+            item._avg = Object.keys(args._avg).reduce(
+              (acc, k) => ({
+                ...acc,
+                [k]: parseFloat(row[`avg_${k}`]) || null,
+              }),
+              {},
+            );
+          }
+
+          if (args._min) {
+            item._min = Object.keys(args._min).reduce(
+              (acc, k) => ({
+                ...acc,
+                [k]: row[`min_${k}`],
+              }),
+              {},
+            );
+          }
+
+          if (args._max) {
+            item._max = Object.keys(args._max).reduce(
+              (acc, k) => ({
+                ...acc,
+                [k]: row[`max_${k}`],
+              }),
+              {},
+            );
+          }
+
+          return item;
+        });
       },
 
       upsert: async (args: { where: any; create: any; update: any }) => {
@@ -366,16 +537,34 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       },
 
       updateMany: async (args: { where?: any; data: any }) => {
-        const dataWithTimestamp = {
-          ...args.data,
-          updatedAt: args.data.updatedAt || new Date(),
-        };
+        const setClauses: string[] = [];
+        const values: any[] = [];
+        let i = 1;
 
-        const keys = Object.keys(dataWithTimestamp);
-        const values = Object.values(dataWithTimestamp);
-        const setClause = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        // Auto-update updatedAt timestamp
+        const data = { ...args.data };
+        if (!data.updatedAt) data.updatedAt = new Date();
 
-        let query = `UPDATE "${actualTableName}" SET ${setClause}`;
+        for (const [key, value] of Object.entries(data)) {
+          if (value !== null && typeof value === 'object') {
+            const valObj = value as any;
+            if ('increment' in valObj) {
+              setClauses.push(`"${key}" = "${key}" + $${i++}`);
+              values.push(valObj.increment);
+              continue;
+            }
+            if ('decrement' in valObj) {
+              setClauses.push(`"${key}" = "${key}" - $${i++}`);
+              values.push(valObj.decrement);
+              continue;
+            }
+          }
+
+          setClauses.push(`"${key}" = $${i++}`);
+          values.push(value);
+        }
+
+        let query = `UPDATE "${actualTableName}" SET ${setClauses.join(', ')}`;
         if (args.where) {
           query += ` WHERE ${self.buildWhereClause(args.where)}`;
         }

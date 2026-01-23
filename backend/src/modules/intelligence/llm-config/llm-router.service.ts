@@ -13,7 +13,8 @@ export type OperationType =
   | 'analysis_quick'           // Analyse rapide (vitesse)
   | 'content_generation'       // Génération de contenu (qualité)
   | 'long_context'             // Documents longs (contexte)
-  | 'scraping_analysis';       // Analyse de scraping (équilibré)
+  | 'scraping_analysis'        // Analyse de scraping (équilibré)
+  | 'data_cleaning';           // Nettoyage de données (coût optimisé)
 
 /**
  * Service de routing intelligent pour les providers LLM
@@ -72,6 +73,11 @@ export class LLMRouterService {
         priority: ['mistral', 'gemini', 'deepseek', 'qwen'],
         criteria: 'balanced',
         description: 'Bon rapport qualité/prix',
+      },
+      data_cleaning: {
+        priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
+        criteria: 'cost',
+        description: 'Nettoyage de données - coût optimisé',
       },
     };
 

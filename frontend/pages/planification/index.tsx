@@ -1,14 +1,23 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import PlanificationDashboard from '@/modules/business/planification/components/PlanificationDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { PlanificationDashboard } from '@/modules/business/planification/components/PlanificationDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 /**
  * Page Planification - Module Dashboard
+ * Mise à jour pour utiliser le nouveau MainLayout (Phase 2)
  */
 export default function PlanificationPage() {
     return (
-        <Layout>
-            <PlanificationDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout
+                title="Planification"
+                breadcrumbs={[
+                    { label: 'Planification' },
+                ]}
+            >
+                <PlanificationDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import MatchingDashboard from '@/modules/business/matching/components/MatchingDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { MatchingDashboard } from '@/modules/business/matching/components/MatchingDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function MatchingDashboardPage() {
     return (
-        <Layout>
-            <MatchingDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Matching">
+                <MatchingDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

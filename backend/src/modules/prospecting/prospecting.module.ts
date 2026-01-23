@@ -22,6 +22,7 @@ import { LeadManagementService } from './services/lead-management.service';
 import { MatchingService } from './services/matching.service';
 import { ProspectingValidationService } from './services/prospecting-validation.service';
 import { ProspectingOrchestratorService } from './services/prospecting-orchestrator.service';
+import { LeadCleaningService } from './services/lead-cleaning.service';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ProspectingOrchestratorService } from './services/prospecting-orchestra
     MatchingService,
     ProspectingValidationService,
     ProspectingOrchestratorService,
+    LeadCleaningService,
   ],
   exports: [
     ProspectingService,
@@ -68,6 +70,7 @@ import { ProspectingOrchestratorService } from './services/prospecting-orchestra
     MatchingService,
     ProspectingValidationService,
     ProspectingOrchestratorService,
+    LeadCleaningService,
   ],
 })
 export class ProspectingModule { }

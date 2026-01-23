@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '@/modules/core/layout/components/Layout';
-import CommunicationsDashboard from '@/modules/business/communications/components/CommunicationsDashboard';
+import { MainLayout } from '@/shared/components/layout';
+import { CommunicationsDashboard } from '@/modules/business/communications/components/CommunicationsDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function CommunicationsDashboardPage() {
     return (
-        <Layout>
-            <CommunicationsDashboard />
-        </Layout>
+        <ProtectedRoute>
+            <MainLayout title="Communications">
+                <CommunicationsDashboard />
+            </MainLayout>
+        </ProtectedRoute>
     );
 }

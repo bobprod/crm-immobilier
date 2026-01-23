@@ -1,27 +1,37 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-20T16:58:54.428Z
+Generated: 2026-01-23T22:23:32.612Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-19T11:05:59.785Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-20T19:53:05.155Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-20T22:20:49.890Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-20T21:27:41.423Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-20T21:50:51.463Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-23T22:04:52.581Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
 - ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
+- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2026-01-20T20:24:31.915Z
 - ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-01-01T20:00:57.976Z
 - ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-01-11T23:34:25.899Z
 - ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-01-11T23:34:25.902Z
 - BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-20T00:56:12.931Z
 - BUTTON_FIX.md  —  mtime: 2026-01-19T23:11:48.935Z
+- CORRECTIONS_TECHNIQUES.md  —  mtime: 2026-01-20T19:53:05.155Z
 - FINAL_SUMMARY.md  —  mtime: 2026-01-20T00:39:35.737Z
 - FIX_BOUTONS_TEST.md  —  mtime: 2026-01-20T01:18:05.782Z
+- FIX_ERROR_400.md  —  mtime: 2026-01-20T20:24:31.965Z
 - FLUX_UTILISATEUR.md  —  mtime: 2026-01-19T22:58:28.036Z
+- GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-01-20T19:53:05.116Z
 - IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-20T00:39:35.723Z
 - IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-19T22:52:32.255Z
 - IMPROVEMENTS.md  —  mtime: 2026-01-19T23:04:30.681Z
 - INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
 - MAJ_2026-01-17.md  —  mtime: 2026-01-17T14:14:36.727Z
+- PHASE_1_INTEGRATION_COMPLETE.md  —  mtime: 2026-01-20T22:23:30.647Z
 - PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-19T23:37:13.007Z
 - QUICK_SUMMARY.md  —  mtime: 2026-01-20T00:49:53.044Z
+- README_AMELIORATIONS.md  —  mtime: 2026-01-20T20:24:31.912Z
 - README_SOLUTION.md  —  mtime: 2026-01-19T22:58:28.036Z
 - RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-20T00:49:22.561Z
 - TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-19T22:52:32.242Z
@@ -34,30 +44,125 @@ Generated: 2026-01-20T16:58:54.428Z
 - analysis\frontend-modules.md  —  mtime: 2026-01-17T14:17:41.786Z
 - analysis\prisma-db-inventory.md  —  mtime: 2026-01-17T14:17:41.766Z
 - analysis\sensitive-fields.md  —  mtime: 2026-01-17T17:53:52.584Z
+- backend\INTEGRATION-PHASE2.md  —  mtime: 2026-01-20T23:19:31.737Z
+- backend\PHASE1_TEST_GUIDE.md  —  mtime: 2026-01-20T22:34:06.624Z
+- backend\PHASE1_TEST_RESULTS.md  —  mtime: 2026-01-20T22:35:07.879Z
+- backend\PHASE3-STAGING.md  —  mtime: 2026-01-20T23:26:37.374Z
+- backend\RAPPORT-PHASE3-FINAL.md  —  mtime: 2026-01-20T23:40:27.439Z
+- backend\RAPPORT-PHASE3.1-AJUSTEMENTS.md  —  mtime: 2026-01-20T23:45:55.642Z
+- backend\TESTS_README.md  —  mtime: 2026-01-20T22:39:30.223Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-01-20T16:50:12.827Z
+- backend  —  mtime: 2026-01-23T21:55:05.719Z
 - frontend  —  mtime: 2026-01-20T01:09:20.940Z
-- backend\prisma\schema.prisma  —  mtime: 2026-01-18T16:32:00.350Z
+- backend\prisma\schema.prisma  —  mtime: 2026-01-20T20:24:31.925Z
 
 ## Top of selected files
+
+### AMELIORATIONS_PROSPECTION.md
+```
+# 🎉 RÉCAPITULATIF DES AMÉLIORATIONS - CRM Immobilier
+
+## ✅ Problèmes Résolus
+
+### 1. **Boutons Non Fonctionnels** ✔️
+
+**Avant:**
+```
+❌ Bouton "Vérifier Emails" - Pas de onClick
+❌ Bouton "Vérifier Téléphones" - Pas de onClick
+❌ Bouton "Détecter Spams" - Pas de onClick
+❌ Bouton "Supprimer Doublons" - Pas de onClick
+❌ Boutons "Ciblage Géographique" - Redirige vers tab inexistant
+❌ Bouton "Tunnel de Vente" - Redirige vers tab inexistant
+```
+
+**Après:**
+```
+✅ Tous les boutons fonctionnent correctement
+✅ Handlers implémentés pour chaque action
+✅ Navigation corrigée vers les bons onglets
+✅ Feedback visuel (disabled state) ajouté
+```
+
+---
+
+### 2. **Détection de Spam Améliorée** ✔️
+
+**Avant:**
+```
+❌ Pas de détection automatique
+❌ Spams passent dans le pipeline
+❌ Agent doit tout vérifier manuelleme
+```
+
+### ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md
+```
+# 📊 Analyse Complète: Modules Business, Intelligence, Prospecting & Core
+
+## 🎯 Vue d'Ensemble
+
+Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas détaillés dans le document principal:
+
+1. **Business Module** - Orchestration métier (mandats, transactions, propriétés, prospects)
+2. **Intelligence Module** - IA & Analytics (AI Orchestrator, LLM Router, Semantic Search, Matching)
+3. **Prospecting Module** - Acquisition leads (campagnes, scraping, matching, validation)
+4. **Prospecting-AI Module** - Prospection automatisée pilotée par IA
+5. **Core Module** - Infrastructure centrale (auth, users, providers registry, settings)
+
+---
+
+## 🏢 Module 1: Business Module (Orchestration Métier)
+
+### 📍 Localisation
+`backend/src/modules/business/` (Multi-services)
+
+### 🎯 Rôle Pr
+```
+
+### ANALYSE_MODULES_VALIDATION_IA.md
+```
+# 📊 Analyse Complète: Modules de Validation, Spam & Intelligence Artificielle
+
+## 🎯 Vue d'Ensemble de l'Architecture
+
+### Architecture Multi-Couches
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         FRONTEND                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │   LeadQualificationService (Client-Side)               │    │
+│  │   - Validation Email/Phone (RFC 5322, E.164)           │    │
+│  │   - Détection Spam (15+ patterns)                      │    │
+│  │   - Scoring Multi-Critères (5 dimensions)              │    │
+│  │   - Classification: qualified/needs-review/rejected    │    │
+│  └─────────────────────────────────
+```
+
+### ANALYSE_MODULES_VALIDATION_IA_PART2.md
+```
+---\n\n## Module 9: Business Module
+
+```
 
 ### ANALYSIS_AUTOGEN.md
 ```
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-19T11:05:59.733Z
+Generated: 2026-01-23T22:04:52.450Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-18T17:42:13.518Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-20T19:53:05.155Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-20T22:20:49.890Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-20T21:27:41.423Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-20T21:50:51.463Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-23T17:28:24.763Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
 - ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
-- ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-01-01T20:00:57.976Z
-- ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-01-11T23:34:25.899Z
-- ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-01-11T23:34:25.902Z
-- INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
-- MAJ_2026-01-17.md  —  mtime: 2026-01-17T14:14
+- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2
 ```
 
 ### ARCHITECTURE_DIAGRAMMES_VISUELS.md
@@ -143,6 +248,31 @@ Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
   │  └─ Supporte dynamiquement: SerpAPI, Firecrawl, Puppete
 ```
 
+### ARCHITECTURE_QUALIFICATION.md
+```
+# 🏗️ ARCHITECTURE DU SYSTÈME DE QUALIFICATION
+
+## 📐 Vue d'Ensemble
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PROSPECTION DASHBOARD                     │
+│                    (ProspectingDashboard.tsx)                │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+           ▼               ▼               ▼
+    ┌──────────┐   ┌─────────────┐  ┌──────────┐
+    │ Campagnes│   │   Leads     │  │ AI Prosp.│
+    └──────────┘   └──────┬──────┘  └──────────┘
+                          │
+              ┌───────────┼───────────┐
+              │           │           │
+              ▼           ▼           ▼
+       ┌─
+```
+
 ### ARCHITECTURE_SAAS_CORE_VISUAL.md
 ```
 # Architecture Visuelle - SaaS Core CRM Immobilier
@@ -183,146 +313,6 @@ Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
 │ │ 🔍 APIs de Scraping                              │ │
 │ │ ⚡ Intégrations                                    │ │
 │
-```
-
-### ARCHITECTURE_VISUELLE_PROSPECTION_AI.md
-```
-# 🏗️ Architecture Visuelle - Module Prospection IA Frontend
-
-## 📊 Vue d'Ensemble
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                   Module Prospection IA Frontend                     │
-│                       (7,035 lignes de code)                         │
-└─────────────────────────────────────────────────────────────────────┘
-                                  │
-                 ┌────────────────┼────────────────┐
-                 │                │                │
-        ┌────────▼─────┐  ┌──────▼──────┐  ┌─────▼──────┐
-        │  Components  │  │   Hooks     │  │   Types    │
-        │   (15 comp)  │  │  (1 hook)   │  │ (1 fichier)│
-        └──────────────┘  └─────────────┘  └────────────┘
-```
-
----
-
-## 🔴 Architecture
-```
-
-### BOUTONS_TEST_AJOUTES.md
-```
-# ✅ Boutons de Test API Ajoutés - Résumé
-
-## 🎯 Problème Résolu
-
-**Problème:** Les boutons de test à côté des champs API key avaient été supprimés.
-
-**Solution:** Réimplémentation complète des boutons de test avec validation directe des providers.
-
----
-
-## 🔧 Modifications Effectuées
-
-### 1. Import de l'icône TestTube
-```typescript
-import { TestTube } from 'lucide-react';
-```
-
-### 2. États ajoutés
-```typescript
-const [testingKeys, setTestingKeys] = useState<Record<string, boolean>>({});
-const [validatedKeys, setValidatedKeys] = useState<Record<string, boolean>>({});
-const [availableModelsPerKey, setAvailableModelsPerKey] = useState<Record<string, string[]>>({});
-```
-
-### 3. Fonction getProviderFromKeyName()
-Mappe les noms de clés aux providers:
-- `openaiApiKey` → `openai`
-- `geminiApiKey` 
-```
-
-### BUTTON_FIX.md
-```
-# ✅ CORRECTION FINALE - Bouton "Tester" Visible Partout
-
-## 🎯 Problème Identifié
-
-L'utilisateur n'y voit pas le bouton "Tester" à côté de chaque input de clé API.
-
-**Cause Racine**:
-- La fonction `getProviderFromKeyName()` ne reconnaissait que 4 providers (OpenAI, Gemini, DeepSeek, Anthropic)
-- OpenRouter et Mistral n'avaient pas de mapping
-- Le paramètre `isLLMKey` était `false` pour OpenRouter et Mistral
-- Le bouton ne s'affichait donc QUE pour les 4 premiers providers
-
-## ✅ Corrections Appliquées
-
-### 1. Mapping Complet des Providers
-
-**Avant**: 4 providers seulement
-```typescript
-const mapping: Record<string, string> = {
-  'openaiApiKey': 'openai',
-  'geminiApiKey': 'gemini',
-  'deepseekApiKey': 'deepseek',
-  'anthropicApiKey': 'anthropic',
-};
-```
-
-**Après**: 12 providers (tous reconn
-```
-
-### FINAL_SUMMARY.md
-```
-# ✅ IMPLÉMENTATION COMPLÈTE - AI API Keys Configuration
-
-## 🎯 Objectifs Réalisés
-
-### ✅ 1. Champs API Optionnels
-- Tous les champs de clé API sont **optionnels**
-- Au moins une clé requise avant sauvegarde
-- Aucune validation de format (accepte n'importe quelle entrée)
-
-### ✅ 2. Test Direct des Providers
-- Test n'utilise PAS le backend
-- Appels directs aux APIs:
-  - OpenAI: `https://api.openai.com/v1/models`
-  - Gemini: `https://generativelanguage.googleapis.com/v1/models`
-  - Anthropic: `https://api.anthropic.com/v1/messages`
-  - DeepSeek: `https://api.deepseek.com/v1/models`
-  - Mistral: `https://api.mistral.ai/v1/models`
-  - OpenRouter: `https://openrouter.ai/api/v1/models`
-
-### ✅ 3. Dropdown des Modèles
-- Affiche **SEULEMENT** quand la clé API est validée
-- Dropdown est `required` (do
-```
-
-### FIX_BOUTONS_TEST.md
-```
-# 🔧 FIX: Boutons de Test API + Layout Menu
-
-## 🎯 Problèmes Identifiés et Résolus
-
-### ❌ Problème 1: Boutons de test non visibles
-**Cause:** Le mauvais fichier était servi
-- URL: `http://localhost:3000/settings/ai-api-keys`
-- Next.js priorise: `/src/pages/` > `/pages/`
-- Fichier modifié: `/pages/settings/ai-api-keys.tsx` ❌
-- Fichier servi: `/src/pages/settings/ai-api-keys.tsx` ✅
-
-**Solution:** Mise à jour du bon fichier (`/src/pages/settings/ai-api-keys.tsx`)
-
-### ❌ Problème 2: Tests via backend au lieu de direct
-**Cause:** `handleTestApiKey()` appelait `/api/ai-billing/api-keys/validate`
-- ❌ Ancienne méthode: Backend proxy
-- ✅ Nouvelle méthode: Appels directs aux providers
-
-**Solution:** Remplacé la fonction pour tester directement avec les APIs
-
-### ✅ Problème 3: Menu layout présent
-Le 
 ```
 
 ## Backend src top-level (if exists)
