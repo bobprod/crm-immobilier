@@ -1,0 +1,12 @@
+{
+    "name": "crm-immobilier-backend",
+    "scripts": {
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:migrate:prod": "prisma migrate deploy",
+        "prisma:migrate:status": "prisma migrate status",
+        "prisma:sync": "prisma format && prisma generate && prisma migrate dev --name sync_schema_update",
+        "prisma:sync:prod": "prisma format && prisma generate && prisma migrate deploy",
+        "prisma:studio": "prisma studio"
+    }
+}

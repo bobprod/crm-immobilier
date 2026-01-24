@@ -140,8 +140,8 @@ export class MarketingTrackingModule implements OnModuleInit {
       if (trackingNotifications && notificationsService) {
         trackingNotifications.setNotificationsService(notificationsService);
       }
-    } catch (error) {
-      console.warn('Could not inject NotificationsService:', error.message);
+    } catch {
+      // NotificationsService is optional - silent fail
     }
 
     // Injecter ProspectionService et AiOrchestratorService dans TrackingProspectionAiService
@@ -167,8 +167,8 @@ export class MarketingTrackingModule implements OnModuleInit {
           trackingProspectionAi.setAiOrchestratorService(aiOrchestratorService);
         }
       }
-    } catch (error) {
-      console.warn('Could not inject Prospection/AI services:', error.message);
+    } catch {
+      // Prospection/AI services are optional - silent fail
     }
 
     // Injecter EmailService, SmsService et UnifiedCommunicationService dans TrackingCommunicationsService
@@ -199,11 +199,8 @@ export class MarketingTrackingModule implements OnModuleInit {
           );
         }
       }
-    } catch (error) {
-      console.warn(
-        'Could not inject Communication services:',
-        error.message,
-      );
+    } catch {
+      // Communication services are optional - silent fail
     }
 
     // Injecter SmartFormsService dans TrackingWebDataService
@@ -218,8 +215,8 @@ export class MarketingTrackingModule implements OnModuleInit {
       if (trackingWebData && smartFormsService) {
         trackingWebData.setSmartFormsService(smartFormsService);
       }
-    } catch (error) {
-      console.warn('Could not inject SmartFormsService:', error.message);
+    } catch {
+      // SmartFormsService is optional - silent fail
     }
   }
 }

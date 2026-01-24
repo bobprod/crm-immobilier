@@ -13,7 +13,7 @@ export class LLMConfigService {
     private readonly prisma: PrismaService,
     private readonly llmFactory: LLMProviderFactory,
     private readonly costTracker: ApiCostTrackerService,
-  ) {}
+  ) { }
 
   /**
    * Récupérer la configuration LLM d'un utilisateur
@@ -195,5 +195,73 @@ export class LLMConfigService {
    */
   async checkBudget(userId: string, monthlyBudget: number) {
     return this.costTracker.checkBudgetAlert(userId, monthlyBudget);
+  }
+
+  /**
+   * Tester une clé API fournie directement (utilisé par l'UI pour tester une clé avant sauvegarde)
+   */
+  async testProviderKey(userId: string, provider: string, apiKey: string) {
+    // Construire une config minimale pour le provider
+    const config: any = {
+      provider,
+      apiKey,
+    };
+
+    const isValid = await this.llmFactory.testProvider(config);
+
+    return {
+      success: isValid,
+      provider,
+      message: isValid ? 'Clé valide' : 'Clé invalide ou erreur de connexion',
+    };
+  }
+
+  /**
+   * Sauvegarder la configuration par défaut (provider + model)
+   */
+  async saveDefaultConfig(userId: string, provider: string, model: string) {
+    // Vérifier que le provider est configuré
+    const userProvider = await this.prisma.userLlmProvider.findUnique({
+      where: {
+        userId_provider: { userId, provider },
+      },
+    });
+
+    if (!userProvider) {
+      throw new Error(`Provider ${provider} non configuré. Veuillez d'abord ajouter une clé API.`);
+    }
+
+    // Mettre à jour le provider avec le modèle sélectionné
+    await this.prisma.userLlmProvider.update({
+      where: {
+        userId_provider: { userId, provider },
+      },
+      data: {
+        model,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Mettre à jour aussi dans llmConfig (ancienne table)
+    await this.prisma.llmConfig.upsert({
+      where: { userId },
+      create: {
+        userId,
+        provider,
+        model,
+      },
+      update: {
+        provider,
+        model,
+      },
+    });
+
+    return {
+      success: true,
+      provider,
+      model,
+      message: `Configuration par défaut sauvegardée: ${provider} - ${model}`,
+    };
   }
 }

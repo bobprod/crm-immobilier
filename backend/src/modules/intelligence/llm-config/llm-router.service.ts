@@ -186,23 +186,40 @@ export class LLMRouterService {
       // Si le provider est déjà dans la liste configurée, on saute
       if (activeProviders.some(cp => cp.provider === p.name)) continue;
 
-      // Sinon on vérifie si une clé existe
+      // Sinon on vérifie si une clé existe ET EST NON VIDE
       let hasKey = false;
+      let apiKey = null;
 
       // Check user settings
       if (aiSettings) {
-        if (aiSettings[p.keyField]) hasKey = true;
+        const keyValue = aiSettings[p.keyField];
+        if (keyValue && keyValue.trim() !== '' && !keyValue.includes('***')) {
+          hasKey = true;
+          apiKey = keyValue;
+        }
         // Compatibilité pour anthropic/claude
-        if (p.name === 'anthropic' && (aiSettings as any).claudeApiKey) hasKey = true;
+        if (p.name === 'anthropic' && !hasKey) {
+          const claudeKey = (aiSettings as any).claudeApiKey;
+          if (claudeKey && claudeKey.trim() !== '' && !claudeKey.includes('***')) {
+            hasKey = true;
+            apiKey = claudeKey;
+          }
+        }
       }
 
       // Check agency settings
-      if (!hasKey && agencyKeys && agencyKeys[p.keyField]) hasKey = true;
+      if (!hasKey && agencyKeys) {
+        const agencyKeyValue = agencyKeys[p.keyField];
+        if (agencyKeyValue && agencyKeyValue.trim() !== '' && !agencyKeyValue.includes('***')) {
+          hasKey = true;
+          apiKey = agencyKeyValue;
+        }
+      }
 
       // Check global settings (Super Admin fallback) - Optionnel
       // Pour l'instant on se limite à User + Agency pour l'activation automatique
 
-      if (hasKey) {
+      if (hasKey && apiKey) {
         // Add virtual provider
         activeProviders.push({
           id: `virtual-${p.name}`,
@@ -346,42 +363,7 @@ export class LLMRouterService {
   }
 
   /**
-   * 📋 Liste des providers configurés par l'utilisateur
-   *
-   * Retourne tous les providers avec leurs stats enrichies
-   */
-  async getUserProviders(userId: string) {
-    const providers = await this.prisma.userLlmProvider.findMany({
-      where: { userId },
-      orderBy: { priority: 'asc' },
-    });
-
-    // Enrichir avec les stats de performance
-    const enriched = await Promise.all(
-      providers.map(async (p) => {
-        const perf = await this.prisma.providerPerformance.findUnique({
-          where: { userId_provider: { userId, provider: p.provider } },
-        });
-
-        const monthlyUsage = await this.getMonthlyUsage(userId, p.provider);
-
-        return {
-          ...p,
-          apiKey: '***' + (p.apiKey?.slice(-4) || ''), // Masquer la clé
-          performance: perf,
-          monthlyUsage,
-          budgetRemaining: p.monthlyBudget
-            ? Math.max(0, p.monthlyBudget - monthlyUsage)
-            : null,
-        };
-      }),
-    );
-
-    return enriched;
-  }
-
-  /**
-   * 💵 Utilisation mensuelle d'un provider
+   *  Utilisation mensuelle d'un provider
    */
   private async getMonthlyUsage(
     userId: string,
@@ -449,7 +431,85 @@ export class LLMRouterService {
   }
 
   /**
-   * 📈 Tracker un appel LLM (à appeler après chaque génération)
+   * � Récupérer les providers configurés par l'utilisateur avec leurs modèles disponibles
+   */
+  async getUserProviders(userId: string) {
+    const userProviders = await this.getUserActiveProviders(userId);
+
+    // Définir les modèles disponibles par provider
+    const providerModels: Record<string, string[]> = {
+      openai: ['gpt-4o', 'gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'],
+      gemini: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
+      anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
+      deepseek: ['deepseek-chat', 'deepseek-coder'],
+      mistral: ['mistral-large-latest', 'mistral-medium', 'mistral-small-latest', 'mistral-tiny'],
+      openrouter: ['anthropic/claude-3.5-sonnet', 'openai/gpt-4-turbo-preview', 'google/gemini-pro-1.5'],
+      qwen: ['qwen-max', 'qwen-plus', 'qwen-turbo'],
+      kimi: ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'],
+    };
+
+    // Filtrer pour ne garder QUE les providers avec une clé API réelle
+    const validProviders = [];
+
+    for (const p of userProviders) {
+      let hasValidKey = false;
+
+      // Si c'est un provider configuré dans UserLlmProvider avec une clé
+      if (p.apiKey && p.apiKey !== 'managed-by-apikeys-service' && !p.apiKey.includes('***')) {
+        hasValidKey = true;
+      }
+
+      // Si c'est un provider virtuel, vérifier dans ai_settings
+      if (p.apiKey === 'managed-by-apikeys-service') {
+        const aiSettings = await this.prisma.ai_settings.findUnique({
+          where: { userId },
+        });
+
+        const keyFieldMapping: Record<string, string> = {
+          openai: 'openaiApiKey',
+          anthropic: 'anthropicApiKey',
+          gemini: 'geminiApiKey',
+          deepseek: 'deepseekApiKey',
+          mistral: 'mistralApiKey',
+          openrouter: 'openrouterApiKey',
+          qwen: 'qwenApiKey',
+          kimi: 'kimiApiKey',
+        };
+
+        const keyField = keyFieldMapping[p.provider];
+        if (keyField && aiSettings) {
+          const keyValue = aiSettings[keyField];
+          if (keyValue && keyValue.trim() !== '' && !keyValue.includes('***')) {
+            hasValidKey = true;
+          }
+          // Vérifier aussi claudeApiKey pour anthropic
+          if (p.provider === 'anthropic' && !hasValidKey) {
+            const claudeKey = (aiSettings as any).claudeApiKey;
+            if (claudeKey && claudeKey.trim() !== '' && !claudeKey.includes('***')) {
+              hasValidKey = true;
+            }
+          }
+        }
+      }
+
+      // N'ajouter que si la clé est valide
+      if (hasValidKey) {
+        validProviders.push({
+          provider: p.provider,
+          model: p.model,
+          isActive: p.isActive,
+          availableModels: providerModels[p.provider] || [],
+          apiKey: p.apiKey ? '***' + p.apiKey.slice(-4) : null,
+        });
+      }
+    }
+
+    console.log(`✅ Providers valides retournés: ${validProviders.map(p => p.provider).join(', ')}`);
+    return validProviders;
+  }
+
+  /**
+   * �📈 Tracker un appel LLM (à appeler après chaque génération)
    *
    * Cette méthode doit être appelée après chaque appel LLM pour :
    * - Enregistrer l'utilisation

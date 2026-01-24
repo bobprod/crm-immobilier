@@ -158,6 +158,10 @@ export default function AIApiKeysPage() {
   const [selectedModel, setSelectedModel] = useState<string>('gpt-4o');
   const [defaultProvider, setDefaultProvider] = useState<string>('openai');
 
+  // État pour les providers configurés (avec clés API valides)
+  const [configuredProviders, setConfiguredProviders] = useState<any[]>([]);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+
   // État pour la validation des clés
   const [testingKeys, setTestingKeys] = useState<Record<string, boolean>>({});
   const [validatedKeys, setValidatedKeys] = useState<Record<string, boolean>>({});
@@ -176,7 +180,44 @@ export default function AIApiKeysPage() {
 
   useEffect(() => {
     loadApiKeys();
+    loadConfiguredProviders();
   }, []);
+
+  const loadConfiguredProviders = async () => {
+    try {
+      setLoadingProviders(true);
+      const token = getAuthToken();
+      if (!token) return;
+
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      apiUrl = apiUrl.replace(/\/api$/, '');
+
+      const response = await fetch(`${apiUrl}/api/llm-config/user-providers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const providers = await response.json();
+        setConfiguredProviders(providers);
+        console.log('👉 Providers configurés:', providers);
+
+        // Si un provider est configuré, le sélectionner par défaut
+        if (providers.length > 0 && !selectedProvider) {
+          const firstProvider = providers[0];
+          setSelectedProvider(firstProvider.provider);
+          if (firstProvider.availableModels && firstProvider.availableModels.length > 0) {
+            setSelectedModel(firstProvider.availableModels[0]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des providers:', error);
+    } finally {
+      setLoadingProviders(false);
+    }
+  };
 
   const loadApiKeys = async () => {
     try {
@@ -354,72 +395,27 @@ export default function AIApiKeysPage() {
     console.log(`🔍 Testing ${provider} API key...`);
 
     try {
+      // Call server-side test endpoint to avoid CORS and to keep API keys secure
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      apiUrl = apiUrl.replace(/\/api$/, '');
+      const response = await fetch(`${apiUrl}/api/llm-config/test-key`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, apiKey }),
+      });
+
       let isValid = false;
       let models: string[] = [];
 
-      if (provider === 'openai') {
-        const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id).filter((id: string) =>
-            id.includes('gpt')
-          ) || [];
-          isValid = true;
-        }
-      } else if (provider === 'gemini') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
-        if (response.ok) {
-          const data = await response.json();
-          models = data.models?.map((m: any) => m.name.replace('models/', '')).filter((name: string) =>
-            name.includes('gemini')
-          ) || [];
-          isValid = true;
-        }
-      } else if (provider === 'anthropic') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 1,
-            messages: [{ role: 'user', content: 'test' }]
-          })
-        });
-        isValid = response.ok || response.status === 400;
-        models = PROVIDER_MODELS.anthropic;
-      } else if (provider === 'deepseek') {
-        const response = await fetch('https://api.deepseek.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || PROVIDER_MODELS.deepseek;
-          isValid = true;
-        }
-      } else if (provider === 'mistral') {
-        const response = await fetch('https://api.mistral.ai/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || [];
-          isValid = true;
-        }
-      } else if (provider === 'openrouter') {
-        const response = await fetch('https://openrouter.ai/api/v1/models', {
-          headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          models = data.data?.map((m: any) => m.id) || [];
-          isValid = true;
-        }
+      if (response.ok) {
+        const data = await response.json();
+        isValid = !!data.success;
+        // backend doesn't return models list for arbitrary keys — use provider defaults
+        models = PROVIDER_MODELS[provider as keyof ProviderModels] || [];
+      } else {
+        // If server returned non-OK, parse error message
+        const errText = await response.text().catch(() => 'Erreur serveur');
+        throw new Error(errText || 'Erreur lors du test côté serveur');
       }
 
       if (isValid) {
@@ -450,6 +446,54 @@ export default function AIApiKeysPage() {
 
   const toggleShowKey = (keyName: string) => {
     setShowKeys(prev => ({ ...prev, [keyName]: !prev[keyName] }));
+  };
+
+  /**
+   * Sauvegarder la configuration par défaut (provider + modèle)
+   */
+  const handleSaveDefaultConfig = async () => {
+    try {
+      if (!selectedProvider || !selectedModel) {
+        addToast('Veuillez sélectionner un provider et un modèle', 'error');
+        return;
+      }
+
+      setLoading(true);
+      const token = getAuthToken();
+      if (!token) {
+        addToast('Authentification requise', 'error');
+        return;
+      }
+
+      let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      apiUrl = apiUrl.replace(/\/api$/, '');
+
+      const response = await fetch(`${apiUrl}/api/llm-config/save-default`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: selectedProvider,
+          model: selectedModel,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDefaultProvider(selectedProvider);
+        addToast(`✅ Configuration sauvegardée: ${selectedProvider.toUpperCase()} - ${selectedModel}`, 'success');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        addToast(`❌ Erreur: ${errorData.message || 'Impossible de sauvegarder'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      addToast('❌ Erreur de connexion au serveur', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
@@ -568,8 +612,6 @@ export default function AIApiKeysPage() {
     );
   };
 
-  const availableModels = PROVIDER_MODELS[selectedProvider as keyof ProviderModels] || [];
-
   return (
     <MainLayout
       title="Clés API & Configuration LLM"
@@ -615,56 +657,100 @@ export default function AIApiKeysPage() {
               <CardContent className="space-y-6">
                 {/* Provider & Model Selection */}
                 <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="provider">Sélectionner un Provider LLM</Label>
-                      <select
-                        id="provider"
-                        value={selectedProvider}
-                        onChange={(e) => {
-                          setSelectedProvider(e.target.value);
-                          setDefaultProvider(e.target.value);
-                          // Définir le premier modèle du provider sélectionné
-                          const models = PROVIDER_MODELS[e.target.value as keyof ProviderModels] || [];
-                          if (models.length > 0) {
-                            setSelectedModel(models[0]);
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mt-1"
-                        data-testid="select-provider"
-                      >
-                        <option value="openai">OpenAI (GPT)</option>
-                        <option value="gemini">Google Gemini</option>
-                        <option value="deepseek">DeepSeek</option>
-                        <option value="anthropic">Anthropic (Claude)</option>
-                      </select>
+                  {loadingProviders ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                      <span className="ml-2 text-purple-700">Chargement des providers...</span>
                     </div>
+                  ) : configuredProviders.length === 0 ? (
+                    <Alert className="border-orange-200 bg-orange-50">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800">
+                        <strong>Aucun provider configuré</strong><br />
+                        Veuillez d'abord ajouter et tester vos clés API ci-dessous, puis revenez ici pour sélectionner votre configuration par défaut.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="provider">Sélectionner un Provider LLM</Label>
+                          <select
+                            id="provider"
+                            value={selectedProvider}
+                            onChange={(e) => {
+                              const newProvider = e.target.value;
+                              setSelectedProvider(newProvider);
 
-                    <div>
-                      <Label htmlFor="model">Modèle à utiliser</Label>
-                      <select
-                        id="model"
-                        value={selectedModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mt-1"
-                        data-testid="select-model"
-                      >
-                        <option value="">Sélectionner un modèle</option>
-                        {availableModels.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                              // Trouver les modèles disponibles pour ce provider
+                              const provider = configuredProviders.find(p => p.provider === newProvider);
+                              if (provider && provider.availableModels && provider.availableModels.length > 0) {
+                                setSelectedModel(provider.availableModels[0]);
+                              } else {
+                                setSelectedModel('');
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mt-1"
+                            data-testid="select-provider"
+                          >
+                            {configuredProviders.map((provider) => (
+                              <option key={provider.provider} value={provider.provider}>
+                                {provider.provider.toUpperCase()}
+                                {provider.model ? ` (${provider.model})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                  {selectedProvider && selectedModel && (
-                    <div className="p-3 bg-white rounded border border-purple-300">
-                      <p className="text-sm text-purple-900" data-testid="selection-display">
-                        <strong>Configuration sélectionnée:</strong> {selectedProvider.toUpperCase()} - <code className="font-mono text-purple-700">{selectedModel}</code>
-                      </p>
-                    </div>
+                        <div>
+                          <Label htmlFor="model">Modèle à utiliser</Label>
+                          <select
+                            id="model"
+                            value={selectedModel}
+                            onChange={(e) => setSelectedModel(e.target.value)}
+                            className="w-full px-3 py-2 border border-purple-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 mt-1"
+                            data-testid="select-model"
+                            disabled={!selectedProvider}
+                          >
+                            {selectedProvider && configuredProviders.find(p => p.provider === selectedProvider)?.availableModels?.map((model: string) => (
+                              <option key={model} value={model}>
+                                {model}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {selectedProvider && selectedModel && (
+                        <div className="p-3 bg-white rounded border border-purple-300">
+                          <p className="text-sm text-purple-900" data-testid="selection-display">
+                            <strong>Configuration sélectionnée:</strong> {selectedProvider.toUpperCase()} - <code className="font-mono text-purple-700">{selectedModel}</code>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Bouton pour enregistrer la configuration par défaut */}
+                      <div className="pt-2">
+                        <Button
+                          type="button"
+                          onClick={handleSaveDefaultConfig}
+                          disabled={loading || !selectedProvider || !selectedModel}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Enregistrement...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Enregistrer comme configuration par défaut
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </div>
 
