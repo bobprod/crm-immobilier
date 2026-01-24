@@ -24,7 +24,7 @@ export class LLMConfigController {
   constructor(
     private readonly llmConfigService: LLMConfigService,
     private readonly llmRouterService: LLMRouterService,
-  ) {}
+  ) { }
 
   /**
    * Récupérer la configuration actuelle
@@ -54,6 +54,18 @@ export class LLMConfigController {
   @ApiResponse({ status: 200, type: TestLLMConfigResponseDto })
   async testConfig(@Request() req) {
     return this.llmConfigService.testConfig(req.user.userId);
+  }
+
+  /**
+   * Tester une clé API fournie par l'utilisateur (avant sauvegarde).
+   * Cette route permet de tester une clé directement côté serveur pour éviter
+   * les problèmes de CORS et d'exposition des clés côté client.
+   */
+  @Post('test-key')
+  @ApiOperation({ summary: 'Tester une clé API LLM fournie (server-side)' })
+  async testProviderKey(@Request() req, @Body() body: { provider: string; apiKey: string }) {
+    const { provider, apiKey } = body || ({} as any);
+    return this.llmConfigService.testProviderKey(req.user.userId, provider, apiKey);
   }
 
   /**
@@ -109,12 +121,22 @@ export class LLMConfigController {
   // ═══════════════════════════════════════════════════════
 
   /**
-   * Liste des providers configurés par l'utilisateur
+   * Liste des providers configurés par l'utilisateur (avec clés API valides)
    */
   @Get('user-providers')
-  @ApiOperation({ summary: 'Liste des providers configurés avec stats' })
+  @ApiOperation({ summary: 'Liste des providers configurés avec stats et modèles disponibles' })
   async getUserProviders(@Request() req) {
     return this.llmRouterService.getUserProviders(req.user.userId);
+  }
+
+  /**
+   * Sauvegarder la configuration par défaut (provider + model)
+   */
+  @Post('save-default')
+  @ApiOperation({ summary: 'Sauvegarder le provider et modèle par défaut' })
+  async saveDefaultConfig(@Request() req, @Body() body: { provider: string; model: string }) {
+    const { provider, model } = body || ({} as any);
+    return this.llmConfigService.saveDefaultConfig(req.user.userId, provider, model);
   }
 
   /**

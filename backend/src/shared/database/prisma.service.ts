@@ -18,7 +18,55 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly tableNameMap: Record<string, string> = {
     llmConfig: 'llm_configs',
     mlConfig: 'ml_configs',
-    // Ajoutez d'autres mappings si nécessaire
+    // Tables LLM Router
+    userLlmProvider: 'user_llm_providers',
+    llmUsageLog: 'llm_usage_logs',
+    providerPerformance: 'provider_performance',
+    agencyApiKeys: 'agency_api_keys',
+    globalSettings: 'global_settings',
+    // Tables utilisateur
+    user: 'users',
+    users: 'users',
+    ai_settings: 'ai_settings',
+    // Tables AI/Billing
+    aiPricing: 'ai_pricing',
+    aiUsage: 'ai_usage',
+    aiErrorLog: 'ai_error_log',
+    aiCredits: 'ai_credits',
+    userAiCredits: 'user_ai_credits',
+    // Tables WhatsApp
+    whatsAppConfig: 'whatsapp_configs',
+    whatsAppConversation: 'whatsapp_conversations',
+    whatsAppMessage: 'whatsapp_messages',
+    whatsAppTemplate: 'whatsapp_templates',
+    whatsAppContact: 'whatsapp_contacts',
+    whatsAppCampaign: 'whatsapp_campaigns',
+    whatsAppCampaignRecipient: 'whatsapp_campaign_recipients',
+    // Tables Tracking (PascalCase = pas de @@map, donc nom direct)
+    trackingEvent: 'TrackingEvent',
+    trackingConfig: 'TrackingConfig',
+    heatmapEvent: 'heatmap_events',
+    trackingAbTest: 'tracking_ab_tests',
+    // Tables Vitrine
+    vitrineConfig: 'VitrineConfig',
+    publishedProperty: 'PublishedProperty',
+    vitrineAnalytics: 'VitrineAnalytics',
+    propertySeo: 'PropertySeo',
+    // Tables Provider
+    providerConfig: 'provider_configs',
+    providerUsageLog: 'provider_usage_logs',
+    providerMetrics: 'provider_metrics',
+    // Tables Investment
+    investmentProject: 'investment_projects',
+    investmentAnalysis: 'investment_analyses',
+    investmentComparison: 'investment_comparisons',
+    investmentAlert: 'investment_alerts',
+    // Tables Intégrations
+    userIntegration: 'user_integrations',
+    syncLog: 'sync_logs',
+    // Autres tables
+    propertyTrackingStats: 'property_tracking_stats',
+    activities: 'activities',
   };
 
   constructor() {
@@ -29,6 +77,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: isLocalDev ? false : { rejectUnauthorized: false },
+      // Connection pool settings to prevent crashes
+      max: 20, // Maximum number of clients in the pool
+      idleTimeoutMillis: 30000, // How long a client can sit idle before being removed
+      connectionTimeoutMillis: 5000, // How long to wait for a connection
+    });
+
+    // Handle pool errors to prevent crashes
+    this.pool.on('error', (err) => {
+      this.logger.error('Unexpected pool error:', err);
     });
 
     // Créer les proxies pour toutes les tables
@@ -90,6 +147,42 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'validation_whitelist',
       'vitrineAnalytics',
       'vitrineConfig',
+      // Tables LLM Router et API Keys
+      'userLlmProvider',
+      'llmUsageLog',
+      'providerPerformance',
+      'agencyApiKeys',
+      'globalSettings',
+      // Tables AI/Billing
+      'aiPricing',
+      'aiUsage',
+      'aiErrorLog',
+      'aiCredits',
+      'userAiCredits',
+      // Tables WhatsApp
+      'whatsAppConfig',
+      'whatsAppConversation',
+      'whatsAppMessage',
+      'whatsAppTemplate',
+      'whatsAppContact',
+      'whatsAppCampaign',
+      'whatsAppCampaignRecipient',
+      // Tables Tracking
+      'heatmapEvent',
+      'trackingAbTest',
+      // Tables Provider
+      'providerConfig',
+      'providerUsageLog',
+      'providerMetrics',
+      // Tables Investment
+      'investmentProject',
+      'investmentAnalysis',
+      'investmentComparison',
+      'investmentAlert',
+      // Tables Intégrations
+      'userIntegration',
+      // Autres
+      'propertyTrackingStats',
     ];
 
     tables.forEach((table) => {
@@ -602,6 +695,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       return String(val);
     };
 
+    // Mapping des clés composites vers leurs colonnes réelles
+    const compositeKeyMap: Record<string, string[]> = {
+      userId_provider: ['userId', 'provider'],
+      userId_agencyId: ['userId', 'agencyId'],
+    };
+
     // Check if a value looks like a Prisma operator object
     const isPrismaOperator = (obj: any): boolean => {
       if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return false;
@@ -623,6 +722,17 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     };
 
     for (const [key, value] of Object.entries(where)) {
+      // Handle composite keys like userId_provider
+      if (compositeKeyMap[key] && typeof value === 'object' && value !== null) {
+        const columns = compositeKeyMap[key];
+        for (const col of columns) {
+          if ((value as any)[col] !== undefined) {
+            conditions.push(`"${col}" = '${formatValue((value as any)[col])}'`);
+          }
+        }
+        continue;
+      }
+
       // Handle Prisma's OR operator
       if (key === 'OR' && Array.isArray(value)) {
         const orConditions = value.map((condition) => `(${this.buildWhereClause(condition)})`);
