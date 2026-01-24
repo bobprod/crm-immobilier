@@ -6,7 +6,10 @@ import {
   ProspectionResult,
   ProspectionStatus,
   ProspectionLead,
+  ProspectionInputMode,
 } from '../dto';
+import { WebDataService } from '../../scraping/services/web-data.service';
+import { FirecrawlService } from '../../scraping/services/firecrawl.service';
 
 /**
  * Service de prospection IA
@@ -17,7 +20,11 @@ import {
 export class ProspectionService {
   private readonly logger = new Logger(ProspectionService.name);
 
-  constructor(private readonly aiOrchestrator: AiOrchestratorService) { }
+  constructor(
+    private readonly aiOrchestrator: AiOrchestratorService,
+    private readonly webDataService: WebDataService,
+    private readonly firecrawlService: FirecrawlService,
+  ) { }
 
   /**
    * Lancer une prospection
@@ -29,12 +36,21 @@ export class ProspectionService {
   }): Promise<ProspectionResult> {
     const { tenantId, userId, request } = params;
 
-    this.logger.log(`Starting prospection for tenant ${tenantId}: ${request.zone}`);
+    this.logger.log(`Starting prospection for tenant ${tenantId}, mode: ${request.inputMode}`);
 
     const startTime = Date.now();
     const prospectionId = `prosp-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
     try {
+      // Route selon le mode de prospection
+      if (request.inputMode === ProspectionInputMode.URLS) {
+        this.logger.log(`URL mode: scraping ${request.urls?.length || 0} URLs`);
+        return this.runUrlBasedProspection(prospectionId, tenantId, userId, request, startTime);
+      }
+
+      // Mode critères (ancien comportement)
+      this.logger.log(`Criteria mode: ${request.zone}`);
+
       // Choisir le moteur
       const engine = request.options?.engine || 'internal';
 
@@ -225,6 +241,199 @@ export class ProspectionService {
         cost: totalCost,
       },
       errors: [],
+      createdAt: new Date(),
+      completedAt: new Date(),
+    };
+  }
+
+  /**
+   * Prospection basée sur URLs directes
+   * ✨ Phase 1 - URL Mode: L'utilisateur fournit des URLs, l'IA extrait tout
+   */
+  private async runUrlBasedProspection(
+    prospectionId: string,
+    tenantId: string,
+    userId: string,
+    request: StartProspectionDto,
+    startTime: number,
+  ): Promise<ProspectionResult> {
+    this.logger.log('Running URL-based prospection with AI extraction...');
+
+    const urls = request.urls || [];
+
+    if (urls.length === 0) {
+      return this.buildEmptyResult(prospectionId, request, startTime);
+    }
+
+    // Étape 1: Scraper toutes les URLs avec extraction IA
+    this.logger.log(`Scraping ${urls.length} URLs with Firecrawl/Puppeteer + LLM...`);
+
+    const rawItems: any[] = [];
+    const scrapingErrors: string[] = [];
+
+    for (const url of urls) {
+      try {
+        // Utiliser Firecrawl avec extraction LLM si disponible
+        const extractionPrompt = `
+          Extraire les informations de contact pour cette annonce immobilière:
+          - Nom/Prénom du propriétaire ou agent
+          - Email
+          - Téléphone
+          - Entreprise/Agence
+          - Rôle (propriétaire, agent, agence)
+          - Budget/Prix du bien
+          - Type de bien (appartement, villa, terrain, etc.)
+          - Localisation (ville, quartier)
+
+          Retourner UNIQUEMENT les données structurées en JSON.
+        `;
+
+        this.logger.log(`Extracting from: ${url}`);
+
+        const webData = await this.webDataService.fetchHtml(url, {
+          tenantId,
+          extractionPrompt,
+          forceProvider: false, // Allow fallback
+        });
+
+        // Si Firecrawl a extrait des données structurées, les utiliser
+        if (webData.extractedData) {
+          rawItems.push({
+            url,
+            ...webData.extractedData,
+            source: url,
+            rawHtml: webData.html?.substring(0, 1000), // Garder un extrait pour contexte
+            text: webData.text?.substring(0, 2000),
+          });
+        } else {
+          // Sinon, utiliser le texte brut pour analyse LLM ultérieure
+          rawItems.push({
+            url,
+            source: url,
+            text: webData.text,
+            title: webData.title,
+            metadata: webData.metadata,
+          });
+        }
+
+        this.logger.log(`✓ Extracted data from ${url}`);
+      } catch (error) {
+        this.logger.warn(`Failed to scrape ${url}: ${error.message}`);
+        scrapingErrors.push(`${url}: ${error.message}`);
+      }
+    }
+
+    if (rawItems.length === 0) {
+      this.logger.warn('No data extracted from any URLs');
+      return this.buildFailedResult(
+        prospectionId,
+        request,
+        startTime,
+        ['No data could be extracted from the provided URLs', ...scrapingErrors],
+      );
+    }
+
+    this.logger.log(`Scraped ${rawItems.length}/${urls.length} URLs successfully`);
+
+    // Étape 2: Analyse LLM pour normaliser et enrichir les données
+    this.logger.log('Analyzing scraped data with LLM...');
+
+    const analysisResult = await this.aiOrchestrator.orchestrate({
+      tenantId,
+      userId,
+      objective: OrchestrationObjective.PROSPECTION,
+      context: {
+        rawItems,
+        step: 'analysis',
+      },
+      options: {
+        executionMode: 'auto',
+        maxCost: request.options?.maxCost || 5,
+        timeout: 300000,
+      },
+    });
+
+    // Extraire les leads analysés
+    const analyzedLeads = this.extractAnalyzedLeadsFromOrchestration(analysisResult);
+
+    if (analyzedLeads.length === 0) {
+      this.logger.warn('No valid leads after LLM analysis');
+      return this.buildEmptyResult(prospectionId, request, startTime);
+    }
+
+    this.logger.log(`Analyzed ${analyzedLeads.length} leads from URLs`);
+
+    // Étape 3: Qualification (même process que criteria mode)
+    const qualifiedLeads: ProspectionLead[] = [];
+
+    for (const analyzedLead of analyzedLeads) {
+      try {
+        const qualificationResult = await this.aiOrchestrator.orchestrate({
+          tenantId,
+          userId,
+          objective: OrchestrationObjective.PROSPECTION,
+          context: {
+            leadId: analyzedLead.id,
+            step: 'qualification',
+          },
+          options: {
+            executionMode: 'auto',
+            maxCost: 1,
+            timeout: 30000,
+          },
+        });
+
+        const qualificationData = qualificationResult.finalResult;
+
+        qualifiedLeads.push({
+          name: analyzedLead.name || 'Unknown',
+          email: analyzedLead.email,
+          phone: analyzedLead.phone,
+          company: analyzedLead.company,
+          role: analyzedLead.role,
+          context: analyzedLead.context || '',
+          source: analyzedLead.source || 'URL Direct',
+          confidence: qualificationData?.score ? qualificationData.score / 100 : 0.7,
+        });
+      } catch (error) {
+        this.logger.warn(`Failed to qualify lead ${analyzedLead.id}: ${error.message}`);
+        qualifiedLeads.push({
+          name: analyzedLead.name || 'Unknown',
+          email: analyzedLead.email,
+          phone: analyzedLead.phone,
+          company: analyzedLead.company,
+          role: analyzedLead.role,
+          context: analyzedLead.context || '',
+          source: analyzedLead.source || 'URL Direct',
+          confidence: 0.5,
+        });
+      }
+    }
+
+    // Calculer les statistiques
+    const stats = this.calculateStats(qualifiedLeads);
+
+    // Calculer le coût (Firecrawl ~$0.001/URL + LLM analysis)
+    const totalCost = (urls.length * 0.001) + (analysisResult.metrics?.totalCost || 0);
+
+    return {
+      id: prospectionId,
+      status: ProspectionStatus.COMPLETED,
+      leads: qualifiedLeads,
+      stats,
+      metadata: {
+        zone: 'URL Mode',
+        targetType: 'URLs',
+        propertyType: undefined,
+        budget: undefined,
+        keywords: undefined,
+        executionTimeMs: Date.now() - startTime,
+        cost: totalCost,
+        urlsScraped: rawItems.length,
+        urlsTotal: urls.length,
+        scrapingErrors,
+      },
+      errors: scrapingErrors.length > 0 ? scrapingErrors : [],
       createdAt: new Date(),
       completedAt: new Date(),
     };

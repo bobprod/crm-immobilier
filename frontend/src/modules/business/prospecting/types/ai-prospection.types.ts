@@ -34,13 +34,19 @@ export interface CampaignSettings {
   timeout?: number; // en secondes (default: 300)
 }
 
+export type ProspectionInputMode = 'criteria' | 'urls';
+
 export interface ProspectionConfiguration {
+  inputMode: ProspectionInputMode;
+  // Criteria mode fields
   zone: GeographicZone;
   targetType: TargetType;
   propertyType: PropertyType;
   budget?: BudgetRange;
   keywords?: string[];
   campaignSettings: CampaignSettings;
+  // URL mode fields
+  urls?: string[];
 }
 
 // ============================================================================
@@ -48,12 +54,18 @@ export interface ProspectionConfiguration {
 // ============================================================================
 
 export interface StartProspectionRequest {
-  zone: GeographicZone;
-  targetType: TargetType;
-  propertyType: PropertyType;
+  // Input mode
+  inputMode: ProspectionInputMode;
+  // Criteria mode (required if inputMode === 'criteria')
+  zone?: GeographicZone;
+  targetType?: TargetType;
+  propertyType?: PropertyType;
   budget?: BudgetRange;
   keywords?: string[];
   maxLeads?: number;
+  // URL mode (required if inputMode === 'urls')
+  urls?: string[];
+  // Common options
   options?: {
     maxCost?: number;
     timeout?: number;
