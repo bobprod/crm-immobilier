@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
-import { ProspectingDashboard } from '@/modules/business/prospecting';
+import { ProspectingDashboardRefactored as ProspectingDashboard } from '@/modules/business/prospecting';
 
 export default function ProspectingPage() {
   const { user, loading: authLoading } = useAuth();

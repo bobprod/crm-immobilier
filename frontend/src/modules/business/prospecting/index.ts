@@ -1,5 +1,6 @@
 // Main Components
 export { ProspectingDashboard } from './components/ProspectingDashboard';
+export { ProspectingDashboardRefactored } from './components/ProspectingDashboardRefactored';
 export { AiProspectionPanel } from './components/AiProspectionPanel';
 
 // Sub Components
