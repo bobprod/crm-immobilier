@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsNumber, Min, Max, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsNumber, Min, Max, IsObject, ValidateIf, IsUrl } from 'class-validator';
+
+/**
+ * Mode de prospection
+ */
+export enum ProspectionInputMode {
+  CRITERIA = 'criteria', // Mode manuel avec critères
+  URLS = 'urls', // Mode URLs directes
+}
 
 /**
  * Type de cible pour la prospection
@@ -28,24 +36,36 @@ export enum PropertyTypeEnum {
  */
 export class StartProspectionDto {
   /**
+   * Mode de prospection
+   */
+  @IsEnum(ProspectionInputMode)
+  inputMode: ProspectionInputMode;
+
+  /**
    * Nom de la campagne de prospection
    */
   @IsString()
   @IsOptional()
   name?: string;
 
+  // ========================================
+  // CRITERIA MODE FIELDS (required if inputMode === 'criteria')
+  // ========================================
+
   /**
    * Zone géographique de prospection
    * @example "Paris 15" ou "Lyon" ou "Ile-de-France"
    */
+  @ValidateIf((o) => o.inputMode === ProspectionInputMode.CRITERIA)
   @IsString()
-  zone: string;
+  zone?: string;
 
   /**
    * Type de cible
    */
+  @ValidateIf((o) => o.inputMode === ProspectionInputMode.CRITERIA)
   @IsEnum(ProspectionTargetType)
-  targetType: ProspectionTargetType;
+  targetType?: ProspectionTargetType;
 
   /**
    * Type de bien recherché
@@ -79,6 +99,24 @@ export class StartProspectionDto {
   @Max(100)
   maxLeads?: number;
 
+  // ========================================
+  // URL MODE FIELDS (required if inputMode === 'urls')
+  // ========================================
+
+  /**
+   * Liste des URLs à scraper (mode URLs)
+   * Maximum 50 URLs par campagne
+   */
+  @ValidateIf((o) => o.inputMode === ProspectionInputMode.URLS)
+  @IsArray()
+  @IsString({ each: true })
+  @Max(50, { each: false })
+  urls?: string[];
+
+  // ========================================
+  // COMMON OPTIONS
+  // ========================================
+
   /**
    * Options avancées
    */
@@ -94,5 +132,10 @@ export class StartProspectionDto {
      * Budget max pour cette prospection (en USD)
      */
     maxCost?: number;
+
+    /**
+     * Timeout en secondes
+     */
+    timeout?: number;
   };
 }

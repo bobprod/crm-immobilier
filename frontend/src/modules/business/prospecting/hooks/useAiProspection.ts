@@ -25,16 +25,28 @@ async function startProspection(
   token: string
 ): Promise<StartProspectionResponse> {
   const request: StartProspectionRequest = {
-    zone: config.zone,
-    targetType: config.targetType,
-    propertyType: config.propertyType,
-    budget: config.budget,
-    keywords: config.keywords,
-    maxLeads: config.campaignSettings.maxLeads,
-    options: {
-      maxCost: config.campaignSettings.maxCost,
-      timeout: config.campaignSettings.timeout || 300,
-    },
+    inputMode: config.inputMode,
+    // Include appropriate fields based on mode
+    ...(config.inputMode === 'urls'
+      ? {
+          urls: config.urls,
+          options: {
+            maxCost: config.campaignSettings.maxCost,
+            timeout: config.campaignSettings.timeout || 300,
+          },
+        }
+      : {
+          zone: config.zone,
+          targetType: config.targetType,
+          propertyType: config.propertyType,
+          budget: config.budget,
+          keywords: config.keywords,
+          maxLeads: config.campaignSettings.maxLeads,
+          options: {
+            maxCost: config.campaignSettings.maxCost,
+            timeout: config.campaignSettings.timeout || 300,
+          },
+        }),
   };
 
   const response = await fetch(`${API_BASE_URL}/api/prospecting-ai/start`, {
@@ -122,6 +134,39 @@ async function convertToProspects(
 function validateConfiguration(config: Partial<ProspectionConfiguration>): ConfigurationValidation {
   const errors: ValidationError[] = [];
 
+  // Mode validation
+  if (!config.inputMode) {
+    errors.push({ field: 'inputMode', message: 'Le mode de prospection est requis' });
+    return { isValid: false, errors };
+  }
+
+  // URL mode validation
+  if (config.inputMode === 'urls') {
+    if (!config.urls || config.urls.length === 0) {
+      errors.push({ field: 'urls', message: 'Au moins une URL est requise en mode URLs' });
+    } else if (config.urls.length > 50) {
+      errors.push({ field: 'urls', message: 'Maximum 50 URLs par campagne' });
+    }
+
+    // Campaign settings validation (required for both modes)
+    if (!config.campaignSettings) {
+      errors.push({ field: 'campaignSettings', message: 'Les paramètres de campagne sont requis' });
+    } else {
+      if (!config.campaignSettings.name || config.campaignSettings.name.trim() === '') {
+        errors.push({ field: 'campaignSettings.name', message: 'Le nom de la campagne est requis' });
+      }
+
+      if (!config.campaignSettings.maxCost || config.campaignSettings.maxCost < 0.5) {
+        errors.push({ field: 'campaignSettings.maxCost', message: 'Le budget API doit être >= $0.50' });
+      } else if (config.campaignSettings.maxCost > 10) {
+        errors.push({ field: 'campaignSettings.maxCost', message: 'Le budget API doit être <= $10.00' });
+      }
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }
+
+  // Criteria mode validation
   // Zone validation
   if (!config.zone) {
     errors.push({ field: 'zone', message: 'La zone géographique est requise' });
@@ -276,12 +321,14 @@ export function useAiProspection(authToken: string): UseAiProspectionReturn {
   const [isPolling, setIsPolling] = useState(false);
 
   const [configuration, setConfiguration] = useState<Partial<ProspectionConfiguration>>({
+    inputMode: 'criteria', // Default to criteria mode
     campaignSettings: {
       name: '',
       maxLeads: 50,
       maxCost: 5,
       timeout: 300,
     },
+    urls: [],
   });
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
