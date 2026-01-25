@@ -29,6 +29,8 @@ import {
   CreateDocumentTemplateDto,
   UpdateAiSettingsDto,
   UpdateDocumentDto,
+  LinkDocumentToInvestmentDto,
+  GenerateDocumentFromInvestmentDto,
 } from './dto';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -251,7 +253,7 @@ export class DocumentsController {
   async linkToInvestment(
     @Request() req,
     @Param('id') documentId: string,
-    @Body() dto: any,
+    @Body() dto: LinkDocumentToInvestmentDto,
   ) {
     return this.intelligenceSyncService.linkDocumentToInvestmentProject(
       req.user.userId,
@@ -288,7 +290,7 @@ export class DocumentsController {
 
   @Post('generate-from-investment')
   @ApiOperation({ summary: 'Générer un document à partir d\'un projet d\'investissement' })
-  async generateFromInvestment(@Request() req, @Body() dto: any) {
+  async generateFromInvestment(@Request() req, @Body() dto: GenerateDocumentFromInvestmentDto) {
     return this.intelligenceSyncService.generateDocumentFromInvestmentProject(
       req.user.userId,
       req.user.tenantId,

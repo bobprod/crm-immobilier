@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { AiOrchestratorService } from '../../intelligence/ai-orchestrator/services/ai-orchestrator.service';
+import { OrchestrationRequestDto, OrchestrationObjective } from '../../intelligence/ai-orchestrator/dto';
 
 /**
  * Service de synchronisation entre le module Documents et le module Intelligence
@@ -147,19 +148,27 @@ export class DocumentsIntelligenceSyncService {
     const prompt = this.buildDocumentGenerationPrompt(documentType, context);
 
     // Appeler l'AI Orchestrator pour générer le document
-    const orchestrationResult = await (this.aiOrchestrator as any).orchestrate({
-      objective: 'DOCUMENT_GENERATION',
-      userQuery: prompt,
-      context,
-      userId,
+    const request: OrchestrationRequestDto = {
+      objective: OrchestrationObjective.CUSTOM,
+      context: {
+        userQuery: prompt,
+        ...context,
+      },
       tenantId,
+      userId,
       options: {
         maxCost: 1.0,
       },
-    } as any);
+    };
+
+    const orchestrationResult = await this.aiOrchestrator.orchestrate(request);
 
     // Le contenu généré devrait être dans la synthèse
     const generatedContent = orchestrationResult.synthesis || '';
+
+    // TODO: Sauvegarder le fichier sur le disque et obtenir le vrai fileUrl et filePath
+    const tempFileUrl = `/api/documents/temp/${Date.now()}.txt`;
+    const tempFilePath = `./uploads/temp/${Date.now()}.txt`;
 
     // Créer le document dans la base de données
     const document = await this.prisma.documents.create({
@@ -168,8 +177,8 @@ export class DocumentsIntelligenceSyncService {
         name: `${documentType}_${project.title}_${new Date().toISOString().split('T')[0]}`,
         originalName: `${documentType}.txt`,
         description: `Document généré automatiquement pour le projet: ${project.title}`,
-        fileUrl: '', // À remplir après sauvegarde du fichier
-        filePath: '', // À remplir après sauvegarde du fichier
+        fileUrl: tempFileUrl,
+        filePath: tempFilePath,
         mimeType: 'text/plain',
         fileSize: Buffer.byteLength(generatedContent, 'utf8'),
         extension: 'txt',

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import * as PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,9 +18,20 @@ import * as path from 'path';
 @Injectable()
 export class RealEstateDocumentGeneratorService {
   private readonly logger = new Logger(RealEstateDocumentGeneratorService.name);
-  private readonly outputDir = './uploads/documents';
+  private readonly outputDir: string;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    // Use configurable upload directory
+    this.outputDir = this.configService.get<string>('UPLOAD_DIR') || './uploads/documents';
+    
+    // Ensure directory exists
+    if (!fs.existsSync(this.outputDir)) {
+      fs.mkdirSync(this.outputDir, { recursive: true });
+    }
+  }
 
   /**
    * Générer un contrat de vente
@@ -41,14 +53,23 @@ export class RealEstateDocumentGeneratorService {
     const fileName = `contrat_vente_${Date.now()}.pdf`;
     const filePath = path.join(this.outputDir, fileName);
 
-    const doc = new PDFDocument({ margin: 50 });
-    doc.pipe(fs.createWriteStream(filePath));
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      const writeStream = fs.createWriteStream(filePath);
+      
+      // Handle stream errors
+      writeStream.on('error', (error) => {
+        this.logger.error(`Error writing PDF file: ${error.message}`);
+        throw new Error(`Failed to create PDF file: ${error.message}`);
+      });
+      
+      doc.pipe(writeStream);
 
-    // En-tête
-    doc.fontSize(20).text('CONTRAT DE VENTE IMMOBILIÈRE', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`Date: ${data.date.toLocaleDateString('fr-FR')}`, { align: 'right' });
-    doc.moveDown(2);
+      // En-tête
+      doc.fontSize(20).text('CONTRAT DE VENTE IMMOBILIÈRE', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(12).text(`Date: ${data.date.toLocaleDateString('fr-FR')}`, { align: 'right' });
+      doc.moveDown(2);
 
     // Parties
     doc.fontSize(14).text('ENTRE LES SOUSSIGNÉS:', { underline: true });
@@ -109,8 +130,23 @@ export class RealEstateDocumentGeneratorService {
 
     doc.end();
 
-    return { filePath, fileName };
+    // Wait for the PDF to be fully written
+    return new Promise((resolve, reject) => {
+      writeStream.on('finish', () => {
+        this.logger.log(`Sales contract generated: ${fileName}`);
+        resolve({ filePath, fileName });
+      });
+      writeStream.on('error', reject);
+    });
+  } catch (error) {
+    this.logger.error(`Error generating sales contract: ${error.message}`);
+    // Clean up partial file if it exists
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    throw error;
   }
+}
 
   /**
    * Générer un accord de commission
