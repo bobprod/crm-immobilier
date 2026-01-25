@@ -267,11 +267,11 @@ export class CampaignService {
                 totalLeads,
                 convertedLeads,
                 conversionRate: totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0,
-                topCampaigns: topCampaigns.map((c) => ({
-                    id: c.id,
-                    name: c.name,
-                    // Prisma may omit _count when no related rows exist
-                    leadsCount: c._count?.leads ?? 0,
+                topCampaigns: (topCampaigns || []).map((c) => ({
+                    id: c?.id,
+                    name: c?.name,
+                    leadsCount: c?._count?.leads ?? 0,
+                })),
                 })),
                 leadsOverTime: leadsOverTimeArray,
             };

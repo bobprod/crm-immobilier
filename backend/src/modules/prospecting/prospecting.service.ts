@@ -1107,11 +1107,11 @@ export class ProspectingService {
       ]);
 
       // Calculer les valeurs estimées
-      const totalLeads = campaigns.reduce((sum, c) => sum + (c._count?.leads || 0), 0);
-      const totalConverted = convertedLeads.length;
-      const estimatedValue = convertedLeads.reduce((sum, lead) => {
-        const budget = lead.budget as any;
-        const budgetValue = budget?.max || budget?.min || lead.budgetMax || lead.budgetMin || 0;
+      const totalLeads = (campaigns || []).reduce((sum, c) => sum + (c?._count?.leads || 0), 0);
+      const totalConverted = (convertedLeads || []).length;
+      const estimatedValue = (convertedLeads || []).reduce((sum, lead) => {
+        const budget = (lead?.budget) as any;
+        const budgetValue = budget?.max || budget?.min || lead?.budgetMax || lead?.budgetMin || 0;
         return sum + (typeof budgetValue === 'number' ? budgetValue : 0);
       }, 0);
 
@@ -1127,9 +1127,9 @@ export class ProspectingService {
       };
 
       // Calculer le coût total basé sur les sources des leads
-      const totalCost = allLeads.reduce((sum, lead) => {
-        const source = (lead.source || 'manual').toLowerCase();
-        const metadata = lead.metadata as any;
+      const totalCost = (allLeads || []).reduce((sum, lead) => {
+        const source = (lead?.source || 'manual').toLowerCase();
+        const metadata = lead?.metadata as any;
         if (metadata?.apiCost) {
           return sum + metadata.apiCost;
         }
@@ -1146,7 +1146,7 @@ export class ProspectingService {
             : 0;
 
       return {
-        totalCampaigns: campaigns.length,
+        totalCampaigns: (campaigns || []).length,
         totalLeads,
         totalConverted,
         conversionRate: totalLeads > 0 ? Math.round((totalConverted / totalLeads) * 100) : 0,
