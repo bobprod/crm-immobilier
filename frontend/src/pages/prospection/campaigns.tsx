@@ -1,28 +1,19 @@
-import React from 'react';
-import { MainLayout } from '@/shared/components/layout';
-import { ProspectingDashboard } from '@/modules/business/prospecting/components/ProspectingDashboard';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 /**
- * Mes Campagnes Page
- *
- * Page pour visualiser et gérer les campagnes de prospection
- * Utilise le nouveau MainLayout avec Sidebar
- *
- * Phase 2: UX/UI Restructuring
+ * Redirection vers la page principale avec onglet Campagnes
  */
+export default function CampaignsRedirect() {
+  const router = useRouter();
 
-const CampaignsPage: React.FC = () => {
+  useEffect(() => {
+    router.replace('/prospection?tab=campaigns');
+  }, [router]);
+
   return (
-    <MainLayout
-      title="Mes Campagnes"
-      breadcrumbs={[
-        { label: 'Prospection', href: '/prospection' },
-        { label: 'Mes Campagnes' },
-      ]}
-    >
-      <ProspectingDashboard />
-    </MainLayout>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+    </div>
   );
-};
-
-export default CampaignsPage;
+}

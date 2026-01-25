@@ -79,25 +79,22 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
           <div className="flex rounded-lg overflow-hidden bg-white/20">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'kanban' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
-              }`}
+              className={`px-4 py-2 text-sm font-medium transition ${viewMode === 'kanban' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
+                }`}
             >
               📊 Kanban
             </button>
             <button
               onClick={() => setViewMode('funnel')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'funnel' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
-              }`}
+              className={`px-4 py-2 text-sm font-medium transition ${viewMode === 'funnel' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
+                }`}
             >
               🔽 Entonnoir
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'list' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
-              }`}
+              className={`px-4 py-2 text-sm font-medium transition ${viewMode === 'list' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
+                }`}
             >
               📋 Liste
             </button>
@@ -119,7 +116,7 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
             <div className="text-indigo-100 text-sm mt-1">Taux de conversion</div>
           </div>
           <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-            <div className="text-3xl font-bold" className={getScoreColor(avgScore)}>
+            <div className={`text-3xl font-bold ${getScoreColor(avgScore)}`}>
               {avgScore}%
             </div>
             <div className="text-indigo-100 text-sm mt-1">Score moyen</div>
@@ -224,26 +221,24 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              lead.leadType === 'mandat'
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.leadType === 'mandat'
                                 ? 'bg-amber-100 text-amber-800'
                                 : 'bg-indigo-100 text-indigo-800'
-                            }`}
+                              }`}
                           >
                             {lead.leadType === 'mandat' ? '🏠 Mandat' : '🔍 Requête'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              lead.status === 'converted'
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.status === 'converted'
                                 ? 'bg-green-100 text-green-800'
                                 : lead.status === 'qualified'
-                                ? 'bg-blue-100 text-blue-800'
-                                : lead.status === 'contacted'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : lead.status === 'contacted'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-gray-100 text-gray-800'
+                              }`}
                           >
                             {lead.status === 'new' && '🆕 Nouveau'}
                             {lead.status === 'contacted' && '📞 Contacté'}
@@ -255,13 +250,12 @@ export const PipelineTab: React.FC<PipelineTabProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                lead.score >= 70
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.score >= 70
                                   ? 'bg-green-100 text-green-800'
                                   : lead.score >= 40
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
                             >
                               {lead.score}%
                             </span>

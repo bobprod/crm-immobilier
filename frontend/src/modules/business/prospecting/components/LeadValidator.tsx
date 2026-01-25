@@ -475,7 +475,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                         <span>🚫</span> Spam
                       </button>
                       <button
-                        onClick={() => onUpdateLead(lead.id, { validated: true, status: 'validated' })}
+                        onClick={() => onUpdateLead(lead.id, { validated: true, status: 'qualified' })}
                         className="px-3 py-1.5 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
                         title="Valider manuellement"
                       >
@@ -486,7 +486,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                   {result?.overall.status === 'suspicious' && (
                     <>
                       <button
-                        onClick={() => onUpdateLead(lead.id, { status: 'validated', validated: true })}
+                        onClick={() => onUpdateLead(lead.id, { status: 'qualified', validated: true })}
                         className="px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
                         title="Valider manuellement"
                       >
@@ -511,7 +511,7 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
                         <span>⭐</span> Qualifier
                       </button>
                       <button
-                        onClick={() => onUpdateLead(lead.id, { status: 'hold' })}
+                        onClick={() => onUpdateLead(lead.id, { status: 'new' })}
                         className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium flex items-center gap-1 whitespace-nowrap"
                         title="Mettre en attente"
                       >
@@ -593,8 +593,8 @@ export const LeadValidator: React.FC<LeadValidatorProps> = ({
               leads.forEach(lead => {
                 if (lead.email) {
                   if (emailMap.has(lead.email)) {
-                    // Marquer comme doublon
-                    onUpdateLead(lead.id, { status: 'duplicate', spam: true });
+                    // Marquer comme doublon (rejected)
+                    onUpdateLead(lead.id, { status: 'rejected', spam: true });
                     duplicateCount++;
                   } else {
                     emailMap.set(lead.email, lead.id);
