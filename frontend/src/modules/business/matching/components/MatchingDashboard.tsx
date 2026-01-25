@@ -107,6 +107,14 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
     const [typeFilter, setTypeFilter] = useState<string>('');
     const [categoryFilter, setCategoryFilter] = useState<string>('');
 
+    // Types de prospects pour le tab "Requêtes" (ceux qui cherchent un bien)
+    const REQUETE_TYPES = ['buyer', 'renter', 'investor'];
+    // Types de prospects qui sont des propriétaires (gérés via Mandats)
+    const MANDAT_TYPES = ['seller', 'landlord', 'owner'];
+
+    // Filtrer les prospects pour n'afficher que les "Requêtes"
+    const filteredProspects = prospects.filter(p => REQUETE_TYPES.includes(p.type));
+
     // Load data based on active tab
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -121,6 +129,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                     }),
                     prospectsAPI.getStats(),
                 ]);
+                // On stocke tous les prospects, le filtrage se fait après
                 setProspects(prospectsResponse.data || []);
                 setProspectStats(stats);
             } else if (activeTab === 'mandates') {
@@ -215,8 +224,8 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
     };
 
     const tabs: { id: TabType; label: string; icon: string; count?: number; description?: string }[] = [
-        { id: 'prospects', label: 'Requêtes', icon: '🔍', count: prospectStats?.total || 0, description: 'Clients qui cherchent' },
-        { id: 'mandates', label: 'Mandats', icon: '📋', count: mandateStats?.total || 0, description: 'Propriétaires' },
+        { id: 'prospects', label: 'Requêtes', icon: '🔍', count: filteredProspects.length, description: 'Acheteurs & Locataires' },
+        { id: 'mandates', label: 'Mandats', icon: '📋', count: mandateStats?.total || 0, description: 'Vendeurs & Bailleurs' },
         { id: 'properties', label: 'Biens', icon: '🏠', count: propertyStats?.total || 0, description: 'Propriétés' },
         { id: 'matching-view', label: 'Matching', icon: '🎯', count: matchingStats?.total || 0, description: 'Correspondances' },
     ];
@@ -387,10 +396,11 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-gray-600 text-sm mb-1">Total Requêtes</p>
+                                        <p className="text-gray-600 text-sm mb-1">Requêtes</p>
                                         <p className="text-4xl font-bold text-gray-900">
-                                            {prospectStats?.total || 0}
+                                            {filteredProspects.length}
                                         </p>
+                                        <p className="text-xs text-gray-400">Acheteurs, Locataires, Investisseurs</p>
                                     </div>
                                     <span className="text-4xl">🔍</span>
                                 </div>
@@ -401,7 +411,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                                     <div>
                                         <p className="text-gray-600 text-sm mb-1">Actifs</p>
                                         <p className="text-4xl font-bold text-gray-900">
-                                            {prospectStats?.activeProspects || 0}
+                                            {filteredProspects.filter(p => p.status === 'active').length}
                                         </p>
                                     </div>
                                     <span className="text-4xl">✓</span>
@@ -433,24 +443,38 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             </div>
                         </div>
 
+                        {/* Info banner */}
+                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-start gap-3">
+                                <span className="text-2xl">💡</span>
+                                <div>
+                                    <p className="font-medium text-blue-900">Requêtes = Clients qui cherchent un bien</p>
+                                    <p className="text-sm text-blue-700 mt-1">
+                                        Ce tab affiche uniquement les <strong>Acheteurs</strong>, <strong>Locataires</strong> et <strong>Investisseurs</strong>.
+                                        Les propriétaires qui vendent ou louent sont gérés dans l'onglet <strong>Mandats</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Prospects List */}
                         {loading ? (
                             <div className="bg-white rounded-lg shadow p-12 text-center">
                                 <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                                 <p className="text-gray-600">Chargement des requêtes...</p>
                             </div>
-                        ) : prospects.length === 0 ? (
+                        ) : filteredProspects.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-12 text-center">
                                 <span className="text-6xl mb-4 block">🔍</span>
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune requête enregistrée</h3>
-                                <p className="text-gray-600 mb-6">Les clients qui cherchent un bien apparaîtront ici</p>
+                                <p className="text-gray-600 mb-6">Les clients qui cherchent un bien (acheteurs, locataires, investisseurs) apparaîtront ici</p>
                                 <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
                                     + Ajouter une requête
                                 </button>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {prospects.map((prospect) => {
+                                {filteredProspects.map((prospect) => {
                                     const typeBadge = getProspectTypeBadge(prospect.type);
                                     return (
                                         <div key={prospect.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
@@ -583,6 +607,20 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             </div>
                         </div>
 
+                        {/* Info banner */}
+                        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="flex items-start gap-3">
+                                <span className="text-2xl">💡</span>
+                                <div>
+                                    <p className="font-medium text-orange-900">Mandats = Propriétaires qui vendent ou louent</p>
+                                    <p className="text-sm text-orange-700 mt-1">
+                                        Ce tab affiche les <strong>mandats de vente</strong> et <strong>mandats de location</strong> signés avec les propriétaires.
+                                        Les clients qui cherchent un bien sont dans l'onglet <strong>Requêtes</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Mandates List */}
                         {loading ? (
                             <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -593,7 +631,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             <div className="bg-white rounded-lg shadow p-12 text-center">
                                 <span className="text-6xl mb-4 block">📋</span>
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun mandat enregistré</h3>
-                                <p className="text-gray-600 mb-6">Les mandats de vente et location apparaîtront ici</p>
+                                <p className="text-gray-600 mb-6">Les mandats de vente et location signés avec les propriétaires apparaîtront ici</p>
                                 <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
                                     + Créer un mandat
                                 </button>
