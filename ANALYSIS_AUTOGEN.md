@@ -1,49 +1,49 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-24T21:49:05.269Z
+Generated: 2026-01-25T19:44:37.552Z
 
 ## Markdown files (found)
-- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-20T19:53:05.155Z
-- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-20T22:20:49.890Z
-- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-20T21:27:41.423Z
-- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-20T21:50:51.463Z
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T20:56:29.284Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-24T21:53:29.269Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-24T21:53:29.274Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-24T21:53:29.278Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-24T21:53:29.280Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T21:54:23.716Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
 - ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
-- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2026-01-20T20:24:31.915Z
+- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2026-01-24T21:53:29.287Z
 - ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-01-01T20:00:57.976Z
 - ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-01-11T23:34:25.899Z
 - ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-01-11T23:34:25.902Z
-- BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-20T00:56:12.931Z
-- BUTTON_FIX.md  —  mtime: 2026-01-19T23:11:48.935Z
-- CORRECTIONS_TECHNIQUES.md  —  mtime: 2026-01-20T19:53:05.155Z
-- FINAL_SUMMARY.md  —  mtime: 2026-01-20T00:39:35.737Z
-- FIX_BOUTONS_TEST.md  —  mtime: 2026-01-20T01:18:05.782Z
-- FIX_ERROR_400.md  —  mtime: 2026-01-20T20:24:31.965Z
-- FLUX_UTILISATEUR.md  —  mtime: 2026-01-19T22:58:28.036Z
-- GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-01-20T19:53:05.116Z
-- IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-20T00:39:35.723Z
-- IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-19T22:52:32.255Z
-- IMPROVEMENTS.md  —  mtime: 2026-01-19T23:04:30.681Z
+- BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-24T21:53:29.290Z
+- BUTTON_FIX.md  —  mtime: 2026-01-24T21:53:29.298Z
+- CORRECTIONS_TECHNIQUES.md  —  mtime: 2026-01-24T21:53:29.302Z
+- FINAL_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.330Z
+- FIX_BOUTONS_TEST.md  —  mtime: 2026-01-24T21:53:29.332Z
+- FIX_ERROR_400.md  —  mtime: 2026-01-24T21:53:29.334Z
+- FLUX_UTILISATEUR.md  —  mtime: 2026-01-24T21:53:29.337Z
+- GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-01-24T21:53:29.339Z
+- IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-24T21:53:29.342Z
+- IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.344Z
+- IMPROVEMENTS.md  —  mtime: 2026-01-24T21:53:29.346Z
 - INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
-- MAJ_2026-01-17.md  —  mtime: 2026-01-17T14:14:36.727Z
-- PHASE_1_INTEGRATION_COMPLETE.md  —  mtime: 2026-01-20T22:23:30.647Z
-- PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-19T23:37:13.007Z
-- QUICK_SUMMARY.md  —  mtime: 2026-01-20T00:49:53.044Z
-- README_AMELIORATIONS.md  —  mtime: 2026-01-20T20:24:31.912Z
-- README_SOLUTION.md  —  mtime: 2026-01-19T22:58:28.036Z
-- RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-20T00:49:22.561Z
-- TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-19T22:52:32.242Z
-- TEST_GUIDE.md  —  mtime: 2026-01-20T00:39:35.736Z
-- TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-01-20T00:48:25.789Z
-- TROUBLESHOOTING.md  —  mtime: 2026-01-19T22:58:28.036Z
+- MAJ_2026-01-17.md  —  mtime: 2026-01-24T21:53:29.348Z
+- PHASE_1_INTEGRATION_COMPLETE.md  —  mtime: 2026-01-24T21:53:29.349Z
+- PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-24T21:53:29.352Z
+- QUICK_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.353Z
+- README_AMELIORATIONS.md  —  mtime: 2026-01-24T21:53:29.355Z
+- README_SOLUTION.md  —  mtime: 2026-01-24T21:53:29.360Z
+- RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.366Z
+- TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-24T21:53:29.369Z
+- TEST_GUIDE.md  —  mtime: 2026-01-24T21:53:29.397Z
+- TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.399Z
+- TROUBLESHOOTING.md  —  mtime: 2026-01-24T21:53:29.401Z
 - VISUAL_ARCHITECTURE_GUIDE.md  —  mtime: 2026-01-11T23:34:26.095Z
-- analysis\db-read-rows.md  —  mtime: 2026-01-17T14:43:47.511Z
-- analysis\db-read-tests.md  —  mtime: 2026-01-17T17:53:52.392Z
-- analysis\frontend-modules.md  —  mtime: 2026-01-17T14:17:41.786Z
-- analysis\prisma-db-inventory.md  —  mtime: 2026-01-17T14:17:41.766Z
-- analysis\sensitive-fields.md  —  mtime: 2026-01-17T17:53:52.584Z
+- analysis\db-read-rows.md  —  mtime: 2026-01-24T21:53:29.407Z
+- analysis\db-read-tests.md  —  mtime: 2026-01-24T21:53:29.407Z
+- analysis\frontend-modules.md  —  mtime: 2026-01-24T21:53:29.411Z
+- analysis\prisma-db-inventory.md  —  mtime: 2026-01-24T21:53:29.427Z
+- analysis\sensitive-fields.md  —  mtime: 2026-01-24T21:53:29.428Z
 - backend\INTEGRATION-PHASE2.md  —  mtime: 2026-01-20T23:19:31.737Z
 - backend\PHASE1_TEST_GUIDE.md  —  mtime: 2026-01-20T22:34:06.624Z
 - backend\PHASE1_TEST_RESULTS.md  —  mtime: 2026-01-20T22:35:07.879Z
@@ -52,11 +52,15 @@ Generated: 2026-01-24T21:49:05.269Z
 - backend\RAPPORT-PHASE3-FINAL.md  —  mtime: 2026-01-20T23:40:27.439Z
 - backend\RAPPORT-PHASE3.1-AJUSTEMENTS.md  —  mtime: 2026-01-20T23:45:55.642Z
 - backend\TESTS_README.md  —  mtime: 2026-01-20T22:39:30.223Z
+- backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-01-24T21:54:07.193Z
+- backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-01-24T21:54:07.196Z
+- backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md  —  mtime: 2026-01-24T21:54:07.200Z
+- frontend\src\modules\business\prospecting\PROSPECTION_REFACTORING.md  —  mtime: 2026-01-24T21:54:07.204Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-01-24T21:00:05.961Z
-- frontend  —  mtime: 2026-01-24T14:21:57.762Z
-- backend\prisma\schema.prisma  —  mtime: 2026-01-24T00:38:12.687Z
+- backend  —  mtime: 2026-01-25T10:05:35.022Z
+- frontend  —  mtime: 2026-01-25T10:07:39.853Z
+- backend\prisma\schema.prisma  —  mtime: 2026-01-24T21:53:29.548Z
 
 ## Top of selected files
 
@@ -94,7 +98,7 @@ Generated: 2026-01-24T21:49:05.269Z
 ```
 ❌ Pas de détection automatique
 ❌ Spams passent dans le pipeline
-❌ Agent doit tout vérifier manuelleme
+❌ Age
 ```
 
 ### ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md
@@ -116,9 +120,7 @@ Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas dét
 ## 🏢 Module 1: Business Module (Orchestration Métier)
 
 ### 📍 Localisation
-`backend/src/modules/business/` (Multi-services)
-
-### 🎯 Rôle Pr
+`backend/src/modules/business/` (Multi-services
 ```
 
 ### ANALYSE_MODULES_VALIDATION_IA.md
@@ -139,7 +141,7 @@ Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas dét
 │  │   - Détection Spam (15+ patterns)                      │    │
 │  │   - Scoring Multi-Critères (5 dimensions)              │    │
 │  │   - Classification: qualified/needs-review/rejected    │    │
-│  └─────────────────────────────────
+│  └─────────────────
 ```
 
 ### ANALYSE_MODULES_VALIDATION_IA_PART2.md
@@ -151,19 +153,19 @@ Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas dét
 ### ANALYSIS_AUTOGEN.md
 ```
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-24T20:56:29.215Z
+Generated: 2026-01-24T21:49:05.269Z
 
 ## Markdown files (found)
 - AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-20T19:53:05.155Z
 - ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-20T22:20:49.890Z
 - ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-20T21:27:41.423Z
 - ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-20T21:50:51.463Z
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T10:27:52.667Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T20:56:29.284Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
 - ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
-- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2
+- ARCHITECTURE_QUALIFICATION.md
 ```
 
 ### ARCHITECTURE_DIAGRAMMES_VISUELS.md
@@ -270,8 +272,7 @@ Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
                           │
               ┌───────────┼───────────┐
               │           │           │
-              ▼           ▼           ▼
-       ┌─
+              ▼           ▼   
 ```
 
 ### ARCHITECTURE_SAAS_CORE_VISUAL.md
