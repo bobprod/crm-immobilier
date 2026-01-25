@@ -1,12 +1,54 @@
 import apiClient from './backend-api';
 
+// Property data included in match results
+export interface MatchProperty {
+  id: string;
+  title: string;
+  type: string;
+  category: string;
+  price: number;
+  currency: string;
+  city?: string;
+  address?: string;
+  area?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  images?: string[];
+  status: string;
+}
+
+// Prospect data included in match results
+export interface MatchProspect {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  type: string;
+  status: string;
+  score: number;
+  budget?: {
+    min?: number;
+    max?: number;
+  };
+  preferences?: Record<string, any>;
+}
+
 export interface MatchingResult {
   id: string;
   prospectId: string;
   propertyId: string;
   score: number;
   reasons: string[];
+  status?: string;
   createdAt: string;
+  updatedAt?: string;
+  // Relations included from backend
+  properties?: MatchProperty;
+  prospects?: MatchProspect;
+  // Aliases for findMatchesForProspect/Property results
+  property?: MatchProperty;
+  prospect?: MatchProspect;
 }
 
 export interface MatchingStats {
