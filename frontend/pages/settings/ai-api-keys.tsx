@@ -248,7 +248,7 @@ export default function AIApiKeysPage() {
       } else if (response.status === 401) {
         addToast('Session expirée, veuillez vous reconnecter', 'error');
       } else if (response.status === 429) {
-        addToast('Trop de requêtes. Veuillez patienter un instant.', 'warning');
+        addToast('Trop de requêtes. Veuillez patienter un instant.', 'info');
       } else {
         const text = await response.text();
         console.error('Failed to load keys:', response.status, text);

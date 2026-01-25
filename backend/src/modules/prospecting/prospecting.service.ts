@@ -1107,7 +1107,7 @@ export class ProspectingService {
       ]);
 
       // Calculer les valeurs estimées
-      const totalLeads = campaigns.reduce((sum, c) => sum + c._count.leads, 0);
+      const totalLeads = campaigns.reduce((sum, c) => sum + (c._count?.leads || 0), 0);
       const totalConverted = convertedLeads.length;
       const estimatedValue = convertedLeads.reduce((sum, lead) => {
         const budget = lead.budget as any;

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/shared/components/layout';
 import { LeadValidator } from '@/modules/business/prospecting/components/LeadValidator';
+import { ProspectingLead } from '@/shared/utils/prospecting-api';
 
 /**
  * Page de Validation des Leads
@@ -12,6 +13,25 @@ import { LeadValidator } from '@/modules/business/prospecting/components/LeadVal
  */
 
 const LeadsValidationPage: React.FC = () => {
+  const [leads, setLeads] = useState<ProspectingLead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // TODO: Fetch leads from API
+    setLoading(false);
+  }, []);
+
+  const handleValidate = async (leadIds: string[]) => {
+    // TODO: Call validation API
+    return [];
+  };
+
+  const handleUpdateLead = (leadId: string, data: Partial<ProspectingLead>) => {
+    setLeads(prev => prev.map(lead =>
+      lead.id === leadId ? { ...lead, ...data } : lead
+    ));
+  };
+
   return (
     <MainLayout
       title="Leads à Valider"
@@ -33,7 +53,15 @@ const LeadsValidationPage: React.FC = () => {
           </div>
         </div>
 
-        <LeadValidator />
+        {loading ? (
+          <div className="text-center py-12">Chargement...</div>
+        ) : (
+          <LeadValidator
+            leads={leads}
+            onValidate={handleValidate}
+            onUpdateLead={handleUpdateLead}
+          />
+        )}
       </div>
     </MainLayout>
   );

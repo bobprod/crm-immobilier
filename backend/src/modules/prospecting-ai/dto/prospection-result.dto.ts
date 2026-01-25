@@ -94,6 +94,12 @@ export interface ProspectionResult {
     keywords?: string[];
     executionTimeMs: number;
     cost?: number;
+    /** Nombre d'URLs scrapées avec succès (mode URL) */
+    urlsScraped?: number;
+    /** Nombre total d'URLs fournies (mode URL) */
+    urlsTotal?: number;
+    /** Erreurs de scraping par URL (mode URL) */
+    scrapingErrors?: string[];
   };
 
   /**
