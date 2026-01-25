@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { DocumentsService } from './documents.service';
 import { AiService } from './ai.service';
 import { OcrService } from './ocr.service';
+import { DocumentsIntelligenceSyncService } from './documents-intelligence-sync.service';
 import {
   UploadDocumentDto,
   GenerateDocumentDto,
@@ -28,6 +29,8 @@ import {
   CreateDocumentTemplateDto,
   UpdateAiSettingsDto,
   UpdateDocumentDto,
+  LinkDocumentToInvestmentDto,
+  GenerateDocumentFromInvestmentDto,
 } from './dto';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -41,6 +44,7 @@ export class DocumentsController {
     private documentsService: DocumentsService,
     private aiService: AiService,
     private ocrService: OcrService,
+    private intelligenceSyncService: DocumentsIntelligenceSyncService,
   ) {}
 
   // ============================================
@@ -238,5 +242,83 @@ export class DocumentsController {
     @Body('variables') variables: Record<string, any>,
   ) {
     return this.documentsService.generateFromTemplate(req.user.userId, id, variables);
+  }
+
+  // ============================================
+  // INTELLIGENCE SYNC
+  // ============================================
+
+  @Post(':id/link-investment')
+  @ApiOperation({ summary: 'Lier un document à un projet d\'investissement' })
+  async linkToInvestment(
+    @Request() req,
+    @Param('id') documentId: string,
+    @Body() dto: LinkDocumentToInvestmentDto,
+  ) {
+    return this.intelligenceSyncService.linkDocumentToInvestmentProject(
+      req.user.userId,
+      documentId,
+      dto.investmentProjectId,
+      dto.linkType,
+      dto.linkReason,
+      dto.metadata,
+    );
+  }
+
+  @Delete(':id/unlink-investment/:projectId')
+  @ApiOperation({ summary: 'Délier un document d\'un projet d\'investissement' })
+  async unlinkFromInvestment(
+    @Request() req,
+    @Param('id') documentId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.intelligenceSyncService.unlinkDocumentFromInvestmentProject(
+      req.user.userId,
+      documentId,
+      projectId,
+    );
+  }
+
+  @Get(':id/investment-projects')
+  @ApiOperation({ summary: 'Récupérer les projets d\'investissement liés à un document' })
+  async getLinkedInvestmentProjects(@Request() req, @Param('id') documentId: string) {
+    return this.intelligenceSyncService.getInvestmentProjectsForDocument(
+      req.user.userId,
+      documentId,
+    );
+  }
+
+  @Post('generate-from-investment')
+  @ApiOperation({ summary: 'Générer un document à partir d\'un projet d\'investissement' })
+  async generateFromInvestment(@Request() req, @Body() dto: GenerateDocumentFromInvestmentDto) {
+    return this.intelligenceSyncService.generateDocumentFromInvestmentProject(
+      req.user.userId,
+      req.user.tenantId,
+      dto.investmentProjectId,
+      dto.documentType,
+      {
+        templateId: dto.templateId,
+        variables: dto.variables,
+        autoLink: dto.autoLink,
+      },
+    );
+  }
+
+  @Get('investment/:projectId/documents')
+  @ApiOperation({ summary: 'Récupérer tous les documents d\'un projet d\'investissement' })
+  async getDocumentsForInvestment(@Request() req, @Param('projectId') projectId: string) {
+    return this.intelligenceSyncService.getDocumentsForInvestmentProject(
+      req.user.userId,
+      projectId,
+    );
+  }
+
+  @Get('investment/:projectId/suggestions')
+  @ApiOperation({ summary: 'Obtenir des suggestions de documents pour un projet' })
+  async getSuggestionsForInvestment(@Request() req, @Param('projectId') projectId: string) {
+    return this.intelligenceSyncService.suggestDocumentsForProject(
+      req.user.userId,
+      projectId,
+    );
   }
 }

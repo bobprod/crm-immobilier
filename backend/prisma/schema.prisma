@@ -8,29 +8,31 @@ datasource db {
 }
 
 model InvestmentProject {
-  id              String                  @id @default(cuid())
-  userId          String
-  tenantId        String
-  title           String
-  description     String?
-  source          InvestmentProjectSource
-  sourceUrl       String?
-  sourceProjectId String?
-  city            String
-  country         String                  @default("France")
-  totalPrice      Float
-  minTicket       Float
-  currency        String                  @default("EUR")
-  targetYield     Float?
-  durationMonths  Int?
-  propertyType    String?
-  fundingProgress Float?
-  status          InvestmentProjectStatus @default(draft)
-  importedAt      DateTime?               @default(now())
-  lastAnalyzedAt  DateTime?
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
-  analyses        InvestmentAnalysis[]
+  id                        String                         @id @default(cuid())
+  userId                    String
+  tenantId                  String
+  title                     String
+  description               String?
+  source                    InvestmentProjectSource
+  sourceUrl                 String?
+  sourceProjectId           String?
+  city                      String
+  country                   String                         @default("France")
+  totalPrice                Float
+  minTicket                 Float
+  currency                  String                         @default("EUR")
+  targetYield               Float?
+  durationMonths            Int?
+  propertyType              String?
+  fundingProgress           Float?
+  status                    InvestmentProjectStatus        @default(draft)
+  importedAt                DateTime?                      @default(now())
+  lastAnalyzedAt            DateTime?
+  createdAt                 DateTime                       @default(now())
+  updatedAt                 DateTime                       @updatedAt
+  analyses                  InvestmentAnalysis[]
+  documents                 documents[]
+  document_investment_links document_investment_link[]
 
   @@map("investment_projects")
 }
@@ -518,67 +520,95 @@ model document_categories {
 }
 
 model documents {
-  id             String               @id @default(cuid())
-  userId         String
-  categoryId     String?
-  name           String
-  originalName   String
-  description    String?
-  fileUrl        String
-  filePath       String
-  mimeType       String
-  fileSize       Int
-  extension      String
-  prospectId     String?
-  propertyId     String?
-  relatedType    String?
-  relatedId      String?
-  tags           Json?
-  metadata       Json?
-  isTemplate     Boolean              @default(false)
-  isPublic       Boolean              @default(false)
-  isSigned       Boolean              @default(false)
-  signedAt       DateTime?
-  signedBy       String?
-  ocrProcessed   Boolean              @default(false)
-  ocrText        String?
-  aiGenerated    Boolean              @default(false)
-  aiGenerationId String?
-  version        Int                  @default(1)
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  aiGeneration   ai_generations?      @relation(fields: [aiGenerationId], references: [id])
-  category       document_categories? @relation(fields: [categoryId], references: [id])
-  properties     properties?          @relation(fields: [propertyId], references: [id])
-  prospects      prospects?           @relation(fields: [prospectId], references: [id])
-  users          users                @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
-  ocr_results    ocr_results[]
+  id                    String                         @id @default(cuid())
+  userId                String
+  categoryId            String?
+  name                  String
+  originalName          String
+  description           String?
+  fileUrl               String
+  filePath              String
+  mimeType              String
+  fileSize              Int
+  extension             String
+  prospectId            String?
+  propertyId            String?
+  relatedType           String?
+  relatedId             String?
+  tags                  Json?
+  metadata              Json?
+  isTemplate            Boolean                        @default(false)
+  isPublic              Boolean                        @default(false)
+  isSigned              Boolean                        @default(false)
+  signedAt              DateTime?
+  signedBy              String?
+  ocrProcessed          Boolean                        @default(false)
+  ocrText               String?
+  aiGenerated           Boolean                        @default(false)
+  aiGenerationId        String?
+  version               Int                            @default(1)
+  // New fields for real estate document management
+  realEstateDocType     RealEstateDocumentType?
+  agencyId              String?
+  contractNumber        String?
+  contractDate          DateTime?
+  expirationDate        DateTime?
+  contractValue         Float?
+  commissionRate        Float?
+  status                DocumentStatus                 @default(draft)
+  validatedBy           String?
+  validatedAt           DateTime?
+  // Intelligence sync fields
+  investmentProjectId   String?
+  intelligenceSyncedAt  DateTime?
+  intelligenceMetadata  Json?
+  createdAt             DateTime                       @default(now())
+  updatedAt             DateTime                       @updatedAt
+  aiGeneration          ai_generations?                @relation(fields: [aiGenerationId], references: [id])
+  category              document_categories?           @relation(fields: [categoryId], references: [id])
+  properties            properties?                    @relation(fields: [propertyId], references: [id])
+  prospects             prospects?                     @relation(fields: [prospectId], references: [id])
+  users                 users                          @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
+  agency                agencies?                      @relation(fields: [agencyId], references: [id])
+  investmentProject     InvestmentProject?             @relation(fields: [investmentProjectId], references: [id])
+  ocr_results           ocr_results[]
+  document_investment_links document_investment_link[]
 
   @@index([userId])
   @@index([categoryId])
   @@index([prospectId])
   @@index([propertyId])
   @@index([relatedType, relatedId])
+  @@index([realEstateDocType])
+  @@index([agencyId])
+  @@index([investmentProjectId])
+  @@index([status])
 }
 
 model document_templates {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  content     String
-  variables   Json
-  category    String?
-  mimeType    String   @default("text/html")
-  isActive    Boolean  @default(true)
-  isPublic    Boolean  @default(false)
-  usageCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  users       users    @relation("UserDocumentTemplates", fields: [userId], references: [id], onDelete: Cascade)
+  id                    String                     @id @default(cuid())
+  userId                String
+  name                  String
+  description           String?
+  content               String
+  variables             Json
+  category              String?
+  mimeType              String                     @default("text/html")
+  isActive              Boolean                    @default(true)
+  isPublic              Boolean                    @default(false)
+  usageCount            Int                        @default(0)
+  // New fields for real estate templates
+  realEstateDocType     RealEstateDocumentType?
+  defaultValidity       Int? // in days
+  requiresSignature     Boolean                    @default(false)
+  templateMetadata      Json?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  users                 users                      @relation("UserDocumentTemplates", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([category])
+  @@index([realEstateDocType])
 }
 
 model ai_generations {
@@ -2844,4 +2874,85 @@ model AiChatMessage {
   @@index([conversationId])
   @@index([createdAt])
   @@map("ai_chat_messages")
+}
+
+// ============================================
+// DOCUMENTS-INTELLIGENCE INTEGRATION
+// ============================================
+
+model document_investment_link {
+  id                  String            @id @default(cuid())
+  documentId          String
+  investmentProjectId String
+  linkType            String // 'contract', 'analysis_report', 'commission', 'supporting_doc'
+  linkReason          String?
+  metadata            Json?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  document            documents         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  investmentProject   InvestmentProject @relation(fields: [investmentProjectId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, investmentProjectId])
+  @@index([documentId])
+  @@index([investmentProjectId])
+  @@index([linkType])
+  @@map("document_investment_links")
+}
+
+// ============================================
+// DOCUMENT ENUMS
+// ============================================
+
+enum RealEstateDocumentType {
+  // Contrats de vente
+  sales_contract
+  preliminary_sales_agreement
+  sales_mandate
+  exclusivity_agreement
+  // Contrats de commission
+  commission_agreement
+  commission_statement
+  // Contrats de promotion
+  promotion_contract
+  developer_contract
+  construction_contract
+  // Contrats de gestion
+  property_management_contract
+  rental_management_contract
+  syndic_contract
+  // Contrats de location
+  lease_agreement
+  rental_contract
+  commercial_lease
+  // Documents administratifs
+  property_deed
+  title_deed
+  cadastral_document
+  urban_planning_certificate
+  // Documents financiers
+  investment_analysis
+  financial_projection
+  appraisal_report
+  // Documents de visite et diagnostic
+  property_visit_report
+  property_viewing_form
+  diagnostic_report
+  energy_performance_certificate
+  // Assurances et inspections
+  insurance_policy
+  inspection_report
+  // Autres
+  other
+}
+
+enum DocumentStatus {
+  draft
+  pending_review
+  reviewed
+  pending_signature
+  signed
+  active
+  expired
+  cancelled
+  archived
 }
