@@ -632,8 +632,9 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
               }
             }
           }
-        } catch (batchError) {
-          console.error('Batch validation error:', batchError);
+        } catch (batchError: any) {
+          // Log detailed error when available (Axios response body)
+          console.error('Batch validation error:', batchError?.response?.data || batchError);
           // Fallback to local validation if API fails
           for (const lead of batch) {
             const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email || '');
