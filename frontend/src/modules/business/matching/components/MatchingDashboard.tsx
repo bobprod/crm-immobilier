@@ -951,50 +951,152 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {matches.map((match) => {
-                                    const scorePercent = Math.round(match.score * 100);
+                                    // Score can be 0-1 or 0-100 depending on source
+                                    const scorePercent = match.score <= 1 ? Math.round(match.score * 100) : Math.round(match.score);
+                                    // Get property and prospect data (handle both naming conventions)
+                                    const property = match.properties || match.property;
+                                    const prospect = match.prospects || match.prospect;
+                                    const prospectTypeBadge = prospect ? getProspectTypeBadge(prospect.type) : null;
+
                                     return (
-                                        <div key={match.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-                                            <div className="p-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-2xl">👤</span>
-                                                        <span className="text-gray-400">→</span>
-                                                        <span className="text-2xl">🏠</span>
+                                        <div key={match.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+                                            {/* Score Header */}
+                                            <div className={`px-4 py-2 flex items-center justify-between ${
+                                                scorePercent >= 80 ? 'bg-green-50' :
+                                                scorePercent >= 60 ? 'bg-yellow-50' : 'bg-red-50'
+                                            }`}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg">🎯</span>
+                                                    <span className="font-medium text-gray-700">Match</span>
+                                                    {match.status && (
+                                                        <span className={`px-2 py-0.5 rounded text-xs ${
+                                                            match.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
+                                                            match.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                                                            match.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                            {match.status === 'contacted' ? 'Contacté' :
+                                                             match.status === 'accepted' ? 'Accepté' :
+                                                             match.status === 'rejected' ? 'Rejeté' :
+                                                             match.status === 'pending' ? 'En attente' : match.status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(scorePercent)}`}>
+                                                    {scorePercent}%
+                                                </span>
+                                            </div>
+
+                                            <div className="p-4">
+                                                {/* Two-column layout: Prospect and Property */}
+                                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                                    {/* Prospect Section */}
+                                                    <div className="border-r border-gray-100 pr-4">
+                                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Prospect</p>
+                                                        {prospect ? (
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
+                                                                        {prospect.firstName?.charAt(0) || '?'}{prospect.lastName?.charAt(0) || '?'}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-medium text-gray-900 truncate">
+                                                                            {prospect.firstName} {prospect.lastName}
+                                                                        </p>
+                                                                        {prospectTypeBadge && (
+                                                                            <span className={`inline-block px-1.5 py-0.5 rounded text-xs ${prospectTypeBadge.color}`}>
+                                                                                {prospectTypeBadge.label}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                {prospect.phone && (
+                                                                    <p className="text-xs text-gray-600 truncate">
+                                                                        📞 {prospect.phone}
+                                                                    </p>
+                                                                )}
+                                                                {prospect.budget && (
+                                                                    <p className="text-xs text-gray-600 mt-1">
+                                                                        💰 {formatPrice(prospect.budget.min || 0)} - {formatPrice(prospect.budget.max || 0)}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm text-gray-400 italic">ID: {match.prospectId?.slice(0, 8)}...</p>
+                                                        )}
                                                     </div>
-                                                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(scorePercent)}`}>
-                                                        {scorePercent}%
-                                                    </span>
+
+                                                    {/* Property Section */}
+                                                    <div className="pl-2">
+                                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Bien</p>
+                                                        {property ? (
+                                                            <div>
+                                                                {/* Property Image */}
+                                                                <div className="relative mb-2">
+                                                                    {property.images && property.images.length > 0 ? (
+                                                                        <img
+                                                                            src={property.images[0]}
+                                                                            alt={property.title}
+                                                                            className="w-full h-24 object-cover rounded-lg"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                                                                            <span className="text-3xl text-gray-300">🏠</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <span className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-xs font-medium ${getPropertyStatusBadge(property.status).color}`}>
+                                                                        {getPropertyStatusBadge(property.status).label}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="font-medium text-gray-900 text-sm truncate">
+                                                                    {property.title}
+                                                                </p>
+                                                                <p className="text-pink-600 font-bold text-sm">
+                                                                    {formatPrice(property.price, property.currency)}
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1 mt-1 text-xs text-gray-500">
+                                                                    {property.city && <span>📍 {property.city}</span>}
+                                                                    {property.area && <span>• {property.area}m²</span>}
+                                                                    {property.bedrooms && <span>• {property.bedrooms}ch</span>}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm text-gray-400 italic">ID: {match.propertyId?.slice(0, 8)}...</p>
+                                                        )}
+                                                    </div>
                                                 </div>
 
-                                                <div className="space-y-2 mb-4">
-                                                    <p className="text-sm">
-                                                        <span className="text-gray-500">Prospect:</span>{' '}
-                                                        <span className="font-medium">{match.prospectId}</span>
-                                                    </p>
-                                                    <p className="text-sm">
-                                                        <span className="text-gray-500">Bien:</span>{' '}
-                                                        <span className="font-medium">{match.propertyId}</span>
-                                                    </p>
-                                                </div>
-
+                                                {/* Match Reasons */}
                                                 {match.reasons && match.reasons.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1 mb-4">
-                                                        {match.reasons.slice(0, 3).map((reason, idx) => (
-                                                            <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                                                {reason}
-                                                            </span>
-                                                        ))}
+                                                    <div className="mb-4">
+                                                        <p className="text-xs text-gray-500 mb-2">Raisons du match:</p>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {match.reasons.slice(0, 4).map((reason, idx) => (
+                                                                <span key={idx} className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">
+                                                                    ✓ {reason}
+                                                                </span>
+                                                            ))}
+                                                            {match.reasons.length > 4 && (
+                                                                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
+                                                                    +{match.reasons.length - 4} autres
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 
-                                                <div className="flex gap-2 pt-4 border-t border-gray-100">
-                                                    <button className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition">
-                                                        ✓ Accepter
+                                                {/* Actions */}
+                                                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                                                    <button className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition flex items-center justify-center gap-1">
+                                                        <span>✓</span> Accepter
                                                     </button>
-                                                    <button className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
-                                                        ✕ Rejeter
+                                                    <button className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition flex items-center justify-center gap-1">
+                                                        <span>📞</span> Contacter
+                                                    </button>
+                                                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
+                                                        ✕
                                                     </button>
                                                 </div>
                                             </div>
