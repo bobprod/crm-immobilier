@@ -452,6 +452,7 @@ export class DocumentsIntelligenceSyncService {
       'insurance_policy': 'insurance_policy',
       'preliminary_sales_agreement': 'preliminary_sales_agreement',
       'sales_mandate': 'sales_mandate',
+      'exclusivity_agreement': 'exclusivity_agreement',
       'commission_statement': 'commission_statement',
       'promotion_contract': 'promotion_contract',
       'developer_contract': 'developer_contract',
@@ -462,6 +463,12 @@ export class DocumentsIntelligenceSyncService {
       'cadastral_document': 'cadastral_document',
       'urban_planning_certificate': 'urban_planning_certificate',
       'lease_agreement': 'lease_agreement',
+      'rental_contract': 'rental_contract',
+      'commercial_lease': 'commercial_lease',
+      'property_viewing_form': 'property_viewing_form',
+      'property_visit_report': 'property_visit_report',
+      'diagnostic_report': 'diagnostic_report',
+      'energy_performance_certificate': 'energy_performance_certificate',
       'inspection_report': 'inspection_report',
     };
 

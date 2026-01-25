@@ -2840,6 +2840,7 @@ enum RealEstateDocumentType {
   sales_contract
   preliminary_sales_agreement
   sales_mandate
+  exclusivity_agreement
   // Contrats de commission
   commission_agreement
   commission_statement
@@ -2851,6 +2852,10 @@ enum RealEstateDocumentType {
   property_management_contract
   rental_management_contract
   syndic_contract
+  // Contrats de location
+  lease_agreement
+  rental_contract
+  commercial_lease
   // Documents administratifs
   property_deed
   title_deed
@@ -2860,10 +2865,15 @@ enum RealEstateDocumentType {
   investment_analysis
   financial_projection
   appraisal_report
-  // Autres
-  lease_agreement
+  // Documents de visite et diagnostic
+  property_visit_report
+  property_viewing_form
+  diagnostic_report
+  energy_performance_certificate
+  // Assurances et inspections
   insurance_policy
   inspection_report
+  // Autres
   other
 }
 

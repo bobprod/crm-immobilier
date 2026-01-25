@@ -499,6 +499,465 @@ ____________________                 ____________________
     },
     mimeType: 'text/markdown',
   },
+  {
+    name: 'Mandat de Vente Exclusif',
+    description: 'Template pour un contrat d\'exclusivité',
+    realEstateDocType: 'exclusivity_agreement',
+    category: 'contracts',
+    requiresSignature: true,
+    defaultValidity: 90,
+    content: `
+# MANDAT DE VENTE EXCLUSIF
+
+**Date:** {{contractDate}}
+
+---
+
+## ENTRE LES SOUSSIGNÉS:
+
+**Le mandant (propriétaire):**
+- Nom: {{clientName}}
+- Adresse: {{clientAddress}}
+- Email: {{clientEmail}}
+
+**L'agence mandataire:**
+- Nom: {{agencyName}}
+- Adresse: {{agencyAddress}}
+- SIRET: {{agencySiret}}
+- Représentée par: {{agentName}}
+
+---
+
+## ARTICLE 1 - OBJET DU MANDAT
+
+Le mandant confie à l'agence, qui l'accepte, un mandat **EXCLUSIF** pour la vente du bien suivant:
+
+- **Type de bien:** {{propertyType}}
+- **Adresse:** {{propertyAddress}}
+- **Surface:** {{propertySize}} m²
+- **Description:** {{propertyDescription}}
+
+---
+
+## ARTICLE 2 - PRIX ET CONDITIONS
+
+**Prix de vente fixé:** {{price}} {{currency}}
+
+**Commission:** {{commissionRate}}% TTC à la charge du vendeur
+
+Le prix inclut les honoraires de l'agence.
+
+---
+
+## ARTICLE 3 - CLAUSE D'EXCLUSIVITÉ
+
+Le présent mandat est consenti à titre **EXCLUSIF** pour une durée de **{{exclusivityPeriod}} jours**, soit jusqu'au {{expirationDate}}.
+
+Pendant cette période:
+- Le mandant s'interdit de vendre le bien par lui-même
+- Le mandant s'interdit de confier la vente à une autre agence
+- Toute vente réalisée pendant cette période donnera lieu au paiement de la commission
+
+---
+
+## ARTICLE 4 - OBLIGATIONS DE L'AGENCE
+
+L'agence s'engage à:
+
+1. Mettre en œuvre tous les moyens nécessaires pour trouver un acquéreur
+2. Diffuser des annonces sur les supports appropriés (internet, presse, vitrines)
+3. Organiser les visites du bien
+4. Assurer la promotion active du bien
+5. Informer régulièrement le mandant de l'avancement de la mission
+6. Négocier dans l'intérêt du mandant
+
+---
+
+## ARTICLE 5 - OBLIGATIONS DU MANDANT
+
+Le mandant s'engage à:
+
+1. Fournir tous les documents nécessaires (diagnostics, titres de propriété, etc.)
+2. Permettre l'accès au bien pour les visites
+3. Respecter l'exclusivité pendant toute la durée du mandat
+4. Informer l'agence de toute modification concernant le bien
+5. Maintenir le bien en bon état de présentation
+
+---
+
+## ARTICLE 6 - RÉSILIATION
+
+En cas de non-respect de l'exclusivité par le mandant, celui-ci devra verser à l'agence la commission prévue.
+
+---
+
+**Fait en deux exemplaires originaux**
+
+**Le:** {{contractDate}}
+
+**Le mandant**                    **Pour l'agence**
+
+____________________              ____________________
+`,
+    variables: {
+      contractDate: { type: 'date', required: true },
+      clientName: { type: 'string', required: true },
+      clientAddress: { type: 'string', required: true },
+      clientEmail: { type: 'email', required: true },
+      agencyName: { type: 'string', required: true },
+      agencyAddress: { type: 'string', required: true },
+      agencySiret: { type: 'string', required: true },
+      agentName: { type: 'string', required: true },
+      propertyType: { type: 'string', required: true },
+      propertyAddress: { type: 'string', required: true },
+      propertySize: { type: 'number', required: true },
+      propertyDescription: { type: 'string', required: false },
+      price: { type: 'number', required: true },
+      currency: { type: 'string', default: 'EUR' },
+      commissionRate: { type: 'number', required: true },
+      exclusivityPeriod: { type: 'number', required: true },
+      expirationDate: { type: 'date', required: true },
+    },
+    mimeType: 'text/markdown',
+  },
+  {
+    name: 'Fiche de Visite de Bien',
+    description: 'Template pour une fiche de visite immobilière',
+    realEstateDocType: 'property_viewing_form',
+    category: 'visits',
+    requiresSignature: false,
+    content: `
+# FICHE DE VISITE DE BIEN
+
+**Date de visite:** {{visitDate}}
+**Référence:** {{referenceNumber}}
+
+---
+
+## 📍 INFORMATIONS DU BIEN
+
+- **Adresse:** {{propertyAddress}}
+- **Type de bien:** {{propertyType}}
+- **Prix:** {{propertyPrice}} {{currency}}
+- **Surface:** {{propertySize}} m²
+- **Nombre de pièces:** {{rooms}}
+- **Étage:** {{floor}}
+- **Ascenseur:** {{hasElevator}}
+
+---
+
+## 👤 INFORMATIONS DU VISITEUR
+
+- **Nom:** {{visitorName}}
+- **Téléphone:** {{visitorPhone}}
+- **Email:** {{visitorEmail}}
+- **Situation:** {{visitorSituation}}
+- **Budget:** {{visitorBudget}} {{currency}}
+- **Délai de projet:** {{projectTimeline}}
+
+---
+
+## 👨‍💼 AGENT ACCOMPAGNATEUR
+
+- **Nom:** {{agentName}}
+- **Téléphone:** {{agentPhone}}
+- **Email:** {{agentEmail}}
+
+---
+
+## 📝 DÉROULEMENT DE LA VISITE
+
+**Heure de début:** {{startTime}}
+**Heure de fin:** {{endTime}}
+**Durée:** {{duration}} minutes
+
+---
+
+## 💭 OBSERVATIONS ET COMMENTAIRES
+
+### Points appréciés par le visiteur:
+{{#positivePoints}}
+- {{.}}
+{{/positivePoints}}
+
+### Points négatifs ou réserves:
+{{#negativePoints}}
+- {{.}}
+{{/negativePoints}}
+
+### Questions posées:
+{{#questions}}
+- {{.}}
+{{/questions}}
+
+---
+
+## 📊 ÉVALUATION
+
+**Niveau d'intérêt:** {{interestLevel}}
+- [ ] Très intéressé
+- [ ] Intéressé
+- [ ] Moyennement intéressé
+- [ ] Peu intéressé
+
+**Souhait de revoir le bien:** {{wantsSecondVisit}}
+
+**Objections principales:**
+{{objections}}
+
+---
+
+## 🎯 SUIVI
+
+**Prochaine action:** {{nextAction}}
+**Date de relance:** {{followUpDate}}
+**Commentaires agent:**
+{{agentComments}}
+
+---
+
+## ✍️ NOTES COMPLÉMENTAIRES
+
+{{additionalNotes}}
+
+---
+
+**Document généré le:** {{generatedDate}}
+`,
+    variables: {
+      visitDate: { type: 'date', required: true },
+      referenceNumber: { type: 'string', required: true },
+      propertyAddress: { type: 'string', required: true },
+      propertyType: { type: 'string', required: true },
+      propertyPrice: { type: 'number', required: true },
+      propertySize: { type: 'number', required: true },
+      rooms: { type: 'number', required: true },
+      floor: { type: 'string', required: false },
+      hasElevator: { type: 'string', required: false },
+      currency: { type: 'string', default: 'EUR' },
+      visitorName: { type: 'string', required: true },
+      visitorPhone: { type: 'string', required: true },
+      visitorEmail: { type: 'email', required: true },
+      visitorSituation: { type: 'string', required: false },
+      visitorBudget: { type: 'number', required: false },
+      projectTimeline: { type: 'string', required: false },
+      agentName: { type: 'string', required: true },
+      agentPhone: { type: 'string', required: true },
+      agentEmail: { type: 'email', required: true },
+      startTime: { type: 'string', required: true },
+      endTime: { type: 'string', required: true },
+      duration: { type: 'number', required: true },
+      positivePoints: { type: 'array', required: false },
+      negativePoints: { type: 'array', required: false },
+      questions: { type: 'array', required: false },
+      interestLevel: { type: 'string', required: true },
+      wantsSecondVisit: { type: 'boolean', required: true },
+      objections: { type: 'string', required: false },
+      nextAction: { type: 'string', required: true },
+      followUpDate: { type: 'date', required: false },
+      agentComments: { type: 'string', required: false },
+      additionalNotes: { type: 'string', required: false },
+      generatedDate: { type: 'date', required: true },
+    },
+    mimeType: 'text/markdown',
+  },
+  {
+    name: 'Contrat de Location',
+    description: 'Template pour un contrat de location résidentielle',
+    realEstateDocType: 'rental_contract',
+    category: 'contracts',
+    requiresSignature: true,
+    defaultValidity: 365,
+    content: `
+# CONTRAT DE LOCATION
+## {{locationType}}
+
+**Date:** {{contractDate}}
+
+---
+
+## ENTRE LES SOUSSIGNÉS:
+
+**Le bailleur:**
+- Nom: {{landlordName}}
+- Adresse: {{landlordAddress}}
+- Email: {{landlordEmail}}
+- Téléphone: {{landlordPhone}}
+
+**Le locataire:**
+- Nom: {{tenantName}}
+- Date de naissance: {{tenantBirthDate}}
+- Adresse actuelle: {{tenantAddress}}
+- Email: {{tenantEmail}}
+- Téléphone: {{tenantPhone}}
+
+---
+
+## ARTICLE 1 - DÉSIGNATION DU BIEN LOUÉ
+
+Le bailleur donne à bail au locataire qui l'accepte, le bien suivant:
+
+- **Adresse:** {{propertyAddress}}
+- **Type:** {{propertyType}}
+- **Surface habitable:** {{propertySize}} m² (loi Carrez)
+- **Composition:** {{propertyComposition}}
+- **Étage:** {{floor}}
+- **Annexes:** {{annexes}}
+
+{{#isFurnished}}
+**État:** Meublé (voir inventaire en annexe)
+{{/isFurnished}}
+{{^isFurnished}}
+**État:** Vide
+{{/isFurnished}}
+
+---
+
+## ARTICLE 2 - DURÉE DU BAIL
+
+Le bail est consenti pour une durée de **{{duration}} mois** ({{durationType}}).
+
+**Date de début:** {{startDate}}
+**Date de fin:** {{endDate}}
+
+{{#isRenewable}}
+Le bail se renouvellera automatiquement par tacite reconduction, sauf préavis de {{noticePeriod}} mois.
+{{/isRenewable}}
+
+---
+
+## ARTICLE 3 - LOYER ET CHARGES
+
+**Loyer mensuel:** {{monthlyRent}} {{currency}}
+**Charges mensuelles (provision):** {{monthlyCharges}} {{currency}}
+**Total mensuel:** {{totalMonthly}} {{currency}}
+
+Le loyer est payable **mensuellement à terme échu**, le **{{paymentDay}}** de chaque mois, par {{paymentMethod}}.
+
+**Révision du loyer:** Le loyer sera révisé chaque année selon l'indice de référence des loyers (IRL).
+
+---
+
+## ARTICLE 4 - DÉPÔT DE GARANTIE
+
+Le locataire verse un dépôt de garantie de **{{deposit}} {{currency}}**.
+
+Ce dépôt sera restitué dans un délai de:
+- 1 mois si l'état des lieux de sortie est conforme à l'état des lieux d'entrée
+- 2 mois dans le cas contraire
+
+Le dépôt sera restitué déduction faite des éventuelles:
+- Réparations locatives
+- Loyers et charges impayés
+- Frais de remise en état
+
+---
+
+## ARTICLE 5 - OBLIGATIONS DU LOCATAIRE
+
+Le locataire s'engage à:
+
+1. **Payer le loyer** aux termes convenus
+2. **Entretenir le logement** et effectuer les réparations locatives
+3. **Souscrire une assurance habitation** couvrant les risques locatifs
+4. **User paisiblement** des locaux conformément à leur destination
+5. **Respecter le règlement** de copropriété
+6. **Ne pas sous-louer** sans l'accord écrit du bailleur
+7. **Informer le bailleur** de toute dégradation nécessitant réparation
+
+---
+
+## ARTICLE 6 - OBLIGATIONS DU BAILLEUR
+
+Le bailleur s'engage à:
+
+1. **Délivrer un logement décent** conforme aux normes en vigueur
+2. **Assurer la jouissance paisible** du logement
+3. **Effectuer les réparations** autres que locatives
+4. **Maintenir les équipements** en bon état de fonctionnement
+
+---
+
+## ARTICLE 7 - ÉTAT DES LIEUX
+
+Un état des lieux contradictoire sera établi:
+- À l'entrée dans les lieux le {{entryDate}}
+- À la sortie des lieux
+
+---
+
+## ARTICLE 8 - DIAGNOSTICS TECHNIQUES
+
+Les diagnostics suivants sont annexés au présent bail:
+{{#diagnostics}}
+- {{name}}: {{status}} ({{validUntil}})
+{{/diagnostics}}
+
+---
+
+## ARTICLE 9 - RÉSILIATION
+
+**Par le locataire:** Préavis de {{tenantNotice}} mois
+**Par le bailleur:** Préavis de {{landlordNotice}} mois pour motif légitime et sérieux
+
+---
+
+## ARTICLE 10 - ÉLECTION DE DOMICILE
+
+Pour l'exécution du présent bail, les parties font élection de domicile en leurs adresses respectives ci-dessus indiquées.
+
+---
+
+**Fait en {{copies}} exemplaires originaux**
+
+**À:** {{contractLocation}}
+**Le:** {{contractDate}}
+
+**Le bailleur**                    **Le locataire**
+
+____________________              ____________________
+`,
+    variables: {
+      contractDate: { type: 'date', required: true },
+      locationType: { type: 'string', default: 'Vide' },
+      landlordName: { type: 'string', required: true },
+      landlordAddress: { type: 'string', required: true },
+      landlordEmail: { type: 'email', required: true },
+      landlordPhone: { type: 'string', required: true },
+      tenantName: { type: 'string', required: true },
+      tenantBirthDate: { type: 'date', required: true },
+      tenantAddress: { type: 'string', required: true },
+      tenantEmail: { type: 'email', required: true },
+      tenantPhone: { type: 'string', required: true },
+      propertyAddress: { type: 'string', required: true },
+      propertyType: { type: 'string', required: true },
+      propertySize: { type: 'number', required: true },
+      propertyComposition: { type: 'string', required: true },
+      floor: { type: 'string', required: false },
+      annexes: { type: 'string', required: false },
+      isFurnished: { type: 'boolean', default: false },
+      duration: { type: 'number', required: true },
+      durationType: { type: 'string', required: true },
+      startDate: { type: 'date', required: true },
+      endDate: { type: 'date', required: true },
+      isRenewable: { type: 'boolean', default: true },
+      noticePeriod: { type: 'number', required: true },
+      monthlyRent: { type: 'number', required: true },
+      monthlyCharges: { type: 'number', required: true },
+      totalMonthly: { type: 'number', required: true },
+      currency: { type: 'string', default: 'EUR' },
+      paymentDay: { type: 'number', required: true },
+      paymentMethod: { type: 'string', required: true },
+      deposit: { type: 'number', required: true },
+      entryDate: { type: 'date', required: true },
+      diagnostics: { type: 'array', required: true },
+      tenantNotice: { type: 'number', required: true },
+      landlordNotice: { type: 'number', required: true },
+      copies: { type: 'number', default: 2 },
+      contractLocation: { type: 'string', required: true },
+    },
+    mimeType: 'text/markdown',
+  },
 ];
 
 async function seedDocumentTemplates() {

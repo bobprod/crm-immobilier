@@ -8,12 +8,13 @@ Le module Documents a été considérablement amélioré pour gérer spécifique
 
 ### 1. Gestion des Documents Immobiliers
 
-Le module supporte maintenant 25+ types de documents spécifiques à l'immobilier:
+Le module supporte maintenant 35+ types de documents spécifiques à l'immobilier:
 
 #### Contrats de Vente
 - `sales_contract` - Contrat de vente
 - `preliminary_sales_agreement` - Promesse de vente
 - `sales_mandate` - Mandat de vente
+- `exclusivity_agreement` - **[NOUVEAU]** Mandat de vente exclusif
 
 #### Contrats de Commission
 - `commission_agreement` - Accord de commission
@@ -29,6 +30,11 @@ Le module supporte maintenant 25+ types de documents spécifiques à l'immobilie
 - `rental_management_contract` - Contrat de gestion locative
 - `syndic_contract` - Contrat de syndic
 
+#### Contrats de Location
+- `lease_agreement` - Contrat de bail résidentiel
+- `rental_contract` - **[NOUVEAU]** Contrat de location
+- `commercial_lease` - **[NOUVEAU]** Bail commercial
+
 #### Documents Administratifs
 - `property_deed` - Titre de propriété
 - `title_deed` - Acte de propriété
@@ -40,8 +46,13 @@ Le module supporte maintenant 25+ types de documents spécifiques à l'immobilie
 - `financial_projection` - Projection financière
 - `appraisal_report` - Rapport d'évaluation
 
-#### Autres
-- `lease_agreement` - Contrat de bail
+#### Documents de Visite et Diagnostic
+- `property_visit_report` - **[NOUVEAU]** Rapport de visite
+- `property_viewing_form` - **[NOUVEAU]** Fiche de visite de bien
+- `diagnostic_report` - **[NOUVEAU]** Rapport de diagnostic
+- `energy_performance_certificate` - **[NOUVEAU]** DPE (Diagnostic de Performance Énergétique)
+
+#### Assurances et Inspections
 - `insurance_policy` - Police d'assurance
 - `inspection_report` - Rapport d'inspection
 
