@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
 import { PlanningService } from './services/planning.service';
 import {
@@ -23,6 +24,8 @@ import {
   UnifiedPlanningQueryDto,
 } from './dto';
 
+@ApiTags('Planning')
+@ApiBearerAuth()
 @Controller('planning')
 @UseGuards(JwtAuthGuard)
 export class PlanningController {
@@ -31,6 +34,8 @@ export class PlanningController {
   // ==================== Unified Planning ====================
 
   @Get('unified')
+  @ApiOperation({ summary: 'Get unified planning data with tasks, appointments, boards, and views' })
+  @ApiResponse({ status: 200, description: 'Returns unified planning data' })
   async getUnifiedPlanningData(@Request() req, @Query() query: UnifiedPlanningQueryDto) {
     return this.planningService.getUnifiedPlanningData(req.user.id, query);
   }
@@ -38,21 +43,30 @@ export class PlanningController {
   // ==================== TaskBoard Endpoints ====================
 
   @Post('boards')
+  @ApiOperation({ summary: 'Create a new task board' })
+  @ApiResponse({ status: 201, description: 'Board created successfully' })
   async createTaskBoard(@Request() req, @Body() dto: CreateTaskBoardDto) {
     return this.planningService.createTaskBoard(req.user.id, dto);
   }
 
   @Get('boards')
+  @ApiOperation({ summary: 'Get all task boards for the current user' })
+  @ApiResponse({ status: 200, description: 'Returns list of boards' })
   async getTaskBoards(@Request() req) {
     return this.planningService.getTaskBoards(req.user.id);
   }
 
   @Get('boards/initialize')
+  @ApiOperation({ summary: 'Initialize default board with standard columns' })
+  @ApiResponse({ status: 200, description: 'Returns initialized board' })
   async initializeDefaultBoard(@Request() req) {
     return this.planningService.initializeDefaultBoard(req.user.id);
   }
 
   @Get('boards/:boardId')
+  @ApiOperation({ summary: 'Get a specific task board by ID' })
+  @ApiResponse({ status: 200, description: 'Returns board details' })
+  @ApiResponse({ status: 404, description: 'Board not found' })
   async getTaskBoard(@Request() req, @Param('boardId') boardId: string) {
     return this.planningService.getTaskBoard(req.user.id, boardId);
   }

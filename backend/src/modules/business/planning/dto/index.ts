@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsBoolean, IsInt, IsEnum, IsObject, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // Enums
 export enum ViewType {
@@ -16,25 +17,31 @@ export enum CalendarViewMode {
 
 // TaskBoard DTOs
 export class CreateTaskBoardDto {
+  @ApiProperty({ description: 'Board name' })
   @IsString()
   name: string;
 
+  @ApiPropertyOptional({ description: 'Board description' })
   @IsOptional()
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({ description: 'Board color', default: '#3B82F6' })
   @IsOptional()
   @IsString()
   color?: string;
 
+  @ApiPropertyOptional({ description: 'Is default board', default: false })
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
 
+  @ApiPropertyOptional({ description: 'Layout configuration' })
   @IsOptional()
   @IsObject()
   layout?: Record<string, any>;
 
+  @ApiPropertyOptional({ description: 'Board settings' })
   @IsOptional()
   @IsObject()
   settings?: Record<string, any>;

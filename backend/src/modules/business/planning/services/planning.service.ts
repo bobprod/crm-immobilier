@@ -329,18 +329,26 @@ export class PlanningService {
   async getUnifiedPlanningData(userId: string, query: UnifiedPlanningQueryDto) {
     const { viewType, startDate, endDate, boardId, status, priority, search } = query;
 
-    // Build filters
-    const taskFilter: any = { userId };
-    const appointmentFilter: any = { userId };
+    // Build task filter with proper typing
+    interface TaskFilter {
+      userId: string;
+      status?: string;
+      priority?: string;
+      boardId?: string;
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+    }
+
+    const taskFilter: TaskFilter = { userId };
 
     if (status) {
       taskFilter.status = status;
-      appointmentFilter.status = status;
     }
 
     if (priority) {
       taskFilter.priority = priority;
-      appointmentFilter.priority = priority;
     }
 
     if (search) {
@@ -348,14 +356,42 @@ export class PlanningService {
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
-      appointmentFilter.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
     }
 
     if (boardId) {
       taskFilter.boardId = boardId;
+    }
+
+    // Build appointment filter with proper typing
+    interface AppointmentFilter {
+      userId: string;
+      status?: string;
+      priority?: string;
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+      AND?: Array<{
+        startTime?: { gte: Date };
+        endTime?: { lte: Date };
+      }>;
+    }
+
+    const appointmentFilter: AppointmentFilter = { userId };
+
+    if (status) {
+      appointmentFilter.status = status;
+    }
+
+    if (priority) {
+      appointmentFilter.priority = priority;
+    }
+
+    if (search) {
+      appointmentFilter.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     // Date range filters for appointments
@@ -373,17 +409,22 @@ export class PlanningService {
       }
     }
 
-    // Fetch data based on view type
-    const [tasks, appointments, boards, views] = await Promise.all([
-      this.prisma.tasks.findMany({
-        where: taskFilter,
-        include: {
+    // Fetch data based on view type with optimized includes
+    const baseTaskInclude = viewType === ViewType.KANBAN 
+      ? {
+          column: true,
+          board: true,
+        }
+      : {
           appointments: true,
           prospects: true,
           properties: true,
-          column: true,
-          board: true,
-        },
+        };
+
+    const [tasks, appointments, boards, views] = await Promise.all([
+      this.prisma.tasks.findMany({
+        where: taskFilter,
+        include: baseTaskInclude,
         orderBy: [
           { position: 'asc' },
           { dueDate: 'asc' },
