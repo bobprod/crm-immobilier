@@ -31,6 +31,7 @@ import { PropertiesModule } from './modules/business/properties/properties.modul
 import { ProspectsModule } from './modules/business/prospects/prospects.module';
 import { AppointmentsModule } from './modules/business/appointments/appointments.module';
 import { TasksModule } from './modules/business/tasks/tasks.module';
+import { PlanningModule } from './modules/business/planning/planning.module';
 import { OwnersModule } from './modules/business/owners/owners.module';
 import { MandatesModule } from './modules/business/mandates/mandates.module';
 import { TransactionsModule } from './modules/business/transactions/transactions.module';
@@ -122,11 +123,12 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // NOTIFICATIONS - 1 module
     NotificationsModule,
 
-    // BUSINESS - 8 modules
+    // BUSINESS - 9 modules
     PropertiesModule,
     ProspectsModule,
     AppointmentsModule,
     TasksModule,
+    PlanningModule,
     OwnersModule,
     MandatesModule,
     TransactionsModule,
