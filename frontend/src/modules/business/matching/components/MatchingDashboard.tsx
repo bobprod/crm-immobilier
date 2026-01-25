@@ -2,12 +2,36 @@ import React, { useState, useEffect, useCallback } from 'react';
 import prospectsAPI, { Prospect, ProspectStats } from '@/shared/utils/prospects-api';
 import propertiesAPI, { Property, PropertyStats } from '@/shared/utils/properties-api';
 import { matchingAPI, MatchingResult, MatchingStats } from '@/shared/utils/matching-api';
+import {
+    mandatesAPI,
+    Mandate,
+    MandateStats,
+    MandateType,
+    MandateStatus,
+    MandateCategory,
+    getMandateTypeLabel,
+    getMandateCategoryLabel,
+    getMandateStatusLabel,
+    getMandateStatusColor,
+    getMandateTypeColor,
+    formatMandatePrice,
+    formatMandateCommission,
+    getMandateDaysRemaining,
+    isMandateExpiringSoon,
+} from '@/shared/utils/mandates-api';
+import {
+    ownersAPI,
+    Owner,
+    OwnerStats,
+    getOwnerFullName,
+    getOwnerInitials,
+} from '@/shared/utils/owners-api';
 
 interface MatchingDashboardProps {
     language?: 'fr' | 'en';
 }
 
-type TabType = 'prospects' | 'properties' | 'matching-view';
+type TabType = 'prospects' | 'mandates' | 'properties' | 'matching-view';
 
 // Helpers pour formater les données
 const formatPrice = (price: number, currency: string = 'TND') => {
@@ -59,12 +83,13 @@ const getScoreColor = (score: number) => {
 };
 
 /**
- * Module Matching - Dashboard avec tabs Prospects et Biens
+ * Module Matching - Dashboard avec tabs Prospects, Mandats, Biens et Vue Matching
  * Connecté aux vraies APIs backend
  */
 export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language = 'fr' }) => {
     const [activeTab, setActiveTab] = useState<TabType>('prospects');
     const [prospects, setProspects] = useState<Prospect[]>([]);
+    const [mandates, setMandates] = useState<Mandate[]>([]);
     const [properties, setProperties] = useState<Property[]>([]);
     const [matches, setMatches] = useState<MatchingResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -72,6 +97,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
 
     // Stats
     const [prospectStats, setProspectStats] = useState<ProspectStats | null>(null);
+    const [mandateStats, setMandateStats] = useState<MandateStats | null>(null);
     const [propertyStats, setPropertyStats] = useState<PropertyStats | null>(null);
     const [matchingStats, setMatchingStats] = useState<MatchingStats | null>(null);
 
@@ -79,6 +105,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [typeFilter, setTypeFilter] = useState<string>('');
+    const [categoryFilter, setCategoryFilter] = useState<string>('');
 
     // Load data based on active tab
     const loadData = useCallback(async () => {
@@ -96,6 +123,17 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                 ]);
                 setProspects(prospectsResponse.data || []);
                 setProspectStats(stats);
+            } else if (activeTab === 'mandates') {
+                const [mandatesData, stats] = await Promise.all([
+                    mandatesAPI.list({
+                        status: statusFilter || undefined,
+                        type: typeFilter || undefined,
+                        category: categoryFilter || undefined,
+                    }),
+                    mandatesAPI.getStats(),
+                ]);
+                setMandates(mandatesData || []);
+                setMandateStats(stats);
             } else if (activeTab === 'properties') {
                 const [propertiesResponse, stats] = await Promise.all([
                     propertiesAPI.getMyProperties({
@@ -121,11 +159,19 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
         } finally {
             setLoading(false);
         }
-    }, [activeTab, statusFilter, typeFilter, searchTerm]);
+    }, [activeTab, statusFilter, typeFilter, categoryFilter, searchTerm]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
+
+    // Reset filters when changing tabs
+    useEffect(() => {
+        setStatusFilter('');
+        setTypeFilter('');
+        setCategoryFilter('');
+        setSearchTerm('');
+    }, [activeTab]);
 
     // Generate matches for a prospect
     const handleFindMatches = async (prospectId: string) => {
@@ -133,7 +179,6 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
             setLoading(true);
             const results = await matchingAPI.findMatches(prospectId);
             console.log('Matches found:', results);
-            // Switch to matching tab to show results
             setActiveTab('matching-view');
             await loadData();
         } catch (err: any) {
@@ -160,10 +205,20 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
         }
     };
 
-    const tabs: { id: TabType; label: string; icon: string; count?: number }[] = [
-        { id: 'prospects', label: 'Prospects', icon: '👤', count: prospectStats?.total || 0 },
-        { id: 'properties', label: 'Biens', icon: '🏠', count: propertyStats?.total || 0 },
-        { id: 'matching-view', label: 'Vue Matching', icon: '🎯', count: matchingStats?.total || 0 },
+    // Find prospects for a mandate's property
+    const handleFindProspectsForMandate = async (mandate: Mandate) => {
+        if (mandate.propertyId) {
+            await handleFindProspectsForProperty(mandate.propertyId);
+        } else {
+            setError('Ce mandat n\'a pas de bien associé');
+        }
+    };
+
+    const tabs: { id: TabType; label: string; icon: string; count?: number; description?: string }[] = [
+        { id: 'prospects', label: 'Requêtes', icon: '🔍', count: prospectStats?.total || 0, description: 'Clients qui cherchent' },
+        { id: 'mandates', label: 'Mandats', icon: '📋', count: mandateStats?.total || 0, description: 'Propriétaires' },
+        { id: 'properties', label: 'Biens', icon: '🏠', count: propertyStats?.total || 0, description: 'Propriétés' },
+        { id: 'matching-view', label: 'Matching', icon: '🎯', count: matchingStats?.total || 0, description: 'Correspondances' },
     ];
 
     return (
@@ -171,7 +226,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-4xl font-bold text-gray-900 mb-2">Matching</h1>
-                <p className="text-gray-600">Associez vos prospects aux biens immobiliers</p>
+                <p className="text-gray-600">Associez vos prospects aux biens immobiliers via les mandats</p>
             </div>
 
             {/* Error display */}
@@ -189,22 +244,27 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
             )}
 
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-8 border-b border-gray-200">
+            <div className="flex gap-1 mb-8 border-b border-gray-200 overflow-x-auto">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`px-6 py-3 font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id
-                            ? 'text-pink-600 border-b-2 border-pink-600'
-                            : 'text-gray-600 hover:text-gray-900'
+                        className={`px-4 py-3 font-medium transition-colors flex flex-col items-center min-w-[100px] ${activeTab === tab.id
+                            ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                     >
-                        <span>{tab.icon}</span>
-                        {tab.label}
-                        {tab.count !== undefined && tab.count > 0 && (
-                            <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-100">
-                                {tab.count}
-                            </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl">{tab.icon}</span>
+                            <span>{tab.label}</span>
+                            {tab.count !== undefined && tab.count > 0 && (
+                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200">
+                                    {tab.count}
+                                </span>
+                            )}
+                        </div>
+                        {tab.description && (
+                            <span className="text-xs text-gray-400 mt-1">{tab.description}</span>
                         )}
                     </button>
                 ))}
@@ -242,9 +302,41 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             <option value="">Tous les types</option>
                             <option value="buyer">Acheteur</option>
                             <option value="renter">Locataire</option>
-                            <option value="seller">Vendeur</option>
-                            <option value="landlord">Bailleur</option>
                             <option value="investor">Investisseur</option>
+                        </select>
+                    </>
+                )}
+                {activeTab === 'mandates' && (
+                    <>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                        >
+                            <option value="">Tous les statuts</option>
+                            <option value="active">Actif</option>
+                            <option value="expired">Expiré</option>
+                            <option value="cancelled">Annulé</option>
+                            <option value="completed">Terminé</option>
+                        </select>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                        >
+                            <option value="">Tous les types</option>
+                            <option value="simple">Simple</option>
+                            <option value="exclusive">Exclusif</option>
+                            <option value="semi_exclusive">Semi-exclusif</option>
+                        </select>
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                        >
+                            <option value="">Toutes catégories</option>
+                            <option value="sale">Vente</option>
+                            <option value="rental">Location</option>
                         </select>
                     </>
                 )}
@@ -287,7 +379,7 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
 
             {/* Content */}
             <div className="space-y-6">
-                {/* Prospects Tab */}
+                {/* Prospects Tab (Requêtes) */}
                 {activeTab === 'prospects' && (
                     <div>
                         {/* Stats Grid */}
@@ -295,12 +387,12 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                             <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-gray-600 text-sm mb-1">Total</p>
+                                        <p className="text-gray-600 text-sm mb-1">Total Requêtes</p>
                                         <p className="text-4xl font-bold text-gray-900">
                                             {prospectStats?.total || 0}
                                         </p>
                                     </div>
-                                    <span className="text-4xl">👥</span>
+                                    <span className="text-4xl">🔍</span>
                                 </div>
                             </div>
 
@@ -345,15 +437,15 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                         {loading ? (
                             <div className="bg-white rounded-lg shadow p-12 text-center">
                                 <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-gray-600">Chargement des prospects...</p>
+                                <p className="text-gray-600">Chargement des requêtes...</p>
                             </div>
                         ) : prospects.length === 0 ? (
                             <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <span className="text-6xl mb-4 block">👤</span>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun prospect enregistré</h3>
-                                <p className="text-gray-600 mb-6">Commencez par importer vos prospects</p>
+                                <span className="text-6xl mb-4 block">🔍</span>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune requête enregistrée</h3>
+                                <p className="text-gray-600 mb-6">Les clients qui cherchent un bien apparaîtront ici</p>
                                 <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
-                                    + Importer des prospects
+                                    + Ajouter une requête
                                 </button>
                             </div>
                         ) : (
@@ -400,6 +492,242 @@ export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language =
                                                         className="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-lg text-sm font-medium hover:bg-pink-200 transition"
                                                     >
                                                         🎯 Trouver biens
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Mandates Tab */}
+                {activeTab === 'mandates' && (
+                    <div>
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-gray-600 text-sm mb-1">Total Mandats</p>
+                                        <p className="text-4xl font-bold text-gray-900">
+                                            {mandateStats?.total || 0}
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">📋</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-gray-600 text-sm mb-1">Actifs</p>
+                                        <p className="text-4xl font-bold text-gray-900">
+                                            {mandateStats?.active || 0}
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">✓</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-gray-600 text-sm mb-1">Expirés</p>
+                                        <p className="text-4xl font-bold text-gray-900">
+                                            {mandateStats?.expired || 0}
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">⏰</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-gray-600 text-sm mb-1">Expirent ce mois</p>
+                                        <p className="text-4xl font-bold text-gray-900">
+                                            {mandateStats?.expiringThisMonth || 0}
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">⚠️</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Commission Stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-lg shadow text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-purple-100 text-sm mb-1">Valeur totale commissions</p>
+                                        <p className="text-3xl font-bold">
+                                            {formatPrice(mandateStats?.totalCommissionValue || 0)}
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">💰</span>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-lg shadow text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-green-100 text-sm mb-1">Commission moyenne</p>
+                                        <p className="text-3xl font-bold">
+                                            {mandateStats?.averageCommission?.toFixed(1) || 0}%
+                                        </p>
+                                    </div>
+                                    <span className="text-4xl">📈</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mandates List */}
+                        {loading ? (
+                            <div className="bg-white rounded-lg shadow p-12 text-center">
+                                <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                                <p className="text-gray-600">Chargement des mandats...</p>
+                            </div>
+                        ) : mandates.length === 0 ? (
+                            <div className="bg-white rounded-lg shadow p-12 text-center">
+                                <span className="text-6xl mb-4 block">📋</span>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun mandat enregistré</h3>
+                                <p className="text-gray-600 mb-6">Les mandats de vente et location apparaîtront ici</p>
+                                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
+                                    + Créer un mandat
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {mandates.map((mandate) => {
+                                    const daysRemaining = getMandateDaysRemaining(mandate);
+                                    const isExpiringSoon = isMandateExpiringSoon(mandate);
+
+                                    return (
+                                        <div key={mandate.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+                                            {/* Header with status */}
+                                            <div className={`px-4 py-2 flex items-center justify-between ${
+                                                mandate.status === MandateStatus.ACTIVE
+                                                    ? 'bg-green-50'
+                                                    : mandate.status === MandateStatus.EXPIRED
+                                                        ? 'bg-red-50'
+                                                        : 'bg-gray-50'
+                                            }`}>
+                                                <span className="text-xs font-medium text-gray-600">
+                                                    Réf: {mandate.reference}
+                                                </span>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMandateStatusColor(mandate.status as MandateStatus)}`}>
+                                                    {getMandateStatusLabel(mandate.status as MandateStatus)}
+                                                </span>
+                                            </div>
+
+                                            <div className="p-4">
+                                                {/* Owner Info */}
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold">
+                                                        {mandate.owner
+                                                            ? getOwnerInitials(mandate.owner)
+                                                            : '??'
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-900">
+                                                            {mandate.owner
+                                                                ? getOwnerFullName(mandate.owner)
+                                                                : 'Propriétaire inconnu'
+                                                            }
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500">
+                                                            {mandate.owner?.phone || mandate.owner?.email || 'Pas de contact'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Property Info if exists */}
+                                                {mandate.property && (
+                                                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                                        <div className="flex items-start gap-3">
+                                                            {mandate.property.images?.[0] ? (
+                                                                <img
+                                                                    src={mandate.property.images[0]}
+                                                                    alt={mandate.property.title}
+                                                                    className="w-16 h-16 rounded object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-16 h-16 rounded bg-gray-200 flex items-center justify-center">
+                                                                    <span className="text-2xl">🏠</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-gray-900 truncate">
+                                                                    {mandate.property.title}
+                                                                </p>
+                                                                <p className="text-sm text-gray-500">
+                                                                    {mandate.property.city}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Mandate Details */}
+                                                <div className="space-y-2 mb-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-600">Type:</span>
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${getMandateTypeColor(mandate.type as MandateType)}`}>
+                                                            {getMandateTypeLabel(mandate.type as MandateType)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-600">Catégorie:</span>
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                            mandate.category === MandateCategory.SALE
+                                                                ? 'bg-blue-100 text-blue-800'
+                                                                : 'bg-orange-100 text-orange-800'
+                                                        }`}>
+                                                            {getMandateCategoryLabel(mandate.category as MandateCategory)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-600">Prix:</span>
+                                                        <span className="font-bold text-pink-600">
+                                                            {formatMandatePrice(mandate.price, mandate.currency)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-gray-600">Commission:</span>
+                                                        <span className="font-medium text-green-600">
+                                                            {formatMandateCommission(mandate)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Dates */}
+                                                <div className="text-xs text-gray-500 mb-4 p-2 bg-gray-50 rounded">
+                                                    <div className="flex justify-between">
+                                                        <span>Début: {formatDate(mandate.startDate)}</span>
+                                                        <span>Fin: {formatDate(mandate.endDate)}</span>
+                                                    </div>
+                                                    {mandate.status === MandateStatus.ACTIVE && (
+                                                        <div className={`mt-1 text-center font-medium ${isExpiringSoon ? 'text-orange-600' : 'text-gray-600'}`}>
+                                                            {isExpiringSoon ? '⚠️ ' : ''}
+                                                            {daysRemaining} jours restants
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                                                    <button
+                                                        onClick={() => handleFindProspectsForMandate(mandate)}
+                                                        disabled={!mandate.propertyId}
+                                                        className="flex-1 px-3 py-2 bg-pink-100 text-pink-700 rounded-lg text-sm font-medium hover:bg-pink-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        👤 Trouver prospects
+                                                    </button>
+                                                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
+                                                        📄 Détails
                                                     </button>
                                                 </div>
                                             </div>
