@@ -234,9 +234,7 @@ export class CampaignService {
                         select: { leads: true },
                     },
                 },
-                orderBy: {
-                    leads: { _count: 'desc' },
-                },
+                orderBy: { createdAt: 'desc' },
                 take: 5,
             });
 
@@ -272,7 +270,8 @@ export class CampaignService {
                 topCampaigns: (topCampaigns || []).map((c) => ({
                     id: c?.id,
                     name: c?.name,
-                    leadsCount: c?._count?.leads || 0,
+                    leadsCount: c?._count?.leads ?? 0,
+                })),
                 })),
                 leadsOverTime: leadsOverTimeArray,
             };

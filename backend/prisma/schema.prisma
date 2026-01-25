@@ -433,6 +433,8 @@ model users {
   providerPerformances    ProviderPerformance[]     @relation("UserProviderPerformance")
   settings                settings[]                @relation("UserSettings")
   tasks                   tasks[]                   @relation("UserTasks")
+  taskBoards              TaskBoard[]               @relation("UserTaskBoards")
+  planningViews           PlanningView[]            @relation("UserPlanningViews")
   toolCallLogs            ToolCallLog[]
   transactions            Transaction[]             @relation("UserTransactions")
   userAiCredits           UserAiCredits?
@@ -1000,12 +1002,19 @@ model tasks {
   appointmentId  String?
   tags           Json?
   assignedTo     String?
+  boardId        String?
+  columnId       String?
+  position       Int?          @default(0)
+  viewType       String?       @default("list")
+  metadata       Json?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   appointments   appointments? @relation("AppointmentTasks", fields: [appointmentId], references: [id])
   properties     properties?   @relation("PropertyTasks", fields: [propertyId], references: [id])
   prospects      prospects?    @relation("ProspectTasks", fields: [prospectId], references: [id])
   users          users         @relation("UserTasks", fields: [userId], references: [id], onDelete: Cascade)
+  board          TaskBoard?    @relation("BoardTasks", fields: [boardId], references: [id], onDelete: SetNull)
+  column         TaskColumn?   @relation("ColumnTasks", fields: [columnId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
@@ -1013,6 +1022,65 @@ model tasks {
   @@index([dueDate])
   @@index([prospectId])
   @@index([propertyId])
+  @@index([boardId])
+  @@index([columnId])
+  @@index([position])
+}
+
+model TaskBoard {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  color       String?      @default("#3B82F6")
+  isDefault   Boolean      @default(false)
+  layout      Json?
+  settings    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        users        @relation("UserTaskBoards", fields: [userId], references: [id], onDelete: Cascade)
+  columns     TaskColumn[] @relation("BoardColumns")
+  tasks       tasks[]      @relation("BoardTasks")
+
+  @@index([userId])
+  @@index([isDefault])
+  @@map("task_boards")
+}
+
+model TaskColumn {
+  id        String    @id @default(cuid())
+  boardId   String
+  name      String
+  color     String?   @default("#6B7280")
+  position  Int       @default(0)
+  limit     Int?
+  settings  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  board     TaskBoard @relation("BoardColumns", fields: [boardId], references: [id], onDelete: Cascade)
+  tasks     tasks[]   @relation("ColumnTasks")
+
+  @@index([boardId])
+  @@index([position])
+  @@map("task_columns")
+}
+
+model PlanningView {
+  id            String   @id @default(cuid())
+  userId        String
+  viewType      String   @default("calendar")
+  preferences   Json?
+  defaultView   Boolean  @default(false)
+  filterOptions Json?
+  layoutConfig  Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          users    @relation("UserPlanningViews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([viewType])
+  @@index([defaultView])
+  @@map("planning_views")
 }
 
 model analytics_events {

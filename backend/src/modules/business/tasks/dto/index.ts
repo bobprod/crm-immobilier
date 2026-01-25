@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDate } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDate, IsInt, Min, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -40,6 +40,32 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   appointmentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  boardId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  columnId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  position?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  viewType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
 }
 
 export class UpdateTaskDto {
@@ -68,4 +94,31 @@ export class UpdateTaskDto {
   @Type(() => Date)
   @IsDate()
   dueDate?: Date;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  boardId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  columnId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  position?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  viewType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
 }
+

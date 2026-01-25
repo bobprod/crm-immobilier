@@ -37,7 +37,7 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
 
   // Filter campaigns by status
   const activeCampaigns = useMemo(
-    () => campaigns.filter((c) => c.status === 'active' || c.status === 'running'),
+    () => campaigns.filter((c) => c.status === 'active'),
     [campaigns]
   );
   const completedCampaigns = useMemo(
@@ -141,31 +141,27 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard
             icon="📋"
-            label="Total campagnes"
+            title="Total campagnes"
             value={campaigns.length}
             color="blue"
-            trend={activeCampaigns.length > 0 ? `${activeCampaigns.length} actives` : undefined}
           />
           <StatCard
             icon="👥"
-            label="Leads collectés"
+            title="Leads collectés"
             value={totalLeads}
             color="purple"
-            trend={`${validatedLeads} validés`}
           />
           <StatCard
             icon="✅"
-            label="Taux de validation"
+            title="Taux de validation"
             value={`${validationRate}%`}
             color="green"
-            trend={validationRate >= 70 ? 'Bon' : 'À améliorer'}
           />
           <StatCard
             icon="🛡️"
-            label="Spams détectés"
+            title="Spams détectés"
             value={spamLeads}
             color="red"
-            trend={spamLeads > 0 ? `${Math.round((spamLeads / totalLeads) * 100)}% du total` : undefined}
           />
         </div>
       </div>
@@ -174,21 +170,19 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
       <div className="flex items-center gap-4 border-b border-gray-200">
         <button
           onClick={() => setShowHistory(false)}
-          className={`px-4 py-2 font-medium transition border-b-2 ${
-            !showHistory
+          className={`px-4 py-2 font-medium transition border-b-2 ${!showHistory
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           Campagnes actives
         </button>
         <button
           onClick={() => setShowHistory(true)}
-          className={`px-4 py-2 font-medium transition border-b-2 ${
-            showHistory
+          className={`px-4 py-2 font-medium transition border-b-2 ${showHistory
               ? 'border-purple-600 text-purple-600'
               : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
+            }`}
         >
           Historique ({completedCampaigns.length})
         </button>
@@ -203,10 +197,9 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}
-                  selected={selectedCampaignId === campaign.id}
-                  onSelect={() => onCampaignSelect(campaign.id)}
-                  onStart={() => onStartCampaign(campaign.id)}
-                  onPause={() => onPauseCampaign(campaign.id)}
+                  onSelect={onCampaignSelect}
+                  onStart={onStartCampaign}
+                  onPause={onPauseCampaign}
                 />
               ))}
             </div>
@@ -237,10 +230,9 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
                   <CampaignCard
                     key={campaign.id}
                     campaign={campaign}
-                    selected={selectedCampaignId === campaign.id}
-                    onSelect={() => onCampaignSelect(campaign.id)}
-                    onStart={() => onStartCampaign(campaign.id)}
-                    onPause={() => onPauseCampaign(campaign.id)}
+                    onSelect={onCampaignSelect}
+                    onStart={onStartCampaign}
+                    onPause={onPauseCampaign}
                   />
                 ))}
               </div>
@@ -386,13 +378,12 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                lead.score >= 70
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${lead.score >= 70
                                   ? 'bg-green-100 text-green-800'
                                   : lead.score >= 40
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
                             >
                               {lead.score}
                             </span>
@@ -451,7 +442,7 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-gray-900">
-                          {campaign.leadsCount || 0}
+                          {campaign.foundCount || 0}
                         </div>
                         <div className="text-xs text-gray-500">leads</div>
                       </div>

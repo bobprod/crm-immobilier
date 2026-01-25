@@ -24,7 +24,7 @@ import {
 
 export interface ConfigurationSectionProps {
   /** Configuration actuelle */
-  configuration: ProspectionConfiguration;
+  configuration: Partial<ProspectionConfiguration>;
 
   /** Fonction pour mettre à jour la configuration */
   updateConfiguration: (updates: Partial<ProspectionConfiguration>) => void;
@@ -111,9 +111,8 @@ export const ConfigurationSection: React.FC<ConfigurationSectionProps> = ({
             </span>
           )}
           <svg
-            className={`w-5 h-5 text-gray-500 transform transition-transform ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
+            className={`w-5 h-5 text-gray-500 transform transition-transform ${isExpanded ? 'rotate-180' : ''
+              }`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -141,10 +140,9 @@ export const ConfigurationSection: React.FC<ConfigurationSectionProps> = ({
                 disabled={isLocked}
                 className={`
                   flex-1 py-3 px-4 rounded-lg font-medium text-sm transition-all
-                  ${
-                    configuration.inputMode === 'criteria'
-                      ? 'bg-purple-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ${configuration.inputMode === 'criteria'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }
                   ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
                 `}
@@ -166,10 +164,9 @@ export const ConfigurationSection: React.FC<ConfigurationSectionProps> = ({
                 disabled={isLocked}
                 className={`
                   flex-1 py-3 px-4 rounded-lg font-medium text-sm transition-all
-                  ${
-                    configuration.inputMode === 'urls'
-                      ? 'bg-purple-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ${configuration.inputMode === 'urls'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }
                   ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}
                 `}
@@ -258,77 +255,77 @@ export const ConfigurationSection: React.FC<ConfigurationSectionProps> = ({
           {configuration.inputMode === 'criteria' && (
             <>
               {/* Geographic Targeting */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                  clipRule="evenodd"
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  1. Ciblage Géographique
+                </h3>
+                <GeographicTargeting
+                  value={configuration.zone}
+                  onChange={handleZoneChange}
+                  disabled={isLocked}
                 />
-              </svg>
-              1. Ciblage Géographique
-            </h3>
-            <GeographicTargeting
-              value={configuration.zone}
-              onChange={handleZoneChange}
-              disabled={isLocked}
-            />
-          </div>
+              </div>
 
-          {/* Demographic Targeting */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-              2. Critères de Ciblage
-            </h3>
-            <DemographicTargeting
-              initialCriteria={{
-                propertyIntent:
-                  configuration.targetType === 'buyers'
-                    ? ['buy']
-                    : configuration.targetType === 'sellers'
-                      ? ['sell']
-                      : configuration.targetType === 'investors'
-                        ? ['invest']
-                        : ['rent'],
-                propertyTypes: [configuration.propertyType],
-                ...(configuration.budget && { budgetRange: configuration.budget }),
-              }}
-              onChange={handleDemographicChange}
-              disabled={isLocked}
-            />
-          </div>
-
-          {/* Campaign Settings */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                  clipRule="evenodd"
+              {/* Demographic Targeting */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                  </svg>
+                  2. Critères de Ciblage
+                </h3>
+                <DemographicTargeting
+                  initialCriteria={{
+                    propertyIntent:
+                      configuration.targetType === 'buyers'
+                        ? ['buy']
+                        : configuration.targetType === 'sellers'
+                          ? ['sell']
+                          : configuration.targetType === 'investors'
+                            ? ['invest']
+                            : ['rent'],
+                    propertyTypes: [configuration.propertyType],
+                    ...(configuration.budget && { budgetRange: configuration.budget }),
+                  }}
+                  onChange={handleDemographicChange}
+                  disabled={isLocked}
                 />
-              </svg>
-              3. Paramètres de Campagne
-            </h3>
-            <CampaignSettings
-              value={configuration.campaignSettings!}
-              onChange={handleCampaignSettingsChange}
-              disabled={isLocked}
-              errors={validationResult.errors.reduce((acc, err) => {
-                if (err.field.startsWith('campaignSettings.')) {
-                  const field = err.field.replace('campaignSettings.', '');
-                  acc[field] = err.message;
-                }
-                return acc;
-              }, {} as Record<string, string>)}
-            />
-          </div>
+              </div>
 
-          </>
+              {/* Campaign Settings */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  3. Paramètres de Campagne
+                </h3>
+                <CampaignSettings
+                  value={configuration.campaignSettings!}
+                  onChange={handleCampaignSettingsChange}
+                  disabled={isLocked}
+                  errors={validationResult.errors.reduce((acc, err) => {
+                    if (err.field.startsWith('campaignSettings.')) {
+                      const field = err.field.replace('campaignSettings.', '');
+                      acc[field] = err.message;
+                    }
+                    return acc;
+                  }, {} as Record<string, string>)}
+                />
+              </div>
+
+            </>
           )}
 
           {/* Validation Errors */}

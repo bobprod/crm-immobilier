@@ -1110,7 +1110,7 @@ export class ProspectingService {
       const totalLeads = (campaigns || []).reduce((sum, c) => sum + (c?._count?.leads || 0), 0);
       const totalConverted = (convertedLeads || []).length;
       const estimatedValue = (convertedLeads || []).reduce((sum, lead) => {
-        const budget = lead?.budget as any;
+        const budget = (lead?.budget) as any;
         const budgetValue = budget?.max || budget?.min || lead?.budgetMax || lead?.budgetMin || 0;
         return sum + (typeof budgetValue === 'number' ? budgetValue : 0);
       }, 0);
