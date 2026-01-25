@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
 
 /**
  * Service spécialisé pour la génération de documents immobiliers
- * 
+ *
  * Templates inclus:
  * - Contrats de vente
  * - Contrats de commission
@@ -26,7 +26,7 @@ export class RealEstateDocumentGeneratorService {
   ) {
     // Use configurable upload directory
     this.outputDir = this.configService.get<string>('UPLOAD_DIR') || './uploads/documents';
-    
+
     // Ensure directory exists
     if (!fs.existsSync(this.outputDir)) {
       fs.mkdirSync(this.outputDir, { recursive: true });
@@ -56,13 +56,13 @@ export class RealEstateDocumentGeneratorService {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const writeStream = fs.createWriteStream(filePath);
-      
+
       // Handle stream errors
       writeStream.on('error', (error) => {
         this.logger.error(`Error writing PDF file: ${error.message}`);
         throw new Error(`Failed to create PDF file: ${error.message}`);
       });
-      
+
       doc.pipe(writeStream);
 
       // En-tête
@@ -71,82 +71,82 @@ export class RealEstateDocumentGeneratorService {
       doc.fontSize(12).text(`Date: ${data.date.toLocaleDateString('fr-FR')}`, { align: 'right' });
       doc.moveDown(2);
 
-    // Parties
-    doc.fontSize(14).text('ENTRE LES SOUSSIGNÉS:', { underline: true });
-    doc.moveDown();
-    doc.fontSize(12).text(`Le vendeur: ${data.sellerName}`, { indent: 20 });
-    doc.text(`L'acquéreur: ${data.buyerName}`, { indent: 20 });
-    doc.moveDown(2);
+      // Parties
+      doc.fontSize(14).text('ENTRE LES SOUSSIGNÉS:', { underline: true });
+      doc.moveDown();
+      doc.fontSize(12).text(`Le vendeur: ${data.sellerName}`, { indent: 20 });
+      doc.text(`L'acquéreur: ${data.buyerName}`, { indent: 20 });
+      doc.moveDown(2);
 
-    // Objet du contrat
-    doc.fontSize(14).text('ARTICLE 1 - OBJET DU CONTRAT', { underline: true });
-    doc.moveDown();
-    doc.fontSize(12).text(
-      `Le présent contrat a pour objet la vente du bien immobilier suivant:`,
-      { indent: 20 }
-    );
-    doc.text(`Titre: ${data.propertyTitle}`, { indent: 20 });
-    doc.text(`Adresse: ${data.propertyAddress}`, { indent: 20 });
-    doc.moveDown(2);
-
-    // Prix
-    doc.fontSize(14).text('ARTICLE 2 - PRIX', { underline: true });
-    doc.moveDown();
-    const currency = data.currency || 'EUR';
-    doc.fontSize(12).text(
-      `Le prix de vente est fixé à ${data.price.toLocaleString('fr-FR')} ${currency}`,
-      { indent: 20 }
-    );
-    doc.moveDown(2);
-
-    // Commission d'agence
-    if (data.agencyName && data.agencyCommission) {
-      doc.fontSize(14).text('ARTICLE 3 - COMMISSION D\'AGENCE', { underline: true });
+      // Objet du contrat
+      doc.fontSize(14).text('ARTICLE 1 - OBJET DU CONTRAT', { underline: true });
       doc.moveDown();
       doc.fontSize(12).text(
-        `L'agence ${data.agencyName} percevra une commission de ${data.agencyCommission}% du prix de vente.`,
+        `Le présent contrat a pour objet la vente du bien immobilier suivant:`,
+        { indent: 20 }
+      );
+      doc.text(`Titre: ${data.propertyTitle}`, { indent: 20 });
+      doc.text(`Adresse: ${data.propertyAddress}`, { indent: 20 });
+      doc.moveDown(2);
+
+      // Prix
+      doc.fontSize(14).text('ARTICLE 2 - PRIX', { underline: true });
+      doc.moveDown();
+      const currency = data.currency || 'EUR';
+      doc.fontSize(12).text(
+        `Le prix de vente est fixé à ${data.price.toLocaleString('fr-FR')} ${currency}`,
         { indent: 20 }
       );
       doc.moveDown(2);
-    }
 
-    // Conditions particulières
-    if (data.conditions && data.conditions.length > 0) {
-      doc.fontSize(14).text('CONDITIONS PARTICULIÈRES', { underline: true });
-      doc.moveDown();
-      data.conditions.forEach((condition, index) => {
-        doc.fontSize(12).text(`${index + 1}. ${condition}`, { indent: 20 });
+      // Commission d'agence
+      if (data.agencyName && data.agencyCommission) {
+        doc.fontSize(14).text('ARTICLE 3 - COMMISSION D\'AGENCE', { underline: true });
+        doc.moveDown();
+        doc.fontSize(12).text(
+          `L'agence ${data.agencyName} percevra une commission de ${data.agencyCommission}% du prix de vente.`,
+          { indent: 20 }
+        );
+        doc.moveDown(2);
+      }
+
+      // Conditions particulières
+      if (data.conditions && data.conditions.length > 0) {
+        doc.fontSize(14).text('CONDITIONS PARTICULIÈRES', { underline: true });
+        doc.moveDown();
+        data.conditions.forEach((condition, index) => {
+          doc.fontSize(12).text(`${index + 1}. ${condition}`, { indent: 20 });
+        });
+        doc.moveDown(2);
+      }
+
+      // Signatures
+      doc.moveDown(3);
+      doc.fontSize(12).text('Le vendeur', { continued: false, indent: 50 });
+      doc.text('L\'acquéreur', { align: 'right', indent: 0 });
+      doc.moveDown(3);
+      doc.text('_____________________', { continued: false, indent: 50 });
+      doc.text('_____________________', { align: 'right', indent: 0 });
+
+      doc.end();
+
+      // Wait for the PDF to be fully written
+      return new Promise((resolve, reject) => {
+        writeStream.on('finish', () => {
+          this.logger.log(`Sales contract generated: ${fileName}`);
+          resolve({ filePath, fileName });
+        });
+        writeStream.on('error', reject);
       });
-      doc.moveDown(2);
+    } catch (error) {
+      this.logger.error(`Error generating sales contract: ${error.message}`);
+      // Clean up partial file if it exists
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw error;
     }
-
-    // Signatures
-    doc.moveDown(3);
-    doc.fontSize(12).text('Le vendeur', { continued: false, indent: 50 });
-    doc.text('L\'acquéreur', { align: 'right', indent: 0 });
-    doc.moveDown(3);
-    doc.text('_____________________', { continued: false, indent: 50 });
-    doc.text('_____________________', { align: 'right', indent: 0 });
-
-    doc.end();
-
-    // Wait for the PDF to be fully written
-    return new Promise((resolve, reject) => {
-      writeStream.on('finish', () => {
-        this.logger.log(`Sales contract generated: ${fileName}`);
-        resolve({ filePath, fileName });
-      });
-      writeStream.on('error', reject);
-    });
-  } catch (error) {
-    this.logger.error(`Error generating sales contract: ${error.message}`);
-    // Clean up partial file if it exists
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    throw error;
   }
-}
 
   /**
    * Générer un accord de commission
@@ -406,7 +406,7 @@ export class RealEstateDocumentGeneratorService {
     if (data.financialProjections && data.financialProjections.length > 0) {
       doc.fontSize(16).text('PROJECTIONS FINANCIÈRES', { underline: true });
       doc.moveDown();
-      
+
       data.financialProjections.forEach((projection) => {
         doc.fontSize(12).text(`Année ${projection.year}:`, { indent: 20 });
         doc.text(`  Revenus: ${projection.revenue.toLocaleString('fr-FR')} EUR`, { indent: 40 });
@@ -444,12 +444,12 @@ export class RealEstateDocumentGeneratorService {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const writeStream = fs.createWriteStream(filePath);
-      
+
       writeStream.on('error', (error) => {
         this.logger.error(`Error writing PDF file: ${error.message}`);
         throw new Error(`Failed to create PDF file: ${error.message}`);
       });
-      
+
       doc.pipe(writeStream);
 
       // En-tête
@@ -579,12 +579,12 @@ export class RealEstateDocumentGeneratorService {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const writeStream = fs.createWriteStream(filePath);
-      
+
       writeStream.on('error', (error) => {
         this.logger.error(`Error writing PDF file: ${error.message}`);
         throw new Error(`Failed to create PDF file: ${error.message}`);
       });
-      
+
       doc.pipe(writeStream);
 
       // En-tête
@@ -697,12 +697,12 @@ export class RealEstateDocumentGeneratorService {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const writeStream = fs.createWriteStream(filePath);
-      
+
       writeStream.on('error', (error) => {
         this.logger.error(`Error writing PDF file: ${error.message}`);
         throw new Error(`Failed to create PDF file: ${error.message}`);
       });
-      
+
       doc.pipe(writeStream);
 
       const currency = data.currency || 'EUR';

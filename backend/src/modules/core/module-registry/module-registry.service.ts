@@ -63,7 +63,7 @@ export interface ModuleManifest {
 
 @Injectable()
 export class ModuleRegistryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * ═══════════════════════════════════════════════════════════
@@ -359,25 +359,54 @@ export class ModuleRegistryService {
   async getMenuForAgency(agencyId: string, userRole: UserRole) {
     const modules = await this.getActiveModulesForAgency(agencyId);
 
-    const menus = [];
+    // Construire une map pour les items de menu afin de reconstruire l'arborescence
+    const itemMap = new Map<string, any>();
+    const rootItems: any[] = [];
+
     for (const module of modules) {
       for (const item of module.menuItems) {
         // Vérifier les permissions (hiérarchie des rôles)
-        if (!item.requiredRole || this.hasRole(userRole, item.requiredRole)) {
-          menus.push({
-            label: item.label,
-            icon: item.icon,
-            path: item.path,
-            module: module.name,
-            moduleCode: module.code,
-            order: item.order,
-          });
+        if (item.requiredRole && !this.hasRole(userRole, item.requiredRole)) {
+          continue;
         }
+
+        itemMap.set(item.id, {
+          id: item.id,
+          moduleId: module.id,
+          moduleCode: module.code,
+          moduleName: module.name,
+          label: item.label,
+          icon: item.icon,
+          path: item.path,
+          order: item.order,
+          requiredRole: item.requiredRole,
+          parentId: item.parentId,
+          children: [] as any[],
+        });
       }
     }
 
-    // Trier par ordre
-    return menus.sort((a, b) => a.order - b.order);
+    // Construire l'arborescence parent → enfants
+    for (const item of itemMap.values()) {
+      if (item.parentId && itemMap.has(item.parentId)) {
+        itemMap.get(item.parentId).children.push(item);
+      } else {
+        rootItems.push(item);
+      }
+    }
+
+    const sortByOrder = (items: any[]) => {
+      items.sort((a, b) => (a.order || 0) - (b.order || 0));
+      for (const child of items) {
+        if (child.children?.length) {
+          sortByOrder(child.children);
+        }
+      }
+    };
+
+    sortByOrder(rootItems);
+
+    return rootItems;
   }
 
   /**

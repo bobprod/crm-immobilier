@@ -38,6 +38,12 @@ export class OrchestrationResponseDto {
    */
   finalResult?: any;
 
+  /** Synthèse textuelle ou contenu généré par l'orchestration (ex: résumé, texte généré) */
+  synthesis?: string;
+
+  /** Identifiant externe de l'orchestration (optionnel) */
+  id?: string;
+
   /**
    * Métriques globales
    */
