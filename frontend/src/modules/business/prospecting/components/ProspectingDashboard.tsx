@@ -1577,11 +1577,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <button
                     onClick={handleVerifyEmails}
                     disabled={!selectedCampaignId || loading || isValidating}
-                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
-                      isValidating && validationProgress.type === 'email'
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${isValidating && validationProgress.type === 'email'
                         ? 'border-green-400 bg-green-50'
                         : 'border-green-200 hover:bg-green-50'
-                    }`}
+                      }`}
                   >
                     {isValidating && validationProgress.type === 'email' && (
                       <div className="absolute inset-0 bg-green-100 opacity-50 animate-pulse" />
@@ -1602,11 +1601,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <button
                     onClick={handleVerifyPhones}
                     disabled={!selectedCampaignId || loading || isValidating}
-                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
-                      isValidating && validationProgress.type === 'phone'
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${isValidating && validationProgress.type === 'phone'
                         ? 'border-blue-400 bg-blue-50'
                         : 'border-blue-200 hover:bg-blue-50'
-                    }`}
+                      }`}
                   >
                     {isValidating && validationProgress.type === 'phone' && (
                       <div className="absolute inset-0 bg-blue-100 opacity-50 animate-pulse" />
@@ -1627,11 +1625,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <button
                     onClick={handleDetectSpam}
                     disabled={!selectedCampaignId || loading || isValidating}
-                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
-                      isValidating && validationProgress.type === 'spam'
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${isValidating && validationProgress.type === 'spam'
                         ? 'border-red-400 bg-red-50'
                         : 'border-red-200 hover:bg-red-50'
-                    }`}
+                      }`}
                   >
                     {isValidating && validationProgress.type === 'spam' && (
                       <div className="absolute inset-0 bg-red-100 opacity-50 animate-pulse" />
@@ -1652,11 +1649,10 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <button
                     onClick={handleRemoveDuplicates}
                     disabled={!selectedCampaignId || loading || isValidating}
-                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${
-                      isValidating && validationProgress.type === 'duplicate'
+                    className={`bg-white border-2 rounded-xl p-4 transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden ${isValidating && validationProgress.type === 'duplicate'
                         ? 'border-purple-400 bg-purple-50'
                         : 'border-purple-200 hover:bg-purple-50'
-                    }`}
+                      }`}
                   >
                     {isValidating && validationProgress.type === 'duplicate' && (
                       <div className="absolute inset-0 bg-purple-100 opacity-50 animate-pulse" />
@@ -1677,9 +1673,8 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                   <button
                     onClick={handleAICleanLeads}
                     disabled={!selectedCampaignId || loading || isValidating || isCleaningWithAI}
-                    className={`bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-transparent rounded-xl p-4 text-white transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden hover:from-indigo-600 hover:to-purple-700 ${
-                      isCleaningWithAI ? 'animate-pulse' : ''
-                    }`}
+                    className={`bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-transparent rounded-xl p-4 text-white transition disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden hover:from-indigo-600 hover:to-purple-700 ${isCleaningWithAI ? 'animate-pulse' : ''
+                      }`}
                   >
                     {isCleaningWithAI && (
                       <div className="absolute inset-0 bg-white opacity-20 animate-pulse" />
@@ -1842,37 +1837,37 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 {/* Résultats de la session de validation */}
                 {(validationResults.emailsValidated > 0 || validationResults.phonesValidated > 0 ||
                   validationResults.spamDetected > 0 || validationResults.duplicatesRemoved > 0) && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                    <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <span className="text-xl">📋</span>
-                      Résultats de la Session
-                    </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-green-600">{validationResults.emailsValidated}</div>
-                        <div className="text-xs text-gray-600">Emails validés</div>
-                        {validationResults.emailsInvalid > 0 && (
-                          <div className="text-xs text-red-500 mt-1">({validationResults.emailsInvalid} invalides)</div>
-                        )}
-                      </div>
-                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-blue-600">{validationResults.phonesValidated}</div>
-                        <div className="text-xs text-gray-600">Téléphones validés</div>
-                        {validationResults.phonesInvalid > 0 && (
-                          <div className="text-xs text-red-500 mt-1">({validationResults.phonesInvalid} invalides)</div>
-                        )}
-                      </div>
-                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-orange-600">{validationResults.spamDetected}</div>
-                        <div className="text-xs text-gray-600">Spams détectés</div>
-                      </div>
-                      <div className="bg-white rounded-lg p-4 text-center shadow-sm">
-                        <div className="text-2xl font-bold text-purple-600">{validationResults.duplicatesRemoved}</div>
-                        <div className="text-xs text-gray-600">Doublons supprimés</div>
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                      <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="text-xl">📋</span>
+                        Résultats de la Session
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                          <div className="text-2xl font-bold text-green-600">{validationResults.emailsValidated}</div>
+                          <div className="text-xs text-gray-600">Emails validés</div>
+                          {validationResults.emailsInvalid > 0 && (
+                            <div className="text-xs text-red-500 mt-1">({validationResults.emailsInvalid} invalides)</div>
+                          )}
+                        </div>
+                        <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                          <div className="text-2xl font-bold text-blue-600">{validationResults.phonesValidated}</div>
+                          <div className="text-xs text-gray-600">Téléphones validés</div>
+                          {validationResults.phonesInvalid > 0 && (
+                            <div className="text-xs text-red-500 mt-1">({validationResults.phonesInvalid} invalides)</div>
+                          )}
+                        </div>
+                        <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                          <div className="text-2xl font-bold text-orange-600">{validationResults.spamDetected}</div>
+                          <div className="text-xs text-gray-600">Spams détectés</div>
+                        </div>
+                        <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                          <div className="text-2xl font-bold text-purple-600">{validationResults.duplicatesRemoved}</div>
+                          <div className="text-xs text-gray-600">Doublons supprimés</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {selectedCampaignId ? (
                   <>
