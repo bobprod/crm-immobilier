@@ -13,12 +13,13 @@ import { ApifyService } from './services/apify.service';
 import { BrightDataService } from './services/brightdata.service';
 import { AntiDetectionService } from './services/anti-detection.service';
 import { LeBonCoinService } from './services/leboncoin.service';
+import { InternationalScraperService } from './services/international-scraper.service';
 
 /**
- * Module de scraping web unifié - Version améliorée
+ * Module de scraping web unifié - Version internationale
  *
  * Ce module fournit une architecture complète pour le scraping web
- * avec support de multiples providers et techniques avancées:
+ * avec support de 20+ pays et multiples providers:
  *
  * PROVIDERS INTÉGRÉS (gratuits):
  * - CheerioService: Parsing HTML simple (gratuit, rapide)
@@ -29,10 +30,17 @@ import { LeBonCoinService } from './services/leboncoin.service';
  * - ApifyService: Scrapers pré-construits (Zillow, Realtor, etc.)
  * - BrightDataService: Proxies résidentiels premium (anti-bot)
  *
- * SCRAPERS SPÉCIFIQUES:
+ * SCRAPERS SPÉCIFIQUES FRANCE:
  * - LeBonCoinService: API non-officielle LeBonCoin
  * - SeLogerService: À venir
  * - PAPService: À venir
+ *
+ * SCRAPERS INTERNATIONAUX (20+ pays):
+ * - InternationalScraperService: Scraper unifié multi-pays
+ *   🌍 Afrique: Maroc, Algérie, Tunisie, Cameroun, CI, Sénégal, Nigeria, Congo
+ *   🌎 Amérique Latine: Brésil, Colombie, Équateur, Bolivie
+ *   🌐 Europe+Canada: Canada, UK, Allemagne, Pays-Bas
+ *   🌏 Asie: Japon, Corée du Sud, Taiwan, Inde
  *
  * SERVICES AVANCÉS:
  * - AntiDetectionService: Techniques d'évitement de détection
@@ -62,6 +70,9 @@ import { LeBonCoinService } from './services/leboncoin.service';
 
     // Scrapers spécifiques sites français
     LeBonCoinService,
+
+    // Scraper international (20+ pays)
+    InternationalScraperService,
   ],
   exports: [
     // Exports existants
@@ -76,6 +87,9 @@ import { LeBonCoinService } from './services/leboncoin.service';
     BrightDataService,
     AntiDetectionService,
     LeBonCoinService,
+
+    // Export international
+    InternationalScraperService,
   ],
 })
 export class ScrapingModule { }
