@@ -1,4 +1,4 @@
-import apiClient from '@/shared/utils/api-client';
+import apiClient from '@/shared/utils/backend-api';
 
 export interface TaskBoard {
   id: string;

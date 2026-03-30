@@ -1,0 +1,13 @@
+
+> crm-immobilier-frontend@1.0.0 dev
+> next dev -p 3002
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://192.168.0.2:3002
+- Environments: .env.local, .env
+✓ Ready in 578ms
+
+○ Compiling /dashboard ...
+ GET /dashboard?testMode=true 200 in 2.8s (next.js: 2.7s, application-code: 122ms)
+[?25h

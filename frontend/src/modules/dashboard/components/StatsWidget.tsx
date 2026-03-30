@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/components/ui/card';
+import { Card, CardContent } from '../../../shared/components/ui/card';
 import {
   Building2,
   Users,
@@ -22,80 +22,91 @@ export function StatsWidget({ stats }: StatsWidgetProps) {
       title: 'Prospects Actifs',
       value: stats.activeProspects,
       icon: Users,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
     },
     {
       title: 'Propriétés Disponibles',
       value: stats.availableProperties,
       icon: Building2,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10',
     },
     {
       title: "RDV Aujourd'hui",
       value: stats.todayAppointments,
       icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
     },
     {
       title: 'Matchs Totaux',
       value: stats.totalMatches,
       icon: Target,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-100',
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-500/10',
     },
     {
       title: 'Campagnes Actives',
       value: stats.activeCampaigns,
       icon: Megaphone,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
     },
     {
       title: 'Tâches en Cours',
       value: stats.pendingTasks,
       icon: CheckSquare,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
     },
     {
       title: 'Communications',
       value: stats.totalCommunications,
       icon: MessageSquare,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500/10',
     },
     {
       title: 'Taux de Conversion',
       value: `${stats.conversionRate}%`,
       icon: TrendingUp,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
-    },
-    {
-      title: 'Taux de Match',
-      value: `${stats.matchSuccessRate}%`,
-      icon: Award,
-      color: 'text-cyan-600',
-      bgColor: 'bg-cyan-100',
+      color: 'text-cyan-500',
+      bgColor: 'bg-cyan-500/10',
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {statItems.map((item) => (
-        <Card key={item.title}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-            <div className={`p-2 rounded-lg ${item.bgColor}`}>
-              <item.icon className={`h-4 w-4 ${item.color}`} />
+        <Card key={item.title} className="group overflow-hidden border-none shadow-ambient hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`p-3 rounded-2xl ${item.bgColor} transition-transform group-hover:scale-110 duration-300`}>
+                <item.icon className={`h-6 w-6 ${item.color}`} />
+              </div>
+              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 group-hover:text-primary transition-colors">
+                En direct
+              </span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{item.value}</div>
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground mb-1 group-hover:text-foreground transition-colors">
+                {item.title}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <h4 className="text-3xl font-extrabold tracking-tight text-foreground">
+                  {item.value}
+                </h4>
+                {/* Visual placeholder for trend */}
+                <div className="flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                  +12%
+                </div>
+              </div>
+            </div>
           </CardContent>
+          <div className={`h-1.5 w-full ${item.bgColor} absolute bottom-0 left-0 overflow-hidden`}>
+             <div className={`h-full ${item.color.replace('text-', 'bg-')} opacity-40 w-1/3 rounded-full animate-pulse`}></div>
+          </div>
         </Card>
       ))}
     </div>

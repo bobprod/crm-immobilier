@@ -18,7 +18,7 @@ import {
   Task,
   UnifiedPlanningData,
 } from './services/planning-api';
-import * as taskService from '@/shared/services/tasks.service';
+import * as taskService from '@/modules/business/tasks/tasks.service';
 
 export default function UnifiedPlanningPage() {
   const { toast } = useToast();
@@ -108,7 +108,7 @@ export default function UnifiedPlanningPage() {
 
   const handleTaskComplete = async (taskId: string) => {
     try {
-      await taskService.completeTask(taskId);
+      await taskService.default.complete(taskId);
       toast({
         title: 'Succès',
         description: 'Tâche marquée comme terminée',
@@ -126,7 +126,7 @@ export default function UnifiedPlanningPage() {
 
   const handleTaskDelete = async (taskId: string) => {
     try {
-      await taskService.deleteTask(taskId);
+      await taskService.default.remove(taskId);
       toast({
         title: 'Succès',
         description: 'Tâche supprimée',
