@@ -22,6 +22,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { ArrowLeft, Settings, Save, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * AI Pricing Configuration
@@ -53,8 +54,8 @@ export default function AIPricingPage() {
 
   const checkAccess = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      const user = await response.json();
+      const response = await apiClient.get('/auth/me');
+      const user = response.data;
       setHasAccess(user.role === 'SUPER_ADMIN');
       setLoading(false);
     } catch (error) {

@@ -12,6 +12,7 @@ import {
   PieChart,
   Calendar
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 interface ProviderMetric {
   date: string;
@@ -35,58 +36,48 @@ interface ProviderPerformance {
   trendValue: number;
 }
 
+const PROVIDER_META: Record<string, { name: string; color: string }> = {
+  anthropic:  { name: 'Claude (Anthropic)', color: '#8B5CF6' },
+  openai:     { name: 'GPT-4 (OpenAI)',     color: '#3B82F6' },
+  gemini:     { name: 'Gemini (Google)',    color: '#10B981' },
+  deepseek:   { name: 'DeepSeek',           color: '#6366F1' },
+  mistral:    { name: 'Mistral AI',         color: '#F97316' },
+  openrouter: { name: 'OpenRouter',         color: '#14B8A6' },
+};
+
 export default function ProvidersAnalyticsPage() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [selectedMetric, setSelectedMetric] = useState<'calls' | 'success' | 'latency' | 'cost'>('calls');
+  const [providers, setProviders] = useState<ProviderPerformance[]>([]);
 
-  // Mock data - En production, fetch depuis API
-  const providers: ProviderPerformance[] = [
-    {
-      provider: 'anthropic',
-      providerName: 'Claude (Anthropic)',
-      color: '#8B5CF6',
-      totalCalls: 1247,
-      successRate: 99.2,
-      avgLatency: 1200,
-      totalCost: 45.50,
-      trend: 'up',
-      trendValue: 12.5
-    },
-    {
-      provider: 'openai',
-      providerName: 'GPT-4 (OpenAI)',
-      color: '#3B82F6',
-      totalCalls: 892,
-      successRate: 97.8,
-      avgLatency: 1500,
-      totalCost: 32.20,
-      trend: 'stable',
-      trendValue: 0.8
-    },
-    {
-      provider: 'gemini',
-      providerName: 'Gemini (Google)',
-      color: '#10B981',
-      totalCalls: 654,
-      successRate: 96.5,
-      avgLatency: 850,
-      totalCost: 18.75,
-      trend: 'up',
-      trendValue: 8.3
-    },
-    {
-      provider: 'cheerio',
-      providerName: 'Cheerio (Internal)',
-      color: '#F59E0B',
-      totalCalls: 3245,
-      successRate: 95.0,
-      avgLatency: 450,
-      totalCost: 0,
-      trend: 'down',
-      trendValue: -3.2
-    }
-  ];
+  useEffect(() => {
+    apiClient.get('/ai-billing/usage/stats/by-provider')
+      .then((res) => {
+        const data: { provider: string; count: number; totalCredits: number; totalCostUsd: number }[] = res.data ?? [];
+        const mapped: ProviderPerformance[] = data.map((item) => {
+          const meta = PROVIDER_META[item.provider?.toLowerCase()] ?? {
+            name: item.provider,
+            color: '#94A3B8',
+          };
+          return {
+            provider: item.provider,
+            providerName: meta.name,
+            color: meta.color,
+            totalCalls: item.count,
+            successRate: 98,       // not returned by backend — use conservative default
+            avgLatency: 1000,      // not returned by backend — use default
+            totalCost: item.totalCostUsd ?? 0,
+            trend: 'stable' as const,
+            trendValue: 0,
+          };
+        });
+        setProviders(mapped);
+      })
+      .catch(() => {
+        // Keep providers empty — UI will show zeros
+      });
+  }, [dateRange]);
 
   // Mock time series data
   const timeSeriesData: ProviderMetric[] = [];
@@ -111,9 +102,13 @@ export default function ProvidersAnalyticsPage() {
   }
 
   const totalCalls = providers.reduce((sum, p) => sum + p.totalCalls, 0);
-  const avgSuccessRate = providers.reduce((sum, p) => sum + p.successRate, 0) / providers.length;
+  const avgSuccessRate = providers.length > 0
+    ? providers.reduce((sum, p) => sum + p.successRate, 0) / providers.length
+    : 0;
   const totalCost = providers.reduce((sum, p) => sum + p.totalCost, 0);
-  const avgLatency = providers.reduce((sum, p) => sum + p.avgLatency, 0) / providers.length;
+  const avgLatency = providers.length > 0
+    ? providers.reduce((sum, p) => sum + p.avgLatency, 0) / providers.length
+    : 0;
 
   return (
     <>

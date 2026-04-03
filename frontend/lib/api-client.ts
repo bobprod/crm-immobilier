@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
   (config: any): any => {
     // Ajouter le token JWT si disponible
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('auth_token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }

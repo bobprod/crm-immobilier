@@ -32,7 +32,7 @@ import {
   ListProjectsDto,
 } from './dto/import-project.dto';
 
-@Controller('api/investment-intelligence')
+@Controller('investment-intelligence')
 @UseGuards(JwtAuthGuard)
 export class InvestmentIntelligenceController {
   private readonly logger = new Logger(InvestmentIntelligenceController.name);

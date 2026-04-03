@@ -50,7 +50,7 @@ export default function ImportProjectPage() {
     setImportResult(null);
 
     try {
-      const response = await apiClient.post('/investment/import', { source, url });
+      const response = await apiClient.post('/investment-intelligence/import', { source, url });
       const result = response.data;
       setImportResult(result);
 

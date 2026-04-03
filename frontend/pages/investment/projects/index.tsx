@@ -35,6 +35,7 @@ import {
   Plus,
   Eye,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Investment Projects List Page
@@ -78,85 +79,8 @@ export default function ProjectsListPage() {
 
   const fetchProjects = async () => {
     try {
-      // TODO: API call
-      setProjects([
-        {
-          id: '1',
-          title: 'Résidence Le Marais',
-          city: 'Paris',
-          country: 'France',
-          totalPrice: 500000,
-          minTicket: 1000,
-          netYield: 9.2,
-          grossYield: 10.5,
-          propertyType: 'Résidentiel',
-          status: 'active',
-          fundingProgress: 75,
-          source: 'bricks',
-          durationMonths: 24,
-        },
-        {
-          id: '2',
-          title: 'Appartements Neufs Lyon',
-          city: 'Lyon',
-          country: 'France',
-          totalPrice: 350000,
-          minTicket: 500,
-          netYield: 7.8,
-          grossYield: 9.1,
-          propertyType: 'Résidentiel',
-          status: 'active',
-          fundingProgress: 45,
-          source: 'homunity',
-          durationMonths: 36,
-        },
-        {
-          id: '3',
-          title: 'Bureaux Bordeaux Centre',
-          city: 'Bordeaux',
-          country: 'France',
-          totalPrice: 800000,
-          minTicket: 2000,
-          netYield: 8.5,
-          grossYield: 9.8,
-          propertyType: 'Commercial',
-          status: 'completed',
-          fundingProgress: 100,
-          source: 'generic',
-          durationMonths: 48,
-        },
-        {
-          id: '4',
-          title: 'Résidence Étudiante Toulouse',
-          city: 'Toulouse',
-          country: 'France',
-          totalPrice: 420000,
-          minTicket: 750,
-          netYield: 8.9,
-          grossYield: 10.2,
-          propertyType: 'Résidentiel',
-          status: 'active',
-          fundingProgress: 62,
-          source: 'bricks',
-          durationMonths: 30,
-        },
-        {
-          id: '5',
-          title: 'Commerce Marseille Vieux-Port',
-          city: 'Marseille',
-          country: 'France',
-          totalPrice: 650000,
-          minTicket: 1500,
-          netYield: 7.5,
-          grossYield: 8.7,
-          propertyType: 'Commercial',
-          status: 'active',
-          fundingProgress: 88,
-          source: 'homunity',
-          durationMonths: 42,
-        },
-      ]);
-
+      const response = await apiClient.get('/investment-intelligence/projects');
+      setProjects(response.data?.projects ?? []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching projects:', error);

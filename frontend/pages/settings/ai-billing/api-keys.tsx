@@ -48,6 +48,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * API Keys Management (BYOK - Bring Your Own Keys)
@@ -93,53 +94,25 @@ export default function APIKeysPage() {
 
   const fetchApiKeys = async () => {
     try {
-      // TODO: Remplacer par vrai appel API
-      // const response = await fetch('/api/ai-billing/api-keys');
-      // const data = await response.json();
-
-      // Données de démo
-      setApiKeys([
-        {
-          id: '1',
-          provider: 'anthropic',
-          keyName: 'Production Key',
-          keyPreview: 'sk-ant-api03-...XyZ',
-          isActive: true,
-          status: 'active',
-          lastUsed: '2025-12-30T08:30:00Z',
-          createdAt: '2025-12-01T10:00:00Z',
-        },
-        {
-          id: '2',
-          provider: 'openai',
-          keyName: 'Main OpenAI Key',
-          keyPreview: 'sk-...ABC',
-          isActive: true,
-          status: 'active',
-          lastUsed: '2025-12-29T14:20:00Z',
-          createdAt: '2025-12-05T15:30:00Z',
-        },
-        {
-          id: '3',
-          provider: 'deepseek',
-          keyName: 'Budget Tasks',
-          keyPreview: 'sk-...DEF',
-          isActive: true,
-          status: 'active',
-          lastUsed: '2025-12-28T09:15:00Z',
-          createdAt: '2025-12-10T12:00:00Z',
-        },
-        {
-          id: '4',
-          provider: 'google',
-          keyName: 'Gemini Test',
-          keyPreview: 'AIza...GHI',
-          isActive: false,
-          status: 'inactive',
-          createdAt: '2025-12-15T11:00:00Z',
-        },
-      ]);
-
+      const response = await apiClient.get('/ai-billing/api-keys/user');
+      const data = response.data ?? {};
+      // Transform flat key object into display array
+      const keys: ApiKey[] = Object.entries(data)
+        .filter(([k, v]) => k.endsWith('ApiKey') && v)
+        .map(([k, v], idx) => {
+          const provider = k.replace('ApiKey', '');
+          const val = v as string;
+          return {
+            id: String(idx + 1),
+            provider,
+            keyName: `${provider} key`,
+            keyPreview: val.length > 8 ? `${val.slice(0, 4)}...${val.slice(-4)}` : '***',
+            isActive: true,
+            status: 'active' as const,
+            createdAt: new Date().toISOString(),
+          };
+        });
+      setApiKeys(keys);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching API keys:', error);
@@ -149,17 +122,12 @@ export default function APIKeysPage() {
 
   const handleAddKey = async () => {
     try {
-      const response = await fetch('/api/ai-billing/api-keys', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newKey),
+      await apiClient.put('/ai-billing/api-keys/user', {
+        [`${newKey.provider}ApiKey`]: newKey.apiKey,
       });
-
-      if (response.ok) {
-        setShowAddDialog(false);
-        setNewKey({ provider: '', keyName: '', apiKey: '' });
-        fetchApiKeys();
-      }
+      setShowAddDialog(false);
+      setNewKey({ provider: '', keyName: '', apiKey: '' });
+      fetchApiKeys();
     } catch (error) {
       console.error('Error adding API key:', error);
     }
@@ -168,23 +136,27 @@ export default function APIKeysPage() {
   const handleDeleteKey = async (keyId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette clé API ?')) return;
 
-    try {
-      const response = await fetch(`/api/ai-billing/api-keys/${keyId}`, {
-        method: 'DELETE',
-      });
+    const key = apiKeys.find((k) => k.id === keyId);
+    if (!key) return;
 
-      if (response.ok) {
-        fetchApiKeys();
-      }
+    try {
+      await apiClient.put('/ai-billing/api-keys/user', {
+        [`${key.provider}ApiKey`]: null,
+      });
+      fetchApiKeys();
     } catch (error) {
       console.error('Error deleting API key:', error);
     }
   };
 
   const handleTestKey = async (keyId: string) => {
+    const key = apiKeys.find((k) => k.id === keyId);
+    if (!key) return;
     try {
-      // TODO: Appel API pour tester la clé
-      console.log('Testing key:', keyId);
+      await apiClient.post('/ai-billing/api-keys/validate', {
+        provider: key.provider,
+        apiKey: key.keyPreview,
+      });
     } catch (error) {
       console.error('Error testing API key:', error);
     }

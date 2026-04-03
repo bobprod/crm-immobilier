@@ -22,6 +22,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * AI Billing Dashboard - Page principale
@@ -49,8 +50,8 @@ export default function AIBillingDashboard() {
     const fetchUser = async () => {
       try {
         // TODO: Remplacer par vrai appel API
-        const response = await fetch('/api/auth/me');
-        const userData = await response.json();
+        const response = await apiClient.get('/auth/me');
+        const userData = response.data;
         setUser(userData);
       } catch (error) {
         console.error('Error fetching user:', error);
