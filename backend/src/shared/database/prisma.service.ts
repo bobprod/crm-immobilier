@@ -68,6 +68,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     // Tables Intégrations
     userIntegration: 'user_integrations',
     syncLog: 'sync_logs',
+    // Tables Business (Mandates, Owners, Transactions, Invoices)
+    mandate: 'mandates',
+    mandates: 'mandates',
+    owner: 'owners',
+    owners: 'owners',
+    invoice: 'invoices',
+    invoices: 'invoices',
     // Autres tables
     propertyTrackingStats: 'property_tracking_stats',
     activities: 'activities',
@@ -185,6 +192,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'investmentAlert',
       // Tables Intégrations
       'userIntegration',
+      // Tables Business (Mandates, Owners, Transactions, Invoices)
+      'mandate',
+      'mandates',
+      'owner',
+      'owners',
+      'invoice',
+      'invoices',
       // Autres
       'propertyTrackingStats',
       // Tables Vitrine Publique
