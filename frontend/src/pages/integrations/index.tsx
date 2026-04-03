@@ -35,6 +35,7 @@ import {
   Refresh,
   Info,
 } from '@mui/icons-material';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * 🔌 Page de configuration des intégrations API
@@ -110,16 +111,8 @@ export default function IntegrationsPage() {
   const loadIntegrations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/integrations', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIntegrations(data);
-      }
+      const response = await apiClient.get('/integrations');
+      setIntegrations(response.data);
     } catch (error) {
       console.error('Failed to load integrations:', error);
     } finally {
@@ -138,8 +131,8 @@ export default function IntegrationsPage() {
 
       const integration = getIntegration(provider);
       const url = integration
-        ? `/api/integrations/${provider}`
-        : '/api/integrations';
+        ? `/integrations/${provider}`
+        : '/integrations';
 
       const method = integration ? 'PUT' : 'POST';
 
@@ -168,16 +161,11 @@ export default function IntegrationsPage() {
         payload.provider = provider;
       }
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await (method === 'PUT'
+        ? apiClient.put(url, payload)
+        : apiClient.post(url, payload));
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         setMessage({ type: 'success', text: 'Configuration sauvegardée avec succès!' });
         await loadIntegrations();
       } else {
@@ -196,14 +184,8 @@ export default function IntegrationsPage() {
       setTesting(true);
       setMessage(null);
 
-      const response = await fetch(`/api/integrations/${provider}/test`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      const result = await response.json();
+      const response = await apiClient.post(`/integrations/${provider}/test`);
+      const result = response.data;
 
       if (result.success) {
         setMessage({ type: 'success', text: result.message || 'Test réussi!' });
@@ -221,24 +203,16 @@ export default function IntegrationsPage() {
 
   const handleDelete = async (provider: string) => {
     try {
-      const response = await fetch(`/api/integrations/${provider}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      await apiClient.delete(`/integrations/${provider}`);
+      setMessage({ type: 'success', text: 'Intégration supprimée' });
+      await loadIntegrations();
+      setDeleteDialog(null);
 
-      if (response.ok || response.status === 204) {
-        setMessage({ type: 'success', text: 'Intégration supprimée' });
-        await loadIntegrations();
-        setDeleteDialog(null);
-
-        // Clear form
-        if (provider === 'resend') setResendForm({});
-        else if (provider === 'sendgrid') setSendgridForm({});
-        else if (provider === 'twilio') setTwilioForm({});
-        else if (provider === 'firebase') setFirebaseForm({});
-      }
+      // Clear form
+      if (provider === 'resend') setResendForm({});
+      else if (provider === 'sendgrid') setSendgridForm({});
+      else if (provider === 'twilio') setTwilioForm({});
+      else if (provider === 'firebase') setFirebaseForm({});
     } catch (error) {
       setMessage({ type: 'error', text: 'Erreur lors de la suppression' });
     }
@@ -246,18 +220,8 @@ export default function IntegrationsPage() {
 
   const handleToggleActive = async (provider: string, isActive: boolean) => {
     try {
-      const response = await fetch(`/api/integrations/${provider}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ isActive }),
-      });
-
-      if (response.ok) {
-        await loadIntegrations();
-      }
+      await apiClient.put(`/integrations/${provider}`, { isActive });
+      await loadIntegrations();
     } catch (error) {
       console.error('Failed to toggle integration:', error);
     }
