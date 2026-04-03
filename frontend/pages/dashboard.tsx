@@ -199,7 +199,7 @@ const DashboardPage: React.FC = () => {
           <div className="relative overflow-hidden bg-gradient-to-r from-navy-600 to-navy-800 rounded-xl p-8 text-white shadow-lg">
             {/* Decorative circles */}
             <div className="absolute -top-6 -right-6 w-40 h-40 rounded-full bg-white/5" />
-            <div className="absolute -bottom-8 right-16 w-28 h-28 rounded-full bg-amber-gold-500/10" />
+            <div className="absolute -bottom-8 right-16 w-28 h-28 rounded-full bg-amber-400/10" />
             <div className="relative">
               <div className="flex items-center gap-3 mb-3">
                 <Home className="w-6 h-6 text-amber-400" />

@@ -49,9 +49,12 @@ const variantStyles: Record<string, { bg: string; icon: string; ring: string }> 
   yellow: { bg: 'bg-amber-100', icon: 'text-amber-600', ring: 'ring-amber-200' },
 };
 
+const isLucideIcon = (icon: LucideIcon | React.ReactNode): icon is LucideIcon =>
+  typeof icon === 'function' && !React.isValidElement(icon);
+
 const renderIcon = (icon: LucideIcon | React.ReactNode): React.ReactNode => {
-  if (typeof icon === 'function') {
-    const IconComponent = icon as LucideIcon;
+  if (isLucideIcon(icon)) {
+    const IconComponent = icon;
     return <IconComponent size={22} strokeWidth={1.75} />;
   }
   return icon as React.ReactNode;
