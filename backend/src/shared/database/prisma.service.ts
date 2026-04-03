@@ -17,7 +17,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   // Mapping des noms de modèle Prisma vers les noms de table PostgreSQL
   private readonly tableNameMap: Record<string, string> = {
     llmConfig: 'llm_configs',
-    mlConfig: 'ml_configs',
+    mlConfig: 'MlConfig',
     // Tables LLM Router
     userLlmProvider: 'user_llm_providers',
     llmUsageLog: 'llm_usage_logs',
@@ -75,6 +75,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     owners: 'owners',
     invoice: 'invoices',
     invoices: 'invoices',
+    // Tables Page Builder (PascalCase = pas de @@map)
+    page: 'Page',
+    pages: 'Page',
+    // Tables ML/AI/SEO (PascalCase = pas de @@map)
+    aiSuggestion: 'AiSuggestion',
+    detectedAnomaly: 'DetectedAnomaly',
+    prospectingSource: 'ProspectingSource',
+    seoConfig: 'SeoConfig',
+    seoBlogPost: 'SeoBlogPost',
     // Autres tables
     propertyTrackingStats: 'property_tracking_stats',
     activities: 'activities',
