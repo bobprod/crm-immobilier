@@ -41,7 +41,7 @@ export class AuthService {
         password: hashedPassword,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
-        role: registerDto.role || 'agent',
+        role: registerDto.role || 'AGENT',
       },
     });
 

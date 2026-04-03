@@ -52,6 +52,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     publishedProperty: 'PublishedProperty',
     vitrineAnalytics: 'VitrineAnalytics',
     propertySeo: 'PropertySeo',
+    publicAgentProfile: 'PublicAgentProfile',
+    publicLead: 'PublicLead',
+    vitrineTemplate: 'VitrineTemplate',
+    vitrinePage: 'VitrinePage',
     // Tables Provider
     providerConfig: 'provider_configs',
     providerUsageLog: 'provider_usage_logs',
@@ -183,6 +187,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'userIntegration',
       // Autres
       'propertyTrackingStats',
+      // Tables Vitrine Publique
+      'publicAgentProfile',
+      'publicLead',
+      'vitrineTemplate',
+      'vitrinePage',
     ];
 
     tables.forEach((table) => {

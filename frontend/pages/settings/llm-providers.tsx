@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X, AlertCircle } from 'lucide-react';
 import Layout from '@/modules/core/layout/components/Layout';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Interface provider configuré
@@ -60,20 +61,12 @@ export default function LLMProvidersPage() {
 
   async function loadData() {
     try {
-      // Charger les providers de l'utilisateur
-      const userRes = await fetch('/api/llm-config/user-providers', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const userData = await userRes.json();
-      setUserProviders(userData);
+      const userRes = await apiClient.get('/llm-config/user-providers');
+      setUserProviders(Array.isArray(userRes.data) ? userRes.data : []);
 
-      // Charger les providers disponibles
-      const availableRes = await fetch('/api/llm-config/providers', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const availableData = await availableRes.json();
-      setAvailableProviders(availableData);
-    } catch (err) {
+      const availableRes = await apiClient.get('/llm-config/providers');
+      setAvailableProviders(Array.isArray(availableRes.data) ? availableRes.data : []);
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -82,30 +75,19 @@ export default function LLMProvidersPage() {
 
   async function deleteProvider(provider: string) {
     if (!confirm(`Supprimer le provider ${provider} ?`)) return;
-
     try {
-      await fetch(`/api/llm-config/user-providers/${provider}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      await apiClient.delete(`/llm-config/user-providers/${provider}`);
       await loadData();
-    } catch (err) {
+    } catch (err: any) {
       alert('Erreur: ' + err.message);
     }
   }
 
   async function toggleActive(provider: UserProvider) {
     try {
-      await fetch(`/api/llm-config/user-providers/${provider.provider}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ isActive: !provider.isActive }),
-      });
+      await apiClient.put(`/llm-config/user-providers/${provider.provider}`, { isActive: !provider.isActive });
       await loadData();
-    } catch (err) {
+    } catch (err: any) {
       alert('Erreur: ' + err.message);
     }
   }

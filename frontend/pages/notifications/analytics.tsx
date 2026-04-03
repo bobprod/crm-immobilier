@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { BarChart3, TrendingUp, Clock, Target, MessageSquare, Mail, Bell, Smartphone } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '@/shared/utils/backend-api';
 
 interface EngagementStats {
   total: number;
@@ -32,22 +32,12 @@ const NotificationAnalyticsPage: React.FC = () => {
     loadAnalytics();
   }, []);
 
-  const getAuthToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token') || sessionStorage.getItem('token');
-    }
-    return null;
-  };
-
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const token = getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
       const [statsRes, readingStatsRes] = await Promise.all([
-        axios.get('/api/notifications/stats/engagement', { headers }),
-        axios.get('/api/notifications/stats/reading', { headers })
+        apiClient.get('/notifications/stats/engagement'),
+        apiClient.get('/notifications/stats/reading')
       ]);
 
       if (statsRes.data) {

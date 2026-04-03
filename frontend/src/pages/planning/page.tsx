@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -22,6 +23,7 @@ import * as taskService from '@/shared/services/tasks.service';
 
 export default function UnifiedPlanningPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<UnifiedPlanningData | null>(null);
   const [activeView, setActiveView] = useState<'kanban' | 'list' | 'calendar' | 'mindmap'>('list');
@@ -40,7 +42,7 @@ export default function UnifiedPlanningPage() {
       const params: any = {
         viewType: activeView,
       };
-      
+
       if (searchQuery) params.search = searchQuery;
       if (statusFilter !== 'all') params.status = statusFilter;
       if (priorityFilter !== 'all') params.priority = priorityFilter;
@@ -89,21 +91,11 @@ export default function UnifiedPlanningPage() {
   };
 
   const handleTaskClick = (task: Task) => {
-    // TODO: Open task detail modal
-    console.log('Task clicked:', task);
-    toast({
-      title: 'Tâche sélectionnée',
-      description: task.title,
-    });
+    router.push(`/tasks/${task.id}`);
   };
 
   const handleAddTask = (columnId?: string) => {
-    // TODO: Open add task modal with columnId pre-filled
-    console.log('Add task to column:', columnId);
-    toast({
-      title: 'Ajouter une tâche',
-      description: 'Fonctionnalité à venir',
-    });
+    router.push('/tasks/new' + (columnId ? `?status=${columnId}` : ''));
   };
 
   const handleTaskComplete = async (taskId: string) => {
@@ -143,13 +135,11 @@ export default function UnifiedPlanningPage() {
   };
 
   const handleDateClick = (date: Date) => {
-    console.log('Date clicked:', date);
-    // TODO: Show day detail or create appointment
+    router.push(`/appointments/new?date=${date.toISOString().split('T')[0]}`);
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    console.log('Appointment clicked:', appointment);
-    // TODO: Open appointment detail
+    router.push(`/appointments/${appointment.id}`);
   };
 
   if (loading) {
