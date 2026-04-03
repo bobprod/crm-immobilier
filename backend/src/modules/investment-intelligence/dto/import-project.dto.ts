@@ -208,15 +208,6 @@ export class AlertCriteriaDto {
   statuses?: InvestmentProjectStatus[];
 }
 
-export class NotificationChannelDto {
-  @IsEnum(['email', 'webhook', 'in_app'])
-  type: 'email' | 'webhook' | 'in_app';
-
-  @ValidateNested()
-  @Type(() => NotificationConfigDto)
-  config: NotificationConfigDto;
-}
-
 export class NotificationConfigDto {
   @IsOptional()
   @IsString()
@@ -225,6 +216,15 @@ export class NotificationConfigDto {
   @IsOptional()
   @IsUrl()
   webhookUrl?: string;
+}
+
+export class NotificationChannelDto {
+  @IsEnum(['email', 'webhook', 'in_app'])
+  type: 'email' | 'webhook' | 'in_app';
+
+  @ValidateNested()
+  @Type(() => NotificationConfigDto)
+  config: NotificationConfigDto;
 }
 
 export class CreateAlertDto {

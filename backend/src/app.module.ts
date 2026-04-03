@@ -152,6 +152,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     ProspectingModule,
     ProspectingAiModule,
 
+    // INVESTMENT - 1 module (Investment Intelligence)
+    InvestmentIntelligenceModule,
+
     // SCRAPING - 1 module (Web Data Services)
     ScrapingModule,
 
