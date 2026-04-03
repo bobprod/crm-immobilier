@@ -19,7 +19,7 @@ import { Response } from 'express';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { VitrineService } from './vitrine.service';
 import { VitrineTrackingService } from './services/vitrine-tracking.service';
-import { UpdateVitrineConfigDto, UpdatePublishedPropertyDto } from './dto';
+import { UpdateVitrineConfigDto, UpdatePublishedPropertyDto, SubmitLeadDto } from './dto';
 
 @ApiTags('Vitrine Publique')
 @Controller('vitrine')
@@ -141,5 +141,134 @@ export class VitrineController {
   @ApiOperation({ summary: 'Get vitrine tracking statistics' })
   async getTrackingStats(@Request() req, @Query('period') period?: 'day' | 'week' | 'month') {
     return this.vitrineTrackingService.getVitrineTrackingStats(req.user.userId, period);
+  }
+
+  // ============================================================
+  // GESTION AGENTS PUBLICS (Dashboard SaaS)
+  // ============================================================
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('agents')
+  @ApiOperation({ summary: 'Lister les profils agents publics' })
+  async getAgentProfiles(@Request() req) {
+    return this.vitrineService.getAgentProfiles(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('agents')
+  @ApiOperation({ summary: 'Créer/modifier un profil agent public' })
+  async upsertAgentProfile(@Request() req, @Body() data: any) {
+    return this.vitrineService.upsertAgentProfile(req.user.userId, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Delete('agents/:id')
+  @ApiOperation({ summary: 'Supprimer un profil agent public' })
+  async deleteAgentProfile(@Request() req, @Param('id') agentId: string) {
+    return this.vitrineService.deleteAgentProfile(req.user.userId, agentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('public-leads')
+  @ApiOperation({ summary: 'Leads capturés via la vitrine publique' })
+  async getPublicLeads(@Request() req) {
+    return this.vitrineService.getPublicLeads(req.user.userId);
+  }
+
+  // ============================================================
+  // ROUTES PUBLIQUES PAR SLUG (Sans authentification)
+  // ============================================================
+
+  @Get('public/slug/:slug')
+  @ApiOperation({ summary: 'Accueil vitrine publique par slug' })
+  async getPublicVitrineBySlug(@Param('slug') slug: string) {
+    return this.vitrineService.getPublicVitrineBySlug(slug);
+  }
+
+  @Get('public/slug/:slug/properties')
+  @ApiOperation({ summary: 'Biens publiés avec filtres' })
+  async getPublicProperties(
+    @Param('slug') slug: string,
+    @Query()
+    filters: {
+      type?: string;
+      category?: string;
+      city?: string;
+      minPrice?: string;
+      maxPrice?: string;
+      minArea?: string;
+      maxArea?: string;
+      bedrooms?: string;
+      sort?: string;
+      page?: string;
+      limit?: string;
+    },
+  ) {
+    return this.vitrineService.getPublicPropertiesBySlug(slug, {
+      type: filters.type,
+      category: filters.category,
+      city: filters.city,
+      minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
+      maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+      minArea: filters.minArea ? Number(filters.minArea) : undefined,
+      maxArea: filters.maxArea ? Number(filters.maxArea) : undefined,
+      bedrooms: filters.bedrooms ? Number(filters.bedrooms) : undefined,
+      sort: filters.sort,
+      page: filters.page ? Number(filters.page) : 1,
+      limit: filters.limit ? Number(filters.limit) : 12,
+    });
+  }
+
+  @Get('public/slug/:slug/properties/:propertyRef')
+  @ApiOperation({ summary: "Détail d'un bien (id ou seo slug)" })
+  async getPublicPropertyDetail(
+    @Param('slug') slug: string,
+    @Param('propertyRef') propertyRef: string,
+  ) {
+    return this.vitrineService.getPublicPropertyDetail(slug, propertyRef);
+  }
+
+  @Get('public/slug/:slug/agents')
+  @ApiOperation({ summary: "Équipe de l'agence" })
+  async getPublicAgents(@Param('slug') slug: string) {
+    return this.vitrineService.getPublicAgents(slug);
+  }
+
+  @Get('public/slug/:slug/agents/:agentId')
+  @ApiOperation({ summary: 'Profil agent individuel' })
+  async getPublicAgent(@Param('slug') slug: string, @Param('agentId') agentId: string) {
+    return this.vitrineService.getPublicAgent(slug, agentId);
+  }
+
+  @Post('public/slug/:slug/contact')
+  @ApiOperation({ summary: 'Soumettre un lead (formulaire contact/visite/estimation)' })
+  async submitPublicLead(
+    @Param('slug') slug: string,
+    @Body() dto: SubmitLeadDto,
+    @Ip() ipAddress: string,
+  ) {
+    return this.vitrineService.submitPublicLead(slug, dto, ipAddress);
+  }
+
+  @Get('public/slug/:slug/sitemap.xml')
+  @ApiOperation({ summary: 'Sitemap XML pour SEO' })
+  async getPublicSitemap(@Param('slug') slug: string, @Res() res: Response) {
+    const xml = await this.vitrineService.getPublicSitemap(slug);
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.status(HttpStatus.OK).send(xml);
+  }
+
+  @Get('public/slug/:slug/robots.txt')
+  @ApiOperation({ summary: 'robots.txt pour SEO' })
+  async getRobots(@Param('slug') slug: string, @Res() res: Response) {
+    const baseUrl = `https://${slug}.${process.env.APP_DOMAIN || 'app.example.com'}`;
+    const robots = `User-agent: *\nAllow: /\nSitemap: ${baseUrl}/sitemap.xml`;
+    res.setHeader('Content-Type', 'text/plain');
+    res.status(HttpStatus.OK).send(robots);
   }
 }

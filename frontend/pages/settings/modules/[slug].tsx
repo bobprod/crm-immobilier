@@ -23,6 +23,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Module Configuration Page
@@ -97,18 +98,10 @@ export default function ModuleConfigPage() {
 
   const handleSaveConfig = async () => {
     if (!module) return;
-
     setSaving(true);
     try {
-      const response = await fetch(`/api/modules/${slug}/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(module),
-      });
-
-      if (response.ok) {
-        alert('Configuration enregistrée avec succès');
-      }
+      await apiClient.put(`/modules/${slug}/config`, module);
+      alert('Configuration enregistrée avec succès');
     } catch (error) {
       console.error('Error saving config:', error);
       alert('Erreur lors de l\'enregistrement');

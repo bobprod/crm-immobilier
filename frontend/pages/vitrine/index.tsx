@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -13,6 +14,7 @@ import { Settings, Eye, BarChart3, Users, Check, X } from 'lucide-react';
  * Page de gestion de la vitrine publique
  */
 export default function VitrinePage() {
+  const router = useRouter();
   const [config, setConfig] = useState<any>(null);
   const [publishedProperties, setPublishedProperties] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -55,7 +57,8 @@ export default function VitrinePage() {
 
   const handleUpdateConfig = async (updates: any) => {
     try {
-      const updated = await vitrineAPI.updateConfig(updates);
+      const { id, userId, createdAt, updatedAt, templateId, ...payload } = updates;
+      const updated = await vitrineAPI.updateConfig(payload);
       setConfig(updated);
     } catch (error) {
       console.error('Erreur mise à jour config:', error);
@@ -73,6 +76,8 @@ export default function VitrinePage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/vitrine/templates')} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition text-sm">🎨 Templates</button>
+          <button onClick={() => router.push('/vitrine/editeur')} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm">🏗️ Éditeur de pages</button>
           <Label htmlFor="vitrine-toggle">
             {config?.isActive ? '✅ Vitrine active' : '❌ Vitrine inactive'}
           </Label>

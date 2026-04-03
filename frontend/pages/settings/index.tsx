@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
+import { apiClient } from '@/shared/utils/backend-api';
 import {
   Settings as SettingsIcon,
   User,
@@ -83,17 +84,9 @@ export default function SettingsPage() {
           return;
         }
 
-        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-
+        const response = await apiClient.get('/ai-billing/api-keys/user');
+        const data = response.data;
+        if (data) {
           // Populate LLM API keys states
           if (data.openaiApiKey) {
             setApiKeyStates((prev) => ({
@@ -187,16 +180,9 @@ export default function SettingsPage() {
         const token = localStorage.getItem('auth_token');
         if (!token) return;
 
-        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        const response = await apiClient.get('/ai-billing/api-keys/scraping-engines');
+        const data = response.data;
+        if (data) {
           setInternalEngines({
             cheerio: {
               enabled: data.cheerioEnabled,
@@ -502,24 +488,10 @@ export default function SettingsPage() {
 
       console.log('📤 Sending LLM keys:', dataToSend);
 
-      const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(dataToSend),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ Save response:', responseData);
+      const response = await apiClient.put('/ai-billing/api-keys/user', dataToSend);
+      if (response.data) {
+        console.log('✅ Save response:', response.data);
         setMessage('✅ Clés LLM sauvegardées avec succès!');
-      } else if (response.status === 401) {
-        setMessage('❌ Session expirée. Veuillez vous reconnecter.');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setMessage(`❌ Erreur: ${errorData.message || 'Erreur lors de la sauvegarde'}`);
       }
     } catch (error) {
       console.error('Save error:', error);
@@ -556,24 +528,10 @@ export default function SettingsPage() {
 
       console.log('📤 Sending Scraping keys:', dataToSend);
 
-      const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/user', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(dataToSend),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ Save response:', responseData);
+      const response = await apiClient.put('/ai-billing/api-keys/user', dataToSend);
+      if (response.data) {
+        console.log('✅ Save response:', response.data);
         setMessage('✅ Clés Scraping sauvegardées avec succès!');
-      } else if (response.status === 401) {
-        setMessage('❌ Session expirée. Veuillez vous reconnecter.');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setMessage(`❌ Erreur: ${errorData.message || 'Erreur lors de la sauvegarde'}`);
       }
     } catch (error) {
       console.error('Save error:', error);
@@ -1168,23 +1126,12 @@ export default function SettingsPage() {
                           return;
                         }
 
-                        const response = await fetch('http://localhost:3001/api/ai-billing/api-keys/scraping-engines', {
-                          method: 'PUT',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`,
-                          },
-                          body: JSON.stringify({
-                            cheerioEnabled: internalEngines.cheerio.enabled,
-                            puppeteerEnabled: internalEngines.puppeteer.enabled,
-                          }),
+                        const response = await apiClient.put('/ai-billing/api-keys/scraping-engines', {
+                          cheerioEnabled: internalEngines.cheerio.enabled,
+                          puppeteerEnabled: internalEngines.puppeteer.enabled,
                         });
-
-                        if (response.ok) {
+                        if (response.data) {
                           setMessage('✅ Configuration des moteurs sauvegardée!');
-                        } else {
-                          const errorData = await response.json().catch(() => ({}));
-                          setMessage(`❌ Erreur: ${errorData.message || 'Échec de la sauvegarde'}`);
                         }
                       } catch (error) {
                         setMessage(`❌ Erreur de connexion: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);

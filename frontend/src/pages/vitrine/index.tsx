@@ -55,7 +55,8 @@ export default function VitrinePage() {
 
   const handleUpdateConfig = async (updates: any) => {
     try {
-      const updated = await vitrineAPI.updateConfig(updates);
+      const { id, userId, createdAt, updatedAt, templateId, ...payload } = updates;
+      const updated = await vitrineAPI.updateConfig(payload);
       setConfig(updated);
     } catch (error) {
       console.error('Erreur mise à jour config:', error);

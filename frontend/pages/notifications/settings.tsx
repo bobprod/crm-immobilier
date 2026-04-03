@@ -6,7 +6,7 @@ import { Switch } from '@/shared/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 import { Bell, Mail, MessageSquare, Smartphone, Clock, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
-import axios from 'axios';
+import { apiClient } from '@/shared/utils/backend-api';
 
 interface NotificationSettings {
   preferredChannel: string;
@@ -44,20 +44,10 @@ const NotificationSettingsPage: React.FC = () => {
     loadSettings();
   }, []);
 
-  const getAuthToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token') || sessionStorage.getItem('token');
-    }
-    return null;
-  };
-
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const token = getAuthToken();
-      const response = await axios.get('/api/notifications/settings', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await apiClient.get('/notifications/settings');
       if (response.data) {
         setSettings(response.data);
       }
@@ -71,10 +61,7 @@ const NotificationSettingsPage: React.FC = () => {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      const token = getAuthToken();
-      await axios.post('/api/notifications/settings', settings, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await apiClient.post('/notifications/settings', settings);
       toast({
         title: 'Paramètres sauvegardés',
         description: 'Vos préférences de notifications ont été mises à jour.',
