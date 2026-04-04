@@ -18,3 +18,4 @@ backend/tsconfig.tsbuildinfo
 frontend/.next/
 frontend/out/
 .playwright-mcp/
+.playwright-mcp/
