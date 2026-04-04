@@ -4,60 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 65% 8%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222 65% 8%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 65% 8%;
-    /* Navy as primary */
+    --popover-foreground: 222 47% 11%;
     --primary: 222 65% 28%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 65% 28%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    /* Amber/Gold accent */
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 30% 94%;
+    --muted-foreground: 215 20% 50%;
     --accent: 42 95% 50%;
-    --accent-foreground: 222 65% 8%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 214 30% 89%;
+    --input: 214 30% 89%;
     --ring: 222 65% 28%;
     --radius: 0.625rem;
-    /* Navy palette */
-    --navy: 222 65% 28%;
-    --navy-light: 222 65% 36%;
-    --navy-dark: 222 65% 18%;
-    --navy-50: 222 65% 97%;
-    --navy-100: 222 65% 93%;
-    /* Amber/Gold palette */
-    --amber-gold: 42 95% 50%;
-    --amber-light: 42 95% 62%;
-    --amber-dark: 42 95% 38%;
   }
 
   .dark {
-    --background: 222 65% 6%;
+    --background: 222 47% 7%;
     --foreground: 210 40% 98%;
-    --card: 222 65% 10%;
+    --card: 222 47% 10%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 65% 10%;
+    --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
-    --primary: 222 65% 28%;
+    --primary: 214 80% 55%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 32% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
     --accent: 42 95% 50%;
-    --accent-foreground: 222 65% 6%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 222 65% 28%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 214 80% 55%;
   }
 }
 
@@ -67,14 +55,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    letter-spacing: -0.01em;
   }
 }
 
@@ -143,14 +123,14 @@
 /* Toggle switch */
 .toggle {
   @apply relative w-11 h-6 bg-gray-200 rounded-full cursor-pointer transition-colors;
-  @apply checked:bg-[hsl(222,65%,28%)];
+  @apply checked:bg-purple-600;
   appearance: none;
   -webkit-appearance: none;
 }
 
 .toggle::before {
   content: '';
-  @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm;
+  @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform;
 }
 
 .toggle:checked::before {
@@ -163,11 +143,11 @@
 }
 
 .card-hover {
-  @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
 }
 
 .btn-primary {
-  @apply bg-[hsl(222,65%,28%)] text-white px-4 py-2 rounded-lg hover:bg-[hsl(222,65%,22%)] transition-colors font-medium;
+  @apply bg-[hsl(222,65%,28%)] text-white px-4 py-2 rounded-lg hover:bg-[hsl(222,65%,22%)] transition-colors font-medium tracking-wide;
 }
 
 .btn-secondary {
@@ -179,46 +159,21 @@
   @apply animate-pulse bg-gray-200 rounded;
 }
 
-/* Status badges - Real estate specific */
+/* Status badges */
 .badge-success {
-  @apply bg-green-100 text-green-800 px-2.5 py-1 rounded-full text-xs font-semibold;
+  @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-warning {
-  @apply bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full text-xs font-semibold;
+  @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-error {
-  @apply bg-red-100 text-red-800 px-2.5 py-1 rounded-full text-xs font-semibold;
+  @apply bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium;
 }
 
 .badge-info {
-  @apply bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-xs font-semibold;
-}
-
-.badge-navy {
-  @apply bg-[hsl(222,65%,93%)] text-[hsl(222,65%,28%)] px-2.5 py-1 rounded-full text-xs font-semibold;
-}
-
-.badge-amber {
-  @apply bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200;
-}
-
-/* Real estate property status badges */
-.badge-exclusivite {
-  @apply bg-amber-400 text-amber-950 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
-}
-
-.badge-vendu {
-  @apply bg-slate-600 text-white px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
-}
-
-.badge-compromis {
-  @apply bg-[hsl(222,65%,28%)] text-white px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
-}
-
-.badge-disponible {
-  @apply bg-emerald-500 text-white px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide;
+  @apply bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium;
 }
 
 /* Form styles */

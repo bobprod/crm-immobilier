@@ -1,49 +1,47 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
   LayoutDashboard,
-  Bot,
-  Shuffle,
+  Search,
+  Target,
   CalendarDays,
   MessageSquare,
   FileText,
   HeartHandshake,
   Megaphone,
-  Gem,
+  TrendingUp,
   Globe,
   BarChart3,
-  BrainCircuit,
+  Bot,
   Bell,
   Settings,
-  Key,
+  KeyRound,
   Puzzle,
   Wrench,
   ChevronDown,
   ChevronRight,
-  PanelLeftClose,
-  PanelLeftOpen,
-  LucideIcon,
+  ChevronLeft,
+  Building2,
+  UserCircle,
 } from 'lucide-react';
 
 /**
  * Sidebar Navigation Component
  *
- * Modern sidebar navigation with:
+ * Elegant sidebar navigation with:
+ * - Lucide icons (professional, consistent)
+ * - Dark theme for a sophisticated real estate look
  * - Hierarchical menu structure
- * - Active state highlighting (Navy palette)
- * - Expandable sub-menus with smooth transitions
+ * - Active state highlighting
+ * - Expandable sub-menus
  * - Notification badges
  * - Responsive (collapsible)
- * - Lucide React icons for professional consistency
- *
- * Phase 2.1: UX/UI Restructuring — Navy/Amber premium palette
  */
 
 export interface MenuItem {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   path?: string;
   badge?: number;
   subItems?: MenuItem[];
@@ -66,13 +64,13 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'prospection',
     label: 'Prospection',
-    icon: Bot,
+    icon: Search,
     path: '/prospection',
   },
   {
     id: 'matching',
     label: 'Matching',
-    icon: Shuffle,
+    icon: Target,
     path: '/matching-dashboard',
   },
   {
@@ -108,7 +106,7 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'investment',
     label: 'Investissement',
-    icon: Gem,
+    icon: TrendingUp,
     path: '/investment',
   },
   {
@@ -126,7 +124,7 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'ai-assistant',
     label: 'Assistant IA',
-    icon: BrainCircuit,
+    icon: Bot,
     path: '/ai-assistant',
   },
   {
@@ -143,7 +141,7 @@ const MENU_ITEMS: MenuItem[] = [
       {
         id: 'settings-api-keys',
         label: 'Clés API',
-        icon: Key,
+        icon: KeyRound,
         path: '/settings/ai-api-keys',
       },
       {
@@ -187,18 +185,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
     const active = isActive(item.path);
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems.has(item.id);
-    const IconComponent = item.icon;
+    const Icon = item.icon;
 
     return (
       <div key={item.id}>
         {/* Main Item */}
         <div
           className={`
-            flex items-center gap-2.5 py-2.5 cursor-pointer transition-all duration-150 select-none
-            ${level > 0 ? 'pl-11 pr-3' : 'px-3'}
-            ${active
-              ? 'bg-navy-100 text-navy-700 border-r-[3px] border-navy-600 font-semibold'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
+            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-0.5
+            ${level > 0 ? 'pl-9 pr-3 py-2' : 'px-3 py-2.5'}
+            ${
+              active
+                ? 'bg-white/15 text-white'
+                : 'text-slate-300 hover:bg-white/10 hover:text-white'
             }
             ${collapsed ? 'justify-center px-2' : ''}
           `}
@@ -209,33 +208,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
               router.push(item.path);
             }
           }}
-          title={collapsed ? item.label : undefined}
         >
           {/* Icon */}
-          <IconComponent
-            className={`flex-shrink-0 transition-colors ${
-              active ? 'text-navy-600' : 'text-gray-400 group-hover:text-gray-600'
-            }`}
-            size={18}
-            strokeWidth={active ? 2.25 : 1.75}
+          <Icon
+            className={`flex-shrink-0 ${active ? 'text-amber-400' : 'text-slate-400'} ${level > 0 ? 'w-4 h-4' : 'w-5 h-5'}`}
           />
 
           {/* Label & Badge */}
           {!collapsed && (
             <>
-              <span className="flex-1 text-sm">{item.label}</span>
+              <span
+                className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'}`}
+              >
+                {item.label}
+              </span>
 
-              {/* Notification Badge */}
+              {/* Badge */}
               {item.badge && (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+                <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
                   {item.badge}
                 </span>
               )}
 
               {/* Expand Arrow */}
               {hasSubItems && (
-                <span className="text-gray-400 transition-transform duration-200">
-                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="text-slate-400">
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
                 </span>
               )}
             </>
@@ -244,7 +246,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
 
         {/* Sub Items */}
         {hasSubItems && isExpanded && !collapsed && (
-          <div className="bg-gray-50/60 border-l-2 border-gray-100 ml-5">
+          <div className="mt-0.5">
             {item.subItems!.map((subItem) => renderMenuItem(subItem, level + 1))}
           </div>
         )}
@@ -255,52 +257,72 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
   return (
     <aside
       className={`
-        h-screen bg-white border-r border-gray-200 flex flex-col
-        transition-all duration-300 ease-in-out
-        ${collapsed ? 'w-[60px]' : 'w-60'}
+        relative h-screen bg-slate-900 flex flex-col
+        transition-all duration-300 ease-in-out shadow-xl
+        ${collapsed ? 'w-20' : 'w-64'}
       `}
     >
       {/* Header */}
-      <div className={`border-b border-gray-100 flex items-center ${collapsed ? 'p-3 justify-center' : 'px-4 py-3.5 justify-between'}`}>
+      <div
+        className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}
+      >
         {!collapsed && (
-          <div>
-            <h1 className="text-base font-bold text-navy-600 tracking-tight">CRM Immo</h1>
-            <p className="text-[11px] text-gray-400 font-medium tracking-wide uppercase">Prospection IA</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-white tracking-wide">CRM Immo</h1>
+              <p className="text-xs text-slate-400">Gestion Immobilière</p>
+            </div>
+          </div>
+        )}
+
+        {collapsed && (
+          <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
         )}
 
         {/* Toggle Button */}
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-700"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
+          title={collapsed ? 'Développer le menu' : 'Réduire le menu'}
         >
-          {collapsed
-            ? <PanelLeftOpen size={18} />
-            : <PanelLeftClose size={18} />
-          }
+          {collapsed ? (
+            <ChevronRight className="w-4 h-4" />
+          ) : (
+            <ChevronLeft className="w-4 h-4" />
+          )}
         </button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+      <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
         {MENU_ITEMS.map((item) => renderMenuItem(item))}
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="px-4 py-3.5 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-navy-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-navy-700 text-xs font-bold">AD</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">Admin User</p>
-              <p className="text-[11px] text-gray-400 truncate">admin@crm.com</p>
+      <div className={`border-t border-slate-700/60 ${collapsed ? 'p-3' : 'p-4'}`}>
+        {collapsed ? (
+          <div className="flex justify-center">
+            <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center">
+              <UserCircle className="w-5 h-5 text-slate-300" />
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+              <UserCircle className="w-5 h-5 text-slate-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">Admin</p>
+              <p className="text-xs text-slate-400 truncate">admin@crm-immo.fr</p>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 };

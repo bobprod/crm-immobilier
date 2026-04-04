@@ -71,42 +71,51 @@ export default function Layout({
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out
+          fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 shadow-xl transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 lg:static lg:inset-auto
           flex flex-col
         `}
       >
         {/* Logo / Header */}
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-primary">CRM Immobilier</h1>
+        <div className="px-5 py-5 border-b border-slate-700/60 flex items-center gap-3">
+          <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-white tracking-wide">CRM Immo</h1>
+            <p className="text-xs text-slate-400">Gestion Immobilière</p>
+          </div>
         </div>
 
         {/* Dynamic Menu - Replace hardcoded menu */}
         <DynamicMenu onNavigate={handleMenuNavigation} />
 
         {/* Logout button */}
-        <div className="border-t border-gray-200 p-6 mt-auto">
+        <div className="border-t border-slate-700/60 p-4 mt-auto">
           <button
             onClick={handleLogout}
-            className="flex items-center text-gray-700 hover:text-gray-900"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors w-full px-3 py-2 rounded-lg hover:bg-slate-800"
           >
-            <LogOut className="w-5 h-5 mr-2" />
-            Déconnexion
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-medium">Déconnexion</span>
           </button>
         </div>
       </div>
 
       {/* Mobile menu button */}
       <button
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900 shadow-lg text-white"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
-        {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {/* Main content */}
