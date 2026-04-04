@@ -3,6 +3,11 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { builderApi, VitrinePage } from '@/modules/vitrine/builder/api';
 import { puckConfig } from '@/modules/vitrine/builder/puck-config';
+import { Sidebar } from '@/shared/components/layout/Sidebar';
+import {
+  Eye, ExternalLink, Plus, MoreVertical, Pencil, Trash2,
+  ChevronRight, Globe, Loader2, LayoutTemplate, ArrowLeft
+} from 'lucide-react';
 
 const Puck = dynamic(() => import('@measured/puck').then((mod) => mod.Puck), { ssr: false });
 
@@ -113,10 +118,13 @@ export default function VitrineEditeur() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f5f5f5' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 16 }}>🏗️</div>
-          <p style={{ color: '#666' }}>Chargement de l'éditeur...</p>
+      <div className="flex h-screen bg-gray-900">
+        <Sidebar collapsed={true} onToggleCollapse={() => {}} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-white">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 opacity-60" />
+            <p className="text-gray-400 text-sm">Chargement de l'éditeur...</p>
+          </div>
         </div>
       </div>
     );
@@ -124,15 +132,20 @@ export default function VitrineEditeur() {
 
   if (pages.length === 0) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f5f5f5' }}>
-        <div style={{ textAlign: 'center', maxWidth: 500, padding: 40, background: '#fff', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 12 }}>Aucune page créée</h2>
-          <p style={{ color: '#666', marginBottom: 24 }}>Commencez par choisir un template pour créer vos pages automatiquement.</p>
-          <button onClick={() => router.push('/vitrine/templates')}
-            style={{ padding: '12px 32px', background: '#1E40AF', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
-            Choisir un template
-          </button>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar collapsed={true} onToggleCollapse={() => {}} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md px-8 py-12 bg-white rounded-2xl shadow-lg">
+            <LayoutTemplate className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Aucune page créée</h2>
+            <p className="text-gray-500 mb-6 text-sm">Commencez par choisir un template pour créer vos pages automatiquement.</p>
+            <button
+              onClick={() => router.push('/vitrine/templates')}
+              className="px-6 py-3 bg-[#1E3A5F] text-white rounded-xl font-semibold text-sm hover:bg-[#162d4a] transition-colors"
+            >
+              Choisir un template
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -145,103 +158,161 @@ export default function VitrineEditeur() {
     : { content: [], root: {} };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', background: '#1a1a2e', color: '#fff', fontSize: 14, zIndex: 200 }}>
-        <button onClick={() => router.push('/vitrine')} style={{ background: 'none', border: 'none', color: '#93C5FD', cursor: 'pointer', fontSize: 14 }}>
-          ← Retour
-        </button>
-        <span style={{ color: '#555' }}>|</span>
-        <span style={{ fontWeight: 600 }}>🏗️ Éditeur</span>
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: 'Inter, sans-serif' }}>
+      {/* Sidebar navigation — toujours visible, collapsée */}
+      <Sidebar collapsed={true} onToggleCollapse={() => {}} />
 
-        {/* Page tabs */}
-        <div style={{ display: 'flex', gap: 4, marginLeft: 16, position: 'relative' }}>
-          {pages.map((p) => (
-            <div key={p.id} style={{ position: 'relative' }}>
-              {renamingPage === p.id ? (
-                <input value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleRenamePage(p); if (e.key === 'Escape') setRenamingPage(null); }}
-                  onBlur={() => handleRenamePage(p)} autoFocus
-                  style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #1E40AF', fontSize: 13, background: '#fff', color: '#333', width: 100 }} />
-              ) : (
-                <button onClick={() => handlePageSwitch(p)}
-                  onContextMenu={(e) => { e.preventDefault(); setShowPageMenu(showPageMenu === p.id ? null : p.id); }}
-                  style={{
-                    padding: '4px 14px', borderRadius: 6, border: 'none', fontSize: 13, cursor: 'pointer',
-                    background: p.id === page.id ? '#1E40AF' : 'rgba(255,255,255,0.1)',
-                    color: p.id === page.id ? '#fff' : '#aaa',
-                    fontWeight: p.id === page.id ? 600 : 400,
-                  }}>
-                  {p.title}
-                </button>
-              )}
-              {showPageMenu === p.id && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)', zIndex: 300, minWidth: 140, padding: 4, marginTop: 4 }}>
-                  <button onClick={() => { setRenamingPage(p.id); setRenameValue(p.title); setShowPageMenu(null); }}
-                    style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', borderRadius: 4, color: '#333' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')} onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
-                    ✏️ Renommer
-                  </button>
-                  {!p.isDefault && (
-                    <button onClick={() => handleDeletePage(p)}
-                      style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', borderRadius: 4, color: '#DC2626' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#FEE2E2')} onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}>
-                      🗑️ Supprimer
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-          {/* Add page button */}
-          {showNewPage ? (
-            <div style={{ display: 'flex', gap: 4 }}>
-              <input value={newPageTitle} onChange={(e) => setNewPageTitle(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleCreatePage(); if (e.key === 'Escape') setShowNewPage(false); }}
-                placeholder="Nom de la page" autoFocus
-                style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #1E40AF', fontSize: 13, background: '#fff', color: '#333', width: 130 }} />
-              <button onClick={handleCreatePage} style={{ padding: '4px 10px', background: '#22C55E', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>✓</button>
-              <button onClick={() => setShowNewPage(false)} style={{ padding: '4px 10px', background: '#666', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>✕</button>
-            </div>
-          ) : (
-            <button onClick={() => setShowNewPage(true)}
-              style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.1)', color: '#93C5FD', border: '1px dashed rgba(147,197,253,0.4)', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
-              + Page
-            </button>
-          )}
-        </div>
-
-        {/* Right side actions */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {saving && <span style={{ color: '#93C5FD', fontSize: 12 }}>Sauvegarde...</span>}
-          {error && <span style={{ color: '#F87171', fontSize: 12 }}>{error}</span>}
-          {siteSlug && (
-            <button onClick={handlePreview}
-              style={{ padding: '4px 14px', background: '#22C55E', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-              👁️ Aperçu
-            </button>
-          )}
-          <button onClick={() => router.push('/vitrine/templates')} style={{ padding: '4px 14px', background: 'rgba(255,255,255,0.1)', color: '#ccc', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
-            🎨 Templates
+      {/* Panneau éditeur — contient topbar + Puck */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Topbar de l'éditeur */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-[#0F1729] text-white text-sm z-50 border-b border-white/10 flex-shrink-0">
+          {/* Retour */}
+          <button
+            onClick={() => router.push('/vitrine')}
+            className="flex items-center gap-1.5 text-blue-300 hover:text-white transition-colors text-xs px-2 py-1 rounded hover:bg-white/10"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Vitrine
           </button>
+          <span className="text-white/20">|</span>
+
+          {/* Onglets pages */}
+          <div className="flex items-center gap-1 flex-1 overflow-x-auto">
+            {pages.map((p) => (
+              <div key={p.id} className="relative flex-shrink-0">
+                {renamingPage === p.id ? (
+                  <input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRenamePage(p);
+                      if (e.key === 'Escape') setRenamingPage(null);
+                    }}
+                    onBlur={() => handleRenamePage(p)}
+                    autoFocus
+                    className="px-2 py-1 rounded border border-blue-400 bg-white text-gray-900 text-xs w-24"
+                  />
+                ) : (
+                  <button
+                    onClick={() => handlePageSwitch(p)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      p.id === page.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    {p.title}
+                  </button>
+                )}
+                {/* Context menu button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowPageMenu(showPageMenu === p.id ? null : p.id); }}
+                  className="ml-0.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/20 text-gray-400 hover:text-white transition-all"
+                >
+                  <MoreVertical className="w-3 h-3" />
+                </button>
+                {showPageMenu === p.id && (
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-50 min-w-36 py-1">
+                    <button
+                      onClick={() => { setRenamingPage(p.id); setRenameValue(p.title); setShowPageMenu(null); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Renommer
+                    </button>
+                    {!p.isDefault && (
+                      <button
+                        onClick={() => handleDeletePage(p)}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Ajouter une page */}
+            {showNewPage ? (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <input
+                  value={newPageTitle}
+                  onChange={(e) => setNewPageTitle(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreatePage(); if (e.key === 'Escape') setShowNewPage(false); }}
+                  placeholder="Nom de la page"
+                  autoFocus
+                  className="px-2 py-1 rounded border border-blue-400 bg-white text-gray-900 text-xs w-32"
+                />
+                <button onClick={handleCreatePage} className="px-2 py-1 bg-emerald-500 text-white rounded text-xs font-bold">✓</button>
+                <button onClick={() => setShowNewPage(false)} className="px-2 py-1 bg-gray-600 text-white rounded text-xs">✕</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowNewPage(true)}
+                className="flex items-center gap-1 px-2 py-1.5 text-blue-300 hover:text-white border border-dashed border-white/20 hover:border-blue-400 rounded text-xs transition-colors flex-shrink-0"
+              >
+                <Plus className="w-3 h-3" /> Page
+              </button>
+            )}
+          </div>
+
+          {/* Actions droite */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {saving && (
+              <span className="flex items-center gap-1 text-blue-300 text-xs">
+                <Loader2 className="w-3 h-3 animate-spin" /> Sauvegarde...
+              </span>
+            )}
+            {error && <span className="text-red-400 text-xs max-w-48 truncate">{error}</span>}
+
+            <button
+              onClick={() => router.push('/vitrine/templates')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded text-xs transition-colors"
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" /> Templates
+            </button>
+
+            {siteSlug && (
+              <>
+                <button
+                  onClick={handlePreview}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded text-xs transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" /> Aperçu
+                </button>
+                <button
+                  onClick={() => window.open(`/sites/${siteSlug}`, '_blank', 'noopener,noreferrer')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Voir le site
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Overlay fermeture menu contextuel */}
+        {showPageMenu && (
+          <div onClick={() => setShowPageMenu(null)} className="fixed inset-0 z-40" />
+        )}
+
+        {/* Puck Editor — prend tout l'espace restant */}
+        <div className="flex-1 overflow-hidden">
+          <Puck
+            config={puckConfig as any}
+            data={initialData}
+            onPublish={handlePublish}
+          />
         </div>
       </div>
 
-      {/* Click overlay to close menus */}
-      {showPageMenu && <div onClick={() => setShowPageMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />}
-
-      {/* Puck Editor */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <Puck
-          config={puckConfig as any}
-          data={initialData}
-          onPublish={handlePublish}
-        />
-      </div>
-
-      {/* Puck CSS imports */}
+      {/* Puck CSS */}
       <style jsx global>{`
         @import url('https://unpkg.com/@measured/puck@0.20.2/puck.css');
+        /* Forcer Puck à remplir son conteneur */
+        .Puck { height: 100% !important; }
+        .Puck-root { height: 100% !important; display: flex; flex-direction: column; }
+        .Puck-root > div:last-child { flex: 1; overflow: hidden; }
       `}</style>
     </div>
   );
