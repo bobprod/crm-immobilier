@@ -14,15 +14,32 @@ export class PersonnelService {
   constructor(private readonly db: PrismaService) {}
 
   // ─────────────────────────────────────────────
+  // PRIVATE HELPERS
+  // ─────────────────────────────────────────────
+
+  private async getAgencyIdForUser(userId: string): Promise<string> {
+    const user = await this.db.users.findUnique({ where: { id: userId } });
+    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    return user.agencyId;
+  }
+
+  private async requireAgentInAgency(agentProfileId: string, agencyId: string) {
+    const profile = await this.db.agentProfile.findFirst({
+      where: { id: agentProfileId, agencyId },
+    });
+    if (!profile) throw new NotFoundException('Agent profile not found');
+    return profile;
+  }
+
+  // ─────────────────────────────────────────────
   // AGENT PROFILES
   // ─────────────────────────────────────────────
 
   async findAllAgents(userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     return this.db.agentProfile.findMany({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
       include: {
         user: {
           select: { id: true, firstName: true, lastName: true, email: true, role: true },
@@ -34,11 +51,10 @@ export class PersonnelService {
   }
 
   async findOneAgent(agentProfileId: string, userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
+      where: { id: agentProfileId, agencyId },
       include: {
         user: {
           select: { id: true, firstName: true, lastName: true, email: true, role: true },
@@ -56,19 +72,18 @@ export class PersonnelService {
   }
 
   async createAgentProfile(userId: string, dto: CreateAgentProfileDto) {
-    const manager = await this.db.users.findUnique({ where: { id: userId } });
-    if (!manager?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     // Verify the target user belongs to the same agency
     const targetUser = await this.db.users.findUnique({ where: { id: dto.userId } });
-    if (!targetUser || targetUser.agencyId !== manager.agencyId) {
+    if (!targetUser || targetUser.agencyId !== agencyId) {
       throw new ForbiddenException('Target user does not belong to your agency');
     }
 
     return this.db.agentProfile.create({
       data: {
         userId: dto.userId,
-        agencyId: manager.agencyId,
+        agencyId,
         jobTitle: dto.jobTitle,
         phone: dto.phone,
         hireDate: dto.hireDate ? new Date(dto.hireDate) : undefined,
@@ -84,13 +99,8 @@ export class PersonnelService {
   }
 
   async updateAgentProfile(agentProfileId: string, userId: string, dto: UpdateAgentProfileDto) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     const { hireDate, ...rest } = dto;
     return this.db.agentProfile.update({
@@ -109,13 +119,8 @@ export class PersonnelService {
   }
 
   async deleteAgentProfile(agentProfileId: string, userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     return this.db.agentProfile.delete({ where: { id: agentProfileId } });
   }
@@ -125,17 +130,16 @@ export class PersonnelService {
   // ─────────────────────────────────────────────
 
   async getCommissionConfig(userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     const config = await this.db.commissionConfig.findUnique({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
     });
 
     // Return default config if none exists yet
     if (!config) {
       return {
-        agencyId: user.agencyId,
+        agencyId,
         tier1MaxAmount: 4000,
         tier2MinAmount: 7000,
         tier2Rate: 15,
@@ -151,13 +155,12 @@ export class PersonnelService {
   }
 
   async upsertCommissionConfig(userId: string, dto: UpdateCommissionConfigDto) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     return this.db.commissionConfig.upsert({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
       create: {
-        agencyId: user.agencyId,
+        agencyId,
         tier1MaxAmount: dto.tier1MaxAmount ?? 4000,
         tier2MinAmount: dto.tier2MinAmount ?? 7000,
         tier2Rate: dto.tier2Rate ?? 15,
@@ -183,13 +186,8 @@ export class PersonnelService {
   // ─────────────────────────────────────────────
 
   async getAgentCommissionOverride(agentProfileId: string, userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     return this.db.agentCommissionOverride.findUnique({
       where: { agentProfileId },
@@ -201,13 +199,8 @@ export class PersonnelService {
     userId: string,
     dto: UpdateAgentCommissionOverrideDto,
   ) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     return this.db.agentCommissionOverride.upsert({
       where: { agentProfileId },
@@ -217,13 +210,8 @@ export class PersonnelService {
   }
 
   async deleteAgentCommissionOverride(agentProfileId: string, userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     const existing = await this.db.agentCommissionOverride.findUnique({
       where: { agentProfileId },
@@ -238,16 +226,15 @@ export class PersonnelService {
   // ─────────────────────────────────────────────
 
   async getAnnualBonusConfig(userId: string) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     const config = await this.db.annualBonusConfig.findUnique({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
     });
 
     if (!config) {
       return {
-        agencyId: user.agencyId,
+        agencyId,
         tier1MinAmount: 180000,
         tier1Rate: 5,
         tier2MinAmount: null,
@@ -263,13 +250,12 @@ export class PersonnelService {
   }
 
   async upsertAnnualBonusConfig(userId: string, dto: UpdateAnnualBonusConfigDto) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     return this.db.annualBonusConfig.upsert({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
       create: {
-        agencyId: user.agencyId,
+        agencyId,
         tier1MinAmount: dto.tier1MinAmount ?? 180000,
         tier1Rate: dto.tier1Rate ?? 5,
         tier2MinAmount: dto.tier2MinAmount ?? null,
@@ -299,13 +285,8 @@ export class PersonnelService {
     userId: string,
     year?: number,
   ) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     return this.db.agentMonthlyPerformance.findMany({
       where: {
@@ -321,17 +302,12 @@ export class PersonnelService {
     userId: string,
     dto: UpsertMonthlyPerformanceDto,
   ) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
-
-    const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
-    });
-    if (!profile) throw new NotFoundException('Agent profile not found');
+    const agencyId = await this.getAgencyIdForUser(userId);
+    await this.requireAgentInAgency(agentProfileId, agencyId);
 
     // Get effective commission config (agent override or agency config)
     const agencyConfig = await this.db.commissionConfig.findUnique({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
     });
     const agentOverride = await this.db.agentCommissionOverride.findUnique({
       where: { agentProfileId },
@@ -399,11 +375,10 @@ export class PersonnelService {
   // ─────────────────────────────────────────────
 
   async getAnnualSummary(agentProfileId: string, userId: string, year: number) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     const profile = await this.db.agentProfile.findFirst({
-      where: { id: agentProfileId, agencyId: user.agencyId },
+      where: { id: agentProfileId, agencyId },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!profile) throw new NotFoundException('Agent profile not found');
@@ -419,7 +394,7 @@ export class PersonnelService {
 
     // Calculate annual bonus
     const bonusConfig = await this.db.annualBonusConfig.findUnique({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
     });
 
     const effectiveBonusConfig = {
@@ -466,11 +441,10 @@ export class PersonnelService {
   // ─────────────────────────────────────────────
 
   async getAgencyPersonnelStats(userId: string, year: number) {
-    const user = await this.db.users.findUnique({ where: { id: userId } });
-    if (!user?.agencyId) throw new ForbiddenException('No agency associated with user');
+    const agencyId = await this.getAgencyIdForUser(userId);
 
     const agents = await this.db.agentProfile.findMany({
-      where: { agencyId: user.agencyId, isActive: true },
+      where: { agencyId, isActive: true },
       include: {
         user: { select: { id: true, firstName: true, lastName: true, email: true, role: true } },
         monthlyPerformances: {
@@ -481,7 +455,7 @@ export class PersonnelService {
     });
 
     const bonusConfig = await this.db.annualBonusConfig.findUnique({
-      where: { agencyId: user.agencyId },
+      where: { agencyId },
     });
 
     const agentsSummary = agents.map((agent) => {
@@ -511,7 +485,7 @@ export class PersonnelService {
 
     return {
       year,
-      agencyId: user.agencyId,
+      agencyId,
       totalAgents: agents.length,
       agents: agentsSummary,
       totalAgencyCA: agentsSummary.reduce((sum, a) => sum + a.totalAnnualCA, 0),

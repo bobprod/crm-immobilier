@@ -220,7 +220,7 @@ export default function AgentDetailPage() {
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
           >
-            {[2024, 2025, 2026, 2027].map((y) => (
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
