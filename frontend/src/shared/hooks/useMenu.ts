@@ -188,6 +188,14 @@ function getDefaultMenu(): DynamicMenuItem[] {
       order: 10,
     },
     {
+      id: 'default-personnel',
+      moduleId: 'business-personnel',
+      label: 'Personnel',
+      icon: 'Users',
+      path: '/personnel',
+      order: 11,
+    },
+    {
       id: 'default-settings',
       moduleId: 'core',
       label: 'Paramètres',

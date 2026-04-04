@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   Building2,
   UserCircle,
+  Users,
 } from 'lucide-react';
 
 /**
@@ -132,6 +133,12 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Notifications',
     icon: Bell,
     path: '/notifications',
+  },
+  {
+    id: 'personnel',
+    label: 'Personnel',
+    icon: Users,
+    path: '/personnel',
   },
   {
     id: 'settings',

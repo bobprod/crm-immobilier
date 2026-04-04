@@ -36,6 +36,7 @@ import { OwnersModule } from './modules/business/owners/owners.module';
 import { MandatesModule } from './modules/business/mandates/mandates.module';
 import { TransactionsModule } from './modules/business/transactions/transactions.module';
 import { FinanceModule } from './modules/business/finance/finance.module';
+import { PersonnelModule } from './modules/business/personnel/personnel.module';
 
 // INTELLIGENCE MODULES
 import { AIMetricsModule } from './modules/intelligence/ai-metrics/ai-metrics.module';
@@ -123,7 +124,7 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // NOTIFICATIONS - 1 module
     NotificationsModule,
 
-    // BUSINESS - 9 modules
+    // BUSINESS - 10 modules
     PropertiesModule,
     ProspectsModule,
     AppointmentsModule,
@@ -133,6 +134,7 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     MandatesModule,
     TransactionsModule,
     FinanceModule,
+    PersonnelModule,
 
     // INTELLIGENCE - 11 modules (5 existing + 4 Quick Wins + 1 AI Chat Assistant + 1 AI Billing)
     AIMetricsModule,

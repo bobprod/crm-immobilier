@@ -113,6 +113,10 @@ model agencies {
   users                 users[]
   whatsappConfigs       WhatsAppConfig?            @relation("AgencyWhatsAppConfig")
   whatsappConversations WhatsAppConversation[]     @relation("AgencyWhatsAppConversations")
+  agentProfiles         AgentProfile[]
+  commissionConfig      CommissionConfig?
+  annualBonusConfig     AnnualBonusConfig?
+  documents             documents[]
 }
 
 model appointments {
@@ -406,6 +410,7 @@ model users {
   campaigns               campaigns[]
   agentCommissions        Commission[]              @relation("AgentCommissions")
   commissions             Commission[]              @relation("UserCommissions")
+  agentProfile            AgentProfile?
   communication_templates communication_templates[] @relation("UserCommunicationTemplates")
   communications          communications[]          @relation("UserCommunications")
   contact_validations     contact_validations[]     @relation("UserContactValidations")
@@ -2802,6 +2807,7 @@ enum ClientType {
 enum UserRole {
   USER
   AGENT
+  MANAGER
   ADMIN
   SUPER_ADMIN
 }
@@ -2955,4 +2961,113 @@ enum DocumentStatus {
   expired
   cancelled
   archived
+}
+
+// ============================================================
+// MODULE PERSONNEL - Gestion agents, commerciaux et personnel
+// ============================================================
+
+model AgentProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  agencyId      String
+  jobTitle      String?
+  phone         String?
+  hireDate      DateTime?
+  isActive      Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency        agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  commissionOverride AgentCommissionOverride?
+  monthlyPerformances AgentMonthlyPerformance[]
+
+  @@index([agencyId])
+  @@map("agent_profiles")
+}
+
+// Commission tiers configurables par agence (par le manager)
+model CommissionConfig {
+  id            String   @id @default(cuid())
+  agencyId      String   @unique
+  // Paliers mensuels (CA = chiffre d'affaire)
+  tier1MaxAmount    Float  @default(4000)   // en dessous = 0%
+  tier2MinAmount    Float  @default(7000)   // au-dessus = tier2Rate
+  tier2Rate         Float  @default(15)     // pourcentage
+  tier3MinAmount    Float  @default(11000)  // au-dessus = tier3Rate
+  tier3Rate         Float  @default(20)     // pourcentage
+  // Taux pour transactions directes
+  directSaleRate    Float  @default(20)     // pourcentage transaction directe
+  currency          String @default("TND")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  agency            agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@map("commission_configs")
+}
+
+// Override de commission pour un agent spécifique (optionnel)
+model AgentCommissionOverride {
+  id              String   @id @default(cuid())
+  agentProfileId  String   @unique
+  tier1MaxAmount  Float?
+  tier2MinAmount  Float?
+  tier2Rate       Float?
+  tier3MinAmount  Float?
+  tier3Rate       Float?
+  directSaleRate  Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agentProfile    AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  @@map("agent_commission_overrides")
+}
+
+// Configuration prime de fin d'année par agence
+model AnnualBonusConfig {
+  id              String   @id @default(cuid())
+  agencyId        String   @unique
+  // Paliers annuels
+  tier1MinAmount  Float    @default(180000)  // au-dessus = tier1Rate
+  tier1Rate       Float    @default(5)       // pourcentage
+  tier2MinAmount  Float?                     // palier 2 optionnel
+  tier2Rate       Float?
+  tier3MinAmount  Float?
+  tier3Rate       Float?
+  currency        String   @default("TND")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agency          agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@map("annual_bonus_configs")
+}
+
+// Performance mensuelle par agent (CA et commissions calculées)
+model AgentMonthlyPerformance {
+  id              String   @id @default(cuid())
+  agentProfileId  String
+  year            Int
+  month           Int      // 1-12
+  caAmount        Float    @default(0)   // chiffre d'affaire du mois (TND)
+  commissionRate  Float    @default(0)   // taux appliqué
+  commissionAmount Float   @default(0)  // montant commission
+  directSalesCA   Float    @default(0)  // CA transactions directes
+  directSalesCommission Float @default(0) // commission transactions directes
+  totalCommission Float    @default(0)  // commission totale
+  currency        String   @default("TND")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agentProfile    AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([agentProfileId, year, month])
+  @@index([agentProfileId])
+  @@index([year, month])
+  @@map("agent_monthly_performances")
 }
