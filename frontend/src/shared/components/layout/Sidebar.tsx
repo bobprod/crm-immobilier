@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   Building2,
   UserCircle,
+  Users,
 } from 'lucide-react';
 
 /**
@@ -132,6 +133,12 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Notifications',
     icon: Bell,
     path: '/notifications',
+  },
+  {
+    id: 'personnel',
+    label: 'Personnel',
+    icon: Users,
+    path: '/personnel',
   },
   {
     id: 'settings',
@@ -290,11 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
           className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
           title={collapsed ? 'Développer le menu' : 'Réduire le menu'}
         >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
