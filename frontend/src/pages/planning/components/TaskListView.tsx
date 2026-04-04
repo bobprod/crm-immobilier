@@ -7,7 +7,12 @@ import { Button } from '@/shared/components/ui/button';
 import { Checkbox } from '@/shared/components/ui/checkbox';
 import { Calendar, User, MoreVertical, CheckCircle } from 'lucide-react';
 import { Task } from '../services/planning-api';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu';
 
 interface TaskListViewProps {
   tasks: Task[];
@@ -47,7 +52,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       if (!task.dueDate) {
         groups.no_date.push(task);
       } else {
@@ -79,13 +84,13 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           </Badge>
         </div>
         <div className="space-y-2">
-          {tasks.map(task => (
-            <Card
+          {tasks.map((task) => (
+            <div
               key={task.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="cursor-pointer hover:shadow-md transition-shadow rounded-lg border bg-card text-card-foreground shadow-sm"
               onClick={() => onTaskClick(task)}
             >
-              <CardContent className="p-4">
+              <div className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
                     checked={task.status === 'done'}
@@ -99,7 +104,9 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <h4 className={`font-medium text-sm mb-1 ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>
+                        <h4
+                          className={`font-medium text-sm mb-1 ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}
+                        >
                           {task.title}
                         </h4>
                         {task.description && (
@@ -115,13 +122,15 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            onTaskClick(task);
-                          }}>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onTaskClick(task);
+                            }}
+                          >
                             Modifier
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
                               onTaskComplete(task.id);
@@ -144,7 +153,9 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                       </DropdownMenu>
                     </div>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge className={`text-xs ${priorityColors[task.priority] || 'bg-gray-100'}`}>
+                      <Badge
+                        className={`text-xs ${priorityColors[task.priority] || 'bg-gray-100'}`}
+                      >
                         {task.priority}
                       </Badge>
                       <Badge className={`text-xs ${statusColors[task.status] || 'bg-gray-100'}`}>
@@ -159,8 +170,8 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -170,7 +181,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   return (
     <div className="space-y-6">
       {renderTaskGroup('En retard', groupedTasks.overdue, '#EF4444')}
-      {renderTaskGroup('Aujourd\'hui', groupedTasks.today, '#3B82F6')}
+      {renderTaskGroup("Aujourd'hui", groupedTasks.today, '#3B82F6')}
       {renderTaskGroup('À venir', groupedTasks.upcoming, '#10B981')}
       {renderTaskGroup('Sans date', groupedTasks.no_date, '#6B7280')}
     </div>

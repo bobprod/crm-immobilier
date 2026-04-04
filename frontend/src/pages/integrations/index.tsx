@@ -130,9 +130,7 @@ export default function IntegrationsPage() {
       setMessage(null);
 
       const integration = getIntegration(provider);
-      const url = integration
-        ? `/integrations/${provider}`
-        : '/integrations';
+      const url = integration ? `/integrations/${provider}` : '/integrations';
 
       const method = integration ? 'PUT' : 'POST';
 
@@ -169,8 +167,8 @@ export default function IntegrationsPage() {
         setMessage({ type: 'success', text: 'Configuration sauvegardée avec succès!' });
         await loadIntegrations();
       } else {
-        const error = await response.json();
-        setMessage({ type: 'error', text: error.message || 'Erreur lors de la sauvegarde' });
+        const errorData = response.data;
+        setMessage({ type: 'error', text: errorData?.message || 'Erreur lors de la sauvegarde' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Erreur de connexion au serveur' });
@@ -234,7 +232,9 @@ export default function IntegrationsPage() {
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 3 }}>
         <Card>
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Email sx={{ fontSize: 40, color: '#000' }} />
                 <Box>
@@ -258,7 +258,10 @@ export default function IntegrationsPage() {
             </Box>
 
             {integration && integration.lastTestStatus && (
-              <Alert severity={integration.lastTestStatus === 'success' ? 'success' : 'error'} sx={{ mb: 2 }}>
+              <Alert
+                severity={integration.lastTestStatus === 'success' ? 'success' : 'error'}
+                sx={{ mb: 2 }}
+              >
                 {integration.lastTestStatus === 'success'
                   ? `✅ Testé avec succès le ${new Date(integration.lastTestedAt!).toLocaleString()}`
                   : `❌ Test échoué: ${integration.lastTestError}`}
@@ -294,7 +297,9 @@ export default function IntegrationsPage() {
                   label="Quota mensuel (optionnel)"
                   type="number"
                   value={resendForm.monthlyQuota || ''}
-                  onChange={(e) => setResendForm({ ...resendForm, monthlyQuota: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setResendForm({ ...resendForm, monthlyQuota: parseInt(e.target.value) })
+                  }
                   placeholder="3000"
                   helperText="Limite d'emails par mois"
                 />
@@ -308,13 +313,15 @@ export default function IntegrationsPage() {
                     </Typography>
                     <LinearProgress
                       variant="determinate"
-                      value={Math.min(((integration.currentUsage || 0) / integration.monthlyQuota) * 100, 100)}
+                      value={Math.min(
+                        ((integration.currentUsage || 0) / integration.monthlyQuota) * 100,
+                        100
+                      )}
                       sx={{ mt: 1 }}
                     />
                   </Paper>
                 </Grid2>
               )}
-
             </Grid2>
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
@@ -327,7 +334,11 @@ export default function IntegrationsPage() {
 
               {integration && integration.hasConfig && (
                 <>
-                  <Button variant="outlined" onClick={() => handleTest('resend')} disabled={testing}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleTest('resend')}
+                    disabled={testing}
+                  >
                     Tester la connexion
                   </Button>
                   <Button
@@ -364,7 +375,9 @@ export default function IntegrationsPage() {
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 3 }}>
         <Card>
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Email sx={{ fontSize: 40, color: '#1A82E2' }} />
                 <Box>
@@ -388,7 +401,10 @@ export default function IntegrationsPage() {
             </Box>
 
             {integration && integration.lastTestStatus && (
-              <Alert severity={integration.lastTestStatus === 'success' ? 'success' : 'error'} sx={{ mb: 2 }}>
+              <Alert
+                severity={integration.lastTestStatus === 'success' ? 'success' : 'error'}
+                sx={{ mb: 2 }}
+              >
                 {integration.lastTestStatus === 'success'
                   ? `✅ Testé avec succès le ${new Date(integration.lastTestedAt!).toLocaleString()}`
                   : `❌ Test échoué: ${integration.lastTestError}`}
@@ -402,7 +418,9 @@ export default function IntegrationsPage() {
                   label="API Key SendGrid"
                   type="password"
                   value={sendgridForm.sendgridApiKey || ''}
-                  onChange={(e) => setSendgridForm({ ...sendgridForm, sendgridApiKey: e.target.value })}
+                  onChange={(e) =>
+                    setSendgridForm({ ...sendgridForm, sendgridApiKey: e.target.value })
+                  }
                   placeholder="SG.123456789..."
                   helperText="Obtenez votre clé sur https://app.sendgrid.com/settings/api_keys"
                 />
@@ -423,7 +441,9 @@ export default function IntegrationsPage() {
                   label="Quota mensuel (optionnel)"
                   type="number"
                   value={sendgridForm.monthlyQuota || ''}
-                  onChange={(e) => setSendgridForm({ ...sendgridForm, monthlyQuota: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setSendgridForm({ ...sendgridForm, monthlyQuota: parseInt(e.target.value) })
+                  }
                 />
               </Grid2>
             </Grid2>
@@ -439,7 +459,11 @@ export default function IntegrationsPage() {
 
               {integration && integration.hasConfig && (
                 <>
-                  <Button variant="outlined" onClick={() => handleTest('sendgrid')} disabled={testing}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleTest('sendgrid')}
+                    disabled={testing}
+                  >
                     Tester la connexion
                   </Button>
                   <Button
@@ -466,7 +490,9 @@ export default function IntegrationsPage() {
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 3 }}>
         <Card>
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Sms sx={{ fontSize: 40, color: '#F22F46' }} />
                 <Box>
@@ -490,7 +516,10 @@ export default function IntegrationsPage() {
             </Box>
 
             {integration && integration.lastTestStatus && (
-              <Alert severity={integration.lastTestStatus === 'success' ? 'success' : 'error'} sx={{ mb: 2 }}>
+              <Alert
+                severity={integration.lastTestStatus === 'success' ? 'success' : 'error'}
+                sx={{ mb: 2 }}
+              >
                 {integration.lastTestStatus === 'success'
                   ? `✅ Testé avec succès le ${new Date(integration.lastTestedAt!).toLocaleString()}`
                   : `❌ Test échoué: ${integration.lastTestError}`}
@@ -503,7 +532,9 @@ export default function IntegrationsPage() {
                   fullWidth
                   label="Account SID"
                   value={twilioForm.twilioAccountSid || ''}
-                  onChange={(e) => setTwilioForm({ ...twilioForm, twilioAccountSid: e.target.value })}
+                  onChange={(e) =>
+                    setTwilioForm({ ...twilioForm, twilioAccountSid: e.target.value })
+                  }
                   placeholder="ACxxxxxxxxxxxxxxxxxxxxx"
                 />
               </Grid2>
@@ -514,7 +545,9 @@ export default function IntegrationsPage() {
                   label="Auth Token"
                   type="password"
                   value={twilioForm.twilioAuthToken || ''}
-                  onChange={(e) => setTwilioForm({ ...twilioForm, twilioAuthToken: e.target.value })}
+                  onChange={(e) =>
+                    setTwilioForm({ ...twilioForm, twilioAuthToken: e.target.value })
+                  }
                   placeholder="your_auth_token"
                 />
               </Grid2>
@@ -524,7 +557,9 @@ export default function IntegrationsPage() {
                   fullWidth
                   label="Numéro de téléphone (SMS)"
                   value={twilioForm.twilioPhoneNumber || ''}
-                  onChange={(e) => setTwilioForm({ ...twilioForm, twilioPhoneNumber: e.target.value })}
+                  onChange={(e) =>
+                    setTwilioForm({ ...twilioForm, twilioPhoneNumber: e.target.value })
+                  }
                   placeholder="+33612345678"
                   helperText="Format E.164"
                 />
@@ -535,7 +570,9 @@ export default function IntegrationsPage() {
                   fullWidth
                   label="Numéro WhatsApp (optionnel)"
                   value={twilioForm.twilioWhatsappNumber || ''}
-                  onChange={(e) => setTwilioForm({ ...twilioForm, twilioWhatsappNumber: e.target.value })}
+                  onChange={(e) =>
+                    setTwilioForm({ ...twilioForm, twilioWhatsappNumber: e.target.value })
+                  }
                   placeholder="whatsapp:+33612345678"
                 />
               </Grid2>
@@ -555,7 +592,9 @@ export default function IntegrationsPage() {
                   label="Quota mensuel (optionnel)"
                   type="number"
                   value={twilioForm.monthlyQuota || ''}
-                  onChange={(e) => setTwilioForm({ ...twilioForm, monthlyQuota: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setTwilioForm({ ...twilioForm, monthlyQuota: parseInt(e.target.value) })
+                  }
                 />
               </Grid2>
             </Grid2>
@@ -571,7 +610,11 @@ export default function IntegrationsPage() {
 
               {integration && integration.hasConfig && (
                 <>
-                  <Button variant="outlined" onClick={() => handleTest('twilio')} disabled={testing}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleTest('twilio')}
+                    disabled={testing}
+                  >
                     Tester la connexion
                   </Button>
                   <Button
@@ -655,7 +698,9 @@ export default function IntegrationsPage() {
                     {integration && integration.hasConfig && (
                       <Chip
                         size="small"
-                        icon={integration.lastTestStatus === 'success' ? <CheckCircle /> : <Error />}
+                        icon={
+                          integration.lastTestStatus === 'success' ? <CheckCircle /> : <Error />
+                        }
                         label={integration.isActive ? 'Actif' : 'Inactif'}
                         color={integration.isActive ? 'success' : 'default'}
                       />

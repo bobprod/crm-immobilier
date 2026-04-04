@@ -41,14 +41,9 @@ interface TaskCardProps {
 }
 
 const TaskCard = ({ task, onClick }: TaskCardProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -63,24 +58,16 @@ const TaskCard = ({ task, onClick }: TaskCardProps) => {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="mb-2"
-    >
-      <Card 
-        className="cursor-pointer hover:shadow-md transition-shadow"
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-2">
+      <div
+        className="cursor-pointer hover:shadow-md transition-shadow rounded-lg border bg-card text-card-foreground shadow-sm"
         onClick={onClick}
       >
-        <CardContent className="p-3">
+        <div className="p-3">
           <div className="space-y-2">
             <h4 className="font-medium text-sm line-clamp-2">{task.title}</h4>
             {task.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {task.description}
-              </p>
+              <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
             )}
             <div className="flex items-center justify-between">
               <Badge className={`text-xs ${priorityColors[task.priority] || 'bg-gray-100'}`}>
@@ -94,8 +81,8 @@ const TaskCard = ({ task, onClick }: TaskCardProps) => {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
@@ -130,24 +117,16 @@ const Column = ({ column, tasks, onTaskClick, onAddTask }: ColumnProps) => {
       </div>
 
       <ScrollArea className="h-[calc(100vh-280px)]">
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
-            {tasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onClick={() => onTaskClick(task)}
-              />
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
             ))}
           </div>
         </SortableContext>
       </ScrollArea>
 
-      <Button
-        variant="ghost"
-        className="w-full mt-4 justify-start text-sm"
-        onClick={onAddTask}
-      >
+      <Button variant="ghost" className="w-full mt-4 justify-start text-sm" onClick={onAddTask}>
         <Plus className="h-4 w-4 mr-2" />
         Ajouter une tâche
       </Button>
@@ -163,7 +142,7 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
 }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(
-    board.columns?.flatMap(c => c.tasks || []) || []
+    board.columns?.flatMap((c) => c.tasks || []) || []
   );
 
   const sensors = useSensors(
@@ -178,7 +157,7 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
   }, [board.columns]);
 
   const getColumnTasks = (columnId: string) => {
-    return localTasks.filter(task => task.columnId === columnId);
+    return localTasks.filter((task) => task.columnId === columnId);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -192,25 +171,25 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = localTasks.find(t => t.id === activeId);
+    const activeTask = localTasks.find((t) => t.id === activeId);
     if (!activeTask) return;
 
     const activeColumnId = activeTask.columnId;
-    const overColumnId = columns.find(c => c.id === overId)?.id || 
-                        localTasks.find(t => t.id === overId)?.columnId;
+    const overColumnId =
+      columns.find((c) => c.id === overId)?.id || localTasks.find((t) => t.id === overId)?.columnId;
 
     if (!overColumnId || activeColumnId === overColumnId) return;
 
-    setLocalTasks(tasks => {
-      const activeTasks = tasks.filter(t => t.columnId === activeColumnId);
-      const overTasks = tasks.filter(t => t.columnId === overColumnId);
+    setLocalTasks((tasks) => {
+      const activeTasks = tasks.filter((t) => t.columnId === activeColumnId);
+      const overTasks = tasks.filter((t) => t.columnId === overColumnId);
 
-      const activeIndex = activeTasks.findIndex(t => t.id === activeId);
-      const overIndex = overTasks.findIndex(t => t.id === overId);
+      const activeIndex = activeTasks.findIndex((t) => t.id === activeId);
+      const overIndex = overTasks.findIndex((t) => t.id === overId);
 
       const newIndex = overIndex >= 0 ? overIndex : overTasks.length;
 
-      return tasks.map(task => {
+      return tasks.map((task) => {
         if (task.id === activeId) {
           return { ...task, columnId: overColumnId, position: newIndex };
         }
@@ -228,24 +207,24 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = localTasks.find(t => t.id === activeId);
+    const activeTask = localTasks.find((t) => t.id === activeId);
     if (!activeTask) return;
 
-    const overColumnId = columns.find(c => c.id === overId)?.id || 
-                        localTasks.find(t => t.id === overId)?.columnId;
+    const overColumnId =
+      columns.find((c) => c.id === overId)?.id || localTasks.find((t) => t.id === overId)?.columnId;
 
     if (!overColumnId) return;
 
-    const columnTasks = localTasks.filter(t => t.columnId === overColumnId);
-    const oldIndex = columnTasks.findIndex(t => t.id === activeId);
-    const newIndex = columnTasks.findIndex(t => t.id === overId);
+    const columnTasks = localTasks.filter((t) => t.columnId === overColumnId);
+    const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
+    const newIndex = columnTasks.findIndex((t) => t.id === overId);
 
     if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
       const reorderedTasks = arrayMove(columnTasks, oldIndex, newIndex);
-      
-      setLocalTasks(tasks => {
-        return tasks.map(task => {
-          const newTask = reorderedTasks.find(t => t.id === task.id);
+
+      setLocalTasks((tasks) => {
+        return tasks.map((task) => {
+          const newTask = reorderedTasks.find((t) => t.id === task.id);
           if (newTask) {
             return { ...task, position: reorderedTasks.indexOf(newTask) };
           }
@@ -260,11 +239,11 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
     } catch (error) {
       console.error('Error moving task:', error);
       // Revert on error
-      setLocalTasks(board.columns?.flatMap(c => c.tasks || []) || []);
+      setLocalTasks(board.columns?.flatMap((c) => c.tasks || []) || []);
     }
   };
 
-  const activeTask = activeId ? localTasks.find(t => t.id === activeId) : null;
+  const activeTask = activeId ? localTasks.find((t) => t.id === activeId) : null;
 
   return (
     <DndContext
@@ -275,8 +254,8 @@ export const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-4 overflow-x-auto pb-4">
-        <SortableContext items={columns.map(c => c.id)}>
-          {columns.map(column => (
+        <SortableContext items={columns.map((c) => c.id)}>
+          {columns.map((column) => (
             <Column
               key={column.id}
               column={column}

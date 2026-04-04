@@ -8,7 +8,7 @@ import {
   CalendarDays,
   MessageSquare,
   FileText,
-  Handshake,
+  HeartHandshake,
   Megaphone,
   Gem,
   Globe,
@@ -96,7 +96,7 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'transactions',
     label: 'Transactions',
-    icon: Handshake,
+    icon: HeartHandshake,
     path: '/transactions-dashboard',
   },
   {

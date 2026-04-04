@@ -1,4 +1,4 @@
-import apiClient from '@/shared/utils/api-client';
+import apiClient from '@/shared/utils/backend-api';
 
 export interface TaskBoard {
   id: string;
@@ -92,7 +92,10 @@ export const getTaskBoard = async (boardId: string): Promise<TaskBoard> => {
   return response.data;
 };
 
-export const updateTaskBoard = async (boardId: string, data: Partial<TaskBoard>): Promise<TaskBoard> => {
+export const updateTaskBoard = async (
+  boardId: string,
+  data: Partial<TaskBoard>
+): Promise<TaskBoard> => {
   const response = await apiClient.put(`/planning/boards/${boardId}`, data);
   return response.data;
 };
@@ -112,7 +115,10 @@ export const createTaskColumn = async (data: Partial<TaskColumn>): Promise<TaskC
   return response.data;
 };
 
-export const updateTaskColumn = async (columnId: string, data: Partial<TaskColumn>): Promise<TaskColumn> => {
+export const updateTaskColumn = async (
+  columnId: string,
+  data: Partial<TaskColumn>
+): Promise<TaskColumn> => {
   const response = await apiClient.put(`/planning/columns/${columnId}`, data);
   return response.data;
 };
@@ -148,7 +154,10 @@ export const getPlanningView = async (viewId: string): Promise<PlanningView> => 
   return response.data;
 };
 
-export const updatePlanningView = async (viewId: string, data: Partial<PlanningView>): Promise<PlanningView> => {
+export const updatePlanningView = async (
+  viewId: string,
+  data: Partial<PlanningView>
+): Promise<PlanningView> => {
   const response = await apiClient.put(`/planning/views/${viewId}`, data);
   return response.data;
 };

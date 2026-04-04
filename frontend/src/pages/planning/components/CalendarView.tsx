@@ -82,14 +82,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => {
+    return appointments.filter((apt) => {
       const aptDate = new Date(apt.startTime);
       return isSameDay(aptDate, date);
     });
   };
 
   const getTasksForDate = (date: Date) => {
-    return tasks.filter(task => {
+    return tasks.filter((task) => {
       if (!task.dueDate) return false;
       const taskDate = new Date(task.dueDate);
       return isSameDay(taskDate, date);
@@ -111,31 +111,35 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
           ) : (
             <>
-              {dayAppointments.map(apt => (
-                <Card
+              {dayAppointments.map((apt) => (
+                <div
                   key={apt.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="cursor-pointer hover:shadow-md transition-shadow rounded-lg border bg-card text-card-foreground shadow-sm"
                   onClick={() => onAppointmentClick(apt)}
                   style={{ borderLeft: `4px solid ${apt.color || '#3B82F6'}` }}
                 >
-                  <CardContent className="p-3">
+                  <div className="p-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-sm">{apt.title}</h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(apt.startTime), 'HH:mm', { locale: fr })} - {format(new Date(apt.endTime), 'HH:mm', { locale: fr })}
+                          {format(new Date(apt.startTime), 'HH:mm', { locale: fr })} -{' '}
+                          {format(new Date(apt.endTime), 'HH:mm', { locale: fr })}
                         </p>
                       </div>
                       <Badge variant="secondary" className="text-xs">
                         {apt.type}
                       </Badge>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
-              {dayTasks.map(task => (
-                <Card key={task.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardContent className="p-3">
+              {dayTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow rounded-lg border bg-card text-card-foreground shadow-sm"
+                >
+                  <div className="p-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-sm">{task.title}</h4>
@@ -145,8 +149,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         Tâche
                       </Badge>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </>
           )}
@@ -158,7 +162,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const renderWeekView = () => {
     return (
       <div className="grid grid-cols-7 gap-2">
-        {dateRange.map(date => {
+        {dateRange.map((date) => {
           const dayAppointments = getAppointmentsForDate(date);
           const dayTasks = getTasksForDate(date);
           const isToday = isSameDay(date, new Date());
@@ -180,7 +184,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </div>
               </div>
               <div className="space-y-1">
-                {dayAppointments.slice(0, 2).map(apt => (
+                {dayAppointments.slice(0, 2).map((apt) => (
                   <div
                     key={apt.id}
                     className="text-xs p-1 rounded truncate"
@@ -189,7 +193,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     {format(new Date(apt.startTime), 'HH:mm')} {apt.title}
                   </div>
                 ))}
-                {dayTasks.slice(0, 1).map(task => (
+                {dayTasks.slice(0, 1).map((task) => (
                   <div key={task.id} className="text-xs p-1 bg-muted rounded truncate">
                     {task.title}
                   </div>
@@ -214,7 +218,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     // Get first day of month and pad with previous month days
     const firstDay = startOfMonth(currentDate);
     const firstDayOfWeek = startOfWeek(firstDay, { weekStartsOn: 1 });
-    
+
     let day = firstDayOfWeek;
     const lastDay = endOfMonth(currentDate);
     const lastDayOfWeek = endOfWeek(lastDay, { weekStartsOn: 1 });
@@ -231,7 +235,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-7 gap-2 mb-2">
-          {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
+          {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
             <div key={day} className="text-center text-xs font-semibold text-muted-foreground">
               {day}
             </div>
@@ -239,7 +243,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
         {weeks.map((week, weekIndex) => (
           <div key={weekIndex} className="grid grid-cols-7 gap-2">
-            {week.map(date => {
+            {week.map((date) => {
               const dayAppointments = getAppointmentsForDate(date);
               const dayTasks = getTasksForDate(date);
               const isToday = isSameDay(date, new Date());
@@ -291,7 +295,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             Aujourd'hui
           </Button>
           <h2 className="text-lg font-semibold ml-4">
-            {format(currentDate, viewMode === 'month' ? 'MMMM yyyy' : 'dd MMMM yyyy', { locale: fr })}
+            {format(currentDate, viewMode === 'month' ? 'MMMM yyyy' : 'dd MMMM yyyy', {
+              locale: fr,
+            })}
           </h2>
         </div>
 
