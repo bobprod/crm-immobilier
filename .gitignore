@@ -17,3 +17,4 @@ backend/tsconfig.tsbuildinfo
 # Next.js build output
 frontend/.next/
 frontend/out/
+.playwright-mcp/

@@ -279,6 +279,7 @@ model properties {
   prospecting_matches prospecting_matches[]         @relation("PropertyMatches")
   tasks               tasks[]                       @relation("PropertyTasks")
   transactions        Transaction[]                 @relation("PropertyTransactions")
+  publicLeads          PublicLead[]                  @relation("PublicLeadProperty")
 
   @@index([priority])
   @@index([isFeatured])
@@ -354,6 +355,7 @@ model prospects {
   users                users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks                tasks[]                     @relation("ProspectTasks")
   transactions         Transaction[]               @relation("ProspectTransactions")
+  publicLeads          PublicLead[]
 }
 
 model ProspectHistory {
@@ -1197,21 +1199,40 @@ model prospect_properties_shown {
   @@index([interestLevel])
 }
 
+model VitrineTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  category     String   @default("general")
+  colors       Json?
+  fonts        Json?
+  defaultPages Json?
+  thumbnail    String?
+  isDefault    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  configs      VitrineConfig[]
+}
+
 model VitrineConfig {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  isActive       Boolean  @default(false)
+  id             String          @id @default(cuid())
+  userId         String          @unique
+  slug           String?         @unique
+  templateId     String?
+  isActive       Boolean         @default(false)
   agencyName     String
   logo           String?
   slogan         String?
-  primaryColor   String   @default("#3B82F6")
-  secondaryColor String   @default("#10B981")
+  primaryColor   String          @default("#3B82F6")
+  secondaryColor String          @default("#10B981")
   phone          String
   email          String
   address        String?
   schedule       Json?
   socialLinks    Json?
-  theme          String   @default("light")
+  theme          String          @default("light")
   heroImage      String?
   aboutText      String?
   services       Json?
@@ -1220,9 +1241,32 @@ model VitrineConfig {
   seoDescription String?
   seoKeywords    String?
   analyticsId    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template       VitrineTemplate? @relation(fields: [templateId], references: [id])
+  pages          VitrinePage[]
+  agents         PublicAgentProfile[]
+  leads          PublicLead[]
+}
+
+model VitrinePage {
+  id              String        @id @default(cuid())
+  vitrineConfigId String
+  slug            String
+  title           String
+  puckData        Json          @default("{}")
+  order           Int           @default(0)
+  isActive        Boolean       @default(true)
+  isDefault       Boolean       @default(false)
+  seoTitle        String?
+  seoDescription  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vitrineConfig   VitrineConfig @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([vitrineConfigId, slug])
+  @@index([vitrineConfigId])
 }
 
 model PublishedProperty {
@@ -1238,6 +1282,60 @@ model PublishedProperty {
   @@unique([propertyId, userId])
   @@index([userId])
   @@index([isFeatured])
+}
+
+model PublicAgentProfile {
+  id              String        @id @default(cuid())
+  vitrineConfigId String
+  firstName       String
+  lastName        String?
+  email           String?
+  phone           String?
+  photo           String?
+  jobTitle        String?
+  bio             String?
+  specialties     String[]
+  languages       String[]
+  order           Int           @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vitrineConfig   VitrineConfig @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+  leads           PublicLead[]
+
+  @@index([vitrineConfigId])
+}
+
+model PublicLead {
+  id              String              @id @default(cuid())
+  vitrineConfigId String
+  vitrineSlug     String?
+  firstName       String
+  lastName        String?
+  email           String
+  phone           String?
+  message         String?
+  type            String              @default("CONTACT")
+  propertyId      String?
+  agentProfileId  String?
+  prospectId      String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  referrer        String?
+  ipAddress       String?
+  status          String              @default("NEW")
+  convertedAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  vitrineConfig   VitrineConfig       @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+  property        properties?         @relation("PublicLeadProperty", fields: [propertyId], references: [id])
+  agentProfile    PublicAgentProfile?  @relation(fields: [agentProfileId], references: [id])
+  prospect        prospects?          @relation(fields: [prospectId], references: [id])
+
+  @@index([vitrineConfigId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model VitrineAnalytics {

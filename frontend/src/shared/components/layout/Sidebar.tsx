@@ -114,7 +114,7 @@ const MENU_ITEMS: MenuItem[] = [
     id: 'vitrine',
     label: 'Sites Vitrines',
     icon: Globe,
-    path: '/sites-vitrines-dashboard',
+    path: '/vitrine',
   },
   {
     id: 'analytics',

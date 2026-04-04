@@ -51,6 +51,14 @@ export class VitrineController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Post('config/toggle')
+  @ApiOperation({ summary: 'Toggle vitrine active state' })
+  async toggleVitrine(@Request() req, @Body() body: { isActive: boolean }) {
+    return this.vitrineService.toggleVitrine(req.user.userId, body.isActive);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get('published-properties')
   @ApiOperation({ summary: 'Get published properties' })
   async getPublishedProperties(@Request() req) {

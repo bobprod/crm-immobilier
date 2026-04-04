@@ -1,7 +1,16 @@
 import apiClient from './backend-api';
 
+// Réexporter les types depuis le client principal
+export type {
+  VitrineConfig,
+  PublicProperty,
+  PublicAgent,
+  SubmitLeadData,
+  PropertyFilters,
+} from './public-vitrine-api';
+
 /**
- * API Client pour le module Vitrine Publique
+ * API Client authentifié pour le dashboard Vitrine (SaaS)
  */
 export const vitrineAPI = {
   // Configuration
@@ -22,8 +31,7 @@ export const vitrineAPI = {
 
   // Gestion biens publiés
   publishProperty: async (propertyId: string, isFeatured = false, order = 0) => {
-    const response = await apiClient.post('/vitrine/properties/publish', {
-      propertyId,
+    const response = await apiClient.post(`/vitrine/properties/${propertyId}/publish`, {
       isFeatured,
       order,
     });
@@ -36,7 +44,7 @@ export const vitrineAPI = {
   },
 
   getPublishedProperties: async () => {
-    const response = await apiClient.get('/vitrine/properties');
+    const response = await apiClient.get('/vitrine/published-properties');
     return response.data;
   },
 
@@ -50,61 +58,23 @@ export const vitrineAPI = {
 
   // Leads
   getVitrineLeads: async () => {
-    const response = await apiClient.get('/vitrine/leads');
-    return response.data;
-  },
-};
-
-/**
- * API Client pour les endpoints publics
- */
-export const publicVitrineAPI = {
-  getConfig: async (userId: string) => {
-    const response = await apiClient.get('/public/config', {
-      params: { userId },
-    });
+    const response = await apiClient.get('/vitrine/public-leads');
     return response.data;
   },
 
-  getProperties: async (userId: string, filters?: any) => {
-    const response = await apiClient.get('/public/properties', {
-      params: { userId, ...filters },
-    });
+  // Agents
+  getAgentProfiles: async () => {
+    const response = await apiClient.get('/vitrine/agents');
     return response.data;
   },
 
-  getProperty: async (userId: string, propertyId: string) => {
-    const response = await apiClient.get(`/public/properties/${propertyId}`, {
-      params: { userId },
-    });
+  upsertAgentProfile: async (data: any) => {
+    const response = await apiClient.post('/vitrine/agents', data);
     return response.data;
   },
 
-  getFeaturedProperties: async (userId: string) => {
-    const response = await apiClient.get('/public/properties/featured', {
-      params: { userId },
-    });
-    return response.data;
-  },
-
-  contact: async (userId: string, data: any) => {
-    const response = await apiClient.post('/public/contact', data, {
-      params: { userId },
-    });
-    return response.data;
-  },
-
-  visitRequest: async (userId: string, data: any) => {
-    const response = await apiClient.post('/public/visit-request', data, {
-      params: { userId },
-    });
-    return response.data;
-  },
-
-  estimation: async (userId: string, data: any) => {
-    const response = await apiClient.post('/public/estimation', data, {
-      params: { userId },
-    });
+  deleteAgentProfile: async (agentId: string) => {
+    const response = await apiClient.delete(`/vitrine/agents/${agentId}`);
     return response.data;
   },
 };

@@ -16,9 +16,15 @@ export default function PageBuilderEditor() {
   }, [id]);
 
   const loadPage = async () => {
-    const response = await apiClient.get(`/page-builder/pages/${id}`);
-    setPage(response.data);
-    setBlocks(response.data.blocks);
+    try {
+      const response = await apiClient.get(`/page-builder/pages/${id}`);
+      setPage(response.data);
+      setBlocks(response.data.blocks || []);
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        router.replace('/page-builder');
+      }
+    }
   };
 
   const addBlock = (type: string) => {

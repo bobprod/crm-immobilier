@@ -160,7 +160,6 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     // SCRAPING - 1 module (Web Data Services)
     ScrapingModule,
 
-
     // COMMUNICATIONS - 3 modules (Email, Email-AI, WhatsApp)
     CommunicationsModule,
     EmailAIResponseModule,
