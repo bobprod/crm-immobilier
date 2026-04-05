@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { builderApi, VitrinePage } from '@/modules/vitrine/builder/api';
 import { puckConfig } from '@/modules/vitrine/builder/puck-config';
 import { Sidebar } from '@/shared/components/layout/Sidebar';
 import {
-  Eye, ExternalLink, Plus, MoreVertical, Pencil, Trash2,
-  ChevronRight, Globe, Loader2, LayoutTemplate, ArrowLeft
+  Eye,
+  ExternalLink,
+  Plus,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  ChevronRight,
+  Globe,
+  Loader2,
+  LayoutTemplate,
+  ArrowLeft,
 } from 'lucide-react';
 
 const Puck = dynamic(() => import('@measured/puck').then((mod) => mod.Puck), { ssr: false });
@@ -49,29 +59,40 @@ export default function VitrineEditeur() {
     loadPages();
   }, [loadPages]);
 
-  const handlePublish = useCallback(async (data: any) => {
-    if (!page) return;
-    setSaving(true);
-    try {
-      await builderApi.savePuckData(page.id, data);
-      setError('');
-    } catch (err: any) {
-      setError(err.message || 'Erreur de sauvegarde');
-    } finally {
-      setSaving(false);
-    }
-  }, [page]);
+  const handlePublish = useCallback(
+    async (data: any) => {
+      if (!page) return;
+      setSaving(true);
+      try {
+        const updated = await builderApi.savePuckData(page.id, data);
+        setPage(updated);
+        setError('');
+      } catch (err: any) {
+        setError(err.message || 'Erreur de sauvegarde');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [page]
+  );
 
-  const handlePageSwitch = useCallback(async (p: VitrinePage) => {
-    setPage(p);
-    setShowPageMenu(null);
-    router.replace({ query: { pageId: p.id } }, undefined, { shallow: true });
-  }, [router]);
+  const handlePageSwitch = useCallback(
+    async (p: VitrinePage) => {
+      setPage(p);
+      setShowPageMenu(null);
+      router.replace({ query: { pageId: p.id } }, undefined, { shallow: true });
+    },
+    [router]
+  );
 
   const handleCreatePage = useCallback(async () => {
     if (!newPageTitle.trim()) return;
     try {
-      const slug = newPageTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slug = newPageTitle
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
       const created = await builderApi.createPage({ slug, title: newPageTitle.trim() });
       setPages((prev) => [...prev, created]);
       setPage(created);
@@ -83,33 +104,44 @@ export default function VitrineEditeur() {
     }
   }, [newPageTitle, router]);
 
-  const handleDeletePage = useCallback(async (pageToDelete: VitrinePage) => {
-    if (pageToDelete.isDefault) { setError('Impossible de supprimer la page par défaut'); return; }
-    if (!confirm(`Supprimer la page "${pageToDelete.title}" ?`)) return;
-    try {
-      await builderApi.deletePage(pageToDelete.id);
-      const remaining = pages.filter((p) => p.id !== pageToDelete.id);
-      setPages(remaining);
-      if (page?.id === pageToDelete.id && remaining.length > 0) {
-        setPage(remaining[0]);
+  const handleDeletePage = useCallback(
+    async (pageToDelete: VitrinePage) => {
+      if (pageToDelete.isDefault) {
+        setError('Impossible de supprimer la page par défaut');
+        return;
       }
-      setShowPageMenu(null);
-    } catch (err: any) {
-      setError(err.message || 'Erreur suppression');
-    }
-  }, [pages, page]);
+      if (!confirm(`Supprimer la page "${pageToDelete.title}" ?`)) return;
+      try {
+        await builderApi.deletePage(pageToDelete.id);
+        const remaining = pages.filter((p) => p.id !== pageToDelete.id);
+        setPages(remaining);
+        if (page?.id === pageToDelete.id && remaining.length > 0) {
+          setPage(remaining[0]);
+        }
+        setShowPageMenu(null);
+      } catch (err: any) {
+        setError(err.message || 'Erreur suppression');
+      }
+    },
+    [pages, page]
+  );
 
-  const handleRenamePage = useCallback(async (pageToRename: VitrinePage) => {
-    if (!renameValue.trim()) return;
-    try {
-      await builderApi.updatePage(pageToRename.id, { title: renameValue.trim() });
-      setPages((prev) => prev.map((p) => p.id === pageToRename.id ? { ...p, title: renameValue.trim() } : p));
-      if (page?.id === pageToRename.id) setPage({ ...pageToRename, title: renameValue.trim() });
-      setRenamingPage(null);
-    } catch (err: any) {
-      setError(err.message || 'Erreur renommage');
-    }
-  }, [renameValue, page]);
+  const handleRenamePage = useCallback(
+    async (pageToRename: VitrinePage) => {
+      if (!renameValue.trim()) return;
+      try {
+        await builderApi.updatePage(pageToRename.id, { title: renameValue.trim() });
+        setPages((prev) =>
+          prev.map((p) => (p.id === pageToRename.id ? { ...p, title: renameValue.trim() } : p))
+        );
+        if (page?.id === pageToRename.id) setPage({ ...pageToRename, title: renameValue.trim() });
+        setRenamingPage(null);
+      } catch (err: any) {
+        setError(err.message || 'Erreur renommage');
+      }
+    },
+    [renameValue, page]
+  );
 
   const handlePreview = useCallback(() => {
     if (!siteSlug || !page) return;
@@ -138,7 +170,9 @@ export default function VitrineEditeur() {
           <div className="text-center max-w-md px-8 py-12 bg-white rounded-2xl shadow-lg">
             <LayoutTemplate className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Aucune page créée</h2>
-            <p className="text-gray-500 mb-6 text-sm">Commencez par choisir un template pour créer vos pages automatiquement.</p>
+            <p className="text-gray-500 mb-6 text-sm">
+              Commencez par choisir un template pour créer vos pages automatiquement.
+            </p>
             <button
               onClick={() => router.push('/vitrine/templates')}
               className="px-6 py-3 bg-[#1E3A5F] text-white rounded-xl font-semibold text-sm hover:bg-[#162d4a] transition-colors"
@@ -153,9 +187,10 @@ export default function VitrineEditeur() {
 
   if (!page) return null;
 
-  const initialData = page.puckData && typeof page.puckData === 'object' && page.puckData.content
-    ? page.puckData
-    : { content: [], root: {} };
+  const initialData =
+    page.puckData && typeof page.puckData === 'object' && page.puckData.content
+      ? page.puckData
+      : { content: [], root: {} };
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -179,7 +214,7 @@ export default function VitrineEditeur() {
           {/* Onglets pages */}
           <div className="flex items-center gap-1 flex-1 overflow-x-auto">
             {pages.map((p) => (
-              <div key={p.id} className="relative flex-shrink-0">
+              <div key={p.id} className="relative flex-shrink-0 group">
                 {renamingPage === p.id ? (
                   <input
                     value={renameValue}
@@ -206,7 +241,10 @@ export default function VitrineEditeur() {
                 )}
                 {/* Context menu button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowPageMenu(showPageMenu === p.id ? null : p.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPageMenu(showPageMenu === p.id ? null : p.id);
+                  }}
                   className="ml-0.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/20 text-gray-400 hover:text-white transition-all"
                 >
                   <MoreVertical className="w-3 h-3" />
@@ -214,7 +252,11 @@ export default function VitrineEditeur() {
                 {showPageMenu === p.id && (
                   <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 z-50 min-w-36 py-1">
                     <button
-                      onClick={() => { setRenamingPage(p.id); setRenameValue(p.title); setShowPageMenu(null); }}
+                      onClick={() => {
+                        setRenamingPage(p.id);
+                        setRenameValue(p.title);
+                        setShowPageMenu(null);
+                      }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <Pencil className="w-3.5 h-3.5" /> Renommer
@@ -238,13 +280,26 @@ export default function VitrineEditeur() {
                 <input
                   value={newPageTitle}
                   onChange={(e) => setNewPageTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreatePage(); if (e.key === 'Escape') setShowNewPage(false); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreatePage();
+                    if (e.key === 'Escape') setShowNewPage(false);
+                  }}
                   placeholder="Nom de la page"
                   autoFocus
                   className="px-2 py-1 rounded border border-blue-400 bg-white text-gray-900 text-xs w-32"
                 />
-                <button onClick={handleCreatePage} className="px-2 py-1 bg-emerald-500 text-white rounded text-xs font-bold">✓</button>
-                <button onClick={() => setShowNewPage(false)} className="px-2 py-1 bg-gray-600 text-white rounded text-xs">✕</button>
+                <button
+                  onClick={handleCreatePage}
+                  className="px-2 py-1 bg-emerald-500 text-white rounded text-xs font-bold"
+                >
+                  ✓
+                </button>
+                <button
+                  onClick={() => setShowNewPage(false)}
+                  className="px-2 py-1 bg-gray-600 text-white rounded text-xs"
+                >
+                  ✕
+                </button>
               </div>
             ) : (
               <button
@@ -299,6 +354,7 @@ export default function VitrineEditeur() {
         {/* Puck Editor — prend tout l'espace restant */}
         <div className="flex-1 overflow-hidden">
           <Puck
+            key={page.id}
             config={puckConfig as any}
             data={initialData}
             onPublish={handlePublish}
@@ -307,12 +363,23 @@ export default function VitrineEditeur() {
       </div>
 
       {/* Puck CSS */}
+      <Head>
+        <link rel="stylesheet" href="https://unpkg.com/@measured/puck@0.20.2/puck.css" />
+      </Head>
       <style jsx global>{`
-        @import url('https://unpkg.com/@measured/puck@0.20.2/puck.css');
         /* Forcer Puck à remplir son conteneur */
-        .Puck { height: 100% !important; }
-        .Puck-root { height: 100% !important; display: flex; flex-direction: column; }
-        .Puck-root > div:last-child { flex: 1; overflow: hidden; }
+        .Puck {
+          height: 100% !important;
+        }
+        .Puck-root {
+          height: 100% !important;
+          display: flex;
+          flex-direction: column;
+        }
+        .Puck-root > div:last-child {
+          flex: 1;
+          overflow: hidden;
+        }
       `}</style>
     </div>
   );

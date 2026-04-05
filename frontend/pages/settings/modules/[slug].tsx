@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -164,7 +166,7 @@ export default function ModuleConfigPage() {
   }
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>Configuration {module.name}</title>
       </Head>
@@ -214,15 +216,15 @@ export default function ModuleConfigPage() {
           <CardContent>
             <div className="flex items-center space-x-2">
               {module.isActive ? (
-                <>
+                 <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-green-600 font-medium">Module actif</span>
-                </>
+                </MainLayout>
               ) : (
-                <>
+                 <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
                   <AlertCircle className="h-4 w-4 text-orange-600" />
                   <span className="text-orange-600 font-medium">Module désactivé</span>
-                </>
+                </MainLayout>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
@@ -389,6 +391,6 @@ export default function ModuleConfigPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </MainLayout>
   );
 }

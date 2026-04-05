@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -96,7 +98,7 @@ export default function AIBillingDashboard() {
   }
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>AI Billing - Gestion Crédits & Facturation IA</title>
         <meta name="description" content="Gestion des crédits IA, usage et facturation" />
@@ -348,6 +350,6 @@ export default function AIBillingDashboard() {
           )}
         </Tabs>
       </div>
-    </>
+    </MainLayout>
   );
 }

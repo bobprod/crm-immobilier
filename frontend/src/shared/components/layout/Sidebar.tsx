@@ -63,6 +63,18 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/dashboard',
   },
   {
+    id: 'prospects',
+    label: 'Prospects',
+    icon: UserCircle,
+    path: '/prospects',
+  },
+  {
+    id: 'properties',
+    label: 'Propriétés',
+    icon: Building2,
+    path: '/properties',
+  },
+  {
     id: 'prospection',
     label: 'Prospection',
     icon: Search,

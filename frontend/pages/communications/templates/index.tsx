@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import communicationsService, { Template, CreateTemplateDto } from '@/modules/communications/communications.service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -394,6 +394,6 @@ export default function TemplatesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

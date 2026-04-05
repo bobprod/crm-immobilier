@@ -19,9 +19,7 @@ backendApiClient.interceptors.request.use(
           config.headers = {} as any;
         }
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('[API Client] Token attached to request:', token.substring(0, 20) + '...');
       } else {
-        console.log('[API Client] No token found in localStorage');
       }
     }
     return config;
@@ -47,14 +45,12 @@ backendApiClient.interceptors.response.use(
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
-        console.log('[API Client] Redirecting to login...');
         window.location.href = '/login';
       } else if (typeof window !== 'undefined') {
         // Just clear tokens if we are on a public page like home
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
-        console.log('[API Client] 401 on public page - tokens cleared, no redirect');
       }
     }
     return Promise.reject(error);

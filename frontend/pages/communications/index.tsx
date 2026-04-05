@@ -1,11 +1,11 @@
 import React from 'react';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import CommunicationCenter from '@/modules/communications/components/CommunicationCenter';
 
 export default function CommunicationsPage() {
   return (
-    <Layout>
+    <MainLayout title="Communications" breadcrumbs={[{ label: 'Communications' }]}>
       <CommunicationCenter />
-    </Layout>
+    </MainLayout>
   );
 }

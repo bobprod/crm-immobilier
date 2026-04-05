@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -82,7 +82,7 @@ export default function CommissionDetailPage() {
                 <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-            </Layout>
+            </MainLayout>
         );
     }
 
@@ -93,7 +93,7 @@ export default function CommissionDetailPage() {
                     <AlertCircle className="h-5 w-5 mr-2" />
                     {error || 'Commission non trouvée'}
                 </div>
-            </Layout>
+            </MainLayout>
         );
     }
 
@@ -338,6 +338,6 @@ export default function CommissionDetailPage() {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
 }

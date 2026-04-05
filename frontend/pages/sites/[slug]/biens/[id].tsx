@@ -34,6 +34,9 @@ interface PropertyPageProps {
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
+  sale: 'À Vendre',
+  rent: 'À Louer',
+  seasonal_rent: 'Location saisonnière',
   SALE: 'À Vendre',
   RENT: 'À Louer',
   SEASONAL_RENT: 'Location saisonnière',
@@ -42,6 +45,7 @@ const fmt = (n: number) => n.toLocaleString('fr-TN');
 
 const PropertyDetailPage: NextPage<PropertyPageProps> = ({ config, property, slug }) => {
   const primaryColor = config.primaryColor || '#1e40af';
+  const normalizedCategory = (property.category || '').toLowerCase();
   const [imageIdx, setImageIdx] = useState(0);
   const images = property.images || [];
 
@@ -77,6 +81,7 @@ const PropertyDetailPage: NextPage<PropertyPageProps> = ({ config, property, slu
   return (
     <AgencyLayout
       config={config}
+      userId={config.userId}
       pageTitle={property.title}
       pageDescription={property.seo?.metaDescription || property.description}
       ogImage={images[0]}
@@ -180,7 +185,9 @@ const PropertyDetailPage: NextPage<PropertyPageProps> = ({ config, property, slu
                       className="text-xs font-semibold px-2.5 py-1 rounded-full text-white"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      {CATEGORY_LABEL[property.category] || property.category}
+                      {CATEGORY_LABEL[property.category] ||
+                        CATEGORY_LABEL[normalizedCategory] ||
+                        property.category}
                     </span>
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
                       {property.type}
@@ -207,7 +214,7 @@ const PropertyDetailPage: NextPage<PropertyPageProps> = ({ config, property, slu
               {/* Price */}
               <p className="text-3xl font-bold mt-4" style={{ color: primaryColor }}>
                 {fmt(property.price)} {property.currency}
-                {property.category === 'RENT' && (
+                {normalizedCategory === 'rent' && (
                   <span className="text-lg font-normal text-gray-500"> / mois</span>
                 )}
               </p>
@@ -290,7 +297,7 @@ const PropertyDetailPage: NextPage<PropertyPageProps> = ({ config, property, slu
             )}
 
             {/* Mortgage Calculator */}
-            {property.category === 'SALE' && (
+            {normalizedCategory === 'sale' && (
               <MortgageCalculator defaultAmount={property.price} primaryColor={primaryColor} />
             )}
           </div>

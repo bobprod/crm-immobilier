@@ -15,7 +15,7 @@ const AgentsPage: NextPage<AgentsPageProps> = ({ config, agents, slug }) => {
   const primaryColor = config.primaryColor || '#1e40af';
 
   return (
-    <AgencyLayout config={config} pageTitle="Notre équipe">
+    <AgencyLayout config={config} userId={config.userId} pageTitle="Notre équipe">
       {/* Page Header */}
       <div
         className="py-16 text-white"

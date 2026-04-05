@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -194,6 +194,6 @@ export default function NewCampaignPage() {
           </Card>
         </form>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

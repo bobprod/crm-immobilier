@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -45,7 +45,7 @@ export default function MarketingTrackingPage() {
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
-      </Layout>
+      </MainLayout>
     );
   }
 
@@ -223,6 +223,6 @@ export default function MarketingTrackingPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

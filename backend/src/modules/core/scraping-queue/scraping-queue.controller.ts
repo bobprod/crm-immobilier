@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
+import { AgencyAdminGuard } from '../../../shared/guards/agency-admin.guard';
 import { ScrapingQueueService } from './scraping-queue.service';
 import { CreateScrapingJobDto, BatchScrapingJobDto } from './dto';
 
@@ -39,7 +40,7 @@ export class ScrapingQueueController {
   @Post('jobs/batch')
   @ApiOperation({
     summary: 'Créer un batch de jobs de scraping',
-    description: 'Traite un grand nombre d\'URLs avec contrôle de concurrence',
+    description: "Traite un grand nombre d'URLs avec contrôle de concurrence",
   })
   async createBatchJob(@Request() req, @Body() dto: BatchScrapingJobDto) {
     const userId = req.user.userId;
@@ -49,7 +50,7 @@ export class ScrapingQueueController {
 
   @Get('jobs')
   @ApiOperation({
-    summary: 'Lister les jobs de l\'utilisateur',
+    summary: "Lister les jobs de l'utilisateur",
     description: 'Récupère tous les jobs de scraping avec filtres',
   })
   @ApiQuery({ name: 'status', required: false, enum: ['waiting', 'active', 'completed', 'failed'] })
@@ -68,7 +69,7 @@ export class ScrapingQueueController {
 
   @Get('jobs/:jobId')
   @ApiOperation({
-    summary: 'Récupérer le statut d\'un job',
+    summary: "Récupérer le statut d'un job",
     description: 'Détails complets du job incluant progression et résultats',
   })
   async getJobStatus(@Param('jobId') jobId: string) {
@@ -102,6 +103,7 @@ export class ScrapingQueueController {
   // ═════════════════════════════════════════════════════════════════
 
   @Get('stats')
+  @UseGuards(AgencyAdminGuard)
   @ApiOperation({
     summary: 'Statistiques de la queue',
     description: 'Nombre de jobs par statut (waiting, active, completed, failed)',
@@ -111,23 +113,23 @@ export class ScrapingQueueController {
   }
 
   @Post('pause')
+  @UseGuards(AgencyAdminGuard)
   @ApiOperation({
     summary: 'Mettre la queue en pause',
     description: 'Arrête le traitement des jobs (admin uniquement)',
   })
   async pauseQueue(@Request() req) {
-    // TODO: Ajouter guard ADMIN
     await this.queueService.pauseQueue();
     return { message: 'Queue paused' };
   }
 
   @Post('resume')
+  @UseGuards(AgencyAdminGuard)
   @ApiOperation({
     summary: 'Reprendre la queue',
     description: 'Reprend le traitement des jobs (admin uniquement)',
   })
   async resumeQueue(@Request() req) {
-    // TODO: Ajouter guard ADMIN
     await this.queueService.resumeQueue();
     return { message: 'Queue resumed' };
   }

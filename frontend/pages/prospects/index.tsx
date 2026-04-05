@@ -1,26 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
+import { Input } from '@/shared/components/ui/input';
 import { useProspects } from '@/shared/hooks/useProspects';
-import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { Search, Plus, User } from 'lucide-react';
 
 export default function ProspectsListPage() {
   const { prospects, loading, refresh } = useProspects();
-  const { user } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-  }, [user, router]);
 
   const filteredProspects = prospects.filter(
     (p) =>
@@ -42,16 +35,17 @@ export default function ProspectsListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
+      <MainLayout title="Prospects" breadcrumbs={[{ label: 'Prospects' }]}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <Layout>
+    <MainLayout title="Prospects" breadcrumbs={[{ label: 'Prospects' }]}>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Prospects</h1>
@@ -65,7 +59,6 @@ export default function ProspectsListPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="relative">
@@ -80,7 +73,6 @@ export default function ProspectsListPage() {
           </CardContent>
         </Card>
 
-        {/* Liste Prospects */}
         <div className="grid gap-4">
           {filteredProspects.length === 0 ? (
             <Card>
@@ -124,6 +116,6 @@ export default function ProspectsListPage() {
           )}
         </div>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Textarea } from '@/shared/components/ui/textarea';
@@ -142,7 +142,7 @@ export default function PropertySeoDetailPage() {
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
-      </Layout>
+      </MainLayout>
     );
   }
 
@@ -160,7 +160,7 @@ export default function PropertySeoDetailPage() {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </MainLayout>
     );
   }
 
@@ -336,6 +336,6 @@ export default function PropertySeoDetailPage() {
           </Card>
         )}
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

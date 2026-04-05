@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 /**
  * Composant pour charger automatiquement les pixels de tracking dans les pages vitrines
  *
@@ -40,7 +42,7 @@ export function TrackingPixelsLoader({
 
     // Charger le script de tracking
     const script = document.createElement('script');
-    script.src = `/api/vitrine/tracking-script/${agencyId}`;
+    script.src = `${API_BASE}/vitrine/tracking-script/${agencyId}`;
     script.async = true;
     script.defer = true;
 

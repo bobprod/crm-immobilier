@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
+import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Activity,
   TrendingUp,
@@ -64,7 +66,7 @@ export default function AIOrchestratorDashboard() {
   };
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>AI Orchestrator - CRM Immobilier</title>
       </Head>
@@ -214,6 +216,6 @@ export default function AIOrchestratorDashboard() {
           </button>
         </div>
       </div>
-    </>
+    </MainLayout>
   );
 }

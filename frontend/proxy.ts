@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get('host') || '';
 
@@ -13,24 +13,24 @@ export function middleware(request: NextRequest) {
   ];
 
   const isMainDomain = mainDomains.some(
-    (d) => hostname === d || hostname.endsWith('.' + d.split(':')[0])
+    (d) => hostname === d || hostname.endsWith('.' + d.split(':')[0]),
   );
 
   if (isMainDomain) {
-    // Routes SaaS normales — ne pas toucher
+    // Routes SaaS normales - ne pas toucher
     return NextResponse.next();
   }
 
   // Extraire le slug depuis le sous-domaine ou chemin /sites/[slug]
   let slug: string | null = null;
 
-  // Cas 1 : Sous-domaine dynamique → firstimmo.crm-immo.com
+  // Cas 1 : Sous-domaine dynamique -> firstimmo.crm-immo.com
   const subdomain = hostname.split('.')[0];
   if (hostname.includes('.') && !isMainDomain && subdomain !== 'www') {
     slug = subdomain;
   }
 
-  // Cas 2 : Path-based → /sites/firstimmo (déjà géré par Next.js routing)
+  // Cas 2 : Path-based -> /sites/firstimmo (déjà géré par Next.js routing)
   if (!slug && url.pathname.startsWith('/sites/')) {
     return NextResponse.next();
   }
@@ -52,3 +52,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|api/).*)',
   ],
 };
+

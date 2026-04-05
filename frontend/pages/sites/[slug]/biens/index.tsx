@@ -194,7 +194,7 @@ const BiensPage: NextPage<BiensPageProps> = ({
   );
 
   return (
-    <AgencyLayout config={config} pageTitle="Tous nos biens">
+    <AgencyLayout config={config} userId={config.userId} pageTitle="Tous nos biens">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="mb-6 flex items-center justify-between">
           <div>

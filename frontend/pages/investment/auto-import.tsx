@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Upload,
   FileText,
@@ -473,6 +473,6 @@ export default function AutoImportPage() {
           </div>
         )}
       </div>
-    </>
+    </MainLayout>
   );
 }

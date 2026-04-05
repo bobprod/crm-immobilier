@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import propertiesAPI, { Property } from '../../shared/utils/properties-api';
-import { Button } from '../../shared/components/ui/button';
+import propertiesAPI, { Property } from '@/shared/utils/properties-api';
+import { Button } from '@/shared/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../shared/components/ui/card';
+} from '@/shared/components/ui/card';
 import {
   Table,
   TableBody,
@@ -16,9 +16,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../shared/components/ui/table';
+} from '@/shared/components/ui/table';
 import { Trash2, RefreshCw, XCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '../../shared/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function TrashedPropertiesPage() {
   const router = useRouter();
@@ -65,7 +65,11 @@ export default function TrashedPropertiesPage() {
   };
 
   const handlePermanentDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement ce bien ? Cette action est irréversible.')) {
+    if (
+      !confirm(
+        'Êtes-vous sûr de vouloir supprimer définitivement ce bien ? Cette action est irréversible.'
+      )
+    ) {
       return;
     }
 
@@ -89,9 +93,7 @@ export default function TrashedPropertiesPage() {
     if (selectedIds.size === 0) return;
 
     try {
-      await Promise.all(
-        Array.from(selectedIds).map((id) => propertiesAPI.restore(id))
-      );
+      await Promise.all(Array.from(selectedIds).map((id) => propertiesAPI.restore(id)));
       toast({
         title: 'Succès',
         description: `${selectedIds.size} bien(s) restauré(s)`,
@@ -146,9 +148,7 @@ export default function TrashedPropertiesPage() {
                 <Trash2 className="h-6 w-6" />
                 Corbeille
               </CardTitle>
-              <CardDescription>
-                Biens supprimés - {properties.length} bien(s)
-              </CardDescription>
+              <CardDescription>Biens supprimés - {properties.length} bien(s)</CardDescription>
             </div>
             <div className="flex gap-2">
               {selectedIds.size > 0 && (

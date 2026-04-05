@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -316,7 +317,7 @@ export default function ModuleRegistryPage() {
   }
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>Module Registry - Système Plug & Play</title>
       </Head>
@@ -518,6 +519,6 @@ export default function ModuleRegistryPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </>
+    </MainLayout>
   );
 }

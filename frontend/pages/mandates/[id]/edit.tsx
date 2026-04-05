@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import Layout from '@/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -85,7 +85,7 @@ export default function EditMandatePage() {
                 <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-            </Layout>
+            </MainLayout>
         );
     }
 
@@ -96,7 +96,7 @@ export default function EditMandatePage() {
                     <AlertCircle className="h-5 w-5 mr-2" />
                     {error || 'Mandat non trouvé'}
                 </div>
-            </Layout>
+            </MainLayout>
         );
     }
 
@@ -365,6 +365,6 @@ export default function EditMandatePage() {
                     </CardContent>
                 </Card>
             </div>
-        </Layout>
+        </MainLayout>
     );
 }

@@ -27,7 +27,14 @@ export function MatchingList() {
   };
 
   const handleAction = async (id: string, action: string) => {
-    await matchingService.performAction(id, action);
+    const actionMap: Record<string, string> = {
+      email: 'email',
+      call: 'call',
+      accept: 'appointment',
+      reject: 'email',
+    };
+    const backendAction = actionMap[action] || action;
+    await matchingService.performAction(id, backendAction);
     loadMatches();
   };
 

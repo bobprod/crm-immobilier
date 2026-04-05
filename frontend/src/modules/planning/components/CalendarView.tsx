@@ -316,3 +316,5 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     </div>
   );
 };
+
+export default CalendarView;

@@ -1,10 +1,10 @@
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { TransactionPipeline } from '../../src/modules/business/transactions/components/TransactionPipeline';
 
 export default function TransactionsPage() {
   return (
-    <Layout>
+    <MainLayout title="Transactions" breadcrumbs={[{ label: 'Transactions' }]}>
       <TransactionPipeline />
-    </Layout>
+    </MainLayout>
   );
 }

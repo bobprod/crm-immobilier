@@ -69,6 +69,12 @@ export function useMenu() {
       // Trier les items par ordre
       const sortedItems = menuArray.sort((a, b) => (a.order || 0) - (b.order || 0));
 
+      // Si aucun module activé, utiliser le menu par défaut
+      if (sortedItems.length === 0) {
+        setMenuItems(getDefaultMenu());
+        return;
+      }
+
       setMenuItems(sortedItems);
     } catch (err) {
       console.error('❌ Erreur lors du chargement du menu:', err);
@@ -128,7 +134,7 @@ function getDefaultMenu(): DynamicMenuItem[] {
       moduleId: 'sales-matching',
       label: 'Matching',
       icon: 'Target',
-      path: '/matching',
+      path: '/matching-dashboard',
       order: 3,
     },
     {
@@ -136,7 +142,7 @@ function getDefaultMenu(): DynamicMenuItem[] {
       moduleId: 'communications',
       label: 'Communications',
       icon: 'MessageSquare',
-      path: '/communications',
+      path: '/communications-dashboard',
       order: 4,
     },
     {
