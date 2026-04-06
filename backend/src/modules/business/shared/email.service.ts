@@ -339,4 +339,88 @@ export class EmailService {
 
     await this.sendEmail(userEmail, subject, html);
   }
+
+  /**
+   * Send welcome email to property owner when a mandate is created
+   */
+  async sendOwnerWelcomeEmail(ownerEmail: string, mandate: any) {
+    const subject = `🏠 Bienvenue – Mandat ${mandate.reference} signé avec succès`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Bienvenue chez CRM Immobilier !</h2>
+        <p>Votre mandat a été enregistré avec succès. Voici un récapitulatif :</p>
+
+        <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Référence :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${mandate.reference}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Type :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${mandate.type}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Catégorie :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${mandate.category}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date de début :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${new Date(mandate.startDate).toLocaleDateString('fr-FR')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date de fin :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${new Date(mandate.endDate).toLocaleDateString('fr-FR')}</td>
+          </tr>
+        </table>
+
+        <p style="margin-top: 20px; color: #555;">
+          Notre équipe prend en charge votre bien et vous contactera prochainement.
+          N'hésitez pas à nous contacter pour toute question.
+        </p>
+        <p style="color: #999; font-size: 12px;">L'équipe CRM Immobilier</p>
+      </div>
+    `;
+
+    await this.sendEmail(ownerEmail, subject, html);
+  }
+
+  /**
+   * Send payment confirmation email
+   */
+  async sendPaymentConfirmationEmail(userEmail: string, payment: any) {
+    const subject = `✅ Confirmation de paiement – ${payment.amount} ${payment.currency}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4CAF50;">✅ Paiement confirmé</h2>
+        <p>Votre paiement a bien été enregistré. Voici le détail :</p>
+
+        <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Montant :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>${payment.amount} ${payment.currency}</strong></td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Méthode :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${payment.method || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${new Date().toLocaleDateString('fr-FR')}</td>
+          </tr>
+          ${payment.reference ? `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Référence :</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${payment.reference}</td>
+          </tr>` : ''}
+        </table>
+
+        <p style="margin-top: 20px; color: #555;">
+          Merci pour votre paiement. Conservez cet email comme justificatif.
+        </p>
+        <p style="color: #999; font-size: 12px;">L'équipe CRM Immobilier</p>
+      </div>
+    `;
+
+    await this.sendEmail(userEmail, subject, html);
+  }
 }

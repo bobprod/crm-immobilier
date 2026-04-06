@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
+import { CommunicationsService } from '../../communications/communications.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private communicationsService: CommunicationsService,
+  ) {}
 
   /**
    * Créer une tâche
@@ -127,7 +131,7 @@ export class TasksService {
         completionRate: total > 0 ? Math.round((done / total) * 100) : 0,
       };
     } catch (error) {
-      console.error('Error fetching tasks stats:', error);
+      this.logger.error('Error fetching tasks stats:', error);
       // Retourner des valeurs par défaut en cas d'erreur
       return {
         total: 0,
@@ -192,12 +196,76 @@ export class TasksService {
     this.logger.log('Starting daily task reminders job...');
 
     try {
-      // TODO: Implémenter logique d'envoi de rappels
-      // 1. Récupérer les tâches dues aujourd'hui
-      // 2. Envoyer notifications par email/SMS
-      // 3. Logger les résultats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      this.logger.log('Daily task reminders sent successfully');
+      // 1. Récupérer les tâches dues aujourd'hui avec les infos utilisateur
+      const tasksDueToday = await this.prisma.tasks.findMany({
+        where: {
+          status: { in: ['todo', 'in_progress'] },
+          dueDate: { gte: today, lt: tomorrow },
+        },
+        include: {
+          user: { select: { id: true, email: true, firstName: true, lastName: true } },
+          prospects: { select: { firstName: true, lastName: true } },
+          properties: { select: { title: true } },
+        },
+      });
+
+      if (tasksDueToday.length === 0) {
+        this.logger.log('No tasks due today, skipping reminders.');
+        return;
+      }
+
+      // 2. Grouper les tâches par utilisateur
+      const tasksByUser: Record<string, (typeof tasksDueToday)[number][]> = {};
+      for (const task of tasksDueToday) {
+        if (!tasksByUser[task.userId]) tasksByUser[task.userId] = [];
+        tasksByUser[task.userId].push(task);
+      }
+
+      // 3. Envoyer une notification par email par utilisateur
+      let sentCount = 0;
+      for (const [userId, tasks] of Object.entries(tasksByUser)) {
+        const user = tasks[0].user;
+        if (!user?.email) continue;
+
+        const taskList = tasks
+          .map((t) => {
+            const related = t.prospects
+              ? `${t.prospects.firstName} ${t.prospects.lastName}`
+              : t.properties?.title || '';
+            return `• ${t.title}${related ? ` (${related})` : ''} [${t.priority}]`;
+          })
+          .join('\n');
+
+        const subject = `📋 Rappel : ${tasks.length} tâche${tasks.length > 1 ? 's' : ''} à faire aujourd'hui`;
+        const body = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Bonjour ${user.firstName || ''} 👋</h2>
+            <p>Vous avez <strong>${tasks.length} tâche${tasks.length > 1 ? 's' : ''}</strong> à traiter aujourd'hui :</p>
+            <pre style="background:#f5f5f5;padding:12px;border-radius:4px;white-space:pre-wrap;">${taskList}</pre>
+            <p style="margin-top:20px;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3003'}/tasks"
+                 style="background-color:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">
+                Voir mes tâches
+              </a>
+            </p>
+            <p style="color:#999;font-size:12px;">L'équipe CRM Immobilier</p>
+          </div>
+        `;
+
+        try {
+          await this.communicationsService.sendEmail(userId, { to: user.email, subject, body });
+          sentCount++;
+        } catch (emailError) {
+          this.logger.error(`Failed to send reminder to ${user.email}:`, emailError);
+        }
+      }
+
+      this.logger.log(`Daily task reminders sent: ${sentCount} emails for ${tasksDueToday.length} tasks`);
     } catch (error) {
       this.logger.error('Failed to send daily task reminders', error);
     }

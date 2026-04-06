@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import { IntegrationsService, CreateIntegrationDto, UpdateIntegrationDto } from './integrations.service';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { Roles } from '../../shared/decorators/roles.decorator';
 
 /**
  * 🔌 Contrôleur pour la gestion des intégrations API utilisateur
@@ -152,10 +154,9 @@ export class IntegrationsController {
    */
   @Post('admin/reset-usage')
   @HttpCode(HttpStatus.OK)
-  async resetMonthlyUsage(@Request() req) {
-    // TODO: Ajouter une vérification de rôle admin
-    // if (!req.user.isAdmin) throw new ForbiddenException();
-
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  async resetMonthlyUsage() {
     return this.integrationsService.resetMonthlyUsage();
   }
 
