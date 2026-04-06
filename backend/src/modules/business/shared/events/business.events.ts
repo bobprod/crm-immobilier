@@ -213,3 +213,62 @@ export class OwnerCreatedEvent {
     public readonly owner: any,
   ) {}
 }
+
+// ========== PROSPECT EVENTS ==========
+
+export class ProspectCreatedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly prospect: any,
+  ) {}
+}
+
+export class ProspectStatusChangedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly prospect: any,
+    public readonly oldStatus: string,
+    public readonly newStatus: string,
+  ) {}
+}
+
+export class ProspectConvertedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly prospect: any,
+  ) {}
+}
+
+// ========== APPOINTMENT EVENTS ==========
+
+export class AppointmentCreatedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly appointment: any,
+  ) {}
+}
+
+export class AppointmentStatusChangedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly appointment: any,
+    public readonly oldStatus: string,
+    public readonly newStatus: string,
+  ) {}
+}
+
+// ========== TASK EVENTS ==========
+
+export class TaskCreatedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly task: any,
+  ) {}
+}
+
+export class TaskCompletedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly task: any,
+  ) {}
+}
