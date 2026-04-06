@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '@/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -64,22 +64,31 @@ export default function PropertyDetailPage() {
 
   if (loading)
     return (
-      <Layout>
+      <MainLayout
+        title="Propriété"
+        breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: 'Chargement...' }]}
+      >
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      </Layout>
+      </MainLayout>
     );
 
   if (!property)
     return (
-      <Layout>
+      <MainLayout
+        title="Propriété"
+        breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: 'Non trouvé' }]}
+      >
         <div className="flex items-center justify-center p-8 text-red-500">Bien non trouvé</div>
-      </Layout>
+      </MainLayout>
     );
 
   return (
-    <Layout>
+    <MainLayout
+      title={property.title}
+      breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: property.title }]}
+    >
       <div className="container mx-auto py-8 space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => router.push('/properties')}>
@@ -280,6 +289,6 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -1,6 +1,15 @@
 import {
-  Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request,
-  UseInterceptors, UploadedFile,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -74,6 +83,28 @@ export class VitrineBuilderController {
     return this.builderService.createPage(req.user.userId, dto);
   }
 
+  // NOTE: static routes and sub-path routes MUST be declared before /:id
+  // to avoid NestJS matching them as the :id parameter
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Put('pages/reorder')
+  @ApiOperation({ summary: 'Reorder pages' })
+  async reorderPages(@Request() req, @Body() dto: ReorderPagesDto) {
+    return this.builderService.reorderPages(req.user.userId, dto.pages);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Put('pages/:id/puck-data')
+  @ApiOperation({ summary: 'Save Puck editor data for a page' })
+  async savePuckData(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { puckData: Record<string, any> },
+  ) {
+    return this.builderService.savePuckData(req.user.userId, id, body.puckData);
+  }
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Put('pages/:id')
@@ -84,26 +115,10 @@ export class VitrineBuilderController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Put('pages/:id/puck-data')
-  @ApiOperation({ summary: 'Save Puck editor data for a page' })
-  async savePuckData(@Request() req, @Param('id') id: string, @Body() body: { puckData: Record<string, any> }) {
-    return this.builderService.savePuckData(req.user.userId, id, body.puckData);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @Delete('pages/:id')
   @ApiOperation({ summary: 'Delete a page' })
   async deletePage(@Request() req, @Param('id') id: string) {
     return this.builderService.deletePage(req.user.userId, id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Put('pages/reorder')
-  @ApiOperation({ summary: 'Reorder pages' })
-  async reorderPages(@Request() req, @Body() dto: ReorderPagesDto) {
-    return this.builderService.reorderPages(req.user.userId, dto.pages);
   }
 
   // ============================================
@@ -114,28 +129,30 @@ export class VitrineBuilderController {
   @ApiBearerAuth()
   @Post('upload')
   @ApiOperation({ summary: 'Upload an image for the page builder' })
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e6);
-        const ext = extname(file.originalname).toLowerCase();
-        cb(null, `builder-${uniqueSuffix}${ext}`);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+          cb(null, uploadDir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e6);
+          const ext = extname(file.originalname).toLowerCase();
+          cb(null, `builder-${uniqueSuffix}${ext}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+      fileFilter: (req, file, cb) => {
+        const allowed = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
+        if (allowed.test(extname(file.originalname))) {
+          cb(null, true);
+        } else {
+          cb(new Error('Only image files are allowed'), false);
+        }
       },
     }),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
-    fileFilter: (req, file, cb) => {
-      const allowed = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
-      if (allowed.test(extname(file.originalname))) {
-        cb(null, true);
-      } else {
-        cb(new Error('Only image files are allowed'), false);
-      }
-    },
-  }))
+  )
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     return {
       url: `/uploads/vitrine/${file.filename}`,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -65,11 +65,7 @@ export default function ImportProjectPage() {
   };
 
   return (
-    <>
-      <Head>
-        <title>Importer un Projet d'Investissement</title>
-      </Head>
-
+    <MainLayout title="Importer un Projet" breadcrumbs={[{ label: 'Investissement', href: '/investment' }, { label: 'Importer' }]}>
       <div className="container max-w-3xl mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
@@ -312,6 +308,6 @@ export default function ImportProjectPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </MainLayout>
   );
 }

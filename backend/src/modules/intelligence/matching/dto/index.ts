@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GenerateMatchesDto {
@@ -38,6 +39,7 @@ export class UpdateMatchStatusDto {
 export class MatchFiltersDto {
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => value ? Number(value) : undefined)
   @IsNumber()
   minScore?: number;
 

@@ -45,15 +45,32 @@ export const vitrineAPI = {
 
   getPublishedProperties: async () => {
     const response = await apiClient.get('/vitrine/published-properties');
-    return response.data;
+    const rows = Array.isArray(response.data) ? response.data : [];
+    return rows.map((row: any) => ({
+      propertyId: row.id,
+      isFeatured: !!row.isFeatured,
+      publishedOrder: row.publishedOrder ?? 0,
+      property: {
+        ...row,
+      },
+    }));
   },
 
   // Analytics
   getAnalytics: async (days = 30) => {
+    const period = days <= 7 ? 'week' : days >= 365 ? 'year' : 'month';
     const response = await apiClient.get('/vitrine/analytics', {
-      params: { days },
+      params: { period },
     });
-    return response.data;
+    const payload = response.data || {};
+    const total = payload.total || {};
+
+    return {
+      ...payload,
+      totalViews: total.pageViews ?? 0,
+      totalVisitors: total.visitors ?? 0,
+      topProperties: payload.topProperties || [],
+    };
   },
 
   // Leads

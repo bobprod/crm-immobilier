@@ -26,7 +26,7 @@ const ContactPage: NextPage<ContactPageProps> = ({ config, slug, defaultType }) 
   const schedule = config.schedule || {};
 
   return (
-    <AgencyLayout config={config} pageTitle="Contact">
+    <AgencyLayout config={config} userId={config.userId} pageTitle="Contact">
       {/* Page Header */}
       <div
         className="py-16 text-white"

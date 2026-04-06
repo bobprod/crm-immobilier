@@ -78,7 +78,7 @@ export function TemplateSelector({ type, onSelect, isOpen, onClose }: TemplateSe
     const subject = selectedTemplate.subject
       ? replaceVariables(selectedTemplate.subject, variableValues)
       : undefined;
-    const body = replaceVariables(selectedTemplate.body, variableValues);
+    const body = replaceVariables(selectedTemplate.content, variableValues);
 
     onSelect({ subject, body });
     handleClose();
@@ -164,7 +164,7 @@ export function TemplateSelector({ type, onSelect, isOpen, onClose }: TemplateSe
                           <strong>Sujet:</strong> {template.subject}
                         </p>
                       )}
-                      <p className="text-sm text-gray-700 line-clamp-2">{template.body}</p>
+                      <p className="text-sm text-gray-700 line-clamp-2">{template.content}</p>
                     </div>
                   ))}
                 </div>
@@ -218,7 +218,7 @@ export function TemplateSelector({ type, onSelect, isOpen, onClose }: TemplateSe
               <div>
                 <p className="text-xs text-gray-500 mb-1">Message:</p>
                 <div className="text-sm whitespace-pre-wrap bg-white p-3 rounded border">
-                  {replaceVariables(selectedTemplate.body, variableValues)}
+                  {replaceVariables(selectedTemplate.content, variableValues)}
                 </div>
               </div>
             </div>

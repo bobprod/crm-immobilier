@@ -8,6 +8,7 @@ const publicApi = axios.create({ baseURL: `${API_BASE}/vitrine/public/slug` });
 
 export interface VitrineConfig {
   id: string;
+  userId?: string;
   agencyName: string;
   logo?: string;
   slogan?: string;

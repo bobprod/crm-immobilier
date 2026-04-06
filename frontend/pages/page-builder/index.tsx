@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -34,7 +34,7 @@ export default function PageBuilderListPage() {
   };
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-6">🎨 Page Builder</h1>
 
@@ -78,6 +78,6 @@ export default function PageBuilderListPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -26,8 +26,24 @@ export interface PaginatedResponse<T> {
  */
 
 // Type aliases for property attributes
-export type PropertyType = 'apartment' | 'house' | 'villa' | 'studio' | 'land' | 'commercial' | 'office' | 'garage' | 'other';
-export type PropertyStatus = 'available' | 'reserved' | 'sold' | 'rented' | 'pending' | 'draft' | 'archived';
+export type PropertyType =
+  | 'apartment'
+  | 'house'
+  | 'villa'
+  | 'studio'
+  | 'land'
+  | 'commercial'
+  | 'office'
+  | 'garage'
+  | 'other';
+export type PropertyStatus =
+  | 'available'
+  | 'reserved'
+  | 'sold'
+  | 'rented'
+  | 'pending'
+  | 'draft'
+  | 'archived';
 export type PropertyPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type PropertyCategory = 'sale' | 'rent' | 'vacation_rental';
 
@@ -39,7 +55,8 @@ export interface Property {
   title: string;
   description?: string;
   notes?: string;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  isFeatured?: boolean;
   tags?: string[];
   owner?: {
     firstName: string;
@@ -111,7 +128,7 @@ export interface CreatePropertyData {
   budget?: Record<string, any>;
 }
 
-export interface UpdatePropertyData extends Partial<CreatePropertyData> { }
+export interface UpdatePropertyData extends Partial<CreatePropertyData> {}
 
 export interface PropertyFilters {
   type?: string;
@@ -147,7 +164,9 @@ class PropertiesAPIService {
   /**
    * Récupérer tous les biens de l'utilisateur connecté
    */
-  async getMyProperties(params?: PaginationParams & PropertyFilters): Promise<PaginatedResponse<Property>> {
+  async getMyProperties(
+    params?: PaginationParams & PropertyFilters
+  ): Promise<PaginatedResponse<Property>> {
     const response = await apiClient.get<PaginatedResponse<Property>>('/properties', { params });
     return response.data;
   }
@@ -223,32 +242,50 @@ class PropertiesAPIService {
    * Supprimer plusieurs biens en masse
    */
   async bulkDelete(ids: string[]): Promise<{ message: string; deletedCount: number }> {
-    const response = await apiClient.post<{ message: string; deletedCount: number }>('/properties/bulk-delete', { ids });
+    const response = await apiClient.post<{ message: string; deletedCount: number }>(
+      '/properties/bulk-delete',
+      { ids }
+    );
     return response.data;
   }
 
   /**
    * Mettre à jour la priorité pour plusieurs biens
    */
-  async bulkUpdatePriority(ids: string[], priority: string): Promise<{ message: string; updatedCount: number }> {
-    const response = await apiClient.post<{ message: string; updatedCount: number }>('/properties/bulk-update-priority', { ids, priority });
+  async bulkUpdatePriority(
+    ids: string[],
+    priority: string
+  ): Promise<{ message: string; updatedCount: number }> {
+    const response = await apiClient.post<{ message: string; updatedCount: number }>(
+      '/properties/bulk-update-priority',
+      { ids, priority }
+    );
     return response.data;
   }
 
   /**
    * Mettre à jour le statut pour plusieurs biens
    */
-  async bulkUpdateStatus(ids: string[], status: string): Promise<{ message: string; updatedCount: number }> {
-    const response = await apiClient.post<{ message: string; updatedCount: number }>('/properties/bulk-update-status', { ids, status });
+  async bulkUpdateStatus(
+    ids: string[],
+    status: string
+  ): Promise<{ message: string; updatedCount: number }> {
+    const response = await apiClient.post<{ message: string; updatedCount: number }>(
+      '/properties/bulk-update-status',
+      { ids, status }
+    );
     return response.data;
   }
 
   /**
    * Rechercher des biens avec filtres
    */
-  async searchProperties(filters: PropertyFilters, params?: PaginationParams): Promise<PaginatedResponse<Property>> {
+  async searchProperties(
+    filters: PropertyFilters,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Property>> {
     const response = await apiClient.get<PaginatedResponse<Property>>('/properties/search', {
-      params: { ...filters, ...params }
+      params: { ...filters, ...params },
     });
     return response.data;
   }
@@ -257,7 +294,9 @@ class PropertiesAPIService {
    * Récupérer les biens publiés (vitrine)
    */
   async getPublishedProperties(params?: PaginationParams): Promise<PaginatedResponse<Property>> {
-    const response = await apiClient.get<PaginatedResponse<Property>>('/properties/published', { params });
+    const response = await apiClient.get<PaginatedResponse<Property>>('/properties/published', {
+      params,
+    });
     return response.data;
   }
 
@@ -307,7 +346,7 @@ class PropertiesAPIService {
    */
   async deletePropertyImage(id: string, imageUrl: string): Promise<Property> {
     const response = await apiClient.delete<Property>(`/properties/${id}/images`, {
-      data: { imageUrl }
+      data: { imageUrl },
     });
     return response.data;
   }
@@ -316,7 +355,9 @@ class PropertiesAPIService {
    * Générer une description IA pour un bien
    */
   async generatePropertyDescription(id: string): Promise<{ description: string }> {
-    const response = await apiClient.post<{ description: string }>(`/properties/${id}/generate-description`);
+    const response = await apiClient.post<{ description: string }>(
+      `/properties/${id}/generate-description`
+    );
     return response.data;
   }
 
@@ -338,7 +379,7 @@ class PropertiesAPIService {
    */
   async getSimilarProperties(id: string, limit: number = 5): Promise<Property[]> {
     const response = await apiClient.get<Property[]>(`/properties/${id}/similar`, {
-      params: { limit }
+      params: { limit },
     });
     return response.data;
   }
@@ -372,7 +413,7 @@ class PropertiesAPIService {
    */
   async getRecentlyViewed(limit: number = 10): Promise<Property[]> {
     const response = await apiClient.get<Property[]>('/properties/recently-viewed', {
-      params: { limit }
+      params: { limit },
     });
     return response.data;
   }
@@ -407,8 +448,13 @@ class PropertiesAPIService {
   /**
    * Récupérer les rendez-vous associés à un bien
    */
-  async getPropertyAppointments(id: string, params?: PaginationParams): Promise<PaginatedResponse<any>> {
-    const response = await apiClient.get<PaginatedResponse<any>>(`/properties/${id}/appointments`, { params });
+  async getPropertyAppointments(
+    id: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<any>> {
+    const response = await apiClient.get<PaginatedResponse<any>>(`/properties/${id}/appointments`, {
+      params,
+    });
     return response.data;
   }
 

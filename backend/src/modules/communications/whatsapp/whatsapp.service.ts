@@ -59,6 +59,39 @@ export class WhatsAppService {
     });
   }
 
+  async testConnection(userId: string) {
+    const config = await this.getConfig(userId);
+
+    if (!config.isActive) {
+      return {
+        success: false,
+        message: 'WhatsApp config is not active',
+      };
+    }
+
+    if (config.provider === 'meta') {
+      const hasRequiredFields = !!config.phoneNumberId && !!config.accessToken;
+      return {
+        success: hasRequiredFields,
+        message: hasRequiredFields
+          ? 'Meta WhatsApp configuration looks valid'
+          : 'Meta WhatsApp configuration is incomplete',
+      };
+    }
+
+    const hasRequiredFields =
+      !!config.twilioAccountSid &&
+      !!config.twilioAuthToken &&
+      !!config.twilioPhoneNumber;
+
+    return {
+      success: hasRequiredFields,
+      message: hasRequiredFields
+        ? 'Twilio WhatsApp configuration looks valid'
+        : 'Twilio WhatsApp configuration is incomplete',
+    };
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // MESSAGE SENDING
   // ═══════════════════════════════════════════════════════════════
@@ -321,6 +354,43 @@ export class WhatsAppService {
     };
   }
 
+  async markMessagesAsRead(userId: string, messageIds: string[]) {
+    if (!messageIds.length) {
+      return { updated: 0 };
+    }
+
+    const result = await this.prisma.whatsAppMessage.updateMany({
+      where: {
+        id: { in: messageIds },
+        conversation: { userId },
+      },
+      data: {
+        status: 'read',
+        readAt: new Date(),
+      },
+    });
+
+    const conversationIds = await this.prisma.whatsAppMessage.findMany({
+      where: {
+        id: { in: messageIds },
+        conversation: { userId },
+      },
+      select: { conversationId: true },
+      distinct: ['conversationId'],
+    });
+
+    await Promise.all(
+      conversationIds.map(({ conversationId }) =>
+        this.prisma.whatsAppConversation.update({
+          where: { id: conversationId },
+          data: { unreadCount: 0 },
+        }),
+      ),
+    );
+
+    return { updated: result.count };
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // CONVERSATION MANAGEMENT
   // ═══════════════════════════════════════════════════════════════
@@ -340,6 +410,10 @@ export class WhatsAppService {
 
     if (filters.leadId) {
       where.leadId = filters.leadId;
+    }
+
+    if (filters.prospectId) {
+      where.prospectId = filters.prospectId;
     }
 
     if (filters.assignedTo) {

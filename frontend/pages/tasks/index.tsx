@@ -1,11 +1,11 @@
 import React from 'react';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import TaskManager from '@/modules/business/tasks/components/TaskManager';
 
 export default function TasksPage() {
   return (
-    <Layout>
+    <MainLayout title="Tâches" breadcrumbs={[{ label: 'Tâches' }]}>
       <TaskManager />
-    </Layout>
+    </MainLayout>
   );
 }

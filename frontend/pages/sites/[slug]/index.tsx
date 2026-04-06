@@ -39,7 +39,12 @@ const VitrinePage: NextPage<HomePageProps> = ({
   const primaryColor = config.primaryColor || '#1e40af';
 
   return (
-    <AgencyLayout config={config} pageTitle="Accueil" canonical={`https://${slug}.immo-saas.tn`}>
+    <AgencyLayout
+      config={config}
+      userId={config.userId}
+      pageTitle="Accueil"
+      canonical={`https://${slug}.immo-saas.tn`}
+    >
       {/* HERO */}
       <HeroSection config={config} />
 

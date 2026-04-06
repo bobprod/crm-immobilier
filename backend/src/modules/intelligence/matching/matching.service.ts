@@ -394,11 +394,16 @@ export class MatchingService {
     if (filters?.propertyType) {
       where.type = filters.propertyType;
     }
-    if (filters?.location) {
-      where.city = { contains: filters.location as string, mode: 'insensitive' };
-    }
+    // Note: 'contains' not supported by pg driver — city filter applied in-memory below
 
-    const properties = await this.prisma.properties.findMany({ where });
+    const allProperties = await this.prisma.properties.findMany({ where });
+
+    // In-memory case-insensitive city filter
+    const properties = filters?.location
+      ? allProperties.filter((p: any) =>
+          p.city?.toLowerCase().includes((filters.location as string).toLowerCase()),
+        )
+      : allProperties;
 
     const matches = [];
     for (const property of properties) {
@@ -445,10 +450,17 @@ export class MatchingService {
 
     const where: any = { userId, status: 'active' };
     if (filters?.location) {
-      where.city = { contains: filters.location as string, mode: 'insensitive' };
+      // Note: 'contains' not supported — filter in-memory below
     }
 
-    const prospects = await this.prisma.prospects.findMany({ where });
+    const allProspects = await this.prisma.prospects.findMany({ where });
+
+    // In-memory case-insensitive city filter
+    const prospects = filters?.location
+      ? allProspects.filter((p: any) =>
+          p.city?.toLowerCase().includes((filters.location as string).toLowerCase()),
+        )
+      : allProspects;
 
     const matches = [];
     for (const prospect of prospects) {

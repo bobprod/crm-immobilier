@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import apiClient from '../utils/backend-api';
 
 interface Prospect {
   id: string;
@@ -16,31 +17,13 @@ export function useProspects() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-
-  const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  };
-
   const loadProspects = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await fetch(`${API_URL}/prospects`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des prospects');
-      }
-
-      const data = await response.json();
-      setProspects(data);
+      const response = await apiClient.get('/prospects');
+      const data = response.data;
+      setProspects(Array.isArray(data) ? data : data.data || []);
     } catch (err: any) {
       setError(err.message);
       console.error('Error loading prospects:', err);
@@ -65,18 +48,9 @@ export function useProspects() {
 
   const createProspect = async (data: Partial<Prospect>) => {
     try {
-      const response = await fetch(`${API_URL}/prospects`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du prospect');
-      }
-
-      const newProspect = await response.json();
-      setProspects([...prospects, newProspect]);
+      const response = await apiClient.post('/prospects', data);
+      const newProspect = response.data;
+      setProspects((prev) => [...prev, newProspect]);
       return newProspect;
     } catch (err: any) {
       setError(err.message);
@@ -86,18 +60,9 @@ export function useProspects() {
 
   const updateProspect = async (id: string, data: Partial<Prospect>) => {
     try {
-      const response = await fetch(`${API_URL}/prospects/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour du prospect');
-      }
-
-      const updatedProspect = await response.json();
-      setProspects(prospects.map((p) => (p.id === id ? updatedProspect : p)));
+      const response = await apiClient.put(`/prospects/${id}`, data);
+      const updatedProspect = response.data;
+      setProspects((prev) => prev.map((p) => (p.id === id ? updatedProspect : p)));
       return updatedProspect;
     } catch (err: any) {
       setError(err.message);
@@ -107,16 +72,8 @@ export function useProspects() {
 
   const deleteProspect = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/prospects/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du prospect');
-      }
-
-      setProspects(prospects.filter((p) => p.id !== id));
+      await apiClient.delete(`/prospects/${id}`);
+      setProspects((prev) => prev.filter((p) => p.id !== id));
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -125,15 +82,8 @@ export function useProspects() {
 
   const getProspectById = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/prospects/${id}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement du prospect');
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/prospects/${id}`);
+      return response.data;
     } catch (err: any) {
       setError(err.message);
       throw err;

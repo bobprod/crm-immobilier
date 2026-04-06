@@ -12,6 +12,12 @@ const nextConfig = {
   },
   // Enable standalone output for Docker
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Internationalization
+  i18n: {
+    locales: ['fr', 'en', 'ar'],
+    defaultLocale: 'fr',
+    localeDetection: true,
+  },
 };
 
 module.exports = nextConfig;

@@ -16,6 +16,9 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { PropertiesService } from './properties.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { CreatePropertyDto, UpdatePropertyDto, PaginationQueryDto } from './dto';
@@ -41,12 +44,10 @@ export class PropertiesController {
   }
 
   @Get('paginated')
-  @ApiOperation({ summary: 'Get paginated properties with cursor-based pagination for infinite scroll' })
-  findAllPaginated(
-    @Request() req,
-    @Query() pagination: PaginationQueryDto,
-    @Query() filters: any,
-  ) {
+  @ApiOperation({
+    summary: 'Get paginated properties with cursor-based pagination for infinite scroll',
+  })
+  findAllPaginated(@Request() req, @Query() pagination: PaginationQueryDto, @Query() filters: any) {
     return this.propertiesService.findAllPaginated(req.user.userId, pagination, filters);
   }
 
@@ -74,7 +75,12 @@ export class PropertiesController {
   @ApiOperation({ summary: 'Get nearby properties by geolocation' })
   @ApiQuery({ name: 'lat', required: true, type: Number })
   @ApiQuery({ name: 'lng', required: true, type: Number })
-  @ApiQuery({ name: 'radius', required: false, type: Number, description: 'Radius in km (default: 5)' })
+  @ApiQuery({
+    name: 'radius',
+    required: false,
+    type: Number,
+    description: 'Radius in km (default: 5)',
+  })
   findNearby(
     @Request() req,
     @Query('lat') lat: string,
@@ -170,7 +176,29 @@ export class PropertiesController {
 
   @Post(':id/images')
   @ApiOperation({ summary: 'Upload property images' })
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(
+    FilesInterceptor('images', 10, {
+      storage: diskStorage({
+        destination: (req: any, _file: any, cb: any) => {
+          const dir = `./uploads/properties/${req.params.id}`;
+          if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (_req: any, file: any, cb: any) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
+          cb(null, `img-${unique}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req: any, file: any, cb: any) => {
+        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(extname(file.originalname))) {
+          cb(null, true);
+        } else {
+          cb(new Error('Seules les images sont acceptées (jpg, png, webp)'), false);
+        }
+      },
+    }),
+  )
   uploadImages(
     @Request() req,
     @Param('id') id: string,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import communicationsService, { Communication } from '../communications.service';
 import { Inbox } from './Inbox';
 import { MessageViewer } from './MessageViewer';
@@ -20,11 +21,19 @@ import {
 import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function CommunicationCenter() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Communication[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Communication | null>(null);
   const [loading, setLoading] = useState(true);
   const [isComposing, setIsComposing] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (router.query.prospectId && !isComposing) {
+      setIsComposing(true);
+      router.replace('/communications', undefined, { shallow: true });
+    }
+  }, [router.query.prospectId, isComposing, router]);
 
   useEffect(() => {
     loadMessages();

@@ -1,9 +1,8 @@
 import { useRouter } from 'next/router';
-import { Button } from '@/shared/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import ProspectCard from '@/modules/business/prospects/components/ProspectCard';
 import { useAuth } from '@/modules/core/auth';
 import { useEffect } from 'react';
+import { MainLayout } from '@/shared/components/layout';
 
 export default function ProspectDetailPage() {
   const router = useRouter();
@@ -18,26 +17,23 @@ export default function ProspectDetailPage() {
 
   if (!id || typeof id !== 'string') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>ID prospect manquant</p>
-      </div>
+      <MainLayout
+        title="Prospect"
+        breadcrumbs={[{ label: 'Prospects', href: '/prospects' }, { label: '...' }]}
+      >
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          ID prospect manquant
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <Button variant="ghost" onClick={() => router.push('/prospects')} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour aux prospects
-          </Button>
-        </div>
-
-        {/* Prospect Card Component */}
-        <ProspectCard prospectId={id} />
-      </div>
-    </div>
+    <MainLayout
+      title="Détail prospect"
+      breadcrumbs={[{ label: 'Prospects', href: '/prospects' }, { label: 'Détail' }]}
+    >
+      <ProspectCard prospectId={id} />
+    </MainLayout>
   );
 }

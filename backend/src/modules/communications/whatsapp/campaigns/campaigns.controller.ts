@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CampaignsService } from './campaigns.service';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import {
   CreateCampaignDto,
   UpdateCampaignDto,
@@ -32,6 +33,7 @@ import {
 
 @ApiTags('WhatsApp Campaigns')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('whatsapp/campaigns')
 export class CampaignsController {
   constructor(private readonly campaignsService: CampaignsService) {}
@@ -64,7 +66,7 @@ export class CampaignsController {
     @Req() req: any,
     @Body() dto: CreateCampaignDto,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.createCampaign(req.user.id, dto);
+    return this.campaignsService.createCampaign(req.user.userId, dto);
   }
 
   @Get()
@@ -86,7 +88,7 @@ export class CampaignsController {
     @Req() req: any,
     @Query() filters: CampaignFiltersDto,
   ): Promise<CampaignsListResponseDto> {
-    return this.campaignsService.getCampaigns(req.user.id, filters);
+    return this.campaignsService.getCampaigns(req.user.userId, filters);
   }
 
   @Get(':id')
@@ -113,7 +115,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.getCampaign(req.user.id, id);
+    return this.campaignsService.getCampaign(req.user.userId, id);
   }
 
   @Put(':id')
@@ -144,7 +146,7 @@ export class CampaignsController {
     @Param('id') id: string,
     @Body() dto: UpdateCampaignDto,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.updateCampaign(req.user.id, id, dto);
+    return this.campaignsService.updateCampaign(req.user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -173,7 +175,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.campaignsService.deleteCampaign(req.user.id, id);
+    return this.campaignsService.deleteCampaign(req.user.userId, id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -208,7 +210,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.launchCampaign(req.user.id, id);
+    return this.campaignsService.launchCampaign(req.user.userId, id);
   }
 
   @Post(':id/pause')
@@ -237,7 +239,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.pauseCampaign(req.user.id, id);
+    return this.campaignsService.pauseCampaign(req.user.userId, id);
   }
 
   @Post(':id/resume')
@@ -266,7 +268,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.resumeCampaign(req.user.id, id);
+    return this.campaignsService.resumeCampaign(req.user.userId, id);
   }
 
   @Post(':id/cancel')
@@ -295,7 +297,7 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignResponseDto> {
-    return this.campaignsService.cancelCampaign(req.user.id, id);
+    return this.campaignsService.cancelCampaign(req.user.userId, id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -325,6 +327,15 @@ export class CampaignsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<CampaignStatsDto> {
-    return this.campaignsService.getCampaignStats(req.user.id, id);
+    return this.campaignsService.getCampaignStats(req.user.userId, id);
+  }
+
+  @Get(':id/recipients')
+  @ApiOperation({
+    summary: 'Get campaign recipients',
+    description: 'Retrieves all recipients for a specific campaign.',
+  })
+  async getCampaignRecipients(@Req() req: any, @Param('id') id: string) {
+    return this.campaignsService.getCampaignRecipients(req.user.userId, id);
   }
 }

@@ -4,6 +4,8 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { swaggerConfig } from './config';
 import { AllExceptionsFilter } from './shared/filters/all-exceptions.filter';
+import { join } from 'path';
+import * as express from 'express';
 
 const logger = new Logger('Bootstrap');
 
@@ -71,6 +73,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // Serve uploaded files as static assets
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // API prefix
   app.setGlobalPrefix('api');
