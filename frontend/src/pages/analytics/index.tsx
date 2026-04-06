@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
         setProspectsStats(ps);
         setPropertiesStats(props);
       } catch (e: any) {
-        setError(e?.message || 'Erreur lors du chargement');
+        setError(e?.message || 'Impossible de charger les données. Veuillez actualiser la page ou contacter le support si le problème persiste.');
       } finally {
         setLoading(false);
       }

@@ -254,7 +254,7 @@ export class AnalyticsEventHandlerService {
     try {
       await this.analyticsService.logEvent(userId, eventType, eventName, metadata);
     } catch (error) {
-      this.logger.error(`Failed to log analytics event [${eventName}]: ${error?.message}`);
+      this.logger.error(`Failed to log analytics event [${eventName}] for user ${userId} (type: ${eventType}): ${error?.message}`);
     }
   }
 }
