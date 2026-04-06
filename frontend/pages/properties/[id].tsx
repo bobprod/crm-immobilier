@@ -64,7 +64,10 @@ export default function PropertyDetailPage() {
 
   if (loading)
     return (
-      <Layout>
+      <MainLayout
+        title="Propriété"
+        breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: 'Chargement...' }]}
+      >
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -73,13 +76,19 @@ export default function PropertyDetailPage() {
 
   if (!property)
     return (
-      <Layout>
+      <MainLayout
+        title="Propriété"
+        breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: 'Non trouvé' }]}
+      >
         <div className="flex items-center justify-center p-8 text-red-500">Bien non trouvé</div>
       </MainLayout>
     );
 
   return (
-    <Layout>
+    <MainLayout
+      title={property.title}
+      breadcrumbs={[{ label: 'Propriétés', href: '/properties' }, { label: property.title }]}
+    >
       <div className="container mx-auto py-8 space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => router.push('/properties')}>

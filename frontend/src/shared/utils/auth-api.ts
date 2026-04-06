@@ -60,11 +60,22 @@ class AuthAPIService {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
     console.log('[AuthAPI] Tentative de connexion avec:', credentials.email, 'vers', API_URL);
 
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+    } catch (networkError: any) {
+      console.error('[AuthAPI] Erreur réseau:', networkError.message);
+      const error: any = new Error(
+        'Impossible de contacter le serveur. Vérifiez que le backend est démarré sur ' + API_URL
+      );
+      error.status = 0;
+      error.response = { status: 0, data: { message: error.message } };
+      throw error;
+    }
 
     console.log('[AuthAPI] Response status:', response.status);
 
@@ -78,7 +89,10 @@ class AuthAPIService {
     }
 
     const authResponse: AuthResponse = await response.json();
-    console.log('[AuthAPI] Login response OK, accessToken:', authResponse.accessToken?.substring(0, 20) + '...');
+    console.log(
+      '[AuthAPI] Login response OK, accessToken:',
+      authResponse.accessToken?.substring(0, 20) + '...'
+    );
 
     // Vérifier la structure de la réponse
     if (!authResponse.accessToken || !authResponse.refreshToken) {

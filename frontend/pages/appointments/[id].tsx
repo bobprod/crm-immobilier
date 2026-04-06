@@ -19,6 +19,8 @@ import {
   Star,
   Bell,
   Users,
+  ExternalLink,
+  Download,
 } from 'lucide-react';
 import {
   appointmentsAPI,
@@ -32,6 +34,8 @@ import {
   formatAppointmentDate,
   getAppointmentDuration,
 } from '@/shared/utils/appointments-api';
+import { downloadICalFile, getGoogleCalendarUrl } from '@/shared/services/integrations';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 export default function AppointmentDetailPage() {
   const router = useRouter();
@@ -39,6 +43,53 @@ export default function AppointmentDetailPage() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleExportICal = () => {
+    if (!appointment) return;
+    
+    try {
+      downloadICalFile({
+        id: appointment.id,
+        title: appointment.title,
+        type: appointment.type as any,
+        date: appointment.startTime.split('T')[0],
+        time: appointment.startTime.split('T')[1]?.slice(0, 5) || '00:00',
+        duration: getAppointmentDuration(appointment.startTime, appointment.endTime),
+        location: appointment.location || '',
+        clientName: appointment.prospects ? `${appointment.prospects.firstName} ${appointment.prospects.lastName}` : '',
+        clientEmail: appointment.prospects?.email || '',
+        clientPhone: appointment.prospects?.phone || '',
+        notes: appointment.description || '',
+        description: appointment.description || '',
+        status: appointment.status as any,
+      });
+      toast({ title: 'Succès', description: 'Fichier iCal téléchargé' });
+    } catch (err) {
+      toast({ title: 'Erreur', description: 'Échec de l\'export iCal', variant: 'destructive' });
+    }
+  };
+
+  const handleAddToGoogleCalendar = () => {
+    if (!appointment) return;
+    
+    const url = getGoogleCalendarUrl({
+      id: appointment.id,
+      title: appointment.title,
+      type: appointment.type as any,
+      date: appointment.startTime.split('T')[0],
+      time: appointment.startTime.split('T')[1]?.slice(0, 5) || '00:00',
+      duration: getAppointmentDuration(appointment.startTime, appointment.endTime),
+      location: appointment.location || '',
+      clientName: appointment.prospects ? `${appointment.prospects.firstName} ${appointment.prospects.lastName}` : '',
+      clientEmail: appointment.prospects?.email || '',
+      clientPhone: appointment.prospects?.phone || '',
+      notes: appointment.description || '',
+      description: appointment.description || '',
+      status: appointment.status as any,
+    });
+    window.open(url, '_blank');
+  };
 
   useEffect(() => {
     if (id) {
@@ -195,7 +246,7 @@ export default function AppointmentDetailPage() {
 
   if (loading) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -205,7 +256,7 @@ export default function AppointmentDetailPage() {
 
   if (error || !appointment) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="flex items-center justify-center p-8 text-red-500">
           <AlertCircle className="h-5 w-5 mr-2" />
           {error || 'Rendez-vous non trouvé'}
@@ -219,7 +270,7 @@ export default function AppointmentDetailPage() {
   const isPast = new Date(appointment.endTime) < new Date();
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -261,6 +312,14 @@ export default function AppointmentDetailPage() {
                 Marquer comme terminé
               </Button>
             )}
+            <Button variant="outline" onClick={handleAddToGoogleCalendar}>
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Google Calendar
+            </Button>
+            <Button variant="outline" onClick={handleExportICal}>
+              <Download className="mr-2 h-4 w-4" />
+              Exporter .ics
+            </Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer

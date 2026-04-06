@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { AuthProvider } from '@/modules/core/auth/components/AuthProvider';
 import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { I18nProvider } from '@/shared/hooks/useTranslation';
 
 // Routes publiques sans auth
 const PUBLIC_ROUTES = [
@@ -30,15 +31,17 @@ export default function App({ Component, pageProps }: AppProps) {
         console.error('App-level error:', error, errorInfo);
       }}
     >
-      <AuthProvider>
-        {isPublic ? (
-          <Component {...pageProps} />
-        ) : (
-          <ProtectedRoute>
+      <I18nProvider>
+        <AuthProvider>
+          {isPublic ? (
             <Component {...pageProps} />
-          </ProtectedRoute>
-        )}
-      </AuthProvider>
+          ) : (
+            <ProtectedRoute>
+              <Component {...pageProps} />
+            </ProtectedRoute>
+          )}
+        </AuthProvider>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

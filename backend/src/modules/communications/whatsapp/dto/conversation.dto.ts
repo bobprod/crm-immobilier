@@ -25,6 +25,11 @@ export class GetConversationsDto {
   @IsOptional()
   leadId?: string;
 
+  @ApiPropertyOptional({ description: 'Prospect ID filter' })
+  @IsString()
+  @IsOptional()
+  prospectId?: string;
+
   @ApiPropertyOptional({ description: 'Assigned to user ID' })
   @IsString()
   @IsOptional()

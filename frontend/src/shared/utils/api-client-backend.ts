@@ -102,6 +102,32 @@ export const campaignsAPI = {
   delete: (id: string) => backendApiClient.delete(`/campaigns/${id}`),
 };
 
+export const appointmentsAPI = {
+  getAll: (filters?: any) => backendApiClient.get('/appointments', { params: filters }),
+  getById: (id: string) => backendApiClient.get(`/appointments/${id}`),
+  create: (data: any) => backendApiClient.post('/appointments', data),
+  update: (id: string, data: any) => backendApiClient.put(`/appointments/${id}`, data),
+  delete: (id: string) => backendApiClient.delete(`/appointments/${id}`),
+  getUpcoming: (limit?: number) => backendApiClient.get('/appointments/upcoming', { params: { limit } }),
+  getToday: () => backendApiClient.get('/appointments/today'),
+  getStats: (startDate?: string, endDate?: string) => backendApiClient.get('/appointments/stats', { params: { startDate, endDate } }),
+  complete: (id: string, data: { outcome?: string; rating?: number }) => backendApiClient.post(`/appointments/${id}/complete`, data),
+  cancel: (id: string, data: { reason?: string }) => backendApiClient.post(`/appointments/${id}/cancel`, data),
+  getAvailability: (date: string, duration?: number) => backendApiClient.get('/appointments/availability', { params: { date, duration } }),
+};
+
+export const tasksAPI = {
+  getAll: (filters?: any) => backendApiClient.get('/tasks', { params: filters }),
+  getById: (id: string) => backendApiClient.get(`/tasks/${id}`),
+  create: (data: any) => backendApiClient.post('/tasks', data),
+  update: (id: string, data: any) => backendApiClient.put(`/tasks/${id}`, data),
+  delete: (id: string) => backendApiClient.delete(`/tasks/${id}`),
+  complete: (id: string) => backendApiClient.put(`/tasks/${id}/complete`),
+  getStats: () => backendApiClient.get('/tasks/stats'),
+  getToday: () => backendApiClient.get('/tasks/today'),
+  getOverdue: () => backendApiClient.get('/tasks/overdue'),
+};
+
 // Helper methods for components
 const apiClientHelpers = {
   getDashboardStats: async () => {

@@ -81,7 +81,7 @@ export default function EditMandatePage() {
 
     if (loadingData) {
         return (
-            <Layout>
+            <MainLayout>
                 <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -91,7 +91,7 @@ export default function EditMandatePage() {
 
     if (!mandate) {
         return (
-            <Layout>
+            <MainLayout>
                 <div className="flex items-center justify-center p-8 text-red-500">
                     <AlertCircle className="h-5 w-5 mr-2" />
                     {error || 'Mandat non trouvé'}
@@ -101,7 +101,7 @@ export default function EditMandatePage() {
     }
 
     return (
-        <Layout>
+        <MainLayout>
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Button

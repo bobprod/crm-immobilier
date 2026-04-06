@@ -94,7 +94,7 @@ export default function LLMProvidersPage() {
 
   if (loading) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -104,7 +104,7 @@ export default function LLMProvidersPage() {
   }
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

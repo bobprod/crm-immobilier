@@ -96,6 +96,24 @@ export const matchingAPI = {
     return response.data;
   },
 
+  // Générer tous les matchings automatiquement (persiste en base)
+  generateAllMatches: async (): Promise<MatchingResult[]> => {
+    const response = await apiClient.post('/matching/generate');
+    return response.data;
+  },
+
+  // Mettre à jour le statut d'un match
+  updateMatchStatus: async (id: string, status: string): Promise<MatchingResult> => {
+    const response = await apiClient.put(`/matching/${id}/status`, { status });
+    return response.data;
+  },
+
+  // Effectuer une action sur un match (ex: créer RDV)
+  performAction: async (id: string, action: any): Promise<any> => {
+    const response = await apiClient.post(`/matching/${id}/action`, action);
+    return response.data;
+  },
+
   // Supprimer un matching
   deleteMatch: async (id: string): Promise<void> => {
     await apiClient.delete(`/matching/${id}`);

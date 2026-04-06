@@ -1,1153 +1,710 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import prospectsAPI, { Prospect, ProspectStats } from '@/shared/utils/prospects-api';
-import propertiesAPI, { Property, PropertyStats } from '@/shared/utils/properties-api';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { matchingAPI, MatchingResult, MatchingStats } from '@/shared/utils/matching-api';
-import {
-    mandatesAPI,
-    Mandate,
-    MandateStats,
-    MandateType,
-    MandateStatus,
-    MandateCategory,
-    getMandateTypeLabel,
-    getMandateCategoryLabel,
-    getMandateStatusLabel,
-    getMandateStatusColor,
-    getMandateTypeColor,
-    formatMandatePrice,
-    formatMandateCommission,
-    getMandateDaysRemaining,
-    isMandateExpiringSoon,
-} from '@/shared/utils/mandates-api';
-import {
-    ownersAPI,
-    Owner,
-    OwnerStats,
-    getOwnerFullName,
-    getOwnerInitials,
-} from '@/shared/utils/owners-api';
 
 interface MatchingDashboardProps {
-    language?: 'fr' | 'en';
+  language?: 'fr' | 'en';
 }
 
-type TabType = 'prospects' | 'mandates' | 'properties' | 'matching-view';
+type TabType = 'results' | 'generate';
 
-// Helpers pour formater les données
-const formatPrice = (price: number, currency: string = 'TND') => {
-    return new Intl.NumberFormat('fr-TN', {
-        style: 'currency',
-        currency: currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(price);
+/* --- Helpers --- */
+const formatPrice = (price: number, currency = 'TND') =>
+  new Intl.NumberFormat('fr-TN', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+
+const MATCH_STATUS: Record<string, { label: string; color: string; icon: string; order: number }> =
+  {
+    pending: { label: 'En attente', color: 'bg-gray-100 text-gray-700', icon: '\u23F3', order: 0 },
+    contacted: {
+      label: 'Contact\u00E9',
+      color: 'bg-blue-100 text-blue-700',
+      icon: '\uD83D\uDCDE',
+      order: 1,
+    },
+    visited: {
+      label: 'Visit\u00E9',
+      color: 'bg-purple-100 text-purple-700',
+      icon: '\uD83C\uDFE0',
+      order: 2,
+    },
+    offered: {
+      label: 'Offre faite',
+      color: 'bg-amber-100 text-amber-700',
+      icon: '\uD83D\uDCB0',
+      order: 3,
+    },
+    negotiating: {
+      label: 'N\u00E9gociation',
+      color: 'bg-orange-100 text-orange-700',
+      icon: '\uD83E\uDD1D',
+      order: 4,
+    },
+    accepted: {
+      label: 'Accept\u00E9',
+      color: 'bg-emerald-100 text-emerald-700',
+      icon: '\u2705',
+      order: 5,
+    },
+    rejected: { label: 'Refus\u00E9', color: 'bg-red-100 text-red-700', icon: '\u274C', order: 6 },
+    success: {
+      label: 'Conclu',
+      color: 'bg-green-100 text-green-700',
+      icon: '\uD83C\uDF89',
+      order: 7,
+    },
+  };
+
+const getStatus = (s?: string) => MATCH_STATUS[s || 'pending'] || MATCH_STATUS.pending;
+
+const PROSPECT_TYPE: Record<string, { label: string; color: string }> = {
+  buyer: { label: 'Acheteur', color: 'bg-blue-100 text-blue-800' },
+  seller: { label: 'Vendeur', color: 'bg-green-100 text-green-800' },
+  renter: { label: 'Locataire', color: 'bg-purple-100 text-purple-800' },
+  landlord: { label: 'Bailleur', color: 'bg-orange-100 text-orange-800' },
+  investor: { label: 'Investisseur', color: 'bg-yellow-100 text-yellow-800' },
 };
 
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
-};
-
-const getProspectTypeBadge = (type: string) => {
-    const types: Record<string, { label: string; color: string }> = {
-        buyer: { label: 'Acheteur', color: 'bg-blue-100 text-blue-800' },
-        seller: { label: 'Vendeur', color: 'bg-green-100 text-green-800' },
-        renter: { label: 'Locataire', color: 'bg-purple-100 text-purple-800' },
-        landlord: { label: 'Bailleur', color: 'bg-orange-100 text-orange-800' },
-        investor: { label: 'Investisseur', color: 'bg-yellow-100 text-yellow-800' },
-        other: { label: 'Autre', color: 'bg-gray-100 text-gray-800' },
-    };
-    return types[type] || types.other;
-};
-
-const getPropertyStatusBadge = (status: string) => {
-    const statuses: Record<string, { label: string; color: string }> = {
-        available: { label: 'Disponible', color: 'bg-green-100 text-green-800' },
-        reserved: { label: 'Réservé', color: 'bg-yellow-100 text-yellow-800' },
-        sold: { label: 'Vendu', color: 'bg-red-100 text-red-800' },
-        rented: { label: 'Loué', color: 'bg-blue-100 text-blue-800' },
-        pending: { label: 'En attente', color: 'bg-gray-100 text-gray-800' },
-        draft: { label: 'Brouillon', color: 'bg-gray-100 text-gray-800' },
-        archived: { label: 'Archivé', color: 'bg-gray-100 text-gray-800' },
-    };
-    return statuses[status] || statuses.pending;
-};
-
-const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-};
+type StatusFilter = 'all' | string;
+type SortKey = 'score' | 'date' | 'status';
 
 /**
- * Module Matching - Dashboard avec tabs Prospects, Mandats, Biens et Vue Matching
- * Connecté aux vraies APIs backend
+ * Module Matching - Dashboard epure
+ * Tab 1 : Resultats (tous les matchs avec pipeline + actions)
+ * Tab 2 : Generer  (batch generation + statistiques)
  */
-export const MatchingDashboard: React.FC<MatchingDashboardProps> = ({ language = 'fr' }) => {
-    const [activeTab, setActiveTab] = useState<TabType>('prospects');
-    const [prospects, setProspects] = useState<Prospect[]>([]);
-    const [mandates, setMandates] = useState<Mandate[]>([]);
-    const [properties, setProperties] = useState<Property[]>([]);
-    const [matches, setMatches] = useState<MatchingResult[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export const MatchingDashboard: React.FC<MatchingDashboardProps> = () => {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<TabType>('results');
+  const [matches, setMatches] = useState<MatchingResult[]>([]);
+  const [stats, setStats] = useState<MatchingStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-    // Stats
-    const [prospectStats, setProspectStats] = useState<ProspectStats | null>(null);
-    const [mandateStats, setMandateStats] = useState<MandateStats | null>(null);
-    const [propertyStats, setPropertyStats] = useState<PropertyStats | null>(null);
-    const [matchingStats, setMatchingStats] = useState<MatchingStats | null>(null);
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('score');
 
-    // Filters
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('');
-    const [typeFilter, setTypeFilter] = useState<string>('');
-    const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [matchesData, statsData] = await Promise.all([
+        matchingAPI.getAllMatches(),
+        matchingAPI.getStats(),
+      ]);
+      setMatches(matchesData || []);
+      setStats(statsData);
+    } catch (err: any) {
+      console.error('Error loading matches:', err);
+      setError(err.message || 'Erreur lors du chargement');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    // Types de prospects pour le tab "Requêtes" (ceux qui cherchent un bien)
-    const REQUETE_TYPES = ['buyer', 'renter', 'investor'];
-    // Types de prospects qui sont des propriétaires (gérés via Mandats)
-    const MANDAT_TYPES = ['seller', 'landlord', 'owner'];
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-    // Filtrer les prospects pour n'afficher que les "Requêtes"
-    const filteredProspects = prospects.filter(p => REQUETE_TYPES.includes(p.type));
+  const handleGenerateAll = async () => {
+    setGenerating(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const generated = await matchingAPI.generateAllMatches();
+      const count = Array.isArray(generated) ? generated.length : 0;
+      setSuccessMsg(`${count} correspondance(s) generee(s) avec succes !`);
+      await loadData();
+    } catch (err: any) {
+      console.error('Error generating:', err);
+      setError(err.message || 'Erreur lors de la generation');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
-    // Load data based on active tab
-    const loadData = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            if (activeTab === 'prospects') {
-                const [prospectsResponse, stats] = await Promise.all([
-                    prospectsAPI.getMyProspects({
-                        status: statusFilter || undefined,
-                        type: typeFilter || undefined,
-                        search: searchTerm || undefined,
-                    }),
-                    prospectsAPI.getStats(),
-                ]);
-                // On stocke tous les prospects, le filtrage se fait après
-                setProspects(prospectsResponse.data || []);
-                setProspectStats(stats);
-            } else if (activeTab === 'mandates') {
-                const [mandatesData, stats] = await Promise.all([
-                    mandatesAPI.list({
-                        status: statusFilter || undefined,
-                        type: typeFilter || undefined,
-                        category: categoryFilter || undefined,
-                    }),
-                    mandatesAPI.getStats(),
-                ]);
-                setMandates(mandatesData || []);
-                setMandateStats(stats);
-            } else if (activeTab === 'properties') {
-                const [propertiesResponse, stats] = await Promise.all([
-                    propertiesAPI.getMyProperties({
-                        status: statusFilter || undefined,
-                        type: typeFilter || undefined,
-                        search: searchTerm || undefined,
-                    }),
-                    propertiesAPI.getPropertyStats(),
-                ]);
-                setProperties(propertiesResponse.data || []);
-                setPropertyStats(stats);
-            } else {
-                const [matchesData, stats] = await Promise.all([
-                    matchingAPI.getAllMatches(),
-                    matchingAPI.getStats(),
-                ]);
-                setMatches(matchesData || []);
-                setMatchingStats(stats);
-            }
-        } catch (err: any) {
-            console.error('Error loading data:', err);
-            setError(err.message || 'Erreur lors du chargement des données');
-        } finally {
-            setLoading(false);
-        }
-    }, [activeTab, statusFilter, typeFilter, categoryFilter, searchTerm]);
+  const handleUpdateStatus = async (matchId: string, newStatus: string) => {
+    try {
+      await matchingAPI.updateMatchStatus(matchId, newStatus);
+      setMatches((prev) => prev.map((m) => (m.id === matchId ? { ...m, status: newStatus } : m)));
+    } catch (err: any) {
+      setError(err.message || 'Erreur');
+    }
+  };
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
+  const handleDeleteMatch = async (matchId: string) => {
+    if (!confirm('Supprimer cette correspondance ?')) return;
+    try {
+      await matchingAPI.deleteMatch(matchId);
+      setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    } catch (err: any) {
+      setError(err.message || 'Erreur');
+    }
+  };
 
-    // Reset filters when changing tabs
-    useEffect(() => {
-        setStatusFilter('');
-        setTypeFilter('');
-        setCategoryFilter('');
-        setSearchTerm('');
-    }, [activeTab]);
+  // Filtrage et tri
+  const filtered = matches
+    .filter((m) => {
+      if (statusFilter !== 'all' && (m.status || 'pending') !== statusFilter) return false;
+      if (searchTerm) {
+        const prop = m.properties || m.property;
+        const pros = m.prospects || m.prospect;
+        const text = [
+          prop?.title,
+          prop?.city,
+          prop?.type,
+          pros?.firstName,
+          pros?.lastName,
+          pros?.email,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!text.includes(searchTerm.toLowerCase())) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
+      if (sortBy === 'date')
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === 'status') return getStatus(a.status).order - getStatus(b.status).order;
+      return 0;
+    });
 
-    // Generate matches for a prospect
-    const handleFindMatches = async (prospectId: string) => {
-        try {
-            setLoading(true);
-            const results = await matchingAPI.findMatches(prospectId);
-            console.log('Matches found:', results);
-            setActiveTab('matching-view');
-            await loadData();
-        } catch (err: any) {
-            console.error('Error finding matches:', err);
-            setError(err.message || 'Erreur lors de la recherche de correspondances');
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Pipeline stats
+  const pipelineCounts = matches.reduce<Record<string, number>>((acc, m) => {
+    const st = m.status || 'pending';
+    acc[st] = (acc[st] || 0) + 1;
+    return acc;
+  }, {});
 
-    // Find prospects for a property
-    const handleFindProspectsForProperty = async (propertyId: string) => {
-        try {
-            setLoading(true);
-            const results = await matchingAPI.findMatchesForProperty(propertyId);
-            console.log('Prospects found:', results);
-            setActiveTab('matching-view');
-            await loadData();
-        } catch (err: any) {
-            console.error('Error finding prospects:', err);
-            setError(err.message || 'Erreur lors de la recherche de prospects');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const tabs: { id: TabType; label: string; icon: string; count?: number }[] = [
+    { id: 'results', label: 'R\u00E9sultats', icon: '\uD83C\uDFAF', count: matches.length },
+    { id: 'generate', label: 'G\u00E9n\u00E9rer', icon: '\u26A1' },
+  ];
 
-    // Find prospects for a mandate's property
-    const handleFindProspectsForMandate = async (mandate: Mandate) => {
-        if (mandate.propertyId) {
-            await handleFindProspectsForProperty(mandate.propertyId);
-        } else {
-            setError('Ce mandat n\'a pas de bien associé');
-        }
-    };
+  return (
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">Matching IA</h1>
+        <p className="text-gray-500">
+          Correspondances automatiques entre prospects et biens immobiliers
+        </p>
+      </div>
 
-    const tabs: { id: TabType; label: string; icon: string; count?: number; description?: string }[] = [
-        { id: 'prospects', label: 'Requêtes', icon: '🔍', count: filteredProspects.length, description: 'Acheteurs & Locataires' },
-        { id: 'mandates', label: 'Mandats', icon: '📋', count: mandateStats?.total || 0, description: 'Vendeurs & Bailleurs' },
-        { id: 'properties', label: 'Biens', icon: '🏠', count: propertyStats?.total || 0, description: 'Propriétés' },
-        { id: 'matching-view', label: 'Matching', icon: '🎯', count: matchingStats?.total || 0, description: 'Correspondances' },
-    ];
-
-    return (
-        <div className="w-full">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">Matching</h1>
-                <p className="text-gray-600">Associez vos prospects aux biens immobiliers via les mandats</p>
-            </div>
-
-            {/* Error display */}
-            {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                    <p className="font-medium">Erreur</p>
-                    <p className="text-sm">{error}</p>
-                    <button
-                        onClick={() => setError(null)}
-                        className="mt-2 text-sm underline hover:no-underline"
-                    >
-                        Fermer
-                    </button>
-                </div>
-            )}
-
-            {/* Tab Navigation */}
-            <div className="flex gap-1 mb-8 border-b border-gray-200 overflow-x-auto">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-4 py-3 font-medium transition-colors flex flex-col items-center min-w-[100px] ${activeTab === tab.id
-                            ? 'text-pink-600 border-b-2 border-pink-600 bg-pink-50'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl">{tab.icon}</span>
-                            <span>{tab.label}</span>
-                            {tab.count !== undefined && tab.count > 0 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200">
-                                    {tab.count}
-                                </span>
-                            )}
-                        </div>
-                        {tab.description && (
-                            <span className="text-xs text-gray-400 mt-1">{tab.description}</span>
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {/* Search and Filters */}
-            <div className="mb-6 flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[250px]">
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    />
-                </div>
-                {activeTab === 'prospects' && (
-                    <>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les statuts</option>
-                            <option value="active">Actif</option>
-                            <option value="inactive">Inactif</option>
-                            <option value="converted">Converti</option>
-                            <option value="lost">Perdu</option>
-                        </select>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les types</option>
-                            <option value="buyer">Acheteur</option>
-                            <option value="renter">Locataire</option>
-                            <option value="investor">Investisseur</option>
-                        </select>
-                    </>
-                )}
-                {activeTab === 'mandates' && (
-                    <>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les statuts</option>
-                            <option value="active">Actif</option>
-                            <option value="expired">Expiré</option>
-                            <option value="cancelled">Annulé</option>
-                            <option value="completed">Terminé</option>
-                        </select>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les types</option>
-                            <option value="simple">Simple</option>
-                            <option value="exclusive">Exclusif</option>
-                            <option value="semi_exclusive">Semi-exclusif</option>
-                        </select>
-                        <select
-                            value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Toutes catégories</option>
-                            <option value="sale">Vente</option>
-                            <option value="rental">Location</option>
-                        </select>
-                    </>
-                )}
-                {activeTab === 'properties' && (
-                    <>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les statuts</option>
-                            <option value="available">Disponible</option>
-                            <option value="reserved">Réservé</option>
-                            <option value="sold">Vendu</option>
-                            <option value="rented">Loué</option>
-                        </select>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                        >
-                            <option value="">Tous les types</option>
-                            <option value="apartment">Appartement</option>
-                            <option value="house">Maison</option>
-                            <option value="villa">Villa</option>
-                            <option value="studio">Studio</option>
-                            <option value="land">Terrain</option>
-                            <option value="commercial">Commercial</option>
-                        </select>
-                    </>
-                )}
-                <button
-                    onClick={loadData}
-                    disabled={loading}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
-                >
-                    {loading ? 'Chargement...' : 'Actualiser'}
-                </button>
-            </div>
-
-            {/* Content */}
-            <div className="space-y-6">
-                {/* Prospects Tab (Requêtes) */}
-                {activeTab === 'prospects' && (
-                    <div>
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Requêtes</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {filteredProspects.length}
-                                        </p>
-                                        <p className="text-xs text-gray-400">Acheteurs, Locataires, Investisseurs</p>
-                                    </div>
-                                    <span className="text-4xl">🔍</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Actifs</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {filteredProspects.filter(p => p.status === 'active').length}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">✓</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Convertis ce mois</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {prospectStats?.convertedThisMonth || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">🎯</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Taux conversion</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {prospectStats?.conversionRate?.toFixed(1) || 0}%
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">📊</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Info banner */}
-                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-start gap-3">
-                                <span className="text-2xl">💡</span>
-                                <div>
-                                    <p className="font-medium text-blue-900">Requêtes = Clients qui cherchent un bien</p>
-                                    <p className="text-sm text-blue-700 mt-1">
-                                        Ce tab affiche uniquement les <strong>Acheteurs</strong>, <strong>Locataires</strong> et <strong>Investisseurs</strong>.
-                                        Les propriétaires qui vendent ou louent sont gérés dans l'onglet <strong>Mandats</strong>.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Prospects List */}
-                        {loading ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-gray-600">Chargement des requêtes...</p>
-                            </div>
-                        ) : filteredProspects.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <span className="text-6xl mb-4 block">🔍</span>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune requête enregistrée</h3>
-                                <p className="text-gray-600 mb-6">Les clients qui cherchent un bien (acheteurs, locataires, investisseurs) apparaîtront ici</p>
-                                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
-                                    + Ajouter une requête
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {filteredProspects.map((prospect) => {
-                                    const typeBadge = getProspectTypeBadge(prospect.type);
-                                    return (
-                                        <div key={prospect.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-                                            <div className="p-6">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div>
-                                                        <h3 className="font-semibold text-lg text-gray-900">
-                                                            {prospect.firstName} {prospect.lastName}
-                                                        </h3>
-                                                        <p className="text-sm text-gray-500">{prospect.email}</p>
-                                                    </div>
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeBadge.color}`}>
-                                                        {typeBadge.label}
-                                                    </span>
-                                                </div>
-
-                                                {prospect.phone && (
-                                                    <p className="text-sm text-gray-600 mb-2">
-                                                        <span className="mr-2">📞</span>
-                                                        {prospect.phone}
-                                                    </p>
-                                                )}
-
-                                                {prospect.budget && (
-                                                    <p className="text-sm text-gray-600 mb-2">
-                                                        <span className="mr-2">💰</span>
-                                                        Budget: {formatPrice(prospect.budget.min || 0, prospect.currency)} - {formatPrice(prospect.budget.max || 0, prospect.currency)}
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${getScoreColor(prospect.score)}`}>
-                                                            Score: {prospect.score}
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleFindMatches(prospect.id)}
-                                                        className="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-lg text-sm font-medium hover:bg-pink-200 transition"
-                                                    >
-                                                        🎯 Trouver biens
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Mandates Tab */}
-                {activeTab === 'mandates' && (
-                    <div>
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Total Mandats</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {mandateStats?.total || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">📋</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Actifs</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {mandateStats?.active || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">✓</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Expirés</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {mandateStats?.expired || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">⏰</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Expirent ce mois</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {mandateStats?.expiringThisMonth || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">⚠️</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Commission Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-lg shadow text-white">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-purple-100 text-sm mb-1">Valeur totale commissions</p>
-                                        <p className="text-3xl font-bold">
-                                            {formatPrice(mandateStats?.totalCommissionValue || 0)}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">💰</span>
-                                </div>
-                            </div>
-                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-lg shadow text-white">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-green-100 text-sm mb-1">Commission moyenne</p>
-                                        <p className="text-3xl font-bold">
-                                            {mandateStats?.averageCommission?.toFixed(1) || 0}%
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">📈</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Info banner */}
-                        <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                            <div className="flex items-start gap-3">
-                                <span className="text-2xl">💡</span>
-                                <div>
-                                    <p className="font-medium text-orange-900">Mandats = Propriétaires qui vendent ou louent</p>
-                                    <p className="text-sm text-orange-700 mt-1">
-                                        Ce tab affiche les <strong>mandats de vente</strong> et <strong>mandats de location</strong> signés avec les propriétaires.
-                                        Les clients qui cherchent un bien sont dans l'onglet <strong>Requêtes</strong>.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Mandates List */}
-                        {loading ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-gray-600">Chargement des mandats...</p>
-                            </div>
-                        ) : mandates.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <span className="text-6xl mb-4 block">📋</span>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun mandat enregistré</h3>
-                                <p className="text-gray-600 mb-6">Les mandats de vente et location signés avec les propriétaires apparaîtront ici</p>
-                                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
-                                    + Créer un mandat
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {mandates.map((mandate) => {
-                                    const daysRemaining = getMandateDaysRemaining(mandate);
-                                    const isExpiringSoon = isMandateExpiringSoon(mandate);
-
-                                    return (
-                                        <div key={mandate.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-                                            {/* Header with status */}
-                                            <div className={`px-4 py-2 flex items-center justify-between ${
-                                                mandate.status === MandateStatus.ACTIVE
-                                                    ? 'bg-green-50'
-                                                    : mandate.status === MandateStatus.EXPIRED
-                                                        ? 'bg-red-50'
-                                                        : 'bg-gray-50'
-                                            }`}>
-                                                <span className="text-xs font-medium text-gray-600">
-                                                    Réf: {mandate.reference}
-                                                </span>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMandateStatusColor(mandate.status as MandateStatus)}`}>
-                                                    {getMandateStatusLabel(mandate.status as MandateStatus)}
-                                                </span>
-                                            </div>
-
-                                            <div className="p-4">
-                                                {/* Owner Info */}
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold">
-                                                        {mandate.owner
-                                                            ? getOwnerInitials(mandate.owner)
-                                                            : '??'
-                                                        }
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-semibold text-gray-900">
-                                                            {mandate.owner
-                                                                ? getOwnerFullName(mandate.owner)
-                                                                : 'Propriétaire inconnu'
-                                                            }
-                                                        </h3>
-                                                        <p className="text-sm text-gray-500">
-                                                            {mandate.owner?.phone || mandate.owner?.email || 'Pas de contact'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Property Info if exists */}
-                                                {mandate.property && (
-                                                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                                                        <div className="flex items-start gap-3">
-                                                            {mandate.property.images?.[0] ? (
-                                                                <img
-                                                                    src={mandate.property.images[0]}
-                                                                    alt={mandate.property.title}
-                                                                    className="w-16 h-16 rounded object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-16 h-16 rounded bg-gray-200 flex items-center justify-center">
-                                                                    <span className="text-2xl">🏠</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="font-medium text-gray-900 truncate">
-                                                                    {mandate.property.title}
-                                                                </p>
-                                                                <p className="text-sm text-gray-500">
-                                                                    {mandate.property.city}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Mandate Details */}
-                                                <div className="space-y-2 mb-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-600">Type:</span>
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${getMandateTypeColor(mandate.type as MandateType)}`}>
-                                                            {getMandateTypeLabel(mandate.type as MandateType)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-600">Catégorie:</span>
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                            mandate.category === MandateCategory.SALE
-                                                                ? 'bg-blue-100 text-blue-800'
-                                                                : 'bg-orange-100 text-orange-800'
-                                                        }`}>
-                                                            {getMandateCategoryLabel(mandate.category as MandateCategory)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-600">Prix:</span>
-                                                        <span className="font-bold text-pink-600">
-                                                            {formatMandatePrice(mandate.price, mandate.currency)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm text-gray-600">Commission:</span>
-                                                        <span className="font-medium text-green-600">
-                                                            {formatMandateCommission(mandate)}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Dates */}
-                                                <div className="text-xs text-gray-500 mb-4 p-2 bg-gray-50 rounded">
-                                                    <div className="flex justify-between">
-                                                        <span>Début: {formatDate(mandate.startDate)}</span>
-                                                        <span>Fin: {formatDate(mandate.endDate)}</span>
-                                                    </div>
-                                                    {mandate.status === MandateStatus.ACTIVE && (
-                                                        <div className={`mt-1 text-center font-medium ${isExpiringSoon ? 'text-orange-600' : 'text-gray-600'}`}>
-                                                            {isExpiringSoon ? '⚠️ ' : ''}
-                                                            {daysRemaining} jours restants
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Actions */}
-                                                <div className="flex gap-2 pt-3 border-t border-gray-100">
-                                                    <button
-                                                        onClick={() => handleFindProspectsForMandate(mandate)}
-                                                        disabled={!mandate.propertyId}
-                                                        className="flex-1 px-3 py-2 bg-pink-100 text-pink-700 rounded-lg text-sm font-medium hover:bg-pink-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        👤 Trouver prospects
-                                                    </button>
-                                                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
-                                                        📄 Détails
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Biens Tab */}
-                {activeTab === 'properties' && (
-                    <div>
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Total</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {propertyStats?.total || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">🏠</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Disponibles</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {propertyStats?.byStatus?.available || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">✓</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Vendus/Loués</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {(propertyStats?.byStatus?.sold || 0) + (propertyStats?.byStatus?.rented || 0)}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">📋</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Prix moyen</p>
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {formatPrice(propertyStats?.averagePrice || 0)}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">💰</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Properties List */}
-                        {loading ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-gray-600">Chargement des biens...</p>
-                            </div>
-                        ) : properties.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <span className="text-6xl mb-4 block">🏠</span>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun bien enregistré</h3>
-                                <p className="text-gray-600 mb-6">Commencez par ajouter vos biens</p>
-                                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-lg font-medium hover:from-pink-600 hover:to-rose-700 transition">
-                                    + Ajouter un bien
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {properties.map((property) => {
-                                    const statusBadge = getPropertyStatusBadge(property.status);
-                                    return (
-                                        <div key={property.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-                                            {/* Property Image */}
-                                            {property.images && property.images.length > 0 ? (
-                                                <div className="relative h-48 w-full">
-                                                    <img
-                                                        src={property.images[0]}
-                                                        alt={property.title}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                                                        {statusBadge.label}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center">
-                                                    <span className="text-6xl text-gray-300">🏠</span>
-                                                    <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                                                        {statusBadge.label}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            <div className="p-4">
-                                                <h3 className="font-semibold text-lg text-gray-900 mb-1 truncate">
-                                                    {property.title}
-                                                </h3>
-                                                <p className="text-pink-600 font-bold text-xl mb-2">
-                                                    {formatPrice(property.price, property.currency)}
-                                                </p>
-
-                                                <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-3">
-                                                    {property.city && (
-                                                        <span className="flex items-center gap-1">
-                                                            📍 {property.city}
-                                                        </span>
-                                                    )}
-                                                    {property.area && (
-                                                        <span className="flex items-center gap-1">
-                                                            📐 {property.area} m²
-                                                        </span>
-                                                    )}
-                                                    {property.bedrooms && (
-                                                        <span className="flex items-center gap-1">
-                                                            🛏️ {property.bedrooms}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                                    <span className="text-xs text-gray-500">
-                                                        {formatDate(property.createdAt)}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => handleFindProspectsForProperty(property.id)}
-                                                        className="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-lg text-sm font-medium hover:bg-pink-200 transition"
-                                                    >
-                                                        👤 Trouver prospects
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Vue Matching Tab */}
-                {activeTab === 'matching-view' && (
-                    <div>
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-pink-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Total appariements</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {matchingStats?.total || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">🎯</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Excellents (80%+)</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {matchingStats?.excellent || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">⭐</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Bons (60-80%)</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {matchingStats?.good || 0}
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">👍</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm mb-1">Score moyen</p>
-                                        <p className="text-4xl font-bold text-gray-900">
-                                            {matchingStats?.avgScore?.toFixed(0) || 0}%
-                                        </p>
-                                    </div>
-                                    <span className="text-4xl">📊</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Matches List */}
-                        {loading ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <div className="animate-spin w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-gray-600">Chargement des correspondances...</p>
-                            </div>
-                        ) : matches.length === 0 ? (
-                            <div className="bg-white rounded-lg shadow p-12 text-center">
-                                <span className="text-6xl mb-4 block">🎯</span>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucun appariement trouvé</h3>
-                                <p className="text-gray-600 mb-6">Les appariements entre prospects et biens s'afficheront ici</p>
-                                <p className="text-sm text-gray-500">
-                                    Utilisez les boutons "Trouver biens" ou "Trouver prospects" dans les autres onglets
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {matches.map((match) => {
-                                    // Score can be 0-1 or 0-100 depending on source
-                                    const scorePercent = match.score <= 1 ? Math.round(match.score * 100) : Math.round(match.score);
-                                    // Get property and prospect data (handle both naming conventions)
-                                    const property = match.properties || match.property;
-                                    const prospect = match.prospects || match.prospect;
-                                    const prospectTypeBadge = prospect ? getProspectTypeBadge(prospect.type) : null;
-
-                                    return (
-                                        <div key={match.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-                                            {/* Score Header */}
-                                            <div className={`px-4 py-2 flex items-center justify-between ${
-                                                scorePercent >= 80 ? 'bg-green-50' :
-                                                scorePercent >= 60 ? 'bg-yellow-50' : 'bg-red-50'
-                                            }`}>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-lg">🎯</span>
-                                                    <span className="font-medium text-gray-700">Match</span>
-                                                    {match.status && (
-                                                        <span className={`px-2 py-0.5 rounded text-xs ${
-                                                            match.status === 'contacted' ? 'bg-blue-100 text-blue-700' :
-                                                            match.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                                                            match.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                            'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                            {match.status === 'contacted' ? 'Contacté' :
-                                                             match.status === 'accepted' ? 'Accepté' :
-                                                             match.status === 'rejected' ? 'Rejeté' :
-                                                             match.status === 'pending' ? 'En attente' : match.status}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(scorePercent)}`}>
-                                                    {scorePercent}%
-                                                </span>
-                                            </div>
-
-                                            <div className="p-4">
-                                                {/* Two-column layout: Prospect and Property */}
-                                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                                    {/* Prospect Section */}
-                                                    <div className="border-r border-gray-100 pr-4">
-                                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Prospect</p>
-                                                        {prospect ? (
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
-                                                                        {prospect.firstName?.charAt(0) || '?'}{prospect.lastName?.charAt(0) || '?'}
-                                                                    </div>
-                                                                    <div className="min-w-0">
-                                                                        <p className="font-medium text-gray-900 truncate">
-                                                                            {prospect.firstName} {prospect.lastName}
-                                                                        </p>
-                                                                        {prospectTypeBadge && (
-                                                                            <span className={`inline-block px-1.5 py-0.5 rounded text-xs ${prospectTypeBadge.color}`}>
-                                                                                {prospectTypeBadge.label}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                {prospect.phone && (
-                                                                    <p className="text-xs text-gray-600 truncate">
-                                                                        📞 {prospect.phone}
-                                                                    </p>
-                                                                )}
-                                                                {prospect.budget && (
-                                                                    <p className="text-xs text-gray-600 mt-1">
-                                                                        💰 {formatPrice(prospect.budget.min || 0)} - {formatPrice(prospect.budget.max || 0)}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-sm text-gray-400 italic">ID: {match.prospectId?.slice(0, 8)}...</p>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Property Section */}
-                                                    <div className="pl-2">
-                                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Bien</p>
-                                                        {property ? (
-                                                            <div>
-                                                                {/* Property Image */}
-                                                                <div className="relative mb-2">
-                                                                    {property.images && property.images.length > 0 ? (
-                                                                        <img
-                                                                            src={property.images[0]}
-                                                                            alt={property.title}
-                                                                            className="w-full h-24 object-cover rounded-lg"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center">
-                                                                            <span className="text-3xl text-gray-300">🏠</span>
-                                                                        </div>
-                                                                    )}
-                                                                    <span className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-xs font-medium ${getPropertyStatusBadge(property.status).color}`}>
-                                                                        {getPropertyStatusBadge(property.status).label}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="font-medium text-gray-900 text-sm truncate">
-                                                                    {property.title}
-                                                                </p>
-                                                                <p className="text-pink-600 font-bold text-sm">
-                                                                    {formatPrice(property.price, property.currency)}
-                                                                </p>
-                                                                <div className="flex flex-wrap gap-1 mt-1 text-xs text-gray-500">
-                                                                    {property.city && <span>📍 {property.city}</span>}
-                                                                    {property.area && <span>• {property.area}m²</span>}
-                                                                    {property.bedrooms && <span>• {property.bedrooms}ch</span>}
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-sm text-gray-400 italic">ID: {match.propertyId?.slice(0, 8)}...</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Match Reasons */}
-                                                {match.reasons && match.reasons.length > 0 && (
-                                                    <div className="mb-4">
-                                                        <p className="text-xs text-gray-500 mb-2">Raisons du match:</p>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {match.reasons.slice(0, 4).map((reason, idx) => (
-                                                                <span key={idx} className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">
-                                                                    ✓ {reason}
-                                                                </span>
-                                                            ))}
-                                                            {match.reasons.length > 4 && (
-                                                                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs">
-                                                                    +{match.reasons.length - 4} autres
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Actions */}
-                                                <div className="flex gap-2 pt-3 border-t border-gray-100">
-                                                    <button className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition flex items-center justify-center gap-1">
-                                                        <span>✓</span> Accepter
-                                                    </button>
-                                                    <button className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition flex items-center justify-center gap-1">
-                                                        <span>📞</span> Contacter
-                                                    </button>
-                                                    <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition">
-                                                        ✕
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+      {/* Alerts */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between items-start">
+          <div>
+            <p className="font-medium">Erreur</p>
+            <p className="text-sm">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-600 text-xl leading-none"
+          >
+            &times;
+          </button>
         </div>
-    );
-};
+      )}
+      {successMsg && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex justify-between items-start">
+          <div>
+            <p className="font-medium">{'\u2705'} Succ&egrave;s</p>
+            <p className="text-sm">{successMsg}</p>
+          </div>
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-green-400 hover:text-green-600 text-xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
-export default MatchingDashboard;
+      {/* Tab Navigation */}
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.id
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+            {tab.count !== undefined && tab.count > 0 && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ====== TAB RESULTATS ====== */}
+      {activeTab === 'results' && (
+        <div className="space-y-6">
+          {/* Pipeline overview */}
+          {matches.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                  statusFilter === 'all'
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Tous ({matches.length})
+              </button>
+              {Object.entries(pipelineCounts)
+                .sort(([a], [b]) => getStatus(a).order - getStatus(b).order)
+                .map(([status, count]) => {
+                  const info = getStatus(status);
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                        statusFilter === status
+                          ? 'ring-2 ring-purple-400 ' + info.color
+                          : info.color + ' hover:opacity-80'
+                      }`}
+                    >
+                      {info.icon} {info.label} ({count})
+                    </button>
+                  );
+                })}
+            </div>
+          )}
+
+          {/* Search & Sort */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 min-w-[250px]">
+              <input
+                type="text"
+                placeholder="Rechercher prospect, bien, ville..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              />
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+            >
+              <option value="score">Trier par score</option>
+              <option value="date">Trier par date</option>
+              <option value="status">Trier par statut</option>
+            </select>
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm"
+            >
+              {loading ? '...' : '\u21BB Actualiser'}
+            </button>
+          </div>
+
+          {/* Match Cards */}
+          {loading ? (
+            <div className="bg-white rounded-xl shadow p-12 text-center">
+              <div className="animate-spin w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-gray-500">Chargement des correspondances...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="bg-white rounded-xl shadow p-12 text-center">
+              <span className="text-5xl block mb-4">{'\uD83C\uDFAF'}</span>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {matches.length === 0
+                  ? 'Aucune correspondance'
+                  : 'Aucun r\u00E9sultat pour ce filtre'}
+              </h3>
+              <p className="text-gray-500 mb-6">
+                {matches.length === 0
+                  ? 'Utilisez l\'onglet "G\u00E9n\u00E9rer" pour lancer le matching IA automatique.'
+                  : 'Essayez de modifier vos filtres de recherche.'}
+              </p>
+              {matches.length === 0 && (
+                <button
+                  onClick={() => setActiveTab('generate')}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+                >
+                  {'\u26A1'} G&eacute;n&eacute;rer les matchs
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-400">{filtered.length} correspondance(s)</p>
+              {filtered.map((match) => {
+                const prop = match.properties || match.property;
+                const pros = match.prospects || match.prospect;
+                const st = getStatus(match.status);
+                const score = match.score || 0;
+                const prosType = PROSPECT_TYPE[pros?.type || ''] || {
+                  label: pros?.type || '\u2014',
+                  color: 'bg-gray-100 text-gray-700',
+                };
+
+                return (
+                  <div
+                    key={match.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                  >
+                    <div className="p-5">
+                      <div className="flex items-start gap-4">
+                        {/* Property image */}
+                        {prop?.images?.[0] ? (
+                          <img
+                            src={prop.images[0]}
+                            alt={prop.title}
+                            className="h-24 w-32 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="h-24 w-32 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-3xl text-gray-300">{'\uD83C\uDFE0'}</span>
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {prop?.title || 'Bien sans titre'}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                {prop?.city || '\u2014'} &middot; {prop?.type || '\u2014'}
+                                {prop?.bedrooms ? ` \u00B7 ${prop.bedrooms} ch.` : ''}
+                                {prop?.area ? ` \u00B7 ${prop.area} m\u00B2` : ''}
+                              </p>
+                              <p className="text-sm font-semibold text-emerald-600 mt-0.5">
+                                {prop?.price ? formatPrice(prop.price, prop.currency) : '\u2014'}
+                              </p>
+                            </div>
+
+                            {/* Score */}
+                            <div className="flex-shrink-0 text-center">
+                              <div
+                                className={`text-2xl font-black ${score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-gray-500'}`}
+                              >
+                                {Math.round(score)}%
+                              </div>
+                              <div className="text-xs text-gray-400">score</div>
+                            </div>
+                          </div>
+
+                          {/* Prospect info */}
+                          <div className="mt-3 flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-400">{'\uD83D\uDC64'}</span>
+                              <Link
+                                href={`/prospects/${pros?.id || match.prospectId}`}
+                                className="font-medium text-gray-700 hover:text-purple-600"
+                              >
+                                {pros?.firstName || ''} {pros?.lastName || 'Prospect inconnu'}
+                              </Link>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${prosType.color}`}
+                            >
+                              {prosType.label}
+                            </span>
+                            {pros?.budget?.max && (
+                              <span className="text-xs text-gray-500">
+                                Budget: {formatPrice(pros.budget.max)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Reasons */}
+                          {match.reasons?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {match.reasons.slice(0, 4).map((r: string, i: number) => (
+                                <span
+                                  key={i}
+                                  className="px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded border border-green-200"
+                                >
+                                  {'\u2713'} {r}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Status + Actions */}
+                          <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-xs font-medium ${st.color}`}
+                              >
+                                {st.icon} {st.label}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {formatDate(match.createdAt)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {(match.status || 'pending') === 'pending' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(match.id, 'contacted')}
+                                  className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-100 transition"
+                                >
+                                  {'\uD83D\uDCDE'} Contacter
+                                </button>
+                              )}
+                              {match.status === 'contacted' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(match.id, 'visited')}
+                                  className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium hover:bg-purple-100 transition"
+                                >
+                                  {'\uD83C\uDFE0'} Visite faite
+                                </button>
+                              )}
+                              {match.status === 'visited' && (
+                                <button
+                                  onClick={() => handleUpdateStatus(match.id, 'offered')}
+                                  className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-100 transition"
+                                >
+                                  {'\uD83D\uDCB0'} Offre
+                                </button>
+                              )}
+                              {match.status === 'offered' && (
+                                <>
+                                  <button
+                                    onClick={() => handleUpdateStatus(match.id, 'accepted')}
+                                    className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-medium hover:bg-green-100 transition"
+                                  >
+                                    {'\u2705'} Accepter
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateStatus(match.id, 'rejected')}
+                                    className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+                                  >
+                                    {'\u274C'} Refuser
+                                  </button>
+                                </>
+                              )}
+                              {prop?.id && (
+                                <Link
+                                  href={`/properties/${prop.id}`}
+                                  className="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-100 transition"
+                                >
+                                  {'\uD83C\uDFE0'} Voir bien
+                                </Link>
+                              )}
+                              <button
+                                onClick={() => handleDeleteMatch(match.id)}
+                                className="px-2 py-1.5 text-gray-400 hover:text-red-600 rounded-lg text-xs transition"
+                                title="Supprimer"
+                              >
+                                {'\uD83D\uDDD1'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ====== TAB GENERER ====== */}
+      {activeTab === 'generate' && (
+        <div className="space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-xs mb-1">Total matchs</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.total || 0}</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-xs mb-1">{'Excellents (\u226580%)'}</p>
+              <p className="text-3xl font-bold text-green-600">{stats?.excellent || 0}</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-xs mb-1">Bons (60-79%)</p>
+              <p className="text-3xl font-bold text-yellow-600">{stats?.good || 0}</p>
+            </div>
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-gray-500 text-xs mb-1">Score moyen</p>
+              <p className="text-3xl font-bold text-purple-600">
+                {stats?.avgScore?.toFixed(0) || 0}%
+              </p>
+            </div>
+          </div>
+
+          {/* Score distribution visual */}
+          {stats && stats.total > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Distribution des scores</h3>
+              <div className="flex gap-1 h-8 rounded-lg overflow-hidden">
+                {stats.excellent > 0 && (
+                  <div
+                    className="bg-green-500 flex items-center justify-center text-white text-xs font-medium"
+                    style={{ width: `${(stats.excellent / stats.total) * 100}%` }}
+                    title={`Excellents: ${stats.excellent}`}
+                  >
+                    {stats.excellent}
+                  </div>
+                )}
+                {stats.good > 0 && (
+                  <div
+                    className="bg-yellow-500 flex items-center justify-center text-white text-xs font-medium"
+                    style={{ width: `${(stats.good / stats.total) * 100}%` }}
+                    title={`Bons: ${stats.good}`}
+                  >
+                    {stats.good}
+                  </div>
+                )}
+                {stats.average > 0 && (
+                  <div
+                    className="bg-red-400 flex items-center justify-center text-white text-xs font-medium"
+                    style={{ width: `${(stats.average / stats.total) * 100}%` }}
+                    title={`Moyens: ${stats.average}`}
+                  >
+                    {stats.average}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-green-500 inline-block" />{' '}
+                  {'Excellents (\u226580%)'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-yellow-500 inline-block" /> Bons (60-79%)
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded bg-red-400 inline-block" /> {'Moyens (<60%)'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Pipeline overview */}
+          {Object.keys(pipelineCounts).length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Pipeline des correspondances</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(pipelineCounts)
+                  .sort(([a], [b]) => getStatus(a).order - getStatus(b).order)
+                  .map(([status, count]) => {
+                    const info = getStatus(status);
+                    return (
+                      <div key={status} className={`p-3 rounded-lg text-center ${info.color}`}>
+                        <div className="text-2xl mb-1">{info.icon}</div>
+                        <div className="text-xl font-bold">{count}</div>
+                        <div className="text-xs">{info.label}</div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Generate action */}
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200 p-8 text-center">
+            <span className="text-5xl block mb-4">{'\uD83E\uDD16'}</span>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Matching IA Automatique</h3>
+            <p className="text-gray-600 max-w-lg mx-auto mb-6">
+              Analysez tous vos prospects actifs et biens disponibles pour g&eacute;n&eacute;rer
+              automatiquement les meilleures correspondances bas&eacute;es sur le budget, la
+              localisation, le type de bien et les crit&egrave;res de recherche.
+            </p>
+            <button
+              onClick={handleGenerateAll}
+              disabled={generating}
+              className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-wait transition text-lg shadow-lg shadow-purple-200"
+            >
+              {generating ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                  G&eacute;n&eacute;ration en cours...
+                </span>
+              ) : (
+                <>{'\u26A1'} G&eacute;n&eacute;rer tous les matchs</>
+              )}
+            </button>
+            <p className="text-xs text-gray-400 mt-3">
+              Les correspondances existantes seront mises &agrave; jour (pas de doublons)
+            </p>
+          </div>
+
+          {/* Quick links */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link
+              href="/prospects"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{'\uD83D\uDC65'}</span>
+                <div>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
+                    Prospects
+                  </p>
+                  <p className="text-xs text-gray-500">G&eacute;rer les acheteurs et locataires</p>
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/mandates"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{'\uD83D\uDCCB'}</span>
+                <div>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
+                    Mandats
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    G&eacute;rer les mandats de vente/location
+                  </p>
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/properties"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{'\uD83C\uDFE0'}</span>
+                <div>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-600 transition">
+                    Biens
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Voir le catalogue de propri&eacute;t&eacute;s
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

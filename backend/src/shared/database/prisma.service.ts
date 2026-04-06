@@ -75,6 +75,25 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     owners: 'owners',
     invoice: 'invoices',
     invoices: 'invoices',
+    transaction: 'transactions',
+    transactions: 'transactions',
+    transactionStep: 'transaction_steps',
+    transactionSteps: 'transaction_steps',
+    commission: 'commissions',
+    commissions: 'commissions',
+    payment: 'payments',
+    payments: 'payments',
+    notification: 'notifications',
+    notifications: 'notifications',
+    notificationPreference: 'notification_preferences',
+    notificationPreferences: 'notification_preferences',
+    // Tables AI Chat
+    aiChatConversation: 'ai_chat_conversations',
+    aiChatConversations: 'ai_chat_conversations',
+    aiChatMessage: 'ai_chat_messages',
+    aiChatMessages: 'ai_chat_messages',
+    // Tables Documents-Intelligence
+    documentInvestmentLink: 'document_investment_links',
     // Tables Page Builder (PascalCase = pas de @@map)
     page: 'Page',
     pages: 'Page',
@@ -215,6 +234,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'publicLead',
       'vitrineTemplate',
       'vitrinePage',
+      // Tables AI Chat
+      'aiChatConversation',
+      'aiChatMessage',
+      // Tables Documents-Intelligence
+      'documentInvestmentLink',
     ];
 
     tables.forEach((table) => {
@@ -492,27 +516,27 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           _count: parseInt(row._count || '0', 10),
           _sum: args._sum
             ? Object.keys(args._sum).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+                {},
+              )
             : null,
           _avg: args._avg
             ? Object.keys(args._avg).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+                {},
+              )
             : null,
           _min: args._min
             ? Object.keys(args._min).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+                {},
+              )
             : null,
           _max: args._max
             ? Object.keys(args._max).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+                {},
+              )
             : null,
         };
       },

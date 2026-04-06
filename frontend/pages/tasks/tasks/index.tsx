@@ -4,7 +4,7 @@ import { MainLayout } from '@/shared/components/layout';
 
 export default function TasksPage() {
   return (
-    <Layout>
+    <MainLayout>
       <div className="p-6">
         <TaskManager />
       </div>

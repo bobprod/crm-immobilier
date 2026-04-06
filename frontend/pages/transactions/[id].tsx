@@ -105,7 +105,7 @@ export default function TransactionDetailPage() {
 
     if (loading) {
         return (
-            <Layout>
+            <MainLayout>
                 <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -115,7 +115,7 @@ export default function TransactionDetailPage() {
 
     if (error || !transaction) {
         return (
-            <Layout>
+            <MainLayout>
                 <div className="flex items-center justify-center p-8 text-red-500">
                     <AlertCircle className="h-5 w-5 mr-2" />
                     {error || 'Transaction non trouvée'}
@@ -125,7 +125,7 @@ export default function TransactionDetailPage() {
     }
 
     return (
-        <Layout>
+        <MainLayout>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">

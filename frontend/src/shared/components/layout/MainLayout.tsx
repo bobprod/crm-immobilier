@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
+import { ChatbotFloatingButton } from './ChatbotFloatingButton';
 import { ChevronRight, Home } from 'lucide-react';
 
 /**
@@ -26,13 +28,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, breadcr
   return (
     <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
+        {/* Secondary Toolbar (utility nav) */}
+        <TopBar />
+
+        {/* Breadcrumbs / Page title bar */}
         {(title || breadcrumbs) && (
-          <div className="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center gap-4 shadow-sm">
+          <div className="bg-slate-50 border-b border-slate-200/80 px-6 py-2.5 flex items-center gap-4">
             {/* Breadcrumbs */}
             {breadcrumbs && breadcrumbs.length > 0 && (
               <nav className="flex items-center gap-1.5 text-sm text-slate-500">
@@ -64,6 +72,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, breadcr
           <div className="p-6 max-w-[1600px]">{children}</div>
         </div>
       </main>
+
+      {/* Floating Chatbot Button */}
+      <ChatbotFloatingButton />
     </div>
   );
 };

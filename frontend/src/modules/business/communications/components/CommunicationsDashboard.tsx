@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import communicationsService from '@/modules/communications/communications.service';
 
 interface CommunicationsDashboardProps {
     language?: 'fr' | 'en';
@@ -26,20 +27,14 @@ export const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = (
         setLoading(true);
         try {
             if (activeTab === 'all') {
-                // Load all communications
-                // const response = await fetch('/api/communications');
-                // const data = await response.json();
-                // setCommunications(data);
+                const data = await communicationsService.getHistory();
+                setCommunications(data);
             } else if (activeTab === 'whatsapp') {
-                // Load WhatsApp messages
-                // const response = await fetch('/api/communications/whatsapp');
-                // const data = await response.json();
-                // setWhatsappMessages(data);
+                const data = await communicationsService.getHistory({ type: 'whatsapp' });
+                setWhatsappMessages(data);
             } else {
-                // Load templates
-                // const response = await fetch('/api/communications/templates');
-                // const data = await response.json();
-                // setTemplates(data);
+                const data = await communicationsService.getTemplates();
+                setTemplates(data);
             }
         } catch (error) {
             console.error('Error loading data:', error);

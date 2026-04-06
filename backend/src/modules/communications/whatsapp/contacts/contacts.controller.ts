@@ -27,6 +27,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ContactsService } from './contacts.service';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import {
   CreateContactDto,
   UpdateContactDto,
@@ -40,6 +41,7 @@ import {
 
 @ApiTags('WhatsApp Contacts')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('whatsapp/contacts')
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
@@ -76,7 +78,7 @@ export class ContactsController {
     @Req() req: any,
     @Body() dto: CreateContactDto,
   ): Promise<ContactResponseDto> {
-    return this.contactsService.createContact(req.user.id, dto);
+    return this.contactsService.createContact(req.user.userId, dto);
   }
 
   @Get()
@@ -98,7 +100,7 @@ export class ContactsController {
     @Req() req: any,
     @Query() filters: ContactFiltersDto,
   ): Promise<ContactsListResponseDto> {
-    return this.contactsService.getContacts(req.user.id, filters);
+    return this.contactsService.getContacts(req.user.userId, filters);
   }
 
   @Get(':id')
@@ -125,7 +127,7 @@ export class ContactsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<ContactResponseDto> {
-    return this.contactsService.getContact(req.user.id, id);
+    return this.contactsService.getContact(req.user.userId, id);
   }
 
   @Put(':id')
@@ -155,7 +157,7 @@ export class ContactsController {
     @Param('id') id: string,
     @Body() dto: UpdateContactDto,
   ): Promise<ContactResponseDto> {
-    return this.contactsService.updateContact(req.user.id, id, dto);
+    return this.contactsService.updateContact(req.user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -180,7 +182,7 @@ export class ContactsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.contactsService.deleteContact(req.user.id, id);
+    return this.contactsService.deleteContact(req.user.userId, id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -209,7 +211,7 @@ export class ContactsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<ContactResponseDto> {
-    return this.contactsService.toggleBlockContact(req.user.id, id);
+    return this.contactsService.toggleBlockContact(req.user.userId, id);
   }
 
   @Get(':id/stats')
@@ -235,7 +237,7 @@ export class ContactsController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<ContactStatsDto> {
-    return this.contactsService.getContactStats(req.user.id, id);
+    return this.contactsService.getContactStats(req.user.userId, id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -308,7 +310,7 @@ export class ContactsController {
       };
     });
 
-    return this.contactsService.importContacts(req.user.id, contacts);
+    return this.contactsService.importContacts(req.user.userId, contacts);
   }
 
   @Get('export/csv')
@@ -330,6 +332,6 @@ export class ContactsController {
     @Req() req: any,
     @Query() filters: ContactFiltersDto,
   ): Promise<ExportResultDto> {
-    return this.contactsService.exportContacts(req.user.id, filters);
+    return this.contactsService.exportContacts(req.user.userId, filters);
   }
 }

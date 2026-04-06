@@ -1,8 +1,15 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../shared/database/prisma.service';
-import { CreatePropertyDto, UpdatePropertyDto, PropertyFiltersDto, PaginationQueryDto, PaginatedResponse } from './dto';
+import {
+  CreatePropertyDto,
+  UpdatePropertyDto,
+  PropertyFiltersDto,
+  PaginationQueryDto,
+  PaginatedResponse,
+} from './dto';
 import { PropertyHistoryService } from './property-history.service';
 import { ImageCompressionService } from '../../../shared/services/image-compression.service';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
@@ -16,6 +23,7 @@ export class PropertiesService {
     private prisma: PrismaService,
     private historyService: PropertyHistoryService,
     private imageCompression: ImageCompressionService,
+    private eventEmitter: EventEmitter2,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -32,6 +40,9 @@ export class PropertiesService {
 
     // Invalidate cache
     await this.invalidateCacheForUser(userId);
+
+    // Émettre l'événement pour déclencher le matching automatique
+    this.eventEmitter.emit('property.created', { userId, property });
 
     return property;
   }
@@ -124,7 +135,7 @@ export class PropertiesService {
    */
   async getTrashed(userId: string) {
     return this.prisma.properties.findMany({
-      where: { 
+      where: {
         userId,
         deletedAt: { not: null },
       },
@@ -211,9 +222,24 @@ export class PropertiesService {
           true, // Delete original after compression
         );
 
+        // Apply watermark to compressed image
+        try {
+          await this.imageCompression.applyWatermark(
+            compressedPath,
+            undefined, // overwrite in place
+            'CRM Immobilier', // TODO: use agency name from settings
+            { opacity: 0.25, position: 'bottom-right' },
+          );
+          this.logger.log(`Watermarked image for property ${id}: ${file.filename}`);
+        } catch (wmError) {
+          this.logger.warn(`Watermark failed (non-blocking): ${wmError.message}`);
+        }
+
         // Store the compressed image path
-        newImages.push(`/uploads/properties/${id}/${file.filename.replace(/(\.[^.]+)$/, '_compressed$1')}`);
-        
+        newImages.push(
+          `/uploads/properties/${id}/${file.filename.replace(/(\.[^.]+)$/, '_compressed$1')}`,
+        );
+
         this.logger.log(`Compressed image for property ${id}: ${file.filename}`);
       } catch (error) {
         this.logger.error(`Failed to compress image: ${error.message}`);
@@ -380,7 +406,7 @@ export class PropertiesService {
     // Try to get from cache first
     const cacheKey = `stats:${userId}`;
     const cached = await this.cacheManager.get(cacheKey);
-    
+
     if (cached) {
       this.logger.debug(`Cache hit for stats:${userId}`);
       return cached;
@@ -404,6 +430,9 @@ export class PropertiesService {
       sold,
       rented,
       avgPrice: avgPrice._avg.price || 0,
+      // Extra fields expected by frontend MatchingDashboard
+      byStatus: { available, sold, rented },
+      averagePrice: avgPrice._avg.price || 0,
     };
 
     // Cache for 5 minutes (300 seconds)
@@ -635,7 +664,7 @@ export class PropertiesService {
     // Try to get from cache first
     const cacheKey = `featured:${userId}`;
     const cached = await this.cacheManager.get(cacheKey);
-    
+
     if (cached) {
       this.logger.debug(`Cache hit for ${cacheKey}`);
       return cached;
@@ -698,7 +727,7 @@ export class PropertiesService {
       for (const key of cacheKeys) {
         await this.cacheManager.del(key);
       }
-      
+
       this.logger.debug(`Property caches invalidated for user ${userId}`);
     } catch (error) {
       this.logger.warn(`Failed to invalidate cache: ${error.message}`);

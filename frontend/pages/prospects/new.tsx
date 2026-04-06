@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Camera, User } from 'lucide-react';
 import apiClient from '@/shared/utils/backend-api';
+import { prospectsAPI } from '@/shared/utils/prospects-api';
 
 export default function NewProspectPage() {
   const router = useRouter();
@@ -22,6 +23,17 @@ export default function NewProspectPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [type, setType] = React.useState<string>('buyer');
   const [source, setSource] = React.useState<string>('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,27 +41,40 @@ export default function NewProspectPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const budgetStr = formData.get('budget') as string;
+    const budgetMin = formData.get('budgetMin') as string;
+    const budgetMax = formData.get('budgetMax') as string;
 
-    const data = {
+    const data: Record<string, any> = {
       firstName: formData.get('firstName') as string,
       lastName: formData.get('lastName') as string,
       email: formData.get('email') as string,
       phone: (formData.get('phone') as string) || undefined,
-      type: type, // Required field: buyer, seller, tenant, owner
+      type,
       source: source || undefined,
-      budget: budgetStr ? parseInt(budgetStr, 10) : undefined,
       notes: (formData.get('notes') as string) || undefined,
     };
 
-    try {
-      console.log('Creating prospect:', data);
-      await apiClient.post('/prospects', data);
+    if (budgetMin || budgetMax) {
+      data.budget = {
+        min: budgetMin ? parseInt(budgetMin, 10) : undefined,
+        max: budgetMax ? parseInt(budgetMax, 10) : undefined,
+      };
+    }
 
-      // Redirect back to prospects list on success
+    try {
+      const res = await apiClient.post('/prospects', data);
+      const created = res.data;
+
+      if (avatarFile && created?.id) {
+        try {
+          await prospectsAPI.uploadAvatar(created.id, avatarFile);
+        } catch {
+          /* non-bloquant */
+        }
+      }
+
       router.push('/prospects');
     } catch (err: any) {
-      console.error('Error creating prospect:', err);
       const message =
         err.response?.data?.message || err.message || 'Erreur lors de la création du prospect';
       setError(Array.isArray(message) ? message.join(', ') : message);
@@ -59,7 +84,10 @@ export default function NewProspectPage() {
   };
 
   return (
-    <MainLayout title="Nouveau Prospect" breadcrumbs={[{ label: 'Prospects', href: '/prospects' }, { label: 'Nouveau' }]}>
+    <MainLayout
+      title="Nouveau Prospect"
+      breadcrumbs={[{ label: 'Prospects', href: '/prospects' }, { label: 'Nouveau' }]}
+    >
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => router.back()} size="sm">
@@ -78,19 +106,54 @@ export default function NewProspectPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Avatar */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div
+                    className="h-20 w-20 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center cursor-pointer overflow-hidden border-4 border-white shadow-lg"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        className="h-full w-full object-cover"
+                        alt="avatar"
+                      />
+                    ) : (
+                      <User className="h-8 w-8 text-white" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 p-1.5 bg-purple-600 text-white rounded-full shadow hover:bg-purple-700"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
+              </div>
+
+              {/* Prénom / Nom */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Prénom *</Label>
                   <Input id="firstName" name="firstName" placeholder="Jean" required />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Nom *</Label>
                   <Input id="lastName" name="lastName" placeholder="Dupont" required />
                 </div>
               </div>
 
+              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
@@ -102,28 +165,35 @@ export default function NewProspectPage() {
                 />
               </div>
 
+              {/* Téléphone */}
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" name="phone" type="tel" placeholder="+216 XX XXX XXX" />
+                <Input id="phone" name="phone" type="tel" placeholder="+33 06 XX XX XX XX" />
               </div>
 
+              {/* Type */}
               <div className="space-y-2">
-                <Label htmlFor="type">Type de prospect *</Label>
+                <Label>Type de prospect *</Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un type" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="buyer">Acheteur</SelectItem>
-                    <SelectItem value="seller">Vendeur</SelectItem>
-                    <SelectItem value="tenant">Locataire</SelectItem>
-                    <SelectItem value="owner">Propriétaire</SelectItem>
+                    <SelectItem value="buyer">🏠 Acheteur</SelectItem>
+                    <SelectItem value="seller">💰 Vendeur</SelectItem>
+                    <SelectItem value="tenant">🔑 Locataire</SelectItem>
+                    <SelectItem value="owner">🏗️ Propriétaire</SelectItem>
+                    <SelectItem value="renter">📋 Locataire (renter)</SelectItem>
+                    <SelectItem value="landlord">🏢 Bailleur</SelectItem>
+                    <SelectItem value="investor">📈 Investisseur</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Source */}
               <div className="space-y-2">
-                <Label htmlFor="source">Source</Label>
+                <Label>Source</Label>
                 <Select value={source} onValueChange={setSource}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une source" />
@@ -134,16 +204,26 @@ export default function NewProspectPage() {
                     <SelectItem value="social">Réseaux sociaux</SelectItem>
                     <SelectItem value="phone">Appel téléphonique</SelectItem>
                     <SelectItem value="prospecting">Prospection IA</SelectItem>
+                    <SelectItem value="csv_import">Import CSV</SelectItem>
                     <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Budget min/max */}
               <div className="space-y-2">
-                <Label htmlFor="budget">Budget (€)</Label>
-                <Input id="budget" name="budget" type="number" placeholder="250000" />
+                <Label>Budget (€)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Input name="budgetMin" type="number" placeholder="Min: 100 000" min={0} />
+                  </div>
+                  <div>
+                    <Input name="budgetMax" type="number" placeholder="Max: 500 000" min={0} />
+                  </div>
+                </div>
               </div>
 
+              {/* Notes */}
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
@@ -154,7 +234,7 @@ export default function NewProspectPage() {
                 />
               </div>
 
-              <div className="flex gap-2 justify-end pt-4">
+              <div className="flex gap-2 justify-end pt-2">
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Annuler
                 </Button>

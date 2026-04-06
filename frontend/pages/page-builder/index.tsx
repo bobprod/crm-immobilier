@@ -34,7 +34,7 @@ export default function PageBuilderListPage() {
   };
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-6">🎨 Page Builder</h1>
 

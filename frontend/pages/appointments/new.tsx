@@ -93,7 +93,7 @@ export default function NewAppointmentPage() {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => router.back()} size="sm">

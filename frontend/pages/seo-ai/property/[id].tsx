@@ -138,7 +138,7 @@ export default function PropertySeoDetailPage() {
 
   if (loading) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
         </div>
@@ -148,7 +148,7 @@ export default function PropertySeoDetailPage() {
 
   if (!property) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="container mx-auto p-6">
           <Card>
             <CardContent className="pt-6 text-center py-12">
@@ -165,7 +165,7 @@ export default function PropertySeoDetailPage() {
   }
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div>

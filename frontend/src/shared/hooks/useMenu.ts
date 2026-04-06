@@ -114,12 +114,20 @@ function getDefaultMenu(): DynamicMenuItem[] {
       order: 0,
     },
     {
+      id: 'default-prospecting',
+      moduleId: 'ai-prospecting',
+      label: 'Prospection IA',
+      icon: 'Search',
+      path: '/prospecting',
+      order: 1,
+    },
+    {
       id: 'default-prospects',
       moduleId: 'sales-prospects',
       label: 'Prospects',
       icon: 'Users',
       path: '/prospects',
-      order: 1,
+      order: 2,
     },
     {
       id: 'default-properties',
@@ -127,14 +135,14 @@ function getDefaultMenu(): DynamicMenuItem[] {
       label: 'Propriétés',
       icon: 'Building',
       path: '/properties',
-      order: 2,
+      order: 3,
     },
     {
       id: 'default-matching',
       moduleId: 'sales-matching',
       label: 'Matching',
       icon: 'Target',
-      path: '/matching-dashboard',
+      path: '/matching',
       order: 3,
     },
     {
@@ -160,14 +168,6 @@ function getDefaultMenu(): DynamicMenuItem[] {
       icon: 'CheckSquare',
       path: '/tasks',
       order: 6,
-    },
-    {
-      id: 'default-prospecting',
-      moduleId: 'ai-prospecting',
-      label: 'Prospection IA',
-      icon: 'Search',
-      path: '/prospecting',
-      order: 7,
     },
     {
       id: 'default-marketing',

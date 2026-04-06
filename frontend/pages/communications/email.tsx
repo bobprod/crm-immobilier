@@ -19,7 +19,6 @@ export default function EmailPage() {
     to: '',
     subject: '',
     body: '',
-    type: 'email' as const,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,13 +28,12 @@ export default function EmailPage() {
     setSuccess(false);
 
     try {
-      await apiClient.post('/communications', formData);
+      await apiClient.post('/communications/email', formData);
       setSuccess(true);
       setFormData({
         to: '',
         subject: '',
         body: '',
-        type: 'email',
       });
 
       setTimeout(() => {
@@ -54,7 +52,7 @@ export default function EmailPage() {
   };
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>

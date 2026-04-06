@@ -20,8 +20,10 @@ export class CreateProspectDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ enum: ['buyer', 'seller', 'tenant', 'owner'] })
-  @IsIn(['buyer', 'seller', 'tenant', 'owner'])
+  @ApiProperty({
+    enum: ['buyer', 'seller', 'tenant', 'owner', 'renter', 'landlord', 'investor', 'other'],
+  })
+  @IsIn(['buyer', 'seller', 'tenant', 'owner', 'renter', 'landlord', 'investor', 'other'])
   type: string;
 
   @ApiPropertyOptional()

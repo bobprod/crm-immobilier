@@ -14,11 +14,13 @@ import {
   InvoiceStatusChangedEvent,
   PaymentCreatedEvent,
   PropertyPublishedEvent,
+  PropertyCreatedEvent,
   OwnerCreatedEvent,
 } from './business.events';
 import { BusinessNotificationHelper } from '../notification.helper';
 import { BusinessActivityLogger } from '../activity-logger.helper';
 import { EmailService } from '../email.service';
+import { PrismaService } from '../../../../shared/database/prisma.service';
 
 /**
  * Event Handlers pour les événements métier
@@ -39,6 +41,7 @@ export class BusinessEventHandlers {
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
     private readonly emailService: EmailService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ========== MANDATE EVENT HANDLERS ==========
@@ -133,7 +136,9 @@ export class BusinessEventHandlers {
 
   @OnEvent('transaction.status_changed')
   async handleTransactionStatusChanged(event: TransactionStatusChangedEvent) {
-    this.logger.debug(`📢 Event: transaction.status_changed - ${event.oldStatus} → ${event.newStatus}`);
+    this.logger.debug(
+      `📢 Event: transaction.status_changed - ${event.oldStatus} → ${event.newStatus}`,
+    );
 
     try {
       // Notification
@@ -179,7 +184,9 @@ export class BusinessEventHandlers {
 
   @OnEvent('commission.created')
   async handleCommissionCreated(event: CommissionCreatedEvent) {
-    this.logger.debug(`📢 Event: commission.created - ${event.commission.amount} ${event.commission.currency}`);
+    this.logger.debug(
+      `📢 Event: commission.created - ${event.commission.amount} ${event.commission.currency}`,
+    );
 
     try {
       // Notification
@@ -202,7 +209,9 @@ export class BusinessEventHandlers {
 
   @OnEvent('commission.status_changed')
   async handleCommissionStatusChanged(event: CommissionStatusChangedEvent) {
-    this.logger.debug(`📢 Event: commission.status_changed - ${event.oldStatus} → ${event.newStatus}`);
+    this.logger.debug(
+      `📢 Event: commission.status_changed - ${event.oldStatus} → ${event.newStatus}`,
+    );
 
     try {
       // Activity log
@@ -252,7 +261,9 @@ export class BusinessEventHandlers {
 
   @OnEvent('payment.created')
   async handlePaymentCreated(event: PaymentCreatedEvent) {
-    this.logger.debug(`📢 Event: payment.created - ${event.payment.amount} ${event.payment.currency}`);
+    this.logger.debug(
+      `📢 Event: payment.created - ${event.payment.amount} ${event.payment.currency}`,
+    );
 
     try {
       // Activity log
@@ -288,6 +299,100 @@ export class BusinessEventHandlers {
       await this.activityLogger.logOwnerCreated(event.userId, event.owner);
     } catch (error) {
       this.logger.error('Error handling owner.created event:', error);
+    }
+  }
+
+  // ========== PROPERTY CREATED → MATCHING AUTOMATIQUE ==========
+
+  @OnEvent('property.created')
+  async handlePropertyCreatedMatching(event: PropertyCreatedEvent) {
+    this.logger.debug(`📢 Event: property.created → matching auto pour "${event.property.title}"`);
+
+    try {
+      const property = event.property;
+
+      // Chercher les prospects dont les critères matchent ce bien
+      const prospects = await this.prisma.prospects.findMany({
+        where: {
+          userId: event.userId,
+          deletedAt: null,
+          budget: { not: null },
+        },
+      });
+
+      const matchedProspects: any[] = [];
+
+      for (const prospect of prospects) {
+        let score = 0;
+        const reasons: string[] = [];
+        const budget = prospect.budget as any;
+
+        // Vérifier le budget
+        if (budget) {
+          const minBudget = budget.min || budget.budgetMin || 0;
+          const maxBudget = budget.max || budget.budgetMax || Infinity;
+          if (property.price >= minBudget && property.price <= maxBudget) {
+            score += 30;
+            reasons.push('Budget compatible');
+          }
+        }
+
+        // Vérifier le type si le prospect a des critères
+        const criteria = prospect.searchCriteria as any;
+        if (criteria) {
+          if (criteria.type && criteria.type === property.type) {
+            score += 20;
+            reasons.push('Type recherché');
+          }
+          if (
+            criteria.city &&
+            property.city &&
+            criteria.city.toLowerCase() === property.city.toLowerCase()
+          ) {
+            score += 25;
+            reasons.push('Ville souhaitée');
+          }
+          if (criteria.minArea && property.area && property.area >= criteria.minArea) {
+            score += 15;
+            reasons.push('Surface suffisante');
+          }
+          if (criteria.bedrooms && property.bedrooms && property.bedrooms >= criteria.bedrooms) {
+            score += 10;
+            reasons.push('Chambres suffisantes');
+          }
+        }
+
+        if (score >= 30) {
+          matchedProspects.push({ prospect, score, reasons });
+        }
+      }
+
+      if (matchedProspects.length > 0) {
+        this.logger.log(
+          `🔔 ${matchedProspects.length} prospect(s) matchent le bien "${property.title}"`,
+        );
+
+        // Créer les notifications pour chaque prospect matché
+        for (const { prospect, score, reasons } of matchedProspects) {
+          await this.prisma.notification.create({
+            data: {
+              userId: event.userId,
+              type: 'matching_alert',
+              title: `Nouveau bien compatible : ${property.title}`,
+              message: `Le prospect ${prospect.firstName} ${prospect.lastName} (score: ${score}%) correspond au bien "${property.title}" — ${reasons.join(', ')}`,
+              metadata: {
+                propertyId: property.id,
+                prospectId: prospect.id,
+                score,
+                reasons,
+              },
+              isRead: false,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error handling property.created matching event:', error);
     }
   }
 }

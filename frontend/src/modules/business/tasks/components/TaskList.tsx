@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import tasksService, { Task, CreateTaskDto, UpdateTaskDto } from '../tasks.service';
 import { TaskItem } from './TaskItem';
 import { TaskDialog } from './TaskDialog';
@@ -19,6 +20,7 @@ import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog';
 const ITEMS_PER_PAGE = 50;
 
 export function TaskList() {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -28,6 +30,14 @@ export function TaskList() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (router.query.action === 'new') {
+      setSelectedTask(null);
+      setIsDialogOpen(true);
+      router.replace('/tasks', undefined, { shallow: true });
+    }
+  }, [router.query.action, router]);
 
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{

@@ -1512,6 +1512,7 @@ export const ProspectingDashboard: React.FC<ProspectingDashboardProps> = ({ lang
                 {selectedCampaignId ? (
                   <SalesFunnel
                     leads={leads}
+                    viewMode={activeLeadsSubTab === 'funnel' ? 'funnel' : 'kanban'}
                     onLeadClick={handleLeadClick}
                     onStageChange={handleStageChange}
                     onExportStats={handleExportStats}

@@ -15,7 +15,7 @@ export class ScheduledTasksService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) { }
+  ) {}
 
   /**
    * 🕐 Exécuté tous les jours à minuit
@@ -114,8 +114,7 @@ export class ScheduledTasksService {
       // Send notification for each expiring mandate
       for (const mandate of expiringMandates) {
         const daysRemaining = Math.ceil(
-          (new Date(mandate.endDate).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24),
+          (new Date(mandate.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
         );
 
         // Only notify for specific thresholds (30 days, 15 days, 7 days, 3 days)
@@ -179,8 +178,7 @@ export class ScheduledTasksService {
       // Create a notification for each overdue invoice
       for (const invoice of overdueInvoices) {
         const daysOverdue = Math.floor(
-          (new Date().getTime() - new Date(invoice.dueDate).getTime()) /
-          (1000 * 60 * 60 * 24),
+          (new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24),
         );
 
         // Notify for specific thresholds (1 day, 7 days, 14 days, 30 days)
@@ -233,38 +231,34 @@ export class ScheduledTasksService {
 
       for (const user of users) {
         // Get stats for the week
-        const [
-          newTransactions,
-          completedTransactions,
-          newMandates,
-          newCommissions,
-        ] = await Promise.all([
-          this.db.transaction.count({
-            where: {
-              userId: user.id,
-              createdAt: { gte: lastWeek },
-            },
-          }),
-          this.db.transaction.count({
-            where: {
-              userId: user.id,
-              status: 'final_deed_signed',
-              updatedAt: { gte: lastWeek },
-            },
-          }),
-          this.db.mandate.count({
-            where: {
-              userId: user.id,
-              createdAt: { gte: lastWeek },
-            },
-          }),
-          this.db.commission.count({
-            where: {
-              userId: user.id,
-              createdAt: { gte: lastWeek },
-            },
-          }),
-        ]);
+        const [newTransactions, completedTransactions, newMandates, newCommissions] =
+          await Promise.all([
+            this.db.transaction.count({
+              where: {
+                userId: user.id,
+                createdAt: { gte: lastWeek },
+              },
+            }),
+            this.db.transaction.count({
+              where: {
+                userId: user.id,
+                status: 'final_deed_signed',
+                updatedAt: { gte: lastWeek },
+              },
+            }),
+            this.db.mandate.count({
+              where: {
+                userId: user.id,
+                createdAt: { gte: lastWeek },
+              },
+            }),
+            this.db.commission.count({
+              where: {
+                userId: user.id,
+                createdAt: { gte: lastWeek },
+              },
+            }),
+          ]);
 
         // Only send summary if there's activity
         if (
@@ -296,6 +290,164 @@ export class ScheduledTasksService {
       this.logger.log('✅ Weekly summaries generated');
     } catch (error) {
       this.logger.error('❌ Error generating weekly summaries:', error);
+    }
+  }
+
+  /**
+   * 🕐 Exécuté tous les jours à minuit
+   * Vérifie et marque les annonces de propriétés expirées
+   * Les propriétés sont archivées après leur période de listing
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async checkAndArchiveExpiredProperties() {
+    this.logger.log('⏰ Checking for expired property listings...');
+
+    try {
+      // Find all published properties that have exceeded their listing duration
+      // Default listing duration: 90 days (if expirationDate is not set)
+      const now = new Date();
+      const ninetydaysAgo = new Date();
+      ninetydaysAgo.setDate(ninetydaysAgo.getDate() - 90);
+
+      // Properties with explicit expiration date that has passed
+      const expiredProperties = await this.db.properties.findMany({
+        where: {
+          AND: [
+            { status: { in: ['published', 'available', 'reserved'] } },
+            {
+              OR: [
+                // Properties with explicit expirationDate that has passed
+                {
+                  AND: [{ expirationDate: { not: null } }, { expirationDate: { lt: now } }],
+                },
+                // Properties without expirationDate but older than 90 days
+                {
+                  AND: [{ expirationDate: null }, { createdAt: { lt: ninetydaysAgo } }],
+                },
+              ],
+            },
+          ],
+        },
+        include: {
+          owner: true,
+        },
+      });
+
+      if (expiredProperties.length === 0) {
+        this.logger.log('✅ No expired property listings found');
+        return;
+      }
+
+      this.logger.log(`📋 Found ${expiredProperties.length} expired listings`);
+
+      // Archive all expired properties
+      await this.db.properties.updateMany({
+        where: {
+          id: {
+            in: expiredProperties.map((p) => p.id),
+          },
+        },
+        data: {
+          status: 'archived',
+          deletedAt: now,
+        },
+      });
+
+      this.logger.log(`✅ Archived ${expiredProperties.length} expired property listings`);
+
+      // Log activity and send notifications for each archived property
+      for (const property of expiredProperties) {
+        // Log activity
+        await this.activityLogger.logPropertyStatusChanged(
+          property.userId,
+          property,
+          property.status,
+          'archived',
+          'Listing expiré - propriété archivée automatiquement',
+        );
+
+        // Create a notification
+        await this.db.notification.create({
+          data: {
+            userId: property.userId,
+            type: 'property_listing_expired',
+            title: 'Annonce expirée',
+            message: `L'annonce de la propriété "${property.title}" a été archivée car sa période de listing a expiré.`,
+            metadata: {
+              propertyId: property.id,
+              propertyTitle: property.title,
+              expirationDate: property.expirationDate,
+              listingDays: Math.floor(
+                (now.getTime() - new Date(property.createdAt).getTime()) / (1000 * 60 * 60 * 24),
+              ),
+            },
+            actionUrl: `/properties/${property.id}`,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error('❌ Error checking expired properties:', error);
+    }
+  }
+
+  /**
+   * 🕐 Exécuté tous les jours à 9h du matin
+   * Notifie les propriétaires pour les annonces expirant bientôt
+   * Notifie 7 jours, 3 jours et 1 jour avant l'expiration
+   */
+  @Cron('0 9 * * *') // Every day at 9 AM
+  async notifyExpiringProperties() {
+    this.logger.log('⏰ Checking for property listings expiring soon...');
+
+    try {
+      const now = new Date();
+      const expiringDates = [1, 3, 7]; // Notify 1, 3, and 7 days before expiration
+
+      for (const daysRemaining of expiringDates) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + daysRemaining);
+
+        const expiringProperties = await this.db.properties.findMany({
+          where: {
+            status: { in: ['published', 'available', 'reserved'] },
+            expirationDate: {
+              gte: new Date(expirationDate.getTime() - 24 * 60 * 60 * 1000),
+              lte: new Date(expirationDate.getTime() + 24 * 60 * 60 * 1000),
+            },
+          },
+          include: {
+            owner: true,
+          },
+        });
+
+        for (const property of expiringProperties) {
+          await this.db.notification.create({
+            data: {
+              userId: property.userId,
+              type: 'property_listing_expiring_soon',
+              title: `Annonce expire dans ${daysRemaining} jour(s)`,
+              message: `L'annonce de la propriété "${property.title}" expire dans ${daysRemaining} jour(s). Veuillez la renouveler pour continuer à la promouvoir.`,
+              metadata: {
+                propertyId: property.id,
+                propertyTitle: property.title,
+                daysRemaining,
+                expirationDate: property.expirationDate,
+              },
+              actionUrl: `/properties/${property.id}/renew`,
+            },
+          });
+        }
+
+        if (expiringProperties.length > 0) {
+          this.logger.log(
+            `📧 Sent ${expiringProperties.length} notification(s) for properties expiring in ${daysRemaining} day(s)`,
+          );
+        }
+      }
+
+      this.logger.log('✅ Property expiration notifications sent');
+    } catch (error) {
+      this.logger.error('❌ Error notifying expiring properties:', error);
     }
   }
 }

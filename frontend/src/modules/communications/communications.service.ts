@@ -23,21 +23,26 @@ export interface SendEmailDto {
 
 export interface SendSmsDto {
   to: string;
-  body: string;
+  message: string;
   prospectId?: string;
+  propertyId?: string;
+  templateId?: string;
 }
 
 export interface SendWhatsAppDto {
   to: string;
-  body: string;
+  message: string;
   prospectId?: string;
+  propertyId?: string;
+  templateId?: string;
+  mediaUrl?: string;
 }
 
 export interface CreateTemplateDto {
   name: string;
   type: 'email' | 'sms' | 'whatsapp';
   subject?: string;
-  body: string;
+  content: string;
   variables?: string[];
 }
 
@@ -46,7 +51,7 @@ export interface Template {
   name: string;
   type: 'email' | 'sms' | 'whatsapp';
   subject?: string;
-  body: string;
+  content: string;
   variables?: string[];
   createdAt: string;
   updatedAt: string;
@@ -104,6 +109,11 @@ const communicationsService = {
     return response.data;
   },
 
+  updateTemplate: async (id: string, data: Partial<CreateTemplateDto>) => {
+    const response = await apiClient.put<Template>(`/communications/templates/${id}`, data);
+    return response.data;
+  },
+
   sendTestEmail: async (to: string) => {
     const response = await apiClient.post('/communications/smtp/test-email', { to });
     return response.data;
@@ -133,12 +143,18 @@ const communicationsService = {
   },
 
   improveText: async (text: string, options?: string[]) => {
-    const response = await apiClient.post('/communications/ai/improve', { text, options });
+    const response = await apiClient.post('/communications/ai/improve-text', {
+      text,
+      improvements: options || ['clarity'],
+    });
     return response.data as { improved: string; changes?: any[] };
   },
 
   translateMessage: async (text: string, target: string) => {
-    const response = await apiClient.post('/communications/ai/translate', { text, target });
+    const response = await apiClient.post('/communications/ai/translate', {
+      text,
+      targetLanguage: target,
+    });
     return response.data as { translated: string };
   },
 };

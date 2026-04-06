@@ -756,7 +756,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">

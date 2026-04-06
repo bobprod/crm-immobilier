@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import {
   LayoutDashboard,
   Search,
@@ -63,6 +64,12 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/dashboard',
   },
   {
+    id: 'prospection',
+    label: 'Prospection',
+    icon: Search,
+    path: '/prospection',
+  },
+  {
     id: 'prospects',
     label: 'Prospects',
     icon: UserCircle,
@@ -75,16 +82,10 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/properties',
   },
   {
-    id: 'prospection',
-    label: 'Prospection',
-    icon: Search,
-    path: '/prospection',
-  },
-  {
     id: 'matching',
     label: 'Matching',
     icon: Target,
-    path: '/matching-dashboard',
+    path: '/matching',
   },
   {
     id: 'planification',
@@ -123,28 +124,10 @@ const MENU_ITEMS: MenuItem[] = [
     path: '/investment',
   },
   {
-    id: 'vitrine',
-    label: 'Sites Vitrines',
-    icon: Globe,
-    path: '/vitrine',
-  },
-  {
     id: 'analytics',
     label: 'Analytics',
     icon: BarChart3,
     path: '/analytics',
-  },
-  {
-    id: 'ai-assistant',
-    label: 'Assistant IA',
-    icon: Bot,
-    path: '/ai-assistant',
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: Bell,
-    path: '/notifications',
   },
   {
     id: 'personnel',
@@ -211,7 +194,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         {/* Main Item */}
         <div
           className={`
-            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-0.5
+            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-1
             ${level > 0 ? 'pl-9 pr-3 py-2' : 'px-3 py-2.5'}
             ${
               active
@@ -314,12 +297,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
-        {MENU_ITEMS.map((item) => renderMenuItem(item))}
+      <nav className="flex-1 overflow-y-auto py-4 px-1 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
+        <div className="space-y-0.5">{MENU_ITEMS.map((item) => renderMenuItem(item))}</div>
       </nav>
 
       {/* Footer */}
       <div className={`border-t border-slate-700/60 ${collapsed ? 'p-3' : 'p-4'}`}>
+        {!collapsed && (
+          <div className="mb-3">
+            <LanguageSwitcher />
+          </div>
+        )}
         {collapsed ? (
           <div className="flex justify-center">
             <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center">

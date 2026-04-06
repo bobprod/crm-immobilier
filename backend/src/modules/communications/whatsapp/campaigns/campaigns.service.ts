@@ -383,6 +383,11 @@ export class CampaignsService {
     return this.calculateStats(campaign);
   }
 
+  async getCampaignRecipients(userId: string, campaignId: string) {
+    const campaign = await this.findCampaignByIdAndUser(userId, campaignId);
+    return campaign.recipients || [];
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // PRIVATE HELPER METHODS
   // ═══════════════════════════════════════════════════════════════

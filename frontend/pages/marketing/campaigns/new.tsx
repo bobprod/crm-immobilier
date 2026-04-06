@@ -79,7 +79,7 @@ export default function NewCampaignPage() {
   };
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto p-6 max-w-4xl">
         {/* Header */}
         <div className="mb-6">

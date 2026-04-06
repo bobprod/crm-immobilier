@@ -258,6 +258,7 @@ model properties {
   images              String[]
   features            String[]
   status              PropertyStatus                @default(available)
+  expirationDate      DateTime?                     // Date d'expiration de l'annonce (optionnel)
   deletedAt           DateTime?
   ownerNewId          String?
   propertySeo         PropertySeo?

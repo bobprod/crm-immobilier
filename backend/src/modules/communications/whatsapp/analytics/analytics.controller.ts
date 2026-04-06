@@ -14,6 +14,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import {
   AnalyticsPeriodDto,
   AnalyticsMetricsDto,
@@ -27,6 +28,7 @@ import {
 
 @ApiTags('WhatsApp Analytics')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('whatsapp/analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
@@ -64,7 +66,7 @@ export class AnalyticsController {
     @Req() req: any,
     @Query() period: AnalyticsPeriodDto,
   ): Promise<AnalyticsMetricsDto> {
-    return this.analyticsService.getMetrics(req.user.id, period);
+    return this.analyticsService.getMetrics(req.user.userId, period);
   }
 
   @Get('charts')
@@ -96,7 +98,7 @@ export class AnalyticsController {
     @Req() req: any,
     @Query() period: AnalyticsPeriodDto,
   ): Promise<AnalyticsChartDataDto> {
-    return this.analyticsService.getChartData(req.user.id, period);
+    return this.analyticsService.getChartData(req.user.userId, period);
   }
 
   @Get('templates/performance')
@@ -128,7 +130,7 @@ export class AnalyticsController {
     @Req() req: any,
     @Query() period: AnalyticsPeriodDto,
   ): Promise<TemplatePerformanceDto[]> {
-    return this.analyticsService.getTemplatePerformance(req.user.id, period);
+    return this.analyticsService.getTemplatePerformance(req.user.userId, period);
   }
 
   @Get('conversations/by-hour')
@@ -161,7 +163,7 @@ export class AnalyticsController {
     @Query() period: AnalyticsPeriodDto,
   ): Promise<ConversationStatsDto[]> {
     return this.analyticsService.getConversationStatsByHour(
-      req.user.id,
+      req.user.userId,
       period,
     );
   }
@@ -199,7 +201,7 @@ export class AnalyticsController {
     @Req() req: any,
     @Query() period: AnalyticsPeriodDto,
   ): Promise<AnalyticsReportDto> {
-    return this.analyticsService.generateReport(req.user.id, period);
+    return this.analyticsService.generateReport(req.user.userId, period);
   }
 
   @Get('report/export')
@@ -240,7 +242,7 @@ export class AnalyticsController {
     @Query('format') format?: ExportFormat,
   ): Promise<ExportResultDto> {
     return this.analyticsService.exportReport(
-      req.user.id,
+      req.user.userId,
       period,
       format || ExportFormat.JSON,
     );

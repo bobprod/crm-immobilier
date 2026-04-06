@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/a
 
 // Helper for authenticated requests
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return { Authorization: `Bearer ${token}` };
 };
 
@@ -273,13 +273,16 @@ export function useContacts(filters?: ContactFilters) {
     setIsExporting(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/whatsapp/contacts/export`,
+        `${API_BASE_URL}/whatsapp/contacts/export/csv`,
         {
           headers: getAuthHeaders(),
-          responseType: 'blob',
         }
       );
-      return response.data;
+      const { data, mimeType } = response.data;
+      const byteCharacters = atob(data);
+      const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
+      const byteArray = new Uint8Array(byteNumbers);
+      return new Blob([byteArray], { type: mimeType || 'text/csv' });
     } catch (error: any) {
       throw new Error('Erreur lors de l\'export des contacts');
     } finally {
