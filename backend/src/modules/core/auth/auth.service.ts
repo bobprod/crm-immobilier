@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CommunicationsService } from '../../communications/communications.service';
@@ -17,6 +17,8 @@ interface OAuthUserData {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -68,7 +70,7 @@ export class AuthService {
       });
     } catch (error) {
       // Ne pas bloquer l'inscription si l'email échoue
-      console.error('Failed to send welcome email:', error);
+      this.logger.error('Failed to send welcome email:', error);
     }
 
     const { password: _, ...result } = user;
@@ -290,7 +292,7 @@ export class AuthService {
 
       return { success: true, message: 'Si cet email existe, un lien de réinitialisation a été envoyé' };
     } catch (error) {
-      console.error('Error requesting password reset:', error);
+      this.logger.error('Error requesting password reset:', error);
       return { success: false, message: 'Une erreur est survenue' };
     }
   }
@@ -320,7 +322,7 @@ export class AuthService {
 
       return { success: true, message: 'Mot de passe réinitialisé avec succès' };
     } catch (error) {
-      console.error('Error resetting password:', error);
+      this.logger.error('Error resetting password:', error);
       return { success: false, message: 'Token invalide ou expiré' };
     }
   }

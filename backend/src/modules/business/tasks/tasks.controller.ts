@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { TasksService } from './tasks.service';
-import { CreateTaskDto, UpdateTaskDto } from './dto';
+import { CreateTaskDto, UpdateTaskDto, TaskFilterDto } from './dto';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
@@ -31,7 +31,7 @@ export class TasksController {
 
   @Get()
   @ApiOperation({ summary: 'Liste des tâches' })
-  findAll(@Request() req, @Query() filters: any) {
+  findAll(@Request() req, @Query() filters: TaskFilterDto) {
     return this.tasksService.findAll(req.user.userId, filters);
   }
 

@@ -34,15 +34,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login user' })
   @ApiBody({ type: LoginDto })
   async login(@Body() loginDto: LoginDto) {
-    console.log('[AUTH DEBUG] Login attempt:', { email: loginDto.email, hasPassword: !!loginDto.password });
-    try {
-      const result = await this.authService.login(loginDto.email, loginDto.password);
-      console.log('[AUTH DEBUG] Login SUCCESS for:', loginDto.email);
-      return result;
-    } catch (error) {
-      console.error('[AUTH DEBUG] Login FAILED:', error.message, error.status);
-      throw error;
-    }
+    return this.authService.login(loginDto.email, loginDto.password);
   }
 
   @Post('refresh')
