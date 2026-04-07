@@ -1,8 +1,13 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 import { CommunicationsService } from '../../communications/communications.service';
+import {
+  AppointmentCreatedEvent,
+  AppointmentStatusChangedEvent,
+} from '../shared/events/business.events';
 
 @Injectable()
 export class AppointmentsService {
@@ -11,6 +16,7 @@ export class AppointmentsService {
   constructor(
     private prisma: PrismaService,
     private communicationsService: CommunicationsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -80,12 +86,11 @@ export class AppointmentsService {
       },
     });
 
+    // Emit analytics event
+    this.eventEmitter.emit('appointment.created', new AppointmentCreatedEvent(userId, appointment));
+
     return this.normalizeAppointment(appointment);
   }
-
-  /**
-   * Récupérer tous les rendez-vous avec filtres
-   */
   async findAll(userId: string, filters?: any) {
     const where: any = { userId };
 
@@ -201,7 +206,7 @@ export class AppointmentsService {
    * Mettre à jour un rendez-vous
    */
   async update(id: string, userId: string, data: any) {
-    await this.findOne(id, userId); // Vérifier l'existence
+    const existing = await this.findOne(id, userId); // Vérifier l'existence
 
     const updateData: any = { ...data };
 
@@ -236,6 +241,14 @@ export class AppointmentsService {
         properties: true,
       },
     });
+
+    // Emit status changed event if status was updated
+    if (data.status && data.status !== (existing as any).status) {
+      this.eventEmitter.emit(
+        'appointment.status_changed',
+        new AppointmentStatusChangedEvent(userId, updated, (existing as any).status, data.status),
+      );
+    }
 
     return this.normalizeAppointment(updated);
   }
