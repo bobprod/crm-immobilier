@@ -243,10 +243,10 @@ export class AppointmentsService {
     });
 
     // Emit status changed event if status was updated
-    if (data.status && data.status !== (existing as any).status) {
+    if (data.status && data.status !== existing.status) {
       this.eventEmitter.emit(
         'appointment.status_changed',
-        new AppointmentStatusChangedEvent(userId, updated, (existing as any).status, data.status),
+        new AppointmentStatusChangedEvent(userId, updated, existing.status, data.status),
       );
     }
 

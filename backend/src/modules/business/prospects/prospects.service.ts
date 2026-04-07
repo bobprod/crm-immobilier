@@ -185,13 +185,13 @@ export class ProspectsService {
     });
 
     // Emit status changed event if status was updated
-    if (data.status && data.status !== (oldProspect as any).status) {
+    if (data.status && data.status !== oldProspect.status) {
       if (data.status === 'converted') {
         this.eventEmitter.emit('prospect.converted', new ProspectConvertedEvent(userId, updatedProspect));
       } else {
         this.eventEmitter.emit(
           'prospect.status_changed',
-          new ProspectStatusChangedEvent(userId, updatedProspect, (oldProspect as any).status, data.status),
+          new ProspectStatusChangedEvent(userId, updatedProspect, oldProspect.status, data.status),
         );
       }
     }
