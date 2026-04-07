@@ -606,7 +606,7 @@ export default function IntegrationsSettingsPage() {
   // ── Load saved settings on mount ──
   useEffect(() => {
     const allSections = [...COMM_SECTIONS, ...TRACKING_SECTIONS];
-    allSections.forEach(async (section) => {
+    const loadSection = async (section: SectionDef) => {
       try {
         const res = await apiClient.get(`/settings/${section.id}`);
         const data: { key: string; value: string }[] = Array.isArray(res.data) ? res.data : [];
@@ -624,7 +624,8 @@ export default function IntegrationsSettingsPage() {
           [section.id]: { ...prev[section.id], loading: false },
         }));
       }
-    });
+    };
+    void Promise.all(allSections.map(loadSection));
   }, []);
 
   const updateValue = useCallback((sectionId: string, key: string, val: string) => {
