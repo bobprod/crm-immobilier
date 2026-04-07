@@ -158,6 +158,12 @@ const MENU_ITEMS: MenuItem[] = [
         icon: Wrench,
         path: '/settings/config',
       },
+      {
+        id: 'settings-integrations',
+        label: 'Intégrations',
+        icon: Globe,
+        path: '/settings/integrations',
+      },
     ],
   },
 ];
