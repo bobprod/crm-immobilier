@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Users,
   Star,
+  KanbanSquare,
 } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -140,6 +141,12 @@ export default function ProspectsListPage() {
             <p className="text-gray-600 mt-1">{prospects.length} prospects au total</p>
           </div>
           <div className="flex gap-2">
+            <Link href="/prospects/pipeline">
+              <Button variant="outline" size="sm" title="Vue Pipeline Kanban (Bitrix24/Odoo style)">
+                <KanbanSquare className="h-4 w-4 mr-2" />
+                Vue Pipeline
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
               {exporting ? 'Export...' : 'Exporter CSV'}

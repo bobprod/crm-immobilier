@@ -70,7 +70,46 @@ export interface CreateProspectData {
   notes?: string;
 }
 
-export interface UpdateProspectData extends Partial<CreateProspectData> {}
+export interface UpdateProspectData extends Partial<CreateProspectData> {
+  lostReason?: string;
+}
+
+export interface ProspectPipelineCard {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  type: string;
+  status: string;
+  score: number;
+  source?: string;
+  budget?: Record<string, any>;
+  lostReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  nextActivity?: {
+    nextActionDate: string;
+    nextAction?: string;
+    channel: string;
+  } | null;
+}
+
+export interface ProspectPipelineColumn {
+  key: string;
+  label: string;
+  color: string;
+  count: number;
+  totalScore: number;
+  cards: ProspectPipelineCard[];
+}
+
+export interface ProspectPipelineData {
+  columns: ProspectPipelineColumn[];
+  unassigned: number;
+  total: number;
+  conversionRate: number;
+}
 
 export interface ProspectFilters {
   type?: string;
@@ -460,6 +499,14 @@ class ProspectsAPIService {
    */
   async getStats(): Promise<ProspectStats> {
     const response = await apiClient.get<ProspectStats>('/prospects/stats');
+    return response.data;
+  }
+
+  /**
+   * Get prospects grouped by pipeline stage (Bitrix24/Odoo style)
+   */
+  async getPipeline(): Promise<ProspectPipelineData> {
+    const response = await apiClient.get<ProspectPipelineData>('/prospects/pipeline');
     return response.data;
   }
 
