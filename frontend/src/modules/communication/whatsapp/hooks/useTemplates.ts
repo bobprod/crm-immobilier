@@ -9,7 +9,7 @@ import {
   TemplateStatus,
 } from '../types/whatsapp.types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 /**
  * Hook to manage WhatsApp templates
@@ -22,11 +22,11 @@ export function useTemplates() {
 
   // Fetch all templates
   const {
-    data: templates,
+    data: templatesResponse,
     error,
     isLoading,
     mutate,
-  } = useSWR<WhatsAppTemplate[]>(
+  } = useSWR<{ templates: WhatsAppTemplate[] }>(
     '/whatsapp/templates',
     async (url) => {
       try {
@@ -39,7 +39,7 @@ export function useTemplates() {
         return response.data;
       } catch (err: any) {
         if (err.response?.status === 404) {
-          return [];
+          return { templates: [] };
         }
         throw err;
       }
@@ -48,6 +48,7 @@ export function useTemplates() {
       revalidateOnFocus: false,
     }
   );
+  const templates = templatesResponse?.templates || [];
 
   /**
    * Get single template by ID
@@ -155,18 +156,19 @@ export function useTemplates() {
    * Duplicate template
    */
   const duplicateTemplate = async (templateId: string): Promise<WhatsAppTemplate> => {
-    const original = await getTemplate(templateId);
-
-    return createTemplate({
-      name: `${original.name}_copy`,
-      language: original.language,
-      category: original.category,
-      header: original.header,
-      body: original.body,
-      footer: original.footer,
-      buttons: original.buttons,
-      variables: original.variables,
-    });
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(
+      `${API_BASE_URL}/whatsapp/templates/${templateId}/duplicate`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    await mutate();
+    return response.data;
   };
 
   /**
@@ -312,7 +314,7 @@ export function useTemplates() {
   };
 
   return {
-    templates: templates || [],
+    templates,
     isLoading,
     error,
     isCreating,

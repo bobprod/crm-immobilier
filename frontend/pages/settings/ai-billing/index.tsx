@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * AI Billing Dashboard - Page principale
@@ -49,8 +51,8 @@ export default function AIBillingDashboard() {
     const fetchUser = async () => {
       try {
         // TODO: Remplacer par vrai appel API
-        const response = await fetch('/api/auth/me');
-        const userData = await response.json();
+        const response = await apiClient.get('/auth/me');
+        const userData = response.data;
         setUser(userData);
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -95,7 +97,7 @@ export default function AIBillingDashboard() {
   }
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>AI Billing - Gestion Crédits & Facturation IA</title>
         <meta name="description" content="Gestion des crédits IA, usage et facturation" />
@@ -347,6 +349,6 @@ export default function AIBillingDashboard() {
           )}
         </Tabs>
       </div>
-    </>
+    </MainLayout>
   );
 }

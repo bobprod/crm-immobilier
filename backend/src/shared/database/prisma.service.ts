@@ -17,7 +17,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   // Mapping des noms de modèle Prisma vers les noms de table PostgreSQL
   private readonly tableNameMap: Record<string, string> = {
     llmConfig: 'llm_configs',
-    mlConfig: 'ml_configs',
+    mlConfig: 'MlConfig',
     // Tables LLM Router
     userLlmProvider: 'user_llm_providers',
     llmUsageLog: 'llm_usage_logs',
@@ -52,6 +52,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     publishedProperty: 'PublishedProperty',
     vitrineAnalytics: 'VitrineAnalytics',
     propertySeo: 'PropertySeo',
+    publicAgentProfile: 'PublicAgentProfile',
+    publicLead: 'PublicLead',
+    vitrineTemplate: 'VitrineTemplate',
+    vitrinePage: 'VitrinePage',
     // Tables Provider
     providerConfig: 'provider_configs',
     providerUsageLog: 'provider_usage_logs',
@@ -64,6 +68,41 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     // Tables Intégrations
     userIntegration: 'user_integrations',
     syncLog: 'sync_logs',
+    // Tables Business (Mandates, Owners, Transactions, Invoices)
+    mandate: 'mandates',
+    mandates: 'mandates',
+    owner: 'owners',
+    owners: 'owners',
+    invoice: 'invoices',
+    invoices: 'invoices',
+    transaction: 'transactions',
+    transactions: 'transactions',
+    transactionStep: 'transaction_steps',
+    transactionSteps: 'transaction_steps',
+    commission: 'commissions',
+    commissions: 'commissions',
+    payment: 'payments',
+    payments: 'payments',
+    notification: 'notifications',
+    notifications: 'notifications',
+    notificationPreference: 'notification_preferences',
+    notificationPreferences: 'notification_preferences',
+    // Tables AI Chat
+    aiChatConversation: 'ai_chat_conversations',
+    aiChatConversations: 'ai_chat_conversations',
+    aiChatMessage: 'ai_chat_messages',
+    aiChatMessages: 'ai_chat_messages',
+    // Tables Documents-Intelligence
+    documentInvestmentLink: 'document_investment_links',
+    // Tables Page Builder (PascalCase = pas de @@map)
+    page: 'Page',
+    pages: 'Page',
+    // Tables ML/AI/SEO (PascalCase = pas de @@map)
+    aiSuggestion: 'AiSuggestion',
+    detectedAnomaly: 'DetectedAnomaly',
+    prospectingSource: 'ProspectingSource',
+    seoConfig: 'SeoConfig',
+    seoBlogPost: 'SeoBlogPost',
     // Autres tables
     propertyTrackingStats: 'property_tracking_stats',
     activities: 'activities',
@@ -181,8 +220,25 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'investmentAlert',
       // Tables Intégrations
       'userIntegration',
+      // Tables Business (Mandates, Owners, Transactions, Invoices)
+      'mandate',
+      'mandates',
+      'owner',
+      'owners',
+      'invoice',
+      'invoices',
       // Autres
       'propertyTrackingStats',
+      // Tables Vitrine Publique
+      'publicAgentProfile',
+      'publicLead',
+      'vitrineTemplate',
+      'vitrinePage',
+      // Tables AI Chat
+      'aiChatConversation',
+      'aiChatMessage',
+      // Tables Documents-Intelligence
+      'documentInvestmentLink',
     ];
 
     tables.forEach((table) => {
@@ -460,27 +516,27 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           _count: parseInt(row._count || '0', 10),
           _sum: args._sum
             ? Object.keys(args._sum).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+                {},
+              )
             : null,
           _avg: args._avg
             ? Object.keys(args._avg).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+                {},
+              )
             : null,
           _min: args._min
             ? Object.keys(args._min).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+                {},
+              )
             : null,
           _max: args._max
             ? Object.keys(args._max).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+                {},
+              )
             : null,
         };
       },

@@ -84,21 +84,23 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
     const isActive = activeItemId === item.id;
 
     return (
-      <div key={item.id}>
+      <div key={item.id} className="px-2">
         <button
           onClick={() => handleNavigation(item.path)}
           className={`
-            w-full flex items-center px-6 py-3 text-left transition-colors
-            ${depth > 0 ? 'pl-12' : ''}
+            w-full flex items-center gap-3 rounded-lg transition-all duration-150 text-left
+            ${depth > 0 ? 'pl-9 pr-3 py-2' : 'px-3 py-2.5'}
             ${
               isActive
-                ? 'bg-primary-foreground text-primary border-r-2 border-primary'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-white/15 text-white'
+                : 'text-slate-300 hover:bg-white/10 hover:text-white'
             }
           `}
         >
-          <Icon className="w-5 h-5 mr-3" />
-          {item.label}
+          <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+          <span className={`text-sm ${isActive ? 'font-semibold text-white' : 'font-medium'}`}>
+            {item.label}
+          </span>
         </button>
 
         {/* Sous-menus récursifs */}
@@ -114,9 +116,9 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
    */
   if (loading) {
     return (
-      <nav className="mt-6 flex-1 overflow-y-auto">
+      <nav className="mt-4 flex-1 overflow-y-auto">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400"></div>
         </div>
       </nav>
     );
@@ -124,12 +126,10 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
 
   if (error) {
     return (
-      <nav className="mt-6 flex-1 overflow-y-auto">
-        <div className="px-6 py-4 text-sm text-red-600">
-          <p>Erreur de chargement du menu</p>
-          <p className="text-xs text-gray-500 mt-1">
-            Le menu par défaut est utilisé
-          </p>
+      <nav className="mt-4 flex-1 overflow-y-auto">
+        <div className="px-5 py-3 text-xs text-slate-400">
+          <p className="text-red-400">Erreur de chargement du menu</p>
+          <p className="text-slate-500 mt-0.5">Menu par défaut utilisé</p>
         </div>
         {menuItems.map((item) => renderMenuItem(item))}
       </nav>
@@ -140,9 +140,9 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
    * Rendu normal du menu
    */
   return (
-    <nav className="mt-6 flex-1 overflow-y-auto">
+    <nav className="mt-4 flex-1 overflow-y-auto py-1">
       {menuItems.length === 0 ? (
-        <div className="px-6 py-4 text-sm text-gray-500">
+        <div className="px-5 py-4 text-sm text-slate-400">
           Aucun module activé
         </div>
       ) : (

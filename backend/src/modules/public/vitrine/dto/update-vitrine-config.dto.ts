@@ -101,4 +101,39 @@ export class UpdateVitrineConfigDto {
   @IsString()
   @IsOptional()
   analyticsId?: string;
+
+  @ApiProperty({ required: false, description: 'Slug unique ex: firstimmo' })
+  @IsString()
+  @IsOptional()
+  slug?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  agencyId?: string;
+
+  @ApiProperty({ required: false, description: 'Domaine personnalisé ex: www.firstimmo.tn' })
+  @IsString()
+  @IsOptional()
+  customDomain?: string;
+
+  @ApiProperty({ required: false, description: 'Sections on/off JSON' })
+  @IsObject()
+  @IsOptional()
+  sectionsConfig?: any;
+
+  @ApiProperty({ required: false, description: 'Theme avancé (fonts, spacing, etc.)' })
+  @IsObject()
+  @IsOptional()
+  themeConfig?: any;
+
+  @ApiProperty({ required: false, description: 'Numéro WhatsApp Business ex: +21699000000' })
+  @IsString()
+  @IsOptional()
+  whatsappNumber?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  accentColor?: string;
 }

@@ -39,6 +39,7 @@ import {
   Clock,
   CheckCircle,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * AI Credits Management Page
@@ -70,49 +71,21 @@ export default function AICreditsPage() {
 
   const fetchCreditsData = async () => {
     try {
-      // TODO: Remplacer par vrai appel API
-      // const response = await fetch('/api/ai-billing/credits');
-      // const data = await response.json();
+      const balanceResponse = await apiClient.get('/ai-billing/credits/balance');
+      setBalance(balanceResponse.data.balance ?? 0);
 
-      // Données de démo
-      setTransactions([
-        {
-          id: '1',
-          type: 'purchase',
-          amount: 10000,
-          balance: 12450,
-          description: 'Achat de crédits - Pack Pro',
-          createdAt: '2025-12-29T10:00:00Z',
-          status: 'completed',
-        },
-        {
-          id: '2',
-          type: 'usage',
-          amount: -1550,
-          balance: 2450,
-          description: 'Usage IA - Claude 3.5 Sonnet',
-          createdAt: '2025-12-28T14:30:00Z',
-          status: 'completed',
-        },
-        {
-          id: '3',
-          type: 'usage',
-          amount: -2300,
-          balance: 4000,
-          description: 'Usage IA - GPT-4',
-          createdAt: '2025-12-27T09:15:00Z',
-          status: 'completed',
-        },
-        {
-          id: '4',
-          type: 'purchase',
-          amount: 5000,
-          balance: 6300,
-          description: 'Achat de crédits - Pack Standard',
-          createdAt: '2025-12-25T16:20:00Z',
-          status: 'completed',
-        },
-      ]);
+      const historyResponse = await apiClient.get('/ai-billing/usage/history?limit=20');
+      const usageData = historyResponse.data?.data ?? [];
+      const transactions: CreditTransaction[] = usageData.map((item: any) => ({
+        id: item.id,
+        type: 'usage' as const,
+        amount: -(item.creditsUsed ?? 0),
+        balance: item.creditsBalance ?? 0,
+        description: item.actionName ?? item.actionCode ?? 'Usage IA',
+        createdAt: item.createdAt,
+        status: 'completed' as const,
+      }));
+      setTransactions(transactions);
 
       setLoading(false);
     } catch (error) {
@@ -123,17 +96,9 @@ export default function AICreditsPage() {
 
   const handlePurchaseCredits = async () => {
     try {
-      // TODO: Appel API
-      const response = await fetch('/api/ai-billing/credits/purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseInt(purchaseAmount) }),
-      });
-
-      if (response.ok) {
-        setShowPurchaseDialog(false);
-        fetchCreditsData();
-      }
+      await apiClient.post('/ai-billing/credits/purchase', { amount: parseInt(purchaseAmount) });
+      setShowPurchaseDialog(false);
+      fetchCreditsData();
     } catch (error) {
       console.error('Error purchasing credits:', error);
     }

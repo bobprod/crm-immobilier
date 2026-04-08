@@ -18,6 +18,7 @@ export interface AppointmentData {
   prospectId?: string;
   campaignId?: string;
   notes: string;
+  description?: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   source?: 'prospects' | 'properties' | 'marketing' | 'prospecting';
 }

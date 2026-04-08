@@ -264,6 +264,189 @@ export class SettingsService {
   }
 
   /**
+   * Tester une connexion WhatsApp Meta Business API (Graph API)
+   */
+  async testWhatsAppMetaConnection(userId: string) {
+    const phoneNumberId = await this.getSetting(userId, 'whatsapp_meta', 'phoneNumberId');
+    const accessToken = await this.getSetting(userId, 'whatsapp_meta', 'accessToken');
+
+    if (!phoneNumberId?.value || !accessToken?.value) {
+      return { success: false, error: 'Phone Number ID et Access Token requis' };
+    }
+
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${phoneNumberId.value}?access_token=${accessToken.value}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          message: `Connexion Meta WhatsApp réussie - Numéro: ${data.display_phone_number || phoneNumberId.value}`,
+          displayNumber: data.display_phone_number,
+        };
+      }
+      const err = await response.json();
+      return {
+        success: false,
+        error: err.error?.message || `Erreur HTTP ${response.status}`,
+      };
+    } catch (error) {
+      return { success: false, error: `Erreur de connexion: ${error.message}` };
+    }
+  }
+
+  /**
+   * Tester une connexion SMTP
+   */
+  async testSMTPConnection(userId: string) {
+    const host = await this.getSetting(userId, 'smtp', 'host');
+    const port = await this.getSetting(userId, 'smtp', 'port');
+    const user = await this.getSetting(userId, 'smtp', 'user');
+    const password = await this.getSetting(userId, 'smtp', 'password');
+
+    if (!host?.value || !port?.value) {
+      return { success: false, error: 'Hôte et port SMTP requis' };
+    }
+
+    // Basic validation – actual SMTP handshake is not feasible in a cloud function context
+    const portNum = parseInt(port.value, 10);
+    const validPorts = [25, 465, 587, 2525];
+    if (!validPorts.includes(portNum)) {
+      return {
+        success: false,
+        error: `Port SMTP invalide. Ports supportés: ${validPorts.join(', ')}`,
+      };
+    }
+
+    return {
+      success: true,
+      message: `Configuration SMTP valide — ${host.value}:${port.value}`,
+      host: host.value,
+      port: portNum,
+      user: user?.value,
+      secure: portNum === 465,
+    };
+  }
+
+  /**
+   * Tester un bot Telegram
+   */
+  async testTelegramConnection(userId: string) {
+    const botToken = await this.getSetting(userId, 'telegram', 'botToken');
+
+    if (!botToken?.value) {
+      return { success: false, error: 'Token du bot Telegram requis' };
+    }
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${botToken.value}/getMe`);
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          message: `Bot Telegram validé: @${data.result?.username}`,
+          botName: data.result?.first_name,
+          username: data.result?.username,
+        };
+      }
+      const err = await response.json();
+      return {
+        success: false,
+        error: err.description || `Erreur HTTP ${response.status}`,
+      };
+    } catch (error) {
+      return { success: false, error: `Erreur de connexion: ${error.message}` };
+    }
+  }
+
+  /**
+   * Tester la configuration Meta Pixel / Conversion API
+   */
+  async testMetaPixelConnection(userId: string) {
+    const pixelId = await this.getSetting(userId, 'tracking_meta', 'pixelId');
+    const accessToken = await this.getSetting(userId, 'tracking_meta', 'accessToken');
+
+    if (!pixelId?.value) {
+      return { success: false, error: 'Pixel ID requis' };
+    }
+
+    if (!accessToken?.value) {
+      return {
+        success: true,
+        message: `Pixel Meta configuré (ID: ${pixelId.value}). Ajoutez un access token pour activer la Conversion API.`,
+        pixelId: pixelId.value,
+        conversionApiEnabled: false,
+      };
+    }
+
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${pixelId.value}?access_token=${accessToken.value}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          success: true,
+          message: `Meta Pixel validé: ${data.name || pixelId.value}`,
+          pixelId: pixelId.value,
+          pixelName: data.name,
+          conversionApiEnabled: true,
+        };
+      }
+      const err = await response.json();
+      return {
+        success: false,
+        error: err.error?.message || `Erreur HTTP ${response.status}`,
+      };
+    } catch (error) {
+      return { success: false, error: `Erreur de connexion: ${error.message}` };
+    }
+  }
+
+  /**
+   * Tester Google Tag Manager
+   */
+  async testGTMConnection(userId: string) {
+    const containerId = await this.getSetting(userId, 'tracking_gtm', 'containerId');
+    if (!containerId?.value) {
+      return { success: false, error: 'Container ID GTM requis (ex: GTM-XXXXXXX)' };
+    }
+    const isValid = /^GTM-[A-Z0-9]+$/i.test(containerId.value);
+    return isValid
+      ? { success: true, message: `GTM Container configuré: ${containerId.value}`, containerId: containerId.value }
+      : { success: false, error: 'Format invalide — attendu: GTM-XXXXXXX' };
+  }
+
+  /**
+   * Tester Google Analytics 4
+   */
+  async testGA4Connection(userId: string) {
+    const measurementId = await this.getSetting(userId, 'tracking_ga4', 'measurementId');
+    if (!measurementId?.value) {
+      return { success: false, error: 'Measurement ID GA4 requis (ex: G-XXXXXXXXXX)' };
+    }
+    const isValid = /^G-[A-Z0-9]+$/i.test(measurementId.value);
+    return isValid
+      ? { success: true, message: `GA4 configuré: ${measurementId.value}`, measurementId: measurementId.value }
+      : { success: false, error: 'Format invalide — attendu: G-XXXXXXXXXX' };
+  }
+
+  /**
+   * Tester Google Ads
+   */
+  async testGoogleAdsConnection(userId: string) {
+    const conversionId = await this.getSetting(userId, 'tracking_google_ads', 'conversionId');
+    if (!conversionId?.value) {
+      return { success: false, error: 'Conversion ID Google Ads requis (ex: AW-XXXXXXXXXX)' };
+    }
+    const isValid = /^AW-[0-9]+$/i.test(conversionId.value);
+    return isValid
+      ? { success: true, message: `Google Ads configuré: ${conversionId.value}`, conversionId: conversionId.value }
+      : { success: false, error: 'Format invalide — attendu: AW-XXXXXXXXXX' };
+  }
+
+  /**
    * Tester une connexion selon la section
    */
   async testConnection(userId: string, section: string) {
@@ -274,8 +457,22 @@ export class SettingsService {
         return this.testSerpApiConnection(userId);
       case 'whatsapp':
         return this.testWhatsAppConnection(userId);
+      case 'whatsapp_meta':
+        return this.testWhatsAppMetaConnection(userId);
       case 'sms':
         return this.testWhatsAppConnection(userId); // Même config Twilio
+      case 'smtp':
+        return this.testSMTPConnection(userId);
+      case 'telegram':
+        return this.testTelegramConnection(userId);
+      case 'tracking_meta':
+        return this.testMetaPixelConnection(userId);
+      case 'tracking_gtm':
+        return this.testGTMConnection(userId);
+      case 'tracking_ga4':
+        return this.testGA4Connection(userId);
+      case 'tracking_google_ads':
+        return this.testGoogleAdsConnection(userId);
       default:
         return {
           success: false,

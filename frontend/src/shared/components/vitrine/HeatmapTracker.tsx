@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 /**
  * Composant pour tracker automatiquement les clics, mouvements et scroll
  * sur les pages vitrines afin de générer des heatmaps.
@@ -142,7 +144,7 @@ export function HeatmapTracker({
     eventsBuffer.current = [];
 
     try {
-      await fetch('/api/marketing-tracking/heatmap/record-batch', {
+      await fetch(`${API_BASE}/marketing-tracking/heatmap/record-batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

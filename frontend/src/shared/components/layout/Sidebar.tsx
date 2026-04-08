@@ -1,24 +1,49 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
+import {
+  LayoutDashboard,
+  Search,
+  Target,
+  CalendarDays,
+  MessageSquare,
+  FileText,
+  HeartHandshake,
+  Megaphone,
+  TrendingUp,
+  Globe,
+  BarChart3,
+  Bot,
+  Bell,
+  Settings,
+  KeyRound,
+  Puzzle,
+  Wrench,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Building2,
+  UserCircle,
+  Users,
+} from 'lucide-react';
 
 /**
  * Sidebar Navigation Component
  *
- * Modern sidebar navigation with:
+ * Elegant sidebar navigation with:
+ * - Lucide icons (professional, consistent)
+ * - Dark theme for a sophisticated real estate look
  * - Hierarchical menu structure
  * - Active state highlighting
  * - Expandable sub-menus
  * - Notification badges
  * - Responsive (collapsible)
- *
- * Phase 2.1: UX/UI Restructuring
  */
 
 export interface MenuItem {
   id: string;
   label: string;
-  icon: string;
+  icon: React.ElementType;
   path?: string;
   badge?: number;
   subItems?: MenuItem[];
@@ -35,103 +60,109 @@ const MENU_ITEMS: MenuItem[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: '📊',
+    icon: LayoutDashboard,
     path: '/dashboard',
   },
   {
     id: 'prospection',
     label: 'Prospection',
-    icon: '🤖',
+    icon: Search,
     path: '/prospection',
+  },
+  {
+    id: 'prospects',
+    label: 'Prospects',
+    icon: UserCircle,
+    path: '/prospects',
+  },
+  {
+    id: 'properties',
+    label: 'Propriétés',
+    icon: Building2,
+    path: '/properties',
   },
   {
     id: 'matching',
     label: 'Matching',
-    icon: '🎯',
-    path: '/matching-dashboard',
+    icon: Target,
+    path: '/matching',
   },
   {
     id: 'planification',
     label: 'Planification',
-    icon: '📅',
+    icon: CalendarDays,
     path: '/planification',
   },
   {
     id: 'communications',
     label: 'Communications',
-    icon: '💬',
+    icon: MessageSquare,
     path: '/communications-dashboard',
   },
   {
     id: 'documents',
     label: 'Documents',
-    icon: '📄',
+    icon: FileText,
     path: '/documents',
   },
   {
     id: 'transactions',
     label: 'Transactions',
-    icon: '🤝',
+    icon: HeartHandshake,
     path: '/transactions-dashboard',
   },
   {
     id: 'marketing',
     label: 'Marketing',
-    icon: '📢',
+    icon: Megaphone,
     path: '/marketing-dashboard',
   },
   {
     id: 'investment',
     label: 'Investissement',
-    icon: '💎',
+    icon: TrendingUp,
     path: '/investment',
-  },
-  {
-    id: 'vitrine',
-    label: 'Sites Vitrines',
-    icon: '🌐',
-    path: '/sites-vitrines-dashboard',
   },
   {
     id: 'analytics',
     label: 'Analytics',
-    icon: '📈',
+    icon: BarChart3,
     path: '/analytics',
   },
   {
-    id: 'ai-assistant',
-    label: 'Assistant IA',
-    icon: '🤖',
-    path: '/ai-assistant',
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: '🔔',
-    path: '/notifications',
+    id: 'personnel',
+    label: 'Personnel',
+    icon: Users,
+    path: '/personnel',
   },
   {
     id: 'settings',
     label: 'Paramètres',
-    icon: '⚙️',
+    icon: Settings,
     subItems: [
       {
         id: 'settings-api-keys',
         label: 'Clés API',
-        icon: '🔑',
+        icon: KeyRound,
         path: '/settings/ai-api-keys',
       },
       {
         id: 'settings-modules',
         label: 'Modules',
-        icon: '🧩',
+        icon: Puzzle,
         path: '/settings/modules',
       },
       {
         id: 'settings-config',
         label: 'Configuration',
-        icon: '🛠️',
+        icon: Wrench,
         path: '/settings/config',
+      },
+      {
+        id: 'settings-integrations',
+        label: 'Intégrations',
+        icon: Globe,
+        path: '/settings/integrations',
       },
     ],
   },
@@ -162,15 +193,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
     const active = isActive(item.path);
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isExpanded = expandedItems.has(item.id);
+    const Icon = item.icon;
 
     return (
       <div key={item.id}>
         {/* Main Item */}
         <div
           className={`
-            flex items-center gap-3 px-4 py-3 cursor-pointer transition-all
-            ${level > 0 ? 'pl-12' : ''}
-            ${active ? 'bg-purple-100 text-purple-700 border-r-4 border-purple-700' : 'text-gray-700 hover:bg-gray-100'}
+            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-1
+            ${level > 0 ? 'pl-9 pr-3 py-2' : 'px-3 py-2.5'}
+            ${
+              active
+                ? 'bg-white/15 text-white'
+                : 'text-slate-300 hover:bg-white/10 hover:text-white'
+            }
             ${collapsed ? 'justify-center px-2' : ''}
           `}
           onClick={() => {
@@ -182,33 +218,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
           }}
         >
           {/* Icon */}
-          <span className="text-2xl flex-shrink-0">{item.icon}</span>
+          <Icon
+            className={`flex-shrink-0 ${active ? 'text-amber-400' : 'text-slate-400'} ${level > 0 ? 'w-4 h-4' : 'w-5 h-5'}`}
+          />
 
           {/* Label & Badge */}
           {!collapsed && (
             <>
-              <span className="flex-1 font-medium text-sm">{item.label}</span>
+              <span
+                className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'}`}
+              >
+                {item.label}
+              </span>
 
               {/* Badge */}
               {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
                   {item.badge}
                 </span>
               )}
 
               {/* Expand Arrow */}
               {hasSubItems && (
-                <svg
-                  className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <span className="text-slate-400">
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </span>
               )}
             </>
           )}
@@ -216,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
 
         {/* Sub Items */}
         {hasSubItems && isExpanded && !collapsed && (
-          <div className="bg-gray-50">
+          <div className="mt-0.5">
             {item.subItems!.map((subItem) => renderMenuItem(subItem, level + 1))}
           </div>
         )}
@@ -227,63 +265,73 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
   return (
     <aside
       className={`
-        h-screen bg-white border-r border-gray-200 flex flex-col
-        transition-all duration-300 ease-in-out
+        relative h-screen bg-slate-900 flex flex-col
+        transition-all duration-300 ease-in-out shadow-xl
         ${collapsed ? 'w-20' : 'w-64'}
       `}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div
+        className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}
+      >
         {!collapsed && (
-          <div>
-            <h1 className="text-xl font-bold text-purple-600">CRM Immo</h1>
-            <p className="text-xs text-gray-500">Prospection IA</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-white tracking-wide">CRM Immo</h1>
+              <p className="text-xs text-slate-400">Gestion Immobilière</p>
+            </div>
+          </div>
+        )}
+
+        {collapsed && (
+          <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
         )}
 
         {/* Toggle Button */}
         <button
           onClick={onToggleCollapse}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
+          title={collapsed ? 'Développer le menu' : 'Réduire le menu'}
         >
-          <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-            {collapsed ? (
-              <path
-                fillRule="evenodd"
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
-            ) : (
-              <path
-                fillRule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            )}
-          </svg>
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto">
-        {MENU_ITEMS.map((item) => renderMenuItem(item))}
+      <nav className="flex-1 overflow-y-auto py-4 px-1 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
+        <div className="space-y-0.5">{MENU_ITEMS.map((item) => renderMenuItem(item))}</div>
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 font-semibold">AD</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
-              <p className="text-xs text-gray-500 truncate">admin@crm.com</p>
+      <div className={`border-t border-slate-700/60 ${collapsed ? 'p-3' : 'p-4'}`}>
+        {!collapsed && (
+          <div className="mb-3">
+            <LanguageSwitcher />
+          </div>
+        )}
+        {collapsed ? (
+          <div className="flex justify-center">
+            <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center">
+              <UserCircle className="w-5 h-5 text-slate-300" />
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+              <UserCircle className="w-5 h-5 text-slate-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">Admin</p>
+              <p className="text-xs text-slate-400 truncate">admin@crm-immo.fr</p>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 };

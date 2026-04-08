@@ -4,8 +4,9 @@ import { useRouter } from 'next/router';
 import { AuthProvider } from '@/modules/core/auth/components/AuthProvider';
 import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { I18nProvider } from '@/shared/hooks/useTranslation';
 
-// Public routes that don't require authentication
+// Routes publiques sans auth
 const PUBLIC_ROUTES = [
   '/login',
   '/auth/login',
@@ -15,12 +16,9 @@ const PUBLIC_ROUTES = [
 ];
 
 function isPublicRoute(pathname: string): boolean {
-  // Check exact matches
-  if (PUBLIC_ROUTES.includes(pathname)) {
-    return true;
-  }
-  // Check if path starts with public route patterns
-  return PUBLIC_ROUTES.some(route => pathname.startsWith(route + '/'));
+  if (PUBLIC_ROUTES.includes(pathname)) return true;
+  if (pathname.startsWith('/sites/')) return true;
+  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route + '/'));
 }
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -30,19 +28,20 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
-        // Log vers votre service de monitoring (Sentry, LogRocket, etc.)
         console.error('App-level error:', error, errorInfo);
       }}
     >
-      <AuthProvider>
-        {isPublic ? (
-          <Component {...pageProps} />
-        ) : (
-          <ProtectedRoute>
+      <I18nProvider>
+        <AuthProvider>
+          {isPublic ? (
             <Component {...pageProps} />
-          </ProtectedRoute>
-        )}
-      </AuthProvider>
+          ) : (
+            <ProtectedRoute>
+              <Component {...pageProps} />
+            </ProtectedRoute>
+          )}
+        </AuthProvider>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

@@ -19,15 +19,12 @@ export class AIChatAssistantService {
     private readonly prisma: PrismaService,
     private readonly llmService: QuickWinsLLMService,
     private readonly communicationsService: CommunicationsService,
-  ) { }
+  ) {}
 
   /**
    * Create a new conversation
    */
-  async createConversation(
-    userId: string,
-    dto: CreateConversationDto,
-  ): Promise<ChatConversation> {
+  async createConversation(userId: string, dto: CreateConversationDto): Promise<ChatConversation> {
     const conversation = await this.prisma.aiChatConversation.create({
       data: {
         userId,
@@ -42,10 +39,7 @@ export class AIChatAssistantService {
   /**
    * Get all conversations for a user
    */
-  async getConversations(
-    userId: string,
-    limit: number = 50,
-  ): Promise<ChatConversation[]> {
+  async getConversations(userId: string, limit: number = 50): Promise<ChatConversation[]> {
     try {
       const conversations = await this.prisma.aiChatConversation.findMany({
         where: {
@@ -56,16 +50,11 @@ export class AIChatAssistantService {
           updatedAt: 'desc',
         },
         take: limit,
-        include: {
-          _count: {
-            select: { messages: true },
-          },
-        },
       });
 
       return conversations.map((conv) => ({
         ...this.mapConversation(conv),
-        messageCount: conv._count.messages,
+        messageCount: 0,
       }));
     } catch (error) {
       this.logger.error(`Error fetching conversations for user ${userId}:`, error);
@@ -145,13 +134,7 @@ export class AIChatAssistantService {
     const history = await this.getRecentMessages(conversationId, 10);
 
     // Generate AI response
-    const aiResponse = await this.generateResponse(
-      userId,
-      dto.message,
-      intent,
-      context,
-      history,
-    );
+    const aiResponse = await this.generateResponse(userId, dto.message, intent, context, history);
 
     // Save AI message
     const aiMessage = await this.prisma.aiChatMessage.create({
@@ -189,10 +172,7 @@ export class AIChatAssistantService {
   /**
    * Delete a conversation (soft delete)
    */
-  async deleteConversation(
-    userId: string,
-    conversationId: string,
-  ): Promise<void> {
+  async deleteConversation(userId: string, conversationId: string): Promise<void> {
     const conversation = await this.prisma.aiChatConversation.findFirst({
       where: {
         id: conversationId,
@@ -321,13 +301,7 @@ export class AIChatAssistantService {
     const entities: any = {};
 
     // Extract location
-    const locations = [
-      'La Marsa',
-      'Sidi Bou Said',
-      'Carthage',
-      'Tunis',
-      'Gammarth',
-    ];
+    const locations = ['La Marsa', 'Sidi Bou Said', 'Carthage', 'Tunis', 'Gammarth'];
     for (const loc of locations) {
       if (message.toLowerCase().includes(loc.toLowerCase())) {
         entities.location = loc;
@@ -380,11 +354,7 @@ export class AIChatAssistantService {
   /**
    * Gather context based on intent and message
    */
-  private async gatherContext(
-    userId: string,
-    intent: any,
-    message: string,
-  ): Promise<any> {
+  private async gatherContext(userId: string, intent: any, message: string): Promise<any> {
     const context: any = {};
 
     try {
@@ -398,10 +368,7 @@ export class AIChatAssistantService {
           break;
 
         case 'generate_report':
-          context.stats = await this.getUserStats(
-            userId,
-            intent.entities.period,
-          );
+          context.stats = await this.getUserStats(userId, intent.entities.period);
           break;
 
         case 'draft_email':
@@ -448,10 +415,7 @@ export class AIChatAssistantService {
 
     try {
       // Use LLM Router for response generation
-      const response = await this.llmService.analyzeText(
-        userId,
-        fullPrompt,
-      );
+      const response = await this.llmService.analyzeText(userId, fullPrompt);
 
       return {
         content: response,
@@ -530,10 +494,7 @@ Règles:
   /**
    * Generate fallback response when LLM is unavailable
    */
-  private generateFallbackResponse(
-    intentType: CommandType,
-    context: any,
-  ): string {
+  private generateFallbackResponse(intentType: CommandType, context: any): string {
     switch (intentType) {
       case 'search_properties':
         return '🏠 Je peux vous aider à chercher des propriétés. Pourriez-vous préciser vos critères (type, localisation, prix) ?';
@@ -560,10 +521,7 @@ Règles:
 
   // Helper methods to fetch CRM data
 
-  private async getRecentProperties(
-    userId: string,
-    limit: number,
-  ): Promise<any[]> {
+  private async getRecentProperties(userId: string, limit: number): Promise<any[]> {
     try {
       const properties = await this.prisma.property.findMany({
         where: { deletedAt: null },
@@ -587,10 +545,7 @@ Règles:
     }
   }
 
-  private async getRecentProspects(
-    userId: string,
-    limit: number,
-  ): Promise<any[]> {
+  private async getRecentProspects(userId: string, limit: number): Promise<any[]> {
     try {
       const prospects = await this.prisma.prospect.findMany({
         where: { userId, deletedAt: null },
@@ -614,10 +569,7 @@ Règles:
     }
   }
 
-  private async getUserStats(
-    userId: string,
-    period: string = 'month',
-  ): Promise<any> {
+  private async getUserStats(userId: string, period: string = 'month'): Promise<any> {
     try {
       const now = new Date();
       const startDate = new Date();
@@ -711,10 +663,7 @@ Règles:
     }
   }
 
-  private async getUpcomingAppointments(
-    userId: string,
-    limit: number,
-  ): Promise<any[]> {
+  private async getUpcomingAppointments(userId: string, limit: number): Promise<any[]> {
     try {
       const appointments = await this.prisma.appointment.findMany({
         where: {
@@ -760,10 +709,7 @@ Règles:
     }
   }
 
-  private async getRecentMessages(
-    conversationId: string,
-    limit: number,
-  ): Promise<any[]> {
+  private async getRecentMessages(conversationId: string, limit: number): Promise<any[]> {
     try {
       const messages = await this.prisma.aiChatMessage.findMany({
         where: { conversationId },
@@ -786,8 +732,14 @@ Règles:
       userId: conversation.userId,
       title: conversation.title,
       context: (conversation.context as any) || {},
-      createdAt: conversation.createdAt instanceof Date ? conversation.createdAt.toISOString() : conversation.createdAt,
-      updatedAt: conversation.updatedAt instanceof Date ? conversation.updatedAt.toISOString() : conversation.updatedAt,
+      createdAt:
+        conversation.createdAt instanceof Date
+          ? conversation.createdAt.toISOString()
+          : conversation.createdAt,
+      updatedAt:
+        conversation.updatedAt instanceof Date
+          ? conversation.updatedAt.toISOString()
+          : conversation.updatedAt,
     };
   }
 

@@ -123,18 +123,9 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
     <div className="space-y-6">
       {/* Header with Metrics */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Mes Campagnes</h2>
-            <p className="text-gray-600 mt-1">Gérez vos campagnes et validez vos leads</p>
-          </div>
-          <button
-            onClick={onNewCampaign}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition flex items-center gap-2"
-          >
-            <span className="text-xl">+</span>
-            Nouvelle Campagne
-          </button>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Mes Campagnes</h2>
+          <p className="text-gray-600 mt-1">Gérez vos campagnes et validez vos leads</p>
         </div>
 
         {/* Stats Grid */}
@@ -205,17 +196,11 @@ export const CampaignsTab: React.FC<CampaignsTabProps> = ({
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow p-12 text-center">
-              <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucune campagne active</h3>
-              <p className="text-gray-600 mb-6">
-                Créez votre première campagne pour commencer à collecter des leads
+              <div className="text-5xl mb-4 opacity-40">📋</div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">Aucune campagne active</h3>
+              <p className="text-sm text-gray-500">
+                Utilisez le bouton <strong>+ Nouvelle campagne</strong> en haut à droite pour démarrer.
               </p>
-              <button
-                onClick={onNewCampaign}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition"
-              >
-                Créer une campagne
-              </button>
             </div>
           )}
 

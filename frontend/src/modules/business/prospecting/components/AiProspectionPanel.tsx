@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { useAiProspection } from '../hooks/useAiProspection';
 import { ConfigurationSection, LauncherSection, ResultsSection } from './ai-prospection';
+import { apiClient } from '@/shared/utils/backend-api';
 import {
   ExportFormat,
   ProspectionLead,
@@ -105,37 +106,26 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
 
     try {
       // Créer un prospect dans le CRM
-      const response = await fetch('http://localhost:3001/api/prospects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`,
-        },
-        body: JSON.stringify({
-          firstName: lead.name.split(' ')[0] || lead.name,
-          lastName: lead.name.split(' ').slice(1).join(' ') || '',
-          email: lead.email || undefined,
-          phone: lead.phone || undefined,
-          city: lead.location?.city || undefined,
-          address: lead.location?.address || undefined,
-          budget: lead.budget ? {
-            min: lead.budget.min,
-            max: lead.budget.max,
-          } : undefined,
-          propertyType: lead.propertyInterest || undefined,
-          source: `prospection-ai:${prospectionResult.id}`,
-          sourceDetails: lead.source || undefined,
-          confidence: lead.confidence,
-          status: 'new',
-          notes: `Lead généré par prospection IA\nConfiance: ${lead.confidence}%\nSource: ${lead.source || 'N/A'}`,
-        }),
+      const response = await apiClient.post('/prospects', {
+        firstName: lead.name.split(' ')[0] || lead.name,
+        lastName: lead.name.split(' ').slice(1).join(' ') || '',
+        email: lead.email || undefined,
+        phone: lead.phone || undefined,
+        city: lead.location?.city || undefined,
+        address: lead.location?.address || undefined,
+        budget: lead.budget ? {
+          min: lead.budget.min,
+          max: lead.budget.max,
+        } : undefined,
+        propertyType: lead.propertyInterest || undefined,
+        source: `prospection-ai:${prospectionResult.id}`,
+        sourceDetails: lead.source || undefined,
+        confidence: lead.confidence,
+        status: 'new',
+        notes: `Lead généré par prospection IA\nConfiance: ${lead.confidence}%\nSource: ${lead.source || 'N/A'}`,
       });
 
-      if (!response.ok) {
-        throw new Error('Échec de création du prospect');
-      }
-
-      const prospect = await response.json();
+      const prospect = response.data;
 
       alert(`✅ Lead ajouté au CRM avec succès!\n\nProspect créé: ${prospect.firstName} ${prospect.lastName}\nID: ${prospect.id}`);
     } catch (error) {

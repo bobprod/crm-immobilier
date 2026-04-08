@@ -1,0 +1,47 @@
+-- Seed des 5 templates vitrine
+INSERT INTO "VitrineTemplate" (id, name, slug, description, category, colors, fonts, "defaultPages", "isDefault") VALUES
+('tpl_elegance', 'Elegance', 'elegance', 'Template light, minimaliste et aere. Parfait pour les agences haut de gamme.', 'premium',
+ '{"primary": "#B8860B", "secondary": "#F5F0E8", "accent": "#1a1a1a", "background": "#FFFDF7", "text": "#2D2D2D", "muted": "#8C8C8C"}'::jsonb,
+ '{"heading": "Playfair Display", "body": "Inter", "accent": "Cormorant"}'::jsonb,
+ '[{"slug": "accueil", "title": "Accueil", "isDefault": true, "puckData": {"content": [{"type": "HeroSlider", "props": {"title": "Bienvenue", "subtitle": "Votre partenaire immobilier", "height": "80vh", "overlay": 0.3}}, {"type": "PropertyGrid", "props": {"columns": 3, "limit": 6, "title": "Nos biens"}}, {"type": "TeamGrid", "props": {"title": "Notre equipe", "columns": 3}}, {"type": "ContactForm", "props": {"title": "Contactez-nous"}}], "root": {"props": {"template": "elegance"}}}},
+  {"slug": "biens", "title": "Nos biens", "puckData": {"content": [{"type": "PropertyGrid", "props": {"columns": 3, "limit": 12, "showFilters": true}}], "root": {"props": {"template": "elegance"}}}},
+  {"slug": "agents", "title": "Notre equipe", "puckData": {"content": [{"type": "TeamGrid", "props": {"columns": 3, "showDetails": true}}], "root": {"props": {"template": "elegance"}}}},
+  {"slug": "contact", "title": "Contact", "puckData": {"content": [{"type": "ContactForm", "props": {"title": "Contactez-nous", "showMap": true}}, {"type": "MapEmbed", "props": {"height": 400}}], "root": {"props": {"template": "elegance"}}}}]'::jsonb,
+ true),
+
+('tpl_moderne', 'Moderne', 'moderne', 'Design bold et geometrique. Ideal pour les agences dynamiques.', 'general',
+ '{"primary": "#1E40AF", "secondary": "#FFFFFF", "accent": "#3B82F6", "background": "#F8FAFC", "text": "#1E293B", "muted": "#64748B"}'::jsonb,
+ '{"heading": "Montserrat", "body": "Open Sans", "accent": "Poppins"}'::jsonb,
+ '[{"slug": "accueil", "title": "Accueil", "isDefault": true, "puckData": {"content": [{"type": "HeroVideo", "props": {"title": "Trouvez votre bien ideal", "overlay": 0.5}}, {"type": "StatsCounter", "props": {"items": [{"value": 150, "label": "Biens"}, {"value": 98, "label": "Clients satisfaits"}, {"value": 15, "label": "Ans experience"}]}}, {"type": "PropertyGrid", "props": {"columns": 4, "limit": 8}}, {"type": "CtaBanner", "props": {"title": "Estimez votre bien gratuitement"}}], "root": {"props": {"template": "moderne"}}}},
+  {"slug": "biens", "title": "Biens", "puckData": {"content": [{"type": "PropertySearch", "props": {}}, {"type": "PropertyGrid", "props": {"columns": 4, "limit": 16, "showFilters": true}}], "root": {"props": {"template": "moderne"}}}},
+  {"slug": "agents", "title": "Equipe", "puckData": {"content": [{"type": "TeamGrid", "props": {"columns": 4}}], "root": {"props": {"template": "moderne"}}}},
+  {"slug": "contact", "title": "Contact", "puckData": {"content": [{"type": "ContactForm", "props": {}}, {"type": "MapEmbed", "props": {}}], "root": {"props": {"template": "moderne"}}}}]'::jsonb,
+ false),
+
+('tpl_prestige', 'Prestige', 'prestige', 'Style luxe et sombre. Pour les biens d exception.', 'premium',
+ '{"primary": "#C9A84C", "secondary": "#1A1A1A", "accent": "#D4AF37", "background": "#0D0D0D", "text": "#F5F5F5", "muted": "#9CA3AF"}'::jsonb,
+ '{"heading": "Cormorant Garamond", "body": "Lato", "accent": "Italiana"}'::jsonb,
+ '[{"slug": "accueil", "title": "Accueil", "isDefault": true, "puckData": {"content": [{"type": "HeroSlider", "props": {"height": "100vh", "overlay": 0.6, "title": "L excellence immobiliere"}}, {"type": "PropertyCarousel", "props": {"limit": 6, "autoScroll": true}}, {"type": "Testimonials", "props": {"autoRotate": true}}, {"type": "TeamGrid", "props": {"columns": 3}}, {"type": "ContactForm", "props": {}}], "root": {"props": {"template": "prestige"}}}},
+  {"slug": "biens", "title": "Collection", "puckData": {"content": [{"type": "PropertyGrid", "props": {"columns": 2, "limit": 12, "showFilters": true}}], "root": {"props": {"template": "prestige"}}}},
+  {"slug": "agents", "title": "Conseillers", "puckData": {"content": [{"type": "TeamGrid", "props": {"columns": 2, "showDetails": true}}], "root": {"props": {"template": "prestige"}}}},
+  {"slug": "contact", "title": "Contact", "puckData": {"content": [{"type": "ContactForm", "props": {}}, {"type": "MapEmbed", "props": {}}], "root": {"props": {"template": "prestige"}}}}]'::jsonb,
+ false),
+
+('tpl_nature', 'Nature', 'nature', 'Ambiance organique et chaleureuse. Ideal pour le residentiel.', 'general',
+ '{"primary": "#6B7B3A", "secondary": "#FDF8F0", "accent": "#8B9556", "background": "#FEFCF6", "text": "#3D3D3D", "muted": "#7C7C6F"}'::jsonb,
+ '{"heading": "DM Serif Display", "body": "Nunito", "accent": "Josefin Sans"}'::jsonb,
+ '[{"slug": "accueil", "title": "Accueil", "isDefault": true, "puckData": {"content": [{"type": "HeroSlider", "props": {"title": "Un chez-vous qui vous ressemble", "height": "70vh"}}, {"type": "TextBlock", "props": {"title": "Notre philosophie", "layout": "image-right"}}, {"type": "PropertyGrid", "props": {"columns": 2, "limit": 4}}, {"type": "Neighborhoods", "props": {"title": "Nos quartiers"}}, {"type": "ContactForm", "props": {}}, {"type": "MapEmbed", "props": {}}], "root": {"props": {"template": "nature"}}}},
+  {"slug": "biens", "title": "Proprietes", "puckData": {"content": [{"type": "PropertyGrid", "props": {"columns": 2, "limit": 12, "showFilters": true}}], "root": {"props": {"template": "nature"}}}},
+  {"slug": "agents", "title": "Notre equipe", "puckData": {"content": [{"type": "TeamGrid", "props": {"columns": 3}}], "root": {"props": {"template": "nature"}}}},
+  {"slug": "contact", "title": "Contact", "puckData": {"content": [{"type": "ContactForm", "props": {}}, {"type": "MapEmbed", "props": {}}], "root": {"props": {"template": "nature"}}}}]'::jsonb,
+ false),
+
+('tpl_urbain', 'Urbain', 'urbain', 'Style industriel et grid. Pour les agences city.', 'general',
+ '{"primary": "#374151", "secondary": "#F97316", "accent": "#FB923C", "background": "#F3F4F6", "text": "#111827", "muted": "#6B7280"}'::jsonb,
+ '{"heading": "Space Grotesk", "body": "Work Sans", "accent": "JetBrains Mono"}'::jsonb,
+ '[{"slug": "accueil", "title": "Accueil", "isDefault": true, "puckData": {"content": [{"type": "HeroVideo", "props": {"title": "L immobilier urbain"}}, {"type": "StatsCounter", "props": {}}, {"type": "PropertyGrid", "props": {"columns": 3, "limit": 9}}, {"type": "FaqAccordion", "props": {"title": "Questions frequentes"}}, {"type": "CtaBanner", "props": {"title": "Discutons de votre projet"}}], "root": {"props": {"template": "urbain"}}}},
+  {"slug": "biens", "title": "Offres", "puckData": {"content": [{"type": "PropertySearch", "props": {}}, {"type": "PropertyGrid", "props": {"columns": 3, "limit": 15, "showFilters": true}}], "root": {"props": {"template": "urbain"}}}},
+  {"slug": "agents", "title": "Team", "puckData": {"content": [{"type": "TeamGrid", "props": {"columns": 4}}], "root": {"props": {"template": "urbain"}}}},
+  {"slug": "contact", "title": "Contact", "puckData": {"content": [{"type": "ContactForm", "props": {}}, {"type": "MapEmbed", "props": {}}], "root": {"props": {"template": "urbain"}}}}]'::jsonb,
+ false)
+ON CONFLICT (slug) DO NOTHING;

@@ -155,7 +155,9 @@ class ProspectsAPIService {
   /**
    * Récupérer tous les prospects de l'utilisateur connecté
    */
-  async getMyProspects(params?: PaginationParams & ProspectFilters): Promise<PaginatedResponse<Prospect>> {
+  async getMyProspects(
+    params?: PaginationParams & ProspectFilters
+  ): Promise<PaginatedResponse<Prospect>> {
     const response = await apiClient.get<PaginatedResponse<Prospect>>('/prospects', { params });
     return response.data;
   }
@@ -195,9 +197,12 @@ class ProspectsAPIService {
   /**
    * Rechercher des prospects avec filtres
    */
-  async searchProspects(filters: ProspectFilters, params?: PaginationParams): Promise<PaginatedResponse<Prospect>> {
+  async searchProspects(
+    filters: ProspectFilters,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Prospect>> {
     const response = await apiClient.get<PaginatedResponse<Prospect>>('/prospects/search', {
-      params: { ...filters, ...params }
+      params: { ...filters, ...params },
     });
     return response.data;
   }
@@ -213,16 +218,28 @@ class ProspectsAPIService {
   /**
    * Récupérer les interactions d'un prospect
    */
-  async getProspectInteractions(prospectId: string, params?: PaginationParams): Promise<PaginatedResponse<ProspectInteraction>> {
-    const response = await apiClient.get<PaginatedResponse<ProspectInteraction>>(`/prospects/${prospectId}/interactions`, { params });
+  async getProspectInteractions(
+    prospectId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<ProspectInteraction>> {
+    const response = await apiClient.get<PaginatedResponse<ProspectInteraction>>(
+      `/prospects/${prospectId}/interactions`,
+      { params }
+    );
     return response.data;
   }
 
   /**
    * Créer une interaction avec un prospect
    */
-  async createInteraction(prospectId: string, data: Omit<ProspectInteraction, 'id' | 'prospectId' | 'userId' | 'createdAt'>): Promise<ProspectInteraction> {
-    const response = await apiClient.post<ProspectInteraction>(`/prospects/${prospectId}/interactions`, data);
+  async createInteraction(
+    prospectId: string,
+    data: Omit<ProspectInteraction, 'id' | 'prospectId' | 'userId' | 'createdAt'>
+  ): Promise<ProspectInteraction> {
+    const response = await apiClient.post<ProspectInteraction>(
+      `/prospects/${prospectId}/interactions`,
+      data
+    );
     return response.data;
   }
 
@@ -230,23 +247,37 @@ class ProspectsAPIService {
    * Récupérer les préférences d'un prospect
    */
   async getProspectPreferences(prospectId: string): Promise<ProspectPreference[]> {
-    const response = await apiClient.get<ProspectPreference[]>(`/prospects/${prospectId}/preferences`);
+    const response = await apiClient.get<ProspectPreference[]>(
+      `/prospects/${prospectId}/preferences`
+    );
     return response.data;
   }
 
   /**
    * Mettre à jour les préférences d'un prospect
    */
-  async updateProspectPreferences(prospectId: string, preferences: Omit<ProspectPreference, 'id' | 'prospectId' | 'updatedAt'>[]): Promise<ProspectPreference[]> {
-    const response = await apiClient.put<ProspectPreference[]>(`/prospects/${prospectId}/preferences`, { preferences });
+  async updateProspectPreferences(
+    prospectId: string,
+    preferences: Omit<ProspectPreference, 'id' | 'prospectId' | 'updatedAt'>[]
+  ): Promise<ProspectPreference[]> {
+    const response = await apiClient.put<ProspectPreference[]>(
+      `/prospects/${prospectId}/preferences`,
+      { preferences }
+    );
     return response.data;
   }
 
   /**
    * Récupérer les matches IA pour un prospect
    */
-  async getProspectMatches(prospectId: string, params?: PaginationParams): Promise<PaginatedResponse<any>> {
-    const response = await apiClient.get<PaginatedResponse<any>>(`/prospects/${prospectId}/matches`, { params });
+  async getProspectMatches(
+    prospectId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<any>> {
+    const response = await apiClient.get<PaginatedResponse<any>>(
+      `/prospects/${prospectId}/matches`,
+      { params }
+    );
     return response.data;
   }
 
@@ -254,7 +285,9 @@ class ProspectsAPIService {
    * Valider les coordonnées d'un prospect
    */
   async validateProspectContacts(prospectId: string): Promise<ContactValidation[]> {
-    const response = await apiClient.post<ContactValidation[]>(`/prospects/${prospectId}/validate-contacts`);
+    const response = await apiClient.post<ContactValidation[]>(
+      `/prospects/${prospectId}/validate-contacts`
+    );
     return response.data;
   }
 
@@ -298,16 +331,27 @@ class ProspectsAPIService {
   /**
    * Récupérer les prospects par type
    */
-  async getProspectsByType(type: string, params?: PaginationParams): Promise<PaginatedResponse<Prospect>> {
-    const response = await apiClient.get<PaginatedResponse<Prospect>>(`/prospects/type/${type}`, { params });
+  async getProspectsByType(
+    type: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Prospect>> {
+    const response = await apiClient.get<PaginatedResponse<Prospect>>(`/prospects/type/${type}`, {
+      params,
+    });
     return response.data;
   }
 
   /**
    * Récupérer les prospects par statut
    */
-  async getProspectsByStatus(status: string, params?: PaginationParams): Promise<PaginatedResponse<Prospect>> {
-    const response = await apiClient.get<PaginatedResponse<Prospect>>(`/prospects/status/${status}`, { params });
+  async getProspectsByStatus(
+    status: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Prospect>> {
+    const response = await apiClient.get<PaginatedResponse<Prospect>>(
+      `/prospects/status/${status}`,
+      { params }
+    );
     return response.data;
   }
 
@@ -316,7 +360,7 @@ class ProspectsAPIService {
    */
   async getProspectsToCall(date?: string): Promise<Prospect[]> {
     const response = await apiClient.get<Prospect[]>('/prospects/to-call', {
-      params: { date }
+      params: { date },
     });
     return response.data;
   }
@@ -326,7 +370,7 @@ class ProspectsAPIService {
    */
   async getInactiveProspects(days: number = 30): Promise<Prospect[]> {
     const response = await apiClient.get<Prospect[]>('/prospects/inactive', {
-      params: { days }
+      params: { days },
     });
     return response.data;
   }
@@ -342,15 +386,24 @@ class ProspectsAPIService {
   /**
    * Récupérer les prospects par source
    */
-  async getProspectsBySource(source: string, params?: PaginationParams): Promise<PaginatedResponse<Prospect>> {
-    const response = await apiClient.get<PaginatedResponse<Prospect>>(`/prospects/source/${source}`, { params });
+  async getProspectsBySource(
+    source: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Prospect>> {
+    const response = await apiClient.get<PaginatedResponse<Prospect>>(
+      `/prospects/source/${source}`,
+      { params }
+    );
     return response.data;
   }
 
   /**
    * Exporter les données des prospects
    */
-  async exportProspectsData(format: 'csv' | 'excel' | 'pdf', filters?: ProspectFilters): Promise<Blob> {
+  async exportProspectsData(
+    format: 'csv' | 'excel' | 'pdf',
+    filters?: ProspectFilters
+  ): Promise<Blob> {
     const response = await apiClient.get<Blob>('/prospects/export', {
       params: { format, ...filters },
       responseType: 'blob',
@@ -455,8 +508,14 @@ class ProspectsAPIService {
   /**
    * Récupérer les rendez-vous d'un prospect
    */
-  async getProspectAppointments(prospectId: string, params?: PaginationParams): Promise<PaginatedResponse<any>> {
-    const response = await apiClient.get<PaginatedResponse<any>>(`/prospects/${prospectId}/appointments`, { params });
+  async getProspectAppointments(
+    prospectId: string,
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<any>> {
+    const response = await apiClient.get<PaginatedResponse<any>>(
+      `/prospects/${prospectId}/appointments`,
+      { params }
+    );
     return response.data;
   }
 
@@ -471,8 +530,29 @@ class ProspectsAPIService {
   /**
    * Fusionner deux prospects (en cas de doublon)
    */
-  async mergeProspects(primaryId: string, secondaryId: string, data: { keepData: string[] }): Promise<Prospect> {
-    const response = await apiClient.post<Prospect>(`/prospects/${primaryId}/merge/${secondaryId}`, data);
+  async mergeProspects(
+    primaryId: string,
+    secondaryId: string,
+    data: { keepData: string[] }
+  ): Promise<Prospect> {
+    const response = await apiClient.post<Prospect>(
+      `/prospects/${primaryId}/merge/${secondaryId}`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
+   * Uploader l'avatar d'un prospect
+   */
+  async uploadAvatar(id: string, file: File): Promise<{ avatarUrl: string; prospect: Prospect }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await apiClient.post<{ avatarUrl: string; prospect: Prospect }>(
+      `/prospects/${id}/avatar`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
     return response.data;
   }
 }

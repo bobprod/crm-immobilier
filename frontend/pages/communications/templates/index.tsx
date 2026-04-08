@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Layout from '../../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import communicationsService, { Template, CreateTemplateDto } from '@/modules/communications/communications.service';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -49,7 +49,7 @@ export default function TemplatesPage() {
     name: '',
     type: 'email',
     subject: '',
-    body: '',
+    content: '',
     variables: [],
   });
 
@@ -82,7 +82,7 @@ export default function TemplatesPage() {
         name: template.name,
         type: template.type,
         subject: template.subject || '',
-        body: template.body,
+        content: template.content,
         variables: template.variables || [],
       });
     } else {
@@ -91,7 +91,7 @@ export default function TemplatesPage() {
         name: '',
         type: 'email',
         subject: '',
-        body: '',
+        content: '',
         variables: [],
       });
     }
@@ -106,7 +106,11 @@ export default function TemplatesPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await communicationsService.createTemplate(formData);
+      if (editingTemplate) {
+        await communicationsService.updateTemplate(editingTemplate.id, formData);
+      } else {
+        await communicationsService.createTemplate(formData);
+      }
       toast({
         title: 'Succès',
         description: editingTemplate
@@ -164,18 +168,20 @@ export default function TemplatesPage() {
 
   const handleBodyChange = (value: string) => {
     const vars = extractVariables(value);
-    setFormData({ ...formData, body: value, variables: vars });
+    setFormData({ ...formData, content: value, variables: vars });
   };
 
   const handleSubjectChange = (value: string) => {
-    const bodyVars = extractVariables(formData.body);
+    const bodyVars = extractVariables(formData.content);
     const subjectVars = extractVariables(value);
     const allVars = [...new Set([...bodyVars, ...subjectVars])];
     setFormData({ ...formData, subject: value, variables: allVars });
   };
 
+  const currentContent = formData.content;
+
   return (
-    <Layout>
+    <MainLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -264,7 +270,7 @@ export default function TemplatesPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-700 mb-4 line-clamp-3">
-                    {template.body}
+                    {template.content}
                   </p>
                   {template.variables && template.variables.length > 0 && (
                     <div className="mb-4">
@@ -349,7 +355,7 @@ export default function TemplatesPage() {
                 <Label>Message</Label>
                 <Textarea
                   placeholder="Utilisez {variable} pour les champs dynamiques&#10;Ex: Bonjour {firstName}, bienvenue chez {agencyName}!"
-                  value={formData.body}
+                  value={currentContent}
                   onChange={(e) => handleBodyChange(e.target.value)}
                   rows={8}
                   className="font-mono text-sm"
@@ -380,7 +386,7 @@ export default function TemplatesPage() {
               <Button variant="outline" onClick={handleCloseModal}>
                 Annuler
               </Button>
-              <Button onClick={handleSave} disabled={saving || !formData.name || !formData.body}>
+              <Button onClick={handleSave} disabled={saving || !formData.name || !currentContent}>
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -394,6 +400,6 @@ export default function TemplatesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Upload,
   FileText,
@@ -212,7 +213,7 @@ export default function AutoImportPage() {
   const pendingRows = rows.filter(r => r.status === 'pending').length;
 
   return (
-    <>
+    <MainLayout>
       <Head>
         <title>Auto-Import Investment Intelligence - CRM Immobilier</title>
       </Head>
@@ -473,6 +474,6 @@ export default function AutoImportPage() {
           </div>
         )}
       </div>
-    </>
+    </MainLayout>
   );
 }

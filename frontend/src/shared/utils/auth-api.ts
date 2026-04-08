@@ -54,47 +54,59 @@ export interface PasswordResetConfirm {
 class AuthAPIService {
   /**
    * Connexion utilisateur
+   * Utilise fetch() natif pour éviter les intercepteurs axios
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    console.log('[AuthAPI] Tentative de connexion avec:', credentials.email);
-    let authResponse: AuthResponse;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    console.log('[AuthAPI] Tentative de connexion avec:', credentials.email, 'vers', API_URL);
+
+    let response: Response;
     try {
-      // Utilisez directement apiClient.post car apiClient est l'instance exportée par défaut
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-
-      console.log('[AuthAPI] Raw response:', response);
-      console.log('[AuthAPI] Response data:', response.data);
-
-      authResponse = response.data;
-
-      // Vérifier la structure de la réponse
-      if (!authResponse.accessToken || !authResponse.refreshToken) {
-        console.error('[AuthAPI] Missing tokens in response:', authResponse);
-        throw new Error('Invalid response format: missing tokens');
-      }
-
-      // Sauvegarder les tokens
-      if (typeof window !== 'undefined') {
-        console.log(
-          '[AuthAPI] Saving token to localStorage:',
-          authResponse.accessToken.substring(0, 20) + '...'
-        );
-        localStorage.setItem('auth_token', authResponse.accessToken);
-        localStorage.setItem('refresh_token', authResponse.refreshToken);
-        localStorage.setItem('user', JSON.stringify(authResponse.user));
-
-        // Vérifier que le token est bien sauvegardé
-        const savedToken = localStorage.getItem('auth_token');
-        console.log(
-          '[AuthAPI] Token saved confirmation:',
-          savedToken ? savedToken.substring(0, 20) + '...' : 'NOT SAVED'
-        );
-      }
-      console.log('[AuthAPI] Connexion réussie pour', credentials.email);
-    } catch (error: any) {
-      console.error('[AuthAPI] Erreur de connexion:', error.status, error.message, error.details);
+      response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+    } catch (networkError: any) {
+      console.error('[AuthAPI] Erreur réseau:', networkError.message);
+      const error: any = new Error(
+        'Impossible de contacter le serveur. Vérifiez que le backend est démarré sur ' + API_URL
+      );
+      error.status = 0;
+      error.response = { status: 0, data: { message: error.message } };
       throw error;
     }
+
+    console.log('[AuthAPI] Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
+      console.error('[AuthAPI] Erreur de connexion:', response.status, errorData);
+      const error: any = new Error(errorData.message || `Login failed (${response.status})`);
+      error.status = response.status;
+      error.response = { status: response.status, data: errorData };
+      throw error;
+    }
+
+    const authResponse: AuthResponse = await response.json();
+    console.log(
+      '[AuthAPI] Login response OK, accessToken:',
+      authResponse.accessToken?.substring(0, 20) + '...'
+    );
+
+    // Vérifier la structure de la réponse
+    if (!authResponse.accessToken || !authResponse.refreshToken) {
+      console.error('[AuthAPI] Missing tokens in response:', authResponse);
+      throw new Error('Invalid response format: missing tokens');
+    }
+
+    // Sauvegarder les tokens
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_token', authResponse.accessToken);
+      localStorage.setItem('refresh_token', authResponse.refreshToken);
+      localStorage.setItem('user', JSON.stringify(authResponse.user));
+    }
+    console.log('[AuthAPI] Connexion réussie pour', credentials.email);
     return authResponse;
   }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -14,15 +15,9 @@ import { Switch } from '@/shared/components/ui/switch';
 import { Label } from '@/shared/components/ui/label';
 import { Input } from '@/shared/components/ui/input';
 import { Textarea } from '@/shared/components/ui/textarea';
-import {
-  ArrowLeft,
-  Settings,
-  Save,
-  Power,
-  AlertCircle,
-  CheckCircle,
-} from 'lucide-react';
+import { ArrowLeft, Settings, Save, Power, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Module Configuration Page
@@ -97,21 +92,15 @@ export default function ModuleConfigPage() {
 
   const handleSaveConfig = async () => {
     if (!module) return;
-
     setSaving(true);
     try {
-      const response = await fetch(`/api/modules/${slug}/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(module),
+      await apiClient.put(`/core/modules/agency-config/${slug}`, {
+        config: module.settings,
       });
-
-      if (response.ok) {
-        alert('Configuration enregistrée avec succès');
-      }
+      alert('Configuration enregistrée avec succès');
     } catch (error) {
       console.error('Error saving config:', error);
-      alert('Erreur lors de l\'enregistrement');
+      alert("Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
@@ -171,7 +160,7 @@ export default function ModuleConfigPage() {
   }
 
   return (
-    <>
+    <MainLayout title="Settings" breadcrumbs={[{ label: 'Paramètres' }]}>
       <Head>
         <title>Configuration {module.name}</title>
       </Head>
@@ -180,11 +169,7 @@ export default function ModuleConfigPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push('/settings/modules')}
-            >
+            <Button variant="ghost" size="icon" onClick={() => router.push('/settings/modules')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
@@ -195,9 +180,7 @@ export default function ModuleConfigPage() {
                   v{module.version}
                 </Badge>
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Configuration et permissions du module
-              </p>
+              <p className="text-muted-foreground mt-1">Configuration et permissions du module</p>
             </div>
           </div>
 
@@ -221,15 +204,15 @@ export default function ModuleConfigPage() {
           <CardContent>
             <div className="flex items-center space-x-2">
               {module.isActive ? (
-                <>
+                <MainLayout title="Settings" breadcrumbs={[{ label: 'Paramètres' }]}>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-green-600 font-medium">Module actif</span>
-                </>
+                </MainLayout>
               ) : (
-                <>
+                <MainLayout title="Settings" breadcrumbs={[{ label: 'Paramètres' }]}>
                   <AlertCircle className="h-4 w-4 text-orange-600" />
                   <span className="text-orange-600 font-medium">Module désactivé</span>
-                </>
+                </MainLayout>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-2">
@@ -244,9 +227,7 @@ export default function ModuleConfigPage() {
         <Card>
           <CardHeader>
             <CardTitle>Paramètres</CardTitle>
-            <CardDescription>
-              Configuration générale du module
-            </CardDescription>
+            <CardDescription>Configuration générale du module</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -255,23 +236,17 @@ export default function ModuleConfigPage() {
                 <Input
                   id="defaultProvider"
                   value={module.settings.defaultProvider || ''}
-                  onChange={(e) =>
-                    handleSettingChange('defaultProvider', e.target.value)
-                  }
+                  onChange={(e) => handleSettingChange('defaultProvider', e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="maxHistoryItems">
-                  Nombre max d'éléments d'historique
-                </Label>
+                <Label htmlFor="maxHistoryItems">Nombre max d'éléments d'historique</Label>
                 <Input
                   id="maxHistoryItems"
                   type="number"
                   value={module.settings.maxHistoryItems || 50}
-                  onChange={(e) =>
-                    handleSettingChange('maxHistoryItems', parseInt(e.target.value))
-                  }
+                  onChange={(e) => handleSettingChange('maxHistoryItems', parseInt(e.target.value))}
                 />
               </div>
             </div>
@@ -280,16 +255,12 @@ export default function ModuleConfigPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="enableExport">Activer l'export</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Permettre l'export des données
-                  </p>
+                  <p className="text-sm text-muted-foreground">Permettre l'export des données</p>
                 </div>
                 <Switch
                   id="enableExport"
                   checked={module.settings.enableExport}
-                  onCheckedChange={(checked) =>
-                    handleSettingChange('enableExport', checked)
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('enableExport', checked)}
                 />
               </div>
 
@@ -303,9 +274,7 @@ export default function ModuleConfigPage() {
                 <Switch
                   id="autoSave"
                   checked={module.settings.autoSave}
-                  onCheckedChange={(checked) =>
-                    handleSettingChange('autoSave', checked)
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('autoSave', checked)}
                 />
               </div>
 
@@ -319,9 +288,7 @@ export default function ModuleConfigPage() {
                 <Switch
                   id="showTimestamps"
                   checked={module.settings.showTimestamps}
-                  onCheckedChange={(checked) =>
-                    handleSettingChange('showTimestamps', checked)
-                  }
+                  onCheckedChange={(checked) => handleSettingChange('showTimestamps', checked)}
                 />
               </div>
             </div>
@@ -332,9 +299,7 @@ export default function ModuleConfigPage() {
         <Card>
           <CardHeader>
             <CardTitle>Permissions</CardTitle>
-            <CardDescription>
-              Gérer les permissions et fonctionnalités par rôle
-            </CardDescription>
+            <CardDescription>Gérer les permissions et fonctionnalités par rôle</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -360,9 +325,7 @@ export default function ModuleConfigPage() {
                   <Switch
                     id={feature}
                     checked={enabled}
-                    onCheckedChange={(checked) =>
-                      handlePermissionChange(feature, checked)
-                    }
+                    onCheckedChange={(checked) => handlePermissionChange(feature, checked)}
                   />
                 </div>
               ))}
@@ -374,9 +337,7 @@ export default function ModuleConfigPage() {
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Zone de danger</CardTitle>
-            <CardDescription>
-              Actions irréversibles
-            </CardDescription>
+            <CardDescription>Actions irréversibles</CardDescription>
           </CardHeader>
           <CardContent>
             <Button
@@ -396,6 +357,6 @@ export default function ModuleConfigPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </MainLayout>
   );
 }

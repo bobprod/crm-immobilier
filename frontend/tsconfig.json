@@ -50,6 +50,8 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/modules/business/tasks/components/__tests__",
+    "tests"
   ]
 }

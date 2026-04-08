@@ -24,6 +24,7 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Investment Project Detail Page
@@ -43,62 +44,15 @@ export default function ProjectDetailPage() {
 
   const fetchProjectDetail = async () => {
     try {
-      // TODO: API call
-      setProject({
-        id: '1',
-        title: 'Résidence Le Marais',
-        description: 'Résidence de standing située au cœur du Marais, l\'un des quartiers les plus prisés de Paris.',
-        city: 'Paris',
-        country: 'France',
-        address: '15 Rue des Francs Bourgeois, 75004 Paris',
-        totalPrice: 500000,
-        minTicket: 1000,
-        currency: 'EUR',
-        grossYield: 10.5,
-        netYield: 9.2,
-        targetYield: 9.5,
-        durationMonths: 24,
-        startDate: '2025-01-01',
-        endDate: '2027-01-01',
-        propertyType: 'Résidentiel',
-        status: 'active',
-        fundingProgress: 75,
-        source: 'bricks',
-        analysis: {
-          overallScore: 85,
-          locationScore: 92,
-          yieldScore: 88,
-          riskScore: 75,
-          liquidityScore: 80,
-          recommendation: 'BUY',
-          recommendationReason: 'Excellent emplacement avec rendement attractif',
-          strengths: [
-            'Quartier historique très recherché',
-            'Proximité transports et commerces',
-            'Rendement net supérieur à 9%',
-            'Gestionnaire expérimenté',
-          ],
-          weaknesses: [
-            'Ticket d\'entrée élevé (1000€)',
-            'Durée longue (24 mois)',
-          ],
-          opportunities: [
-            'Potentiel de plus-value importante',
-            'Demande locative forte',
-          ],
-          threats: [
-            'Évolution réglementaire (encadrement loyers)',
-            'Travaux imprévus possibles',
-          ],
-          redFlags: [],
-        },
-        images: [
-          '/api/placeholder/800/600',
-          '/api/placeholder/800/600',
-          '/api/placeholder/800/600',
-        ],
-      });
-
+      const response = await apiClient.get(`/investment-intelligence/projects/${id}`);
+      const data = response.data?.project ?? response.data;
+      // Replace broken /api/placeholder images with a safe fallback
+      if (data?.images) {
+        data.images = data.images.map((img: string) =>
+          img.startsWith('/api/placeholder') ? '/placeholder.svg' : img
+        );
+      }
+      setProject(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching project:', error);

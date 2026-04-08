@@ -9,7 +9,7 @@ import {
   MessageResponseDto,
 } from '../types/whatsapp.types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 /**
  * Hook to manage WhatsApp messages
@@ -38,7 +38,7 @@ export function useMessages(conversationId?: string) {
       return response.data.messages || [];
     },
     {
-      refreshInterval: 5000, // Refresh every 5 seconds for real-time feel
+      refreshInterval: 5000,
       revalidateOnFocus: true,
     }
   );
@@ -50,20 +50,14 @@ export function useMessages(conversationId?: string) {
     setIsSending(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/messages/text`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/whatsapp/messages/text`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      // Refresh messages
       await mutate();
-
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Failed to send message');
@@ -79,20 +73,14 @@ export function useMessages(conversationId?: string) {
     setIsSending(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/messages/media`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/whatsapp/messages/media`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      // Refresh messages
       await mutate();
-
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Failed to send media message');
@@ -104,24 +92,20 @@ export function useMessages(conversationId?: string) {
   /**
    * Send template message
    */
-  const sendTemplateMessage = async (data: SendTemplateMessageDto): Promise<MessageResponseDto> => {
+  const sendTemplateMessage = async (
+    data: SendTemplateMessageDto
+  ): Promise<MessageResponseDto> => {
     setIsSending(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/messages/template`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/whatsapp/messages/template`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      // Refresh messages
       await mutate();
-
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Failed to send template message');
@@ -140,16 +124,12 @@ export function useMessages(conversationId?: string) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await axios.post(
-        `${API_BASE_URL}/upload/media`, // Assuming generic upload endpoint
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/whatsapp/media/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       return response.data.url;
     } catch (err: any) {
@@ -189,7 +169,7 @@ export function useMessages(conversationId?: string) {
    */
   const getUnreadCount = (): number => {
     if (!messages) return 0;
-    return messages.filter(msg => msg.direction === 'inbound' && !msg.readAt).length;
+    return messages.filter((msg) => msg.direction === 'inbound' && !msg.readAt).length;
   };
 
   /**
@@ -209,7 +189,6 @@ export function useMessages(conversationId?: string) {
         }
       );
 
-      // Refresh messages
       await mutate();
     } catch (err: any) {
       console.error('Failed to mark messages as read:', err);
@@ -231,9 +210,9 @@ export function useMessages(conversationId?: string) {
    * Format file size
    */
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return {

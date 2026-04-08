@@ -1,10 +1,10 @@
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { MandateList } from '../../src/modules/business/mandates/components/MandateList';
 
 export default function MandatesPage() {
   return (
-    <Layout>
+    <MainLayout title="Mandats" breadcrumbs={[{ label: 'Mandats' }]}>
       <MandateList />
-    </Layout>
+    </MainLayout>
   );
 }

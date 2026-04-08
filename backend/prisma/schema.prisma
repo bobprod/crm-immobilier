@@ -114,6 +114,10 @@ model agencies {
   whatsappConfigs       WhatsAppConfig?            @relation("AgencyWhatsAppConfig")
   whatsappConversations WhatsAppConversation[]     @relation("AgencyWhatsAppConversations")
   financialCommitments  FinancialCommitment[]
+  agentProfiles         AgentProfile[]
+  commissionConfig      CommissionConfig?
+  annualBonusConfig     AnnualBonusConfig?
+  documents             documents[]
 }
 
 model appointments {
@@ -255,6 +259,7 @@ model properties {
   images              String[]
   features            String[]
   status              PropertyStatus                @default(available)
+  expirationDate      DateTime?                     // Date d'expiration de l'annonce (optionnel)
   deletedAt           DateTime?
   ownerNewId          String?
   propertySeo         PropertySeo?
@@ -276,6 +281,7 @@ model properties {
   prospecting_matches prospecting_matches[]         @relation("PropertyMatches")
   tasks               tasks[]                       @relation("PropertyTasks")
   transactions        Transaction[]                 @relation("PropertyTransactions")
+  publicLeads          PublicLead[]                  @relation("PublicLeadProperty")
 
   @@index([priority])
   @@index([isFeatured])
@@ -351,6 +357,7 @@ model prospects {
   users                users                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   tasks                tasks[]                     @relation("ProspectTasks")
   transactions         Transaction[]               @relation("ProspectTransactions")
+  publicLeads          PublicLead[]
 }
 
 model ProspectHistory {
@@ -447,6 +454,7 @@ model users {
   whatsappMessages        WhatsAppMessage[]         @relation("UserWhatsAppMessages")
   aiChatConversations     AiChatConversation[]      @relation("UserAiChatConversations")
   createdCommitments      FinancialCommitment[]     @relation("CommitmentCreator")
+  agentProfile            AgentProfile?
 }
 
 model communications {
@@ -1194,21 +1202,40 @@ model prospect_properties_shown {
   @@index([interestLevel])
 }
 
+model VitrineTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  category     String   @default("general")
+  colors       Json?
+  fonts        Json?
+  defaultPages Json?
+  thumbnail    String?
+  isDefault    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  configs      VitrineConfig[]
+}
+
 model VitrineConfig {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  isActive       Boolean  @default(false)
+  id             String          @id @default(cuid())
+  userId         String          @unique
+  slug           String?         @unique
+  templateId     String?
+  isActive       Boolean         @default(false)
   agencyName     String
   logo           String?
   slogan         String?
-  primaryColor   String   @default("#3B82F6")
-  secondaryColor String   @default("#10B981")
+  primaryColor   String          @default("#3B82F6")
+  secondaryColor String          @default("#10B981")
   phone          String
   email          String
   address        String?
   schedule       Json?
   socialLinks    Json?
-  theme          String   @default("light")
+  theme          String          @default("light")
   heroImage      String?
   aboutText      String?
   services       Json?
@@ -1217,9 +1244,32 @@ model VitrineConfig {
   seoDescription String?
   seoKeywords    String?
   analyticsId    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template       VitrineTemplate? @relation(fields: [templateId], references: [id])
+  pages          VitrinePage[]
+  agents         PublicAgentProfile[]
+  leads          PublicLead[]
+}
+
+model VitrinePage {
+  id              String        @id @default(cuid())
+  vitrineConfigId String
+  slug            String
+  title           String
+  puckData        Json          @default("{}")
+  order           Int           @default(0)
+  isActive        Boolean       @default(true)
+  isDefault       Boolean       @default(false)
+  seoTitle        String?
+  seoDescription  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vitrineConfig   VitrineConfig @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([vitrineConfigId, slug])
+  @@index([vitrineConfigId])
 }
 
 model PublishedProperty {
@@ -1235,6 +1285,60 @@ model PublishedProperty {
   @@unique([propertyId, userId])
   @@index([userId])
   @@index([isFeatured])
+}
+
+model PublicAgentProfile {
+  id              String        @id @default(cuid())
+  vitrineConfigId String
+  firstName       String
+  lastName        String?
+  email           String?
+  phone           String?
+  photo           String?
+  jobTitle        String?
+  bio             String?
+  specialties     String[]
+  languages       String[]
+  order           Int           @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  vitrineConfig   VitrineConfig @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+  leads           PublicLead[]
+
+  @@index([vitrineConfigId])
+}
+
+model PublicLead {
+  id              String              @id @default(cuid())
+  vitrineConfigId String
+  vitrineSlug     String?
+  firstName       String
+  lastName        String?
+  email           String
+  phone           String?
+  message         String?
+  type            String              @default("CONTACT")
+  propertyId      String?
+  agentProfileId  String?
+  prospectId      String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  referrer        String?
+  ipAddress       String?
+  status          String              @default("NEW")
+  convertedAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  vitrineConfig   VitrineConfig       @relation(fields: [vitrineConfigId], references: [id], onDelete: Cascade)
+  property        properties?         @relation("PublicLeadProperty", fields: [propertyId], references: [id])
+  agentProfile    PublicAgentProfile?  @relation(fields: [agentProfileId], references: [id])
+  prospect        prospects?          @relation(fields: [prospectId], references: [id])
+
+  @@index([vitrineConfigId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model VitrineAnalytics {
@@ -2804,6 +2908,7 @@ enum ClientType {
 enum UserRole {
   USER
   AGENT
+  MANAGER
   ADMIN
   SUPER_ADMIN
 }
@@ -3069,4 +3174,110 @@ enum OccurrenceStatus {
   DONE
   OVERDUE
   WAIVED
+}
+
+// ============================================================
+// MODULE PERSONNEL - Gestion agents, commerciaux et personnel
+// ============================================================
+
+model AgentProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  agencyId      String
+  jobTitle      String?
+  phone         String?
+  hireDate      DateTime?
+  isActive      Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency        agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  commissionOverride AgentCommissionOverride?
+  monthlyPerformances AgentMonthlyPerformance[]
+
+  @@index([agencyId])
+  @@map("agent_profiles")
+}
+
+// Commission tiers configurables par agence (par le manager)
+model CommissionConfig {
+  id                String   @id @default(cuid())
+  agencyId          String   @unique
+  tier1MaxAmount    Float    @default(4000)
+  tier2MinAmount    Float    @default(7000)
+  tier2Rate         Float    @default(15)
+  tier3MinAmount    Float    @default(11000)
+  tier3Rate         Float    @default(20)
+  directSaleRate    Float    @default(20)
+  currency          String   @default("TND")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  agency            agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@map("commission_configs")
+}
+
+// Override de commission pour un agent spécifique
+model AgentCommissionOverride {
+  id              String   @id @default(cuid())
+  agentProfileId  String   @unique
+  tier1MaxAmount  Float?
+  tier2MinAmount  Float?
+  tier2Rate       Float?
+  tier3MinAmount  Float?
+  tier3Rate       Float?
+  directSaleRate  Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agentProfile    AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  @@map("agent_commission_overrides")
+}
+
+// Configuration prime de fin d'année par agence
+model AnnualBonusConfig {
+  id              String   @id @default(cuid())
+  agencyId        String   @unique
+  tier1MinAmount  Float    @default(180000)
+  tier1Rate       Float    @default(5)
+  tier2MinAmount  Float?
+  tier2Rate       Float?
+  tier3MinAmount  Float?
+  tier3Rate       Float?
+  currency        String   @default("TND")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agency          agencies @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@map("annual_bonus_configs")
+}
+
+// Performance mensuelle par agent
+model AgentMonthlyPerformance {
+  id                    String   @id @default(cuid())
+  agentProfileId        String
+  year                  Int
+  month                 Int
+  caAmount              Float    @default(0)
+  commissionRate        Float    @default(0)
+  commissionAmount      Float    @default(0)
+  directSalesCA         Float    @default(0)
+  directSalesCommission Float    @default(0)
+  totalCommission       Float    @default(0)
+  currency              String   @default("TND")
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  agentProfile    AgentProfile @relation(fields: [agentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([agentProfileId, year, month])
+  @@index([agentProfileId])
+  @@index([year, month])
+  @@map("agent_monthly_performances")
 }

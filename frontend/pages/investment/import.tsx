@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Import Investment Project Page
@@ -49,34 +50,22 @@ export default function ImportProjectPage() {
     setImportResult(null);
 
     try {
-      const response = await fetch('/api/investment/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, url }),
-      });
-
-      if (!response.ok) throw new Error('Erreur lors de l\'import');
-
-      const result = await response.json();
+      const response = await apiClient.post('/investment-intelligence/import', { source, url });
+      const result = response.data;
       setImportResult(result);
 
-      // Redirect to project detail after 2s
       setTimeout(() => {
         router.push(`/investment/projects/${result.projectId}`);
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'import');
+      setError(err.response?.data?.message || err.message || 'Erreur lors de l\'import');
     } finally {
       setImporting(false);
     }
   };
 
   return (
-    <>
-      <Head>
-        <title>Importer un Projet d'Investissement</title>
-      </Head>
-
+    <MainLayout title="Importer un Projet" breadcrumbs={[{ label: 'Investissement', href: '/investment' }, { label: 'Importer' }]}>
       <div className="container max-w-3xl mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
@@ -319,6 +308,6 @@ export default function ImportProjectPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </MainLayout>
   );
 }

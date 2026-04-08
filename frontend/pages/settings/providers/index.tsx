@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Plus,
   Search,
@@ -310,7 +311,7 @@ export default function UnifiedProvidersPage() {
   };
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>Unified Provider Management - CRM Immobilier</title>
       </Head>
@@ -589,6 +590,6 @@ export default function UnifiedProvidersPage() {
           </div>
         </div>
       </div>
-    </>
+    </MainLayout>
   );
 }

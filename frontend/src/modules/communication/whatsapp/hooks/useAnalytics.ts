@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/a
 
 // Helper for authenticated requests
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   return { Authorization: `Bearer ${token}` };
 };
 
@@ -140,7 +140,7 @@ export function useAnalytics() {
     isLoading: isLoadingTemplates,
     mutate: mutateTemplates,
   } = useSWR<TemplatePerformance[]>(
-    `/whatsapp/analytics/templates${buildQueryString()}`,
+    `/whatsapp/analytics/templates/performance${buildQueryString()}`,
     fetcher
   );
 
@@ -149,8 +149,9 @@ export function useAnalytics() {
     data: conversationsByHour,
     error: conversationError,
     isLoading: isLoadingConversations,
+    mutate: mutateConversations,
   } = useSWR<ConversationStats[]>(
-    `/whatsapp/analytics/conversations-by-hour${buildQueryString()}`,
+    `/whatsapp/analytics/conversations/by-hour${buildQueryString()}`,
     fetcher
   );
 
@@ -168,13 +169,15 @@ export function useAnalytics() {
   const generateReport = async (): Promise<AnalyticsReport> => {
     setIsGenerating(true);
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/analytics/reports`,
+      const response = await axios.get(
+        `${API_BASE_URL}/whatsapp/analytics/report`,
         {
+          params: {
           start: period.start.toISOString(),
           end: period.end.toISOString(),
-        },
-        { headers: getAuthHeaders() }
+          },
+          headers: getAuthHeaders(),
+        }
       );
       return response.data;
     } catch (error: any) {
@@ -188,18 +191,18 @@ export function useAnalytics() {
   const exportPDF = async (): Promise<Blob> => {
     setIsExporting(true);
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/analytics/export/pdf`,
+      const response = await axios.get(
+        `${API_BASE_URL}/whatsapp/analytics/report/export`,
         {
+          params: {
           start: period.start.toISOString(),
           end: period.end.toISOString(),
-        },
-        {
+            format: 'pdf',
+          },
           headers: getAuthHeaders(),
-          responseType: 'blob',
         }
       );
-      return response.data;
+      return exportResultToBlob(response.data);
     } catch (error: any) {
       throw new Error('Erreur lors de l\'export PDF');
     } finally {
@@ -211,18 +214,18 @@ export function useAnalytics() {
   const exportCSV = async (): Promise<Blob> => {
     setIsExporting(true);
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/analytics/export/csv`,
+      const response = await axios.get(
+        `${API_BASE_URL}/whatsapp/analytics/report/export`,
         {
+          params: {
           start: period.start.toISOString(),
           end: period.end.toISOString(),
-        },
-        {
+            format: 'csv',
+          },
           headers: getAuthHeaders(),
-          responseType: 'blob',
         }
       );
-      return response.data;
+      return exportResultToBlob(response.data);
     } catch (error: any) {
       throw new Error('Erreur lors de l\'export CSV');
     } finally {
@@ -234,18 +237,18 @@ export function useAnalytics() {
   const exportExcel = async (): Promise<Blob> => {
     setIsExporting(true);
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/analytics/export/excel`,
+      const response = await axios.get(
+        `${API_BASE_URL}/whatsapp/analytics/report/export`,
         {
+          params: {
           start: period.start.toISOString(),
           end: period.end.toISOString(),
-        },
-        {
+            format: 'excel',
+          },
           headers: getAuthHeaders(),
-          responseType: 'blob',
         }
       );
-      return response.data;
+      return exportResultToBlob(response.data);
     } catch (error: any) {
       throw new Error('Erreur lors de l\'export Excel');
     } finally {
@@ -275,21 +278,36 @@ export function useAnalytics() {
     comparison: Record<string, number>; // percentage change
   }> => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/whatsapp/analytics/compare`,
-        {
-          period1: {
+      const [response1, response2] = await Promise.all([
+        axios.get(`${API_BASE_URL}/whatsapp/analytics/metrics`, {
+          params: {
             start: period1.start.toISOString(),
             end: period1.end.toISOString(),
           },
-          period2: {
+          headers: getAuthHeaders(),
+        }),
+        axios.get(`${API_BASE_URL}/whatsapp/analytics/metrics`, {
+          params: {
             start: period2.start.toISOString(),
             end: period2.end.toISOString(),
           },
+          headers: getAuthHeaders(),
+        }),
+      ]);
+      return {
+        period1: response1.data,
+        period2: response2.data,
+        comparison: {
+          totalMessages: calculatePercentageChange(
+            response1.data?.messages?.total || 0,
+            response2.data?.messages?.total || 0
+          ),
+          responseRate: calculatePercentageChange(
+            response1.data?.engagement?.responseRate || 0,
+            response2.data?.engagement?.responseRate || 0
+          ),
         },
-        { headers: getAuthHeaders() }
-      );
-      return response.data;
+      };
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Erreur lors de la comparaison');
     }
@@ -301,8 +319,9 @@ export function useAnalytics() {
       mutateMetrics(),
       mutateCharts(),
       mutateTemplates(),
+      mutateConversations(),
     ]);
-  }, [mutateMetrics, mutateCharts, mutateTemplates]);
+  }, [mutateMetrics, mutateCharts, mutateTemplates, mutateConversations]);
 
   return {
     // Data
@@ -326,7 +345,7 @@ export function useAnalytics() {
     isExporting,
 
     // Errors
-    error: metricsError || chartError || templateError,
+    error: metricsError || chartError || templateError || conversationError,
 
     // Actions
     generateReport,
@@ -398,4 +417,13 @@ export function calculatePercentageChange(current: number, previous: number): nu
  */
 export function formatPercentage(value: number, decimals: number = 1): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
+}
+
+function exportResultToBlob(result: { data: string; mimeType?: string }): Blob {
+  const byteCharacters = atob(result.data);
+  const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], {
+    type: result.mimeType || 'application/octet-stream',
+  });
 }

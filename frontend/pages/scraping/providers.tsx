@@ -10,6 +10,7 @@ import {
   AlertCircle,
   TrendingUp
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 interface Provider {
   provider: string;
@@ -37,9 +38,8 @@ export default function ScrapingProviders() {
   const fetchProviders = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/provider-registry/available/scraping');
-      const data = await res.json();
-      setProviders(data);
+      const res = await apiClient.get('/provider-registry/available/scraping');
+      setProviders(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Failed to fetch providers:', error);
     } finally {
@@ -50,10 +50,8 @@ export default function ScrapingProviders() {
   const testProvider = async (providerId: string) => {
     setTesting(providerId);
     try {
-      const res = await fetch(`/api/provider-registry/${providerId}/test`, {
-        method: 'POST',
-      });
-      const result = await res.json();
+      const res = await apiClient.post(`/provider-registry/${providerId}/test`);
+      const result = res.data;
 
       if (result.success) {
         alert(`✅ ${result.message}\nLatency: ${result.latency}ms`);
@@ -61,7 +59,7 @@ export default function ScrapingProviders() {
         alert(`❌ Test failed: ${result.message}`);
       }
 
-      fetchProviders(); // Refresh
+      fetchProviders();
     } catch (error) {
       console.error('Test failed:', error);
       alert('❌ Test failed');

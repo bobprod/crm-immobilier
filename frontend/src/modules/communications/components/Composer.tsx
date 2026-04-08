@@ -21,7 +21,7 @@ const emailSchema = z.object({
 
 const smsSchema = z.object({
   to: z.string().min(8, 'Numéro invalide'),
-  body: z.string().min(1, 'Message requis'),
+  message: z.string().min(1, 'Message requis'),
 });
 
 interface ComposerProps {
@@ -48,7 +48,11 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
   const onSendEmail = async (data: z.infer<typeof emailSchema>) => {
     try {
       setSending(true);
-      await communicationsService.sendEmail(data as SendEmailDto);
+      await communicationsService.sendEmail({
+        ...data,
+        prospectId,
+        propertyId,
+      } as SendEmailDto);
       toast({ title: 'Email envoyé', description: `Envoyé à ${data.to}` });
       emailForm.reset();
       onSent();
@@ -62,7 +66,11 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
   const onSendSms = async (data: z.infer<typeof smsSchema>) => {
     try {
       setSending(true);
-      await communicationsService.sendSms(data as SendSmsDto);
+      await communicationsService.sendSms({
+        ...data,
+        prospectId,
+        propertyId,
+      } as SendSmsDto);
       toast({ title: 'SMS envoyé', description: `Envoyé à ${data.to}` });
       smsForm.reset();
       onSent();
@@ -80,7 +88,7 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
       }
       emailForm.setValue('body', data.body);
     } else {
-      smsForm.setValue('body', data.body);
+      smsForm.setValue('message', data.body);
     }
   };
 
@@ -186,10 +194,10 @@ export function Composer({ onSent, prospectId, propertyId }: ComposerProps) {
                   <Textarea
                     placeholder="Votre SMS..."
                     className="min-h-[100px]"
-                    {...smsForm.register('body')}
+                    {...smsForm.register('message')}
                   />
-                  {smsForm.formState.errors.body && (
-                    <p className="text-xs text-red-500">{smsForm.formState.errors.body.message}</p>
+                  {smsForm.formState.errors.message && (
+                    <p className="text-xs text-red-500">{smsForm.formState.errors.message.message}</p>
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={sending}>

@@ -6,7 +6,7 @@ import { PrismaService as DatabaseService } from '../../../shared/database/prism
  */
 @Injectable()
 export class BusinessActivityLogger {
-  constructor(private readonly db: DatabaseService) { }
+  constructor(private readonly db: DatabaseService) {}
 
   // ========== MANDATES ==========
 
@@ -40,7 +40,12 @@ export class BusinessActivityLogger {
   /**
    * Log mandate status change
    */
-  async logMandateStatusChanged(userId: string, mandate: any, oldStatus: string, newStatus: string) {
+  async logMandateStatusChanged(
+    userId: string,
+    mandate: any,
+    oldStatus: string,
+    newStatus: string,
+  ) {
     try {
       await this.db.activity.create({
         data: {
@@ -232,7 +237,12 @@ export class BusinessActivityLogger {
   /**
    * Log commission status change
    */
-  async logCommissionStatusChanged(userId: string, commission: any, oldStatus: string, newStatus: string) {
+  async logCommissionStatusChanged(
+    userId: string,
+    commission: any,
+    oldStatus: string,
+    newStatus: string,
+  ) {
     try {
       await this.db.activity.create({
         data: {
@@ -286,7 +296,12 @@ export class BusinessActivityLogger {
   /**
    * Log invoice status change
    */
-  async logInvoiceStatusChanged(userId: string, invoice: any, oldStatus: string, newStatus: string) {
+  async logInvoiceStatusChanged(
+    userId: string,
+    invoice: any,
+    oldStatus: string,
+    newStatus: string,
+  ) {
     try {
       await this.db.activity.create({
         data: {
@@ -366,6 +381,67 @@ export class BusinessActivityLogger {
       });
     } catch (error) {
       console.error('Error logging owner creation activity:', error);
+    }
+  }
+
+  // ========== PROPERTIES ==========
+
+  /**
+   * Log property status change
+   */
+  async logPropertyStatusChanged(
+    userId: string,
+    property: any,
+    oldStatus: string,
+    newStatus: string,
+    reason?: string,
+  ) {
+    try {
+      await this.db.activity.create({
+        data: {
+          userId,
+          type: 'property_status_changed',
+          description: `Propriété "${property.title}" : ${oldStatus} → ${newStatus}${reason ? ' (' + reason + ')' : ''}`,
+          entityType: 'property',
+          entityId: property.id,
+          metadata: {
+            propertyId: property.id,
+            title: property.title,
+            oldStatus,
+            newStatus,
+            reason,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error logging property status change activity:', error);
+    }
+  }
+
+  /**
+   * Log property created
+   */
+  async logPropertyCreated(userId: string, property: any) {
+    try {
+      await this.db.activity.create({
+        data: {
+          userId,
+          type: 'property_created',
+          description: `Propriété créée : ${property.title} (${property.type}, ${property.price} ${property.currency})`,
+          entityType: 'property',
+          entityId: property.id,
+          metadata: {
+            propertyId: property.id,
+            title: property.title,
+            type: property.type,
+            price: property.price,
+            currency: property.currency,
+            city: property.city,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error logging property creation activity:', error);
     }
   }
 }

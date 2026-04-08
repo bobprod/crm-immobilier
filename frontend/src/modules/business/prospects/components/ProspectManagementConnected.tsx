@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -45,12 +45,12 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react';
+import prospectsAPI from '@/shared/utils/prospects-api';
 import {
   useProspectsEnhanced,
   ProspectEnhanced,
   ProspectInteraction,
 } from '@/shared/hooks/useProspectsEnhanced';
-
 // Types
 type ProspectType =
   | 'requete_location'
@@ -130,6 +130,9 @@ export default function ProspectManagementConnected({
   const [interactionOutcome, setInteractionOutcome] = useState('');
   const [nextAction, setNextAction] = useState('');
   const [nextActionDate, setNextActionDate] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Form state for new prospect
   const [newProspect, setNewProspect] = useState({
@@ -193,10 +196,18 @@ export default function ProspectManagementConnected({
   // Handle create prospect
   const handleCreateProspect = async () => {
     try {
-      await createProspect({
+      const created = await createProspect({
         ...newProspect,
         prospectType: activeTab,
       });
+      // Upload avatar if selected
+      if (avatarFile && created?.id) {
+        try {
+          await prospectsAPI.uploadAvatar(created.id, avatarFile);
+        } catch {
+          // Non-blocking — avatar can be uploaded later
+        }
+      }
       toast({
         title: 'Succes',
         description: 'Prospect cree avec succes',
@@ -232,6 +243,9 @@ export default function ProspectManagementConnected({
       notes: '',
       source: '',
     });
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarFile(null);
+    setAvatarPreview(null);
   };
 
   // Handle add interaction
@@ -584,6 +598,45 @@ export default function ProspectManagementConnected({
           <DialogHeader>
             <DialogTitle>Nouveau Prospect</DialogTitle>
           </DialogHeader>
+          {/* Avatar upload */}
+          <div className="flex items-center gap-4 py-2">
+            <div
+              className="relative cursor-pointer group"
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="avatar"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-400"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center group-hover:border-blue-400 transition-colors">
+                  <User className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+              <div className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                +
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700">Photo du prospect</p>
+              <p className="text-xs text-gray-400">JPG, PNG — max 2 Mo</p>
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+                setAvatarFile(f);
+                setAvatarPreview(URL.createObjectURL(f));
+              }}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label>Prenom *</Label>

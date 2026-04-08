@@ -24,6 +24,7 @@ import {
   BarChart3,
   Download,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Investment Intelligence Dashboard
@@ -54,58 +55,29 @@ export default function InvestmentDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // TODO: Replace with real API call
-      // const response = await fetch('/api/investment/dashboard');
-      // const data = await response.json();
+      const response = await apiClient.get('/investment-intelligence/projects');
+      const projects = response.data?.projects ?? [];
 
-      // Demo data
+      setRecentProjects(projects.slice(0, 5));
+
+      const active = projects.filter((p: any) => p.status === 'active').length;
+      const totalInvested = projects.reduce((sum: number, p: any) => sum + (p.totalPrice ?? 0), 0);
+      const avgROI = projects.length
+        ? projects.reduce((sum: number, p: any) => sum + (p.netYield ?? 0), 0) / projects.length
+        : 0;
+      const cityMap: Record<string, number> = {};
+      projects.forEach((p: any) => { if (p.city) cityMap[p.city] = (cityMap[p.city] ?? 0) + 1; });
+      const topCity = Object.entries(cityMap).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '-';
+      const best = projects.reduce((a: any, b: any) => ((a?.netYield ?? 0) > (b?.netYield ?? 0) ? a : b), null);
+
       setStats({
-        totalProjects: 24,
-        activeProjects: 12,
-        totalInvested: 450000,
-        avgROI: 8.5,
-        topCity: 'Paris',
-        bestPerforming: 'Résidence Le Marais',
+        totalProjects: projects.length,
+        activeProjects: active,
+        totalInvested,
+        avgROI: parseFloat(avgROI.toFixed(1)),
+        topCity,
+        bestPerforming: best?.title ?? '-',
       });
-
-      setRecentProjects([
-        {
-          id: '1',
-          title: 'Résidence Le Marais',
-          city: 'Paris',
-          country: 'France',
-          totalPrice: 500000,
-          minTicket: 1000,
-          netYield: 9.2,
-          status: 'active',
-          fundingProgress: 75,
-          source: 'bricks',
-        },
-        {
-          id: '2',
-          title: 'Appartements Neufs Lyon',
-          city: 'Lyon',
-          country: 'France',
-          totalPrice: 350000,
-          minTicket: 500,
-          netYield: 7.8,
-          status: 'active',
-          fundingProgress: 45,
-          source: 'homunity',
-        },
-        {
-          id: '3',
-          title: 'Bureaux Bordeaux Centre',
-          city: 'Bordeaux',
-          country: 'France',
-          totalPrice: 800000,
-          minTicket: 2000,
-          netYield: 8.5,
-          status: 'completed',
-          fundingProgress: 100,
-          source: 'generic',
-        },
-      ]);
 
       setLoading(false);
     } catch (error) {

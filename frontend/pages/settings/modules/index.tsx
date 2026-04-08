@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { MainLayout } from '@/shared/components/layout';
 import {
   Card,
   CardContent,
@@ -33,6 +34,7 @@ import {
   FileText,
   BarChart3,
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 /**
  * Module Registry UI - Système Plug & Play
@@ -99,11 +101,9 @@ export default function ModuleRegistryPage() {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      const userData = await response.json();
-      setUser(userData);
+      const response = await apiClient.get('/auth/me');
+      setUser(response.data);
     } catch (error) {
-      // Fallback dev
       setUser({ role: 'ADMIN', agencyId: 'agency-1' });
     }
   };
@@ -277,15 +277,8 @@ export default function ModuleRegistryPage() {
     }
 
     try {
-      const response = await fetch('/api/modules/registry/install', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ moduleId, agencyId: user?.agencyId }),
-      });
-
-      if (response.ok) {
-        fetchModules();
-      }
+      await apiClient.post('/modules/registry/install', { moduleId, agencyId: user?.agencyId });
+      fetchModules();
     } catch (error) {
       console.error('Error installing module:', error);
     }
@@ -300,13 +293,8 @@ export default function ModuleRegistryPage() {
     if (!confirm('Êtes-vous sûr de vouloir désinstaller ce module ?')) return;
 
     try {
-      const response = await fetch(`/api/modules/registry/${moduleId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        fetchModules();
-      }
+      await apiClient.delete(`/modules/registry/${moduleId}`);
+      fetchModules();
     } catch (error) {
       console.error('Error uninstalling module:', error);
     }
@@ -329,7 +317,7 @@ export default function ModuleRegistryPage() {
   }
 
   return (
-    <>
+     <MainLayout title="Settings" breadcrumbs={[{ label: "Paramètres" }]}>
       <Head>
         <title>Module Registry - Système Plug & Play</title>
       </Head>
@@ -531,6 +519,6 @@ export default function ModuleRegistryPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </>
+    </MainLayout>
   );
 }

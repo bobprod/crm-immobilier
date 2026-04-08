@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import Layout from '../../src/modules/core/layout/components/Layout';
+import { MainLayout } from '@/shared/components/layout';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -68,7 +68,7 @@ export default function NewMandatePage() {
     }, []);
 
     return (
-        <Layout>
+        <MainLayout>
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Button
@@ -343,6 +343,6 @@ export default function NewMandatePage() {
                     </CardContent>
                 </Card>
             </div>
-        </Layout>
+        </MainLayout>
     );
 }

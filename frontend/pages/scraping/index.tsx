@@ -11,6 +11,7 @@ import {
   Plus,
   Loader2
 } from 'lucide-react';
+import { apiClient } from '@/shared/utils/backend-api';
 
 export default function ScrapingDashboard() {
   const router = useRouter();
@@ -26,14 +27,12 @@ export default function ScrapingDashboard() {
     setLoading(true);
     try {
       // Fetch queue stats
-      const statsRes = await fetch('/api/scraping-queue/stats');
-      const statsData = await statsRes.json();
-      setStats(statsData);
+      const statsRes = await apiClient.get('/scraping-queue/stats');
+      setStats(statsRes.data);
 
       // Fetch recent jobs
-      const jobsRes = await fetch('/api/scraping-queue/jobs?limit=10');
-      const jobsData = await jobsRes.json();
-      setRecentJobs(jobsData);
+      const jobsRes = await apiClient.get('/scraping-queue/jobs?limit=10');
+      setRecentJobs(jobsRes.data);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {

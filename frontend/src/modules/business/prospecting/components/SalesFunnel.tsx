@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { ProspectingLead, LeadStatus } from '@/shared/utils/prospecting-api';
+import { TrendingUp, LayoutList, GitMerge, ChevronRight } from 'lucide-react';
 
 interface FunnelStage {
   id: LeadStatus;
@@ -12,6 +13,7 @@ interface FunnelStage {
 
 interface SalesFunnelProps {
   leads: ProspectingLead[];
+  viewMode: 'funnel' | 'kanban';
   onLeadClick?: (lead: ProspectingLead) => void;
   onStageChange?: (leadId: string, newStatus: LeadStatus) => void;
   onExportStats?: () => void;
@@ -25,23 +27,23 @@ const FUNNEL_STAGES: FunnelStage[] = [
     icon: '🆕',
     color: 'text-blue-700',
     bgColor: 'bg-blue-100',
-    description: 'Leads fraichement captures',
+    description: 'Leads fraîchement capturés',
   },
   {
     id: 'contacted',
-    name: 'Contactes',
+    name: 'Contactés',
     icon: '📞',
     color: 'text-purple-700',
     bgColor: 'bg-purple-100',
-    description: 'Premier contact etabli',
+    description: 'Premier contact établi',
   },
   {
     id: 'qualified',
-    name: 'Qualifies',
+    name: 'Qualifiés',
     icon: '✅',
     color: 'text-green-700',
     bgColor: 'bg-green-100',
-    description: 'Besoin confirme et budget valide',
+    description: 'Besoin confirmé et budget validé',
   },
   {
     id: 'converted',
@@ -53,11 +55,11 @@ const FUNNEL_STAGES: FunnelStage[] = [
   },
   {
     id: 'rejected',
-    name: 'Rejetes',
+    name: 'Rejetés',
     icon: '❌',
     color: 'text-red-700',
     bgColor: 'bg-red-100',
-    description: 'Non qualifies ou desinteresses',
+    description: 'Non qualifiés ou désintéressés',
   },
 ];
 
@@ -86,88 +88,54 @@ const LeadCard: React.FC<{
             {(lead.firstName?.[0] || '') + (lead.lastName?.[0] || 'L')}
           </div>
           <div>
-            <p className="font-medium text-gray-900 text-sm">
-              {lead.firstName || ''} {lead.lastName || 'Sans nom'}
+            <p className="font-medium text-gray-900 text-sm truncate w-24">
+              {lead.firstName || ''} {lead.lastName || ''}
             </p>
-            <p className="text-xs text-gray-500">{lead.email || lead.phone || '-'}</p>
           </div>
         </div>
-        <div
-          className={`w-6 h-6 rounded-full ${getScoreColor(lead.score)} flex items-center justify-center`}
-        >
-          <span className="text-white text-xs font-bold">{lead.score}</span>
+        <div className={`w-5 h-5 rounded-full ${getScoreColor(lead.score || 0)} flex items-center justify-center`}>
+          <span className="text-white text-[10px] font-bold">{lead.score || 0}</span>
         </div>
       </div>
-      <div className="flex items-center gap-2 text-xs">
-        <span
-          className={`px-2 py-0.5 rounded-full ${
-            lead.leadType === 'mandat'
-              ? 'bg-amber-100 text-amber-700'
-              : 'bg-indigo-100 text-indigo-700'
-          }`}
-        >
-          {lead.leadType === 'mandat' ? '🏠 Mandat' : '🔍 Requete'}
+      <div className="flex items-center gap-2 text-[10px]">
+        <span className={`px-1.5 py-0.5 rounded-full ${lead.leadType === 'mandat' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>
+          {lead.leadType === 'mandat' ? '🏠 Mandat' : '🔍 Requête'}
         </span>
-        {lead.city && <span className="text-gray-500">📍 {lead.city}</span>}
+        {lead.city && <span className="text-gray-400 truncate flex-1">📍 {lead.city}</span>}
       </div>
-      {lead.budget && (
-        <div className="mt-2 text-xs text-gray-600">
-          💰{' '}
-          {typeof lead.budget === 'object'
-            ? `${((lead.budget as any).min / 1000).toFixed(0)}k - ${((lead.budget as any).max / 1000).toFixed(0)}k`
-            : `${(lead.budget / 1000).toFixed(0)}k`}{' '}
-          TND
-        </div>
-      )}
     </div>
   );
 };
 
 export const SalesFunnel: React.FC<SalesFunnelProps> = ({
   leads,
+  viewMode,
   onLeadClick,
   onStageChange,
   onExportStats,
   onRelaunchInactive,
 }) => {
   const [draggedLead, setDraggedLead] = useState<ProspectingLead | null>(null);
-  const [viewMode, setViewMode] = useState<'funnel' | 'kanban'>('funnel');
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [notification, setNotification] = useState<{
-    message: string;
-    type: 'success' | 'error';
-  } | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Auto-dismiss notification after 4 seconds
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
   }, []);
 
-  // Group leads by status
   const leadsByStage = useMemo(() => {
     const grouped: Record<LeadStatus, ProspectingLead[]> = {
-      new: [],
-      contacted: [],
-      qualified: [],
-      converted: [],
-      rejected: [],
+      new: [], contacted: [], qualified: [], converted: [], rejected: [],
     };
-
     leads.forEach((lead) => {
-      if (grouped[lead.status]) {
-        grouped[lead.status].push(lead);
-      }
+      if (grouped[lead.status]) grouped[lead.status].push(lead);
     });
-
     return grouped;
   }, [leads]);
 
-  // Calculate conversion rates
   const conversionRates = useMemo(() => {
     const total = leads.length;
     const stages = FUNNEL_STAGES.filter((s) => s.id !== 'rejected');
-
     return stages.map((stage) => {
       const count = leadsByStage[stage.id].length;
       const rate = total > 0 ? (count / total) * 100 : 0;
@@ -175,274 +143,106 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
     });
   }, [leads, leadsByStage]);
 
-  // Handle drag and drop
-  const handleDragStart = (lead: ProspectingLead) => {
-    setDraggedLead(lead);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
+  const handleDragStart = (lead: ProspectingLead) => setDraggedLead(lead);
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleDrop = (stageId: LeadStatus) => {
-    if (draggedLead && onStageChange) {
-      onStageChange(draggedLead.id, stageId);
-    }
+    if (draggedLead && onStageChange) onStageChange(draggedLead.id, stageId);
     setDraggedLead(null);
   };
 
-  // Stats
   const totalLeads = leads.length;
   const convertedCount = leadsByStage.converted.length;
   const conversionRate = totalLeads > 0 ? ((convertedCount / totalLeads) * 100).toFixed(1) : '0';
-  const avgScore =
-    totalLeads > 0 ? (leads.reduce((sum, l) => sum + l.score, 0) / totalLeads).toFixed(0) : '0';
+  const inactiveLeads = leads.filter((lead) => lead.status === 'new' || lead.status === 'contacted');
 
-  // Find inactive leads (new or contacted for more than 7 days - simulated)
-  const inactiveLeads = useMemo(() => {
-    return leads.filter((lead) => lead.status === 'new' || lead.status === 'contacted');
-  }, [leads]);
-
-  // Export stats as CSV
   const handleExportStats = () => {
-    if (onExportStats) {
-      onExportStats();
-    } else {
-      // Default export behavior
-      const stats = {
-        totalLeads,
-        byStage: FUNNEL_STAGES.map((stage) => ({
-          stage: stage.name,
-          count: leadsByStage[stage.id].length,
-          rate:
-            totalLeads > 0 ? ((leadsByStage[stage.id].length / totalLeads) * 100).toFixed(1) : '0',
-        })),
-        conversionRate,
-        avgScore,
-      };
-
-      const csvContent = [
-        ['Etape', 'Nombre', 'Taux (%)'].join(','),
-        ...stats.byStage.map((s) => [s.stage, s.count, s.rate].join(',')),
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `funnel-stats-${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-    }
+    if (onExportStats) return onExportStats();
+    const csvContent = "Étape,Nombre,Taux (%)\n" + 
+      FUNNEL_STAGES.map(s => `${s.name},${leadsByStage[s.id].length},${(leadsByStage[s.id].length / (totalLeads || 1) * 100).toFixed(1)}`).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url;
+    link.download = `funnel-stats-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
-  // Relaunch inactive leads
   const handleRelaunchInactive = () => {
     const inactiveIds = inactiveLeads.map((l) => l.id);
     if (onRelaunchInactive) {
       onRelaunchInactive(inactiveIds);
-      showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
+      showNotification(`${inactiveIds.length} leads relancés!`);
     } else if (onStageChange && inactiveIds.length > 0) {
-      // Default: Mark new leads as contacted
-      inactiveLeads
-        .filter((l) => l.status === 'new')
-        .forEach((lead) => onStageChange(lead.id, 'contacted'));
-      showNotification(`${inactiveIds.length} leads marqués pour relance!`, 'success');
+      inactiveLeads.filter(l => l.status === 'new').forEach(l => onStageChange(l.id, 'contacted'));
+      showNotification(`${inactiveIds.length} leads relancés!`);
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden relative">
-      {/* Notification Toast */}
+    <div className="relative">
       {notification && (
-        <div
-          className={`absolute top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse ${
-            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-          }`}
-        >
+        <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce ${
+          notification.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+        }`}>
           <span>{notification.type === 'success' ? '✓' : '✕'}</span>
           <span>{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-75">
-            ×
-          </button>
         </div>
       )}
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <span>🎯</span> Tunnel de Conversion
-            </h2>
-            <p className="text-indigo-100 text-sm mt-1">Suivez la progression de vos leads</p>
-          </div>
-          <div className="flex rounded-lg overflow-hidden bg-white/20">
-            <button
-              onClick={() => setViewMode('funnel')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'funnel' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
-              }`}
-            >
-              Entonnoir
-            </button>
-            <button
-              onClick={() => setViewMode('kanban')}
-              className={`px-4 py-2 text-sm font-medium transition ${
-                viewMode === 'kanban' ? 'bg-white text-indigo-600' : 'text-white hover:bg-white/10'
-              }`}
-            >
-              Kanban
-            </button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{totalLeads}</div>
-            <div className="text-indigo-100 text-sm">Total leads</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{convertedCount}</div>
-            <div className="text-indigo-100 text-sm">Convertis</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{conversionRate}%</div>
-            <div className="text-indigo-100 text-sm">Taux conversion</div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{avgScore}</div>
-            <div className="text-indigo-100 text-sm">Score moyen</div>
-          </div>
-        </div>
-      </div>
 
       {viewMode === 'funnel' ? (
-        /* Funnel View */
-        <div className="p-6">
-          <div className="relative">
-            {conversionRates.map((stage, index) => {
-              const width = 100 - index * 15;
-              const nextStage = conversionRates[index + 1];
-              const dropRate = nextStage
-                ? (((stage.count - nextStage.count) / Math.max(stage.count, 1)) * 100).toFixed(0)
-                : null;
+        <div className="p-4 space-y-3">
+          {conversionRates.map((stage, index) => {
+            const width = 100 - index * 12;
+            const nextStage = conversionRates[index + 1];
+            const dropRate = nextStage ? (((stage.count - nextStage.count) / Math.max(stage.count, 1)) * 100).toFixed(0) : null;
 
-              return (
-                <div key={stage.id} className="mb-2">
-                  <div
-                    className={`relative mx-auto ${stage.bgColor} rounded-lg transition-all hover:shadow-lg cursor-pointer`}
-                    style={{ width: `${width}%`, minHeight: '80px' }}
-                    onDragOver={handleDragOver}
-                    onDrop={() => handleDrop(stage.id)}
-                  >
-                    <div className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{stage.icon}</span>
-                        <div>
-                          <h4 className={`font-semibold ${stage.color}`}>{stage.name}</h4>
-                          <p className="text-sm text-gray-600">{stage.description}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold ${stage.color}`}>{stage.count}</div>
-                        <div className="text-sm text-gray-500">{stage.rate.toFixed(1)}%</div>
-                      </div>
+            return (
+              <div key={stage.id} className="relative group">
+                <div 
+                  className={`mx-auto ${stage.bgColor} rounded-xl transition-all border border-transparent group-hover:border-purple-300 p-4 flex items-center justify-between min-h-[70px] shadow-sm`}
+                  style={{ width: `${width}%` }}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(stage.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{stage.icon}</span>
+                    <div className="min-w-0">
+                      <h4 className={`font-bold text-sm ${stage.color}`}>{stage.name}</h4>
+                      <p className="text-[10px] text-gray-400 hidden sm:block">{stage.description}</p>
                     </div>
-
-                    {/* Lead avatars */}
-                    {leadsByStage[stage.id].length > 0 && (
-                      <div className="px-4 pb-3 flex -space-x-2 overflow-hidden">
-                        {leadsByStage[stage.id].slice(0, 8).map((lead, i) => (
-                          <div
-                            key={lead.id}
-                            className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold"
-                            title={`${lead.firstName} ${lead.lastName}`}
-                          >
-                            {(lead.firstName?.[0] || '') + (lead.lastName?.[0] || '')}
-                          </div>
-                        ))}
-                        {leadsByStage[stage.id].length > 8 && (
-                          <div className="w-8 h-8 rounded-full bg-gray-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                            +{leadsByStage[stage.id].length - 8}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
-
-                  {/* Drop rate indicator */}
-                  {dropRate && Number(dropRate) > 0 && (
-                    <div className="text-center my-1">
-                      <span className="text-xs text-red-500">↓ -{dropRate}% perte</span>
-                    </div>
-                  )}
+                  <div className="text-right">
+                    <div className={`text-xl font-black ${stage.color}`}>{stage.count}</div>
+                    <div className="text-[10px] text-gray-400">{stage.rate.toFixed(1)}%</div>
+                  </div>
                 </div>
-              );
-            })}
-
-            {/* Rejected section */}
-            <div className="mt-6 pt-4 border-t border-dashed border-gray-300">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-gray-600 flex items-center gap-2">
-                  <span>❌</span> Leads rejetes
-                </h4>
-                <span className="text-red-600 font-bold">{leadsByStage.rejected.length}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {leadsByStage.rejected.slice(0, 5).map((lead) => (
-                  <span key={lead.id} className="px-2 py-1 bg-red-50 text-red-700 rounded text-sm">
-                    {lead.firstName} {lead.lastName}
-                  </span>
-                ))}
-                {leadsByStage.rejected.length > 5 && (
-                  <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-sm">
-                    +{leadsByStage.rejected.length - 5} autres
-                  </span>
+                {dropRate && Number(dropRate) > 0 && (
+                  <div className="text-center py-1 flex items-center justify-center gap-1">
+                    <div className="h-px w-8 bg-red-100" />
+                    <span className="text-[10px] font-bold text-red-400">-{dropRate}% perte</span>
+                    <div className="h-px w-8 bg-red-100" />
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       ) : (
-        /* Kanban View */
         <div className="p-4 overflow-x-auto">
           <div className="flex gap-4 min-w-max">
             {FUNNEL_STAGES.map((stage) => (
-              <div
-                key={stage.id}
-                className="w-72 flex-shrink-0"
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(stage.id)}
-              >
-                <div className={`${stage.bgColor} rounded-t-lg p-3`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span>{stage.icon}</span>
-                      <span className={`font-semibold ${stage.color}`}>{stage.name}</span>
-                    </div>
-                    <span
-                      className={`px-2 py-0.5 rounded-full ${stage.bgColor} ${stage.color} text-sm font-bold`}
-                    >
-                      {leadsByStage[stage.id].length}
-                    </span>
+              <div key={stage.id} className="w-64 flex-shrink-0" onDragOver={handleDragOver} onDrop={() => handleDrop(stage.id)}>
+                <div className={`${stage.bgColor} rounded-t-xl p-3 border-b-2 border-white/50 flex justify-between items-center`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{stage.icon}</span>
+                    <span className={`font-bold text-sm ${stage.color}`}>{stage.name}</span>
                   </div>
+                  <span className="text-[10px] font-black bg-white/40 px-2 py-0.5 rounded-full">{leadsByStage[stage.id].length}</span>
                 </div>
-                <div className="bg-gray-50 rounded-b-lg p-3 min-h-[400px] space-y-2">
+                <div className="bg-gray-50/50 rounded-b-xl p-3 min-h-[300px] space-y-2 border border-gray-100">
                   {leadsByStage[stage.id].map((lead) => (
-                    <LeadCard
-                      key={lead.id}
-                      lead={lead}
-                      onClick={() => onLeadClick?.(lead)}
-                      onDragStart={() => handleDragStart(lead)}
-                    />
+                    <LeadCard key={lead.id} lead={lead} onClick={() => onLeadClick?.(lead)} onDragStart={() => handleDragStart(lead)} />
                   ))}
-                  {leadsByStage[stage.id].length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <div className="text-3xl mb-2">📭</div>
-                      <p className="text-sm">Aucun lead</p>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -450,29 +250,22 @@ export const SalesFunnel: React.FC<SalesFunnelProps> = ({
         </div>
       )}
 
-      {/* Actions */}
-      <div className="p-4 bg-gray-50 border-t flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">{totalLeads}</span> leads au total •
-          <span className="text-green-600 font-medium ml-1">{conversionRate}%</span> taux de
-          conversion
-          {inactiveLeads.length > 0 && (
-            <span className="text-orange-600 ml-2">• {inactiveLeads.length} inactif(s)</span>
-          )}
+      {/* Actions footer */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl p-4 shadow-xl">
+        <div className="text-xs text-gray-500">
+          <span className="font-bold text-gray-900">{totalLeads}</span> leads capturés • 
+          <span className="text-emerald-600 font-bold ml-1">{conversionRate}%</span> conversion finale
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleExportStats}
-            className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"
-          >
-            📊 Exporter stats
+          <button onClick={handleExportStats} className="px-3 py-2 text-[10px] font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition uppercase tracking-wider">
+            📊 Stats CSV
           </button>
-          <button
-            onClick={handleRelaunchInactive}
+          <button 
+            onClick={handleRelaunchInactive} 
             disabled={inactiveLeads.length === 0}
-            className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 text-[10px] font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 uppercase tracking-wider"
           >
-            🔄 Relancer les inactifs ({inactiveLeads.length})
+            🔄 Relance auto ({inactiveLeads.length})
           </button>
         </div>
       </div>

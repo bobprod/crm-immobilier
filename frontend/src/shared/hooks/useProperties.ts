@@ -1,36 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Property } from '../utils/properties-api';
+import apiClient from '../utils/backend-api';
 
 export function useProperties() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-
-  const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  };
-
   const loadProperties = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await fetch(`${API_URL}/properties`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des biens');
-      }
-
-      const data = await response.json();
-      setProperties(data);
+      const response = await apiClient.get('/properties');
+      const data = response.data;
+      setProperties(Array.isArray(data) ? data : data.data || []);
     } catch (err: any) {
       setError(err.message);
       console.error('Error loading properties:', err);
@@ -40,26 +23,14 @@ export function useProperties() {
   };
 
   useEffect(() => {
-    // Only load on client-side to avoid SSR issues
-    if (typeof window !== 'undefined') {
-      loadProperties();
-    }
+    loadProperties();
   }, []);
 
   const createProperty = async (data: Partial<Property>) => {
     try {
-      const response = await fetch(`${API_URL}/properties`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du bien');
-      }
-
-      const newProperty = await response.json();
-      setProperties([...properties, newProperty]);
+      const response = await apiClient.post('/properties', data);
+      const newProperty = response.data;
+      setProperties((prev) => [...prev, newProperty]);
       return newProperty;
     } catch (err: any) {
       setError(err.message);
@@ -69,18 +40,9 @@ export function useProperties() {
 
   const updateProperty = async (id: string, data: Partial<Property>) => {
     try {
-      const response = await fetch(`${API_URL}/properties/${id}`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour du bien');
-      }
-
-      const updatedProperty = await response.json();
-      setProperties(properties.map((p) => (p.id === id ? updatedProperty : p)));
+      const response = await apiClient.patch(`/properties/${id}`, data);
+      const updatedProperty = response.data;
+      setProperties((prev) => prev.map((p) => (p.id === id ? updatedProperty : p)));
       return updatedProperty;
     } catch (err: any) {
       setError(err.message);
@@ -90,16 +52,8 @@ export function useProperties() {
 
   const deleteProperty = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/properties/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du bien');
-      }
-
-      setProperties(properties.filter((p) => p.id !== id));
+      await apiClient.delete(`/properties/${id}`);
+      setProperties((prev) => prev.filter((p) => p.id !== id));
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -108,15 +62,8 @@ export function useProperties() {
 
   const getPropertyById = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/properties/${id}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement du bien');
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/properties/${id}`);
+      return response.data;
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -125,16 +72,8 @@ export function useProperties() {
 
   const searchProperties = async (criteria: any) => {
     try {
-      const query = new URLSearchParams(criteria).toString();
-      const response = await fetch(`${API_URL}/properties/search?${query}`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la recherche');
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/properties', { params: criteria });
+      return Array.isArray(response.data) ? response.data : response.data.data || [];
     } catch (err: any) {
       setError(err.message);
       throw err;

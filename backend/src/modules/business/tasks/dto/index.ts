@@ -122,3 +122,20 @@ export class UpdateTaskDto {
   metadata?: Record<string, any>;
 }
 
+export class TaskFilterDto {
+  @ApiPropertyOptional({ enum: ['todo', 'in_progress', 'done'] })
+  @IsOptional()
+  @IsEnum(['todo', 'in_progress', 'done'])
+  status?: string;
+
+  @ApiPropertyOptional({ enum: ['low', 'medium', 'high'] })
+  @IsOptional()
+  @IsEnum(['low', 'medium', 'high'])
+  priority?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  prospectId?: string;
+}
+

@@ -433,8 +433,11 @@ export class BusinessOrchestrator {
   }
 
   private async sendOwnerWelcomeEmail(email: string, mandate: any) {
-    // TODO: Implement welcome email template
-    this.logger.log(`📧 Would send welcome email to ${email} for mandate ${mandate.reference}`);
+    try {
+      await this.emailService.sendOwnerWelcomeEmail(email, mandate);
+    } catch (error) {
+      this.logger.error(`Failed to send owner welcome email to ${email}:`, error);
+    }
   }
 
   private async generateBuyerInvoice(
@@ -517,7 +520,15 @@ export class BusinessOrchestrator {
   }
 
   private async sendPaymentConfirmationEmail(payment: any) {
-    // TODO: Implement payment confirmation email
-    this.logger.log(`📧 Would send payment confirmation email for ${payment.amount} ${payment.currency}`);
+    const recipientEmail = payment.invoice?.clientEmail;
+    if (!recipientEmail) {
+      this.logger.warn(`No client email found for payment confirmation (paymentId: ${payment.id})`);
+      return;
+    }
+    try {
+      await this.emailService.sendPaymentConfirmationEmail(recipientEmail, payment);
+    } catch (error) {
+      this.logger.error(`Failed to send payment confirmation email to ${recipientEmail}:`, error);
+    }
   }
 }

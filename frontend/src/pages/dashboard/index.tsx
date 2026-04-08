@@ -1,165 +1,168 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Layout from '@/modules/core/layout/components/Layout';
-import { StatsWidget } from '@/modules/dashboard/components/StatsWidget';
-import { QuickActions } from '@/modules/dashboard/components/QuickActions';
-import { RecentActivities } from '@/modules/dashboard/components/RecentActivities';
-import { ChartsWidget } from '@/modules/dashboard/components/ChartsWidget';
-import { AlertsWidget } from '@/modules/dashboard/components/AlertsWidget';
-import { TopPerformersWidget } from '@/modules/dashboard/components/TopPerformersWidget';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { dashboardService } from '@/modules/dashboard/services/dashboard.service';
 import type {
   DashboardStats,
-  DashboardCharts,
-  RecentActivities as RecentActivitiesType,
-  TopPerformers,
   DashboardAlerts,
+  RecentActivities,
+  TopPerformers,
 } from '@/modules/dashboard/types/dashboard.types';
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [alerts, setAlerts] = useState<DashboardAlerts | null>(null);
+  const [activities, setActivities] = useState<RecentActivities | null>(null);
+  const [topPerformers, setTopPerformers] = useState<TopPerformers | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State for all dashboard data
-  const [stats, setStats] = useState<DashboardStats>({
-    activeProspects: 0,
-    availableProperties: 0,
-    todayAppointments: 0,
-    totalMatches: 0,
-    activeCampaigns: 0,
-    pendingTasks: 0,
-    totalCommunications: 0,
-    conversionRate: 0,
-    matchSuccessRate: 0,
-  });
-
-  const [charts, setCharts] = useState<DashboardCharts>({
-    prospects: { labels: [], values: [] },
-    properties: { labels: [], values: [] },
-    appointments: { labels: [], values: [] },
-    communications: { labels: [], values: [] },
-  });
-
-  const [activities, setActivities] = useState<RecentActivitiesType>({
-    recentProspects: [],
-    recentProperties: [],
-    recentAppointments: [],
-    recentCommunications: [],
-  });
-
-  const [performers, setPerformers] = useState<TopPerformers>({
-    topProperties: [],
-    topProspects: [],
-    topMatches: [],
-  });
-
-  const [alerts, setAlerts] = useState<DashboardAlerts>({
-    alerts: [],
-    counts: {
-      overdueTasks: 0,
-      upcomingAppointments: 0,
-      unmatchedProspects: 0,
-    },
-  });
-
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch all dashboard data in parallel
-      const [statsData, chartsData, activitiesData, performersData, alertsData] = await Promise.all(
-        [
+    const load = async () => {
+      try {
+        const [s, al, ac, tp] = await Promise.all([
           dashboardService.getStats(),
-          dashboardService.getCharts(),
+          dashboardService.getAlerts(),
           dashboardService.getRecentActivities(),
           dashboardService.getTopPerformers(),
-          dashboardService.getAlerts(),
-        ]
-      );
-
-      setStats(statsData);
-      setCharts(chartsData);
-      setActivities(activitiesData);
-      setPerformers(performersData);
-      setAlerts(alertsData);
-    } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err?.message || 'Erreur lors du chargement du dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement du dashboard...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-              <h3 className="text-lg font-semibold text-red-800 mb-2">Erreur</h3>
-              <p className="text-red-600 mb-4">{error}</p>
-              <button
-                onClick={fetchDashboardData}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Réessayer
-              </button>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+        ]);
+        setStats(s);
+        setAlerts(al);
+        setActivities(ac);
+        setTopPerformers(tp);
+      } catch (e: any) {
+        setError(e?.message || 'Impossible de charger les données. Veuillez actualiser la page ou contacter le support si le problème persiste.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
-          <p className="text-gray-600 mt-1">Vue d'ensemble de votre activité</p>
+          <h1 style={{ margin: 0 }}>Tableau de bord</h1>
+          <p style={{ color: '#666', margin: '4px 0 0' }}>Vue d&apos;ensemble de votre activité CRM</p>
         </div>
-
-        {/* Alerts */}
-        {alerts.alerts.length > 0 && <AlertsWidget alerts={alerts} />}
-
-        {/* Stats Grid */}
-        <StatsWidget stats={stats} />
-
-        {/* Quick Actions */}
-        <QuickActions />
-
-        {/* Charts */}
-        <ChartsWidget charts={charts} />
-
-        {/* Two Column Layout */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent Activities */}
-          <RecentActivities activities={activities} />
-
-          {/* Top Performers */}
-          <TopPerformersWidget performers={performers} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/analytics" style={{ padding: '8px 16px', border: '1px solid #e5e7eb', borderRadius: 6, textDecoration: 'none', color: '#374151' }}>
+            Analytics
+          </Link>
+          <Link href="/intelligence" style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', borderRadius: 6, textDecoration: 'none' }}>
+            Intelligence IA
+          </Link>
         </div>
       </div>
-    </Layout>
+
+      {loading && <p>Chargement...</p>}
+      {error && <p style={{ color: '#b91c1c' }}>Erreur: {error}</p>}
+
+      {!loading && !error && (
+        <>
+          {/* Alerts */}
+          {alerts && alerts.alerts.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              {alerts.alerts.map((alert, i) => (
+                <div key={i} style={{
+                  padding: '10px 16px',
+                  marginBottom: 8,
+                  borderRadius: 6,
+                  background: alert.type === 'warning' ? '#fef3c7' : alert.type === 'error' ? '#fee2e2' : '#dbeafe',
+                  border: `1px solid ${alert.type === 'warning' ? '#fcd34d' : alert.type === 'error' ? '#fca5a5' : '#93c5fd'}`,
+                  color: alert.type === 'warning' ? '#92400e' : alert.type === 'error' ? '#991b1b' : '#1e40af',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span>{alert.message}</span>
+                  <Link href={alert.action} style={{ fontSize: 12, textDecoration: 'underline' }}>Voir</Link>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* KPI Stats */}
+          {stats && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+              <StatCard label="Prospects actifs" value={stats.activeProspects} color="#2563eb" href="/prospects" />
+              <StatCard label="Biens disponibles" value={stats.availableProperties} color="#16a34a" href="/properties" />
+              <StatCard label="RDV aujourd'hui" value={stats.todayAppointments} color="#9333ea" href="/appointments" />
+              <StatCard label="Matchs en attente" value={stats.totalMatches} color="#ea580c" href="/matching" />
+              <StatCard label="Tâches en cours" value={stats.pendingTasks} color="#dc2626" href="/tasks" />
+              <StatCard label="Campagnes actives" value={stats.activeCampaigns} color="#0891b2" href="/prospecting" />
+              <StatCard label="Taux de conversion" value={`${stats.conversionRate}%`} color="#7c3aed" />
+              <StatCard label="Taux de match" value={`${stats.matchSuccessRate}%`} color="#b45309" />
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {/* Activités récentes */}
+            {activities && (
+              <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+                <h2 style={{ margin: '0 0 12px', fontSize: 16 }}>Activités récentes</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {activities.recentProspects.slice(0, 3).map((p) => (
+                    <ActivityRow key={p.id} type="Prospect" label={`${p.firstName} ${p.lastName}`} status={p.status} date={p.createdAt} />
+                  ))}
+                  {activities.recentProperties.slice(0, 3).map((p) => (
+                    <ActivityRow key={p.id} type="Bien" label={p.title} status={p.status} date={p.createdAt} />
+                  ))}
+                  {activities.recentAppointments.slice(0, 2).map((a) => (
+                    <ActivityRow key={a.id} type="RDV" label={a.title} status={a.status} date={a.startTime} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top performers */}
+            {topPerformers && (
+              <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+                <h2 style={{ margin: '0 0 12px', fontSize: 16 }}>Top performers</h2>
+                <div>
+                  <h3 style={{ fontSize: 13, color: '#6b7280', margin: '0 0 6px' }}>Meilleurs biens</h3>
+                  {topPerformers.topProperties.slice(0, 3).map((p) => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{p.title}</span>
+                      <span style={{ color: '#6b7280' }}>{p.viewsCount} vues · {p._count.matches} matchs</span>
+                    </div>
+                  ))}
+                  <h3 style={{ fontSize: 13, color: '#6b7280', margin: '12px 0 6px' }}>Meilleurs prospects</h3>
+                  {topPerformers.topProspects.slice(0, 3).map((p) => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9' }}>
+                      <span>{p.firstName} {p.lastName}</span>
+                      <span style={{ color: '#6b7280' }}>Score: {p.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function StatCard({ label, value, color, href }: { label: string; value: number | string; color: string; href?: string }) {
+  const content = (
+    <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, background: '#fff' }}>
+      <p style={{ margin: '0 0 4px', fontSize: 12, color: '#6b7280' }}>{label}</p>
+      <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color }}>{value}</p>
+    </div>
+  );
+  if (href) return <Link href={href} style={{ textDecoration: 'none' }}>{content}</Link>;
+  return content;
+}
+
+function ActivityRow({ type, label, status, date }: { type: string; label: string; status: string; date: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+      <div>
+        <span style={{ fontSize: 11, background: '#f1f5f9', borderRadius: 4, padding: '2px 6px', marginRight: 8 }}>{type}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+      </div>
+      <span style={{ color: '#9ca3af', fontSize: 11 }}>{new Date(date).toLocaleDateString('fr-FR')}</span>
+    </div>
   );
 }

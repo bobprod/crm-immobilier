@@ -10,12 +10,19 @@ const apiClient = axios.create({
   timeout: 10000,
 });
 
+// Routes d'auth publiques (pas de token requis)
+const PUBLIC_AUTH_ROUTES = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
+
 // Intercepteur pour ajouter le token JWT
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Ne pas envoyer de token sur les routes d'auth publiques uniquement
+    const isPublicAuth = PUBLIC_AUTH_ROUTES.some(route => config.url?.startsWith(route));
+    if (!isPublicAuth) {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },

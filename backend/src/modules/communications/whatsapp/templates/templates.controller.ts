@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { TemplatesService } from './templates.service';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import {
   CreateTemplateDto,
   UpdateTemplateDto,
@@ -32,6 +33,7 @@ import {
 
 @ApiTags('WhatsApp Templates')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('whatsapp/templates')
 export class TemplatesController {
   constructor(private readonly templatesService: TemplatesService) {}
@@ -68,7 +70,7 @@ export class TemplatesController {
     @Req() req: any,
     @Body() dto: CreateTemplateDto,
   ): Promise<TemplateResponseDto> {
-    return this.templatesService.createTemplate(req.user.id, dto);
+    return this.templatesService.createTemplate(req.user.userId, dto);
   }
 
   @Get()
@@ -90,7 +92,7 @@ export class TemplatesController {
     @Req() req: any,
     @Query() filters: TemplateFiltersDto,
   ): Promise<TemplatesListResponseDto> {
-    return this.templatesService.getTemplates(req.user.id, filters);
+    return this.templatesService.getTemplates(req.user.userId, filters);
   }
 
   @Get(':id')
@@ -116,7 +118,7 @@ export class TemplatesController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<TemplateResponseDto> {
-    return this.templatesService.getTemplate(req.user.id, id);
+    return this.templatesService.getTemplate(req.user.userId, id);
   }
 
   @Put(':id')
@@ -151,7 +153,7 @@ export class TemplatesController {
     @Param('id') id: string,
     @Body() dto: UpdateTemplateDto,
   ): Promise<TemplateResponseDto> {
-    return this.templatesService.updateTemplate(req.user.id, id, dto);
+    return this.templatesService.updateTemplate(req.user.userId, id, dto);
   }
 
   @Delete(':id')
@@ -176,7 +178,7 @@ export class TemplatesController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.templatesService.deleteTemplate(req.user.id, id);
+    return this.templatesService.deleteTemplate(req.user.userId, id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -207,7 +209,7 @@ export class TemplatesController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<TemplateResponseDto> {
-    return this.templatesService.duplicateTemplate(req.user.id, id);
+    return this.templatesService.duplicateTemplate(req.user.userId, id);
   }
 
   @Get(':id/stats')
@@ -233,6 +235,6 @@ export class TemplatesController {
     @Req() req: any,
     @Param('id') id: string,
   ): Promise<TemplateStatsDto> {
-    return this.templatesService.getTemplateStats(req.user.id, id);
+    return this.templatesService.getTemplateStats(req.user.userId, id);
   }
 }

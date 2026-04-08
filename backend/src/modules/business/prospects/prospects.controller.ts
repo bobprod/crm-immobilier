@@ -11,8 +11,14 @@ import {
   Request,
   Patch,
   Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { Response } from 'express';
 import { ProspectsService } from './prospects.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
@@ -121,5 +127,77 @@ export class ProspectsController {
   @ApiOperation({ summary: 'Get prospect interactions' })
   async getInteractions(@Param('id') id: string, @Request() req) {
     return this.prospectsService.getInteractions(id, req.user.userId);
+  }
+
+  @Post(':id/avatar')
+  @ApiOperation({ summary: 'Upload prospect avatar' })
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: (_req: any, _file: any, cb: any) => {
+          const dir = './uploads/prospects/avatars';
+          if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (req: any, file: any, cb: any) => {
+          const id = req.params.id;
+          const unique = Date.now();
+          cb(null, `avatar-${id}-${unique}${extname(file.originalname).toLowerCase()}`);
+        },
+      }),
+      limits: { fileSize: 2 * 1024 * 1024 },
+      fileFilter: (_req: any, file: any, cb: any) => {
+        if (/\.(jpg|jpeg|png|gif|webp)$/i.test(extname(file.originalname))) {
+          cb(null, true);
+        } else {
+          cb(new Error('Seules les images sont acceptées'), false);
+        }
+      },
+    }),
+  )
+  uploadAvatar(@Request() req, @Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    return this.prospectsService.uploadAvatar(id, req.user.userId, file);
+  }
+
+  // ===================== BULK ACTIONS =====================
+
+  @Patch('bulk/update')
+  @ApiOperation({ summary: 'Bulk update prospects (status, tags, etc.)' })
+  bulkUpdate(@Request() req, @Body() body: { ids: string[]; data: Record<string, any> }) {
+    return this.prospectsService.bulkUpdate(req.user.userId, body.ids, body.data);
+  }
+
+  @Delete('bulk/delete')
+  @ApiOperation({ summary: 'Bulk soft-delete prospects' })
+  bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
+    return this.prospectsService.bulkDelete(req.user.userId, body.ids);
+  }
+
+  @Post(':id/duplicate')
+  @ApiOperation({ summary: 'Duplicate a prospect' })
+  duplicate(@Request() req, @Param('id') id: string) {
+    return this.prospectsService.duplicate(id, req.user.userId);
+  }
+
+  @Patch(':id/tags')
+  @ApiOperation({ summary: 'Update tags on a prospect' })
+  updateTags(@Request() req, @Param('id') id: string, @Body('tags') tags: string[]) {
+    return this.prospectsService.updateTags(id, req.user.userId, tags);
+  }
+
+  @Post('import/csv')
+  @ApiOperation({ summary: 'Import prospects from CSV' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_, __, cb) => cb(null, './uploads/temp'),
+        filename: (_, f, cb) => cb(null, `import-${Date.now()}${extname(f.originalname)}`),
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async importCSV(@Request() req, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new Error('Fichier manquant');
+    return this.prospectsService.importCSV(req.user.userId, file);
   }
 }

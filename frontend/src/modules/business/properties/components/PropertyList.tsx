@@ -13,18 +13,85 @@ import { Checkbox } from '@/shared/components/ui/checkbox';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import propertiesAPI, { Property, CreatePropertyData } from '@/shared/utils/properties-api';
+import apiClient from '@/shared/utils/backend-api';
 import { PropertyFilters } from './PropertyFilters';
 import { PropertyBulkActions } from './PropertyBulkActions';
 import { PropertyFormModal } from './PropertyFormModal';
 import { ConfirmDialog } from '@/shared/components/ui/confirm-dialog';
-import { Plus, Eye, Edit, Trash } from 'lucide-react';
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash,
+  LayoutGrid,
+  List,
+  Download,
+  RefreshCw,
+  Home,
+  CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  Building2,
+  MapPin,
+  Bed,
+  Bath,
+  Map,
+  Star,
+  Zap,
+  Flame,
+} from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
+import dynamic from 'next/dynamic';
+
+const PropertyMap = dynamic(() => import('./PropertyMap').then((mod) => mod.PropertyMap), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[450px] bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
+      <MapPin className="h-8 w-8 text-gray-300" />
+    </div>
+  ),
+});
 
 interface PropertyListProps {
   initialLoading?: boolean;
   initialError?: string | null;
   initialProperties?: Property[];
 }
+
+const TYPE_LABELS: Record<string, string> = {
+  apartment: 'Appartement',
+  house: 'Maison',
+  villa: 'Villa',
+  studio: 'Studio',
+  land: 'Terrain',
+  commercial: 'Commercial',
+  office: 'Bureau',
+  garage: 'Garage',
+  other: 'Autre',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  available: 'Disponible',
+  reserved: 'Réservé',
+  sold: 'Vendu',
+  rented: 'Loué',
+  pending: 'En attente',
+  draft: 'Brouillon',
+  archived: 'Archivé',
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  sale: 'Vente',
+  rent: 'Location',
+  vacation_rental: 'Location saisonnière',
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  low: 'Basse',
+  medium: 'Moyenne',
+  high: 'Haute',
+  urgent: 'Urgente',
+};
 
 export function PropertyList({
   initialLoading,
@@ -36,6 +103,9 @@ export function PropertyList({
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<any>({});
+  const [stats, setStats] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'map'>('table');
+  const [exporting, setExporting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -61,27 +131,35 @@ export function PropertyList({
     setError(null);
     try {
       const response = await propertiesAPI.list(currentFilters);
-      // Handle both array response and { properties: [], total: 0 } response format
       const data = Array.isArray(response) ? response : (response as any).properties || [];
       setProperties(data);
     } catch (err) {
       const errorMessage = 'Impossible de charger les propriétés';
       setError(errorMessage);
-      toast({
-        title: 'Erreur',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erreur', description: errorMessage, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await apiClient.get('/properties/stats');
+      setStats(res.data);
+    } catch {}
   };
 
   useEffect(() => {
     if (!initialProperties && !initialLoading) {
       fetchProperties();
     }
+    fetchStats();
   }, [initialProperties, initialLoading]);
+
+  const handleRefresh = () => {
+    fetchProperties();
+    fetchStats();
+  };
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -89,25 +167,16 @@ export function PropertyList({
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(properties.map((p) => p.id));
-    } else {
-      setSelectedIds([]);
-    }
+    setSelectedIds(checked ? properties.map((p) => p.id) : []);
   };
 
   const handleSelectOne = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds((prev) => [...prev, id]);
-    } else {
-      setSelectedIds((prev) => prev.filter((pid) => pid !== id));
-    }
+    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((pid) => pid !== id)));
   };
 
   const handleBulkAction = async (action: string, value?: any) => {
     try {
       if (action === 'delete') {
-        // Show beautiful confirmation dialog
         setConfirmDialog({
           open: true,
           title: 'Supprimer les propriétés',
@@ -136,20 +205,32 @@ export function PropertyList({
       } else if (action === 'status') {
         await propertiesAPI.bulkUpdateStatus(selectedIds, value);
       }
-
-      // Refresh list and clear selection
       await fetchProperties();
       setSelectedIds([]);
-      toast({
-        title: 'Succès',
-        description: 'Propriétés mises à jour avec succès',
-      });
+      toast({ title: 'Succès', description: 'Propriétés mises à jour avec succès' });
     } catch (err) {
       toast({
         title: 'Erreur',
         description: 'Impossible de mettre à jour les propriétés',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const response = await apiClient.get('/properties/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `proprietes_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Erreur', description: "Impossible d'exporter", variant: 'destructive' });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -178,12 +259,13 @@ export function PropertyList({
         return 'bg-red-100 text-red-800';
       case 'rented':
         return 'bg-blue-100 text-blue-800';
+      case 'draft':
+        return 'bg-gray-100 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Modal handlers
   const handleOpenCreateModal = () => {
     setEditingProperty(null);
     setIsModalOpen(true);
@@ -199,27 +281,24 @@ export function PropertyList({
     setEditingProperty(null);
   };
 
-  const handleSubmitProperty = async (data: CreatePropertyData) => {
+  const handleSubmitProperty = async (data: CreatePropertyData, pendingImages?: File[]) => {
     try {
       if (editingProperty) {
-        // Update existing property
         await propertiesAPI.update(editingProperty.id, data);
-        toast({
-          title: 'Succès',
-          description: 'Propriété mise à jour avec succès',
-        });
+        if (pendingImages && pendingImages.length > 0) {
+          await propertiesAPI.uploadPropertyImages(editingProperty.id, pendingImages);
+        }
+        toast({ title: 'Succès', description: 'Propriété mise à jour avec succès' });
       } else {
-        // Create new property
-        await propertiesAPI.create(data);
-        toast({
-          title: 'Succès',
-          description: 'Propriété créée avec succès',
-        });
+        const created = await propertiesAPI.create(data);
+        if (pendingImages && pendingImages.length > 0 && created?.id) {
+          await propertiesAPI.uploadPropertyImages(created.id, pendingImages);
+        }
+        toast({ title: 'Succès', description: 'Propriété créée avec succès' });
       }
-      // Close the modal
       handleCloseModal();
-      // Refresh the list
       await fetchProperties();
+      fetchStats();
     } catch (error) {
       toast({
         title: 'Erreur',
@@ -228,57 +307,156 @@ export function PropertyList({
           : 'Impossible de créer la propriété',
         variant: 'destructive',
       });
-      // Don't close modal on error so user can fix issues
       throw error;
     }
   };
 
-  const handleDeleteProperty = useCallback((property: Property) => {
-    setConfirmDialog({
-      open: true,
-      title: 'Supprimer la propriété',
-      description: `Êtes-vous sûr de vouloir supprimer "${property.title}" ? Cette action est irréversible.`,
-      onConfirm: async () => {
-        try {
-          await propertiesAPI.delete(property.id);
-          await fetchProperties();
-          toast({
-            title: 'Succès',
-            description: 'Propriété supprimée avec succès',
-          });
-        } catch (err) {
-          toast({
-            title: 'Erreur',
-            description: 'Impossible de supprimer la propriété',
-            variant: 'destructive',
-          });
-        }
-      },
-    });
-  }, [toast]);
+  const handleDeleteProperty = useCallback(
+    (property: Property) => {
+      setConfirmDialog({
+        open: true,
+        title: 'Supprimer la propriété',
+        description: `Êtes-vous sûr de vouloir supprimer "${property.title}" ? Cette action est irréversible.`,
+        onConfirm: async () => {
+          try {
+            await propertiesAPI.delete(property.id);
+            await fetchProperties();
+            fetchStats();
+            toast({ title: 'Succès', description: 'Propriété supprimée avec succès' });
+          } catch (err) {
+            toast({
+              title: 'Erreur',
+              description: 'Impossible de supprimer la propriété',
+              variant: 'destructive',
+            });
+          }
+        },
+      });
+    },
+    [toast]
+  );
 
   if (loading && properties.length === 0) {
     return (
       <div className="flex items-center justify-center p-8" data-testid="loading-state">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2">Loading properties...</span>
+        <span className="ml-2 text-gray-600">Chargement...</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="flex items-center justify-center p-8 text-red-500" data-testid="error-state">{error}</div>;
+    return (
+      <div className="flex items-center justify-center p-8 text-red-500" data-testid="error-state">
+        {error}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Propriétés</h2>
-        <Button onClick={handleOpenCreateModal} data-testid="create-property-button">
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvelle Propriété
-        </Button>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Propriétés</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{properties.length} bien(s) trouvé(s)</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={exporting}>
+            <Download className="h-4 w-4 mr-1.5" />
+            {exporting ? 'Export...' : 'Exporter CSV'}
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          {/* View Toggle */}
+          <div className="flex rounded-md border overflow-hidden">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 ${viewMode === 'table' ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              title="Vue tableau"
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 ${viewMode === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              title="Vue grille"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`p-1.5 ${viewMode === 'map' ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              title="Vue carte"
+            >
+              <Map className="h-4 w-4" />
+            </button>
+          </div>
+          <Button onClick={handleOpenCreateModal} data-testid="create-property-button">
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvelle Propriété
+          </Button>
+        </div>
       </div>
+
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Building2 className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Disponibles</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.byStatus?.available || 0}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Home className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Vendus/Loués</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {(stats.byStatus?.sold || 0) + (stats.byStatus?.rented || 0)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <DollarSign className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Prix moyen</p>
+                <p className="text-lg font-bold text-purple-600">
+                  {new Intl.NumberFormat('fr-FR', { notation: 'compact' }).format(
+                    stats.averagePrice || 0
+                  )}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <PropertyFilters onFilterChange={handleFilterChange} />
 
@@ -292,106 +470,307 @@ export function PropertyList({
         property={editingProperty}
       />
 
-      <Card>
-        <CardContent className="p-0">
-          <Table data-testid="properties-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">
-                  <Checkbox
-                    checked={properties.length > 0 && selectedIds.length === properties.length}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Prix</TableHead>
-                <TableHead>Surface</TableHead>
-                <TableHead>Priorité</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody data-testid="properties-tbody">
-              {properties.length === 0 ? (
+      {/* MAP VIEW */}
+      {viewMode === 'map' && (
+        <PropertyMap
+          properties={properties}
+          onPropertyClick={(p) => router.push(`/properties/${p.id}`)}
+        />
+      )}
+
+      {/* TABLE VIEW */}
+      {viewMode === 'table' && (
+        <Card>
+          <CardContent className="p-0">
+            <Table data-testid="properties-table">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    Aucune propriété trouvée
-                  </TableCell>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={properties.length > 0 && selectedIds.length === properties.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead>Titre</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Prix</TableHead>
+                  <TableHead>Surface</TableHead>
+                  <TableHead>Priorité</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                properties.map((property) => (
-                  <TableRow key={property.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedIds.includes(property.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectOne(property.id, checked as boolean)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div>{property.title}</div>
-                      <div className="text-xs text-gray-500">{property.city}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{property.type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('fr-TN', {
-                        style: 'currency',
-                        currency: 'TND',
-                      }).format(property.price)}
-                    </TableCell>
-                    <TableCell>
-                      {property.area ? `${property.area} m²` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getPriorityColor(property.priority)} variant="secondary">
-                        {property.priority || 'medium'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(property.status)} variant="secondary">
-                        {property.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => router.push(`/properties/${property.id}`)}
-                          data-testid={`view-property-${property.id}`}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEditModal(property)}
-                          data-testid={`edit-property-${property.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteProperty(property)}
-                          data-testid={`delete-property-${property.id}`}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody data-testid="properties-tbody">
+                {properties.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-12 text-gray-500">
+                      <Building2 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                      Aucune propriété trouvée
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : (
+                  properties.map((property) => (
+                    <TableRow key={property.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(property.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectOne(property.id, checked as boolean)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {property.images && (property.images as string[]).length > 0 ? (
+                            <img
+                              src={
+                                (property.images as string[])[0].startsWith('http')
+                                  ? (property.images as string[])[0]
+                                  : `http://localhost:3001${(property.images as string[])[0]}`
+                              }
+                              className="h-9 w-12 object-cover rounded"
+                              alt=""
+                              onError={(e) => (e.currentTarget.style.display = 'none')}
+                            />
+                          ) : (
+                            <div className="h-9 w-12 bg-gray-100 rounded flex items-center justify-center">
+                              <Home className="h-4 w-4 text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium text-gray-900 truncate max-w-[180px] flex items-center gap-1">
+                              {property.isFeatured && (
+                                <Star className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
+                              )}
+                              {property.priority === 'urgent' && (
+                                <Zap className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                              )}
+                              {property.title}
+                            </div>
+                            {property.city && (
+                              <div className="text-xs text-gray-500 flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {property.city}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <Badge variant="outline" className="text-xs">
+                            {TYPE_LABELS[property.type] || property.type}
+                          </Badge>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {CATEGORY_LABELS[property.category] || property.category}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {new Intl.NumberFormat('fr-TN', {
+                          style: 'currency',
+                          currency: 'TND',
+                        }).format(property.price)}
+                      </TableCell>
+                      <TableCell>{property.area ? `${property.area} m²` : '—'}</TableCell>
+                      <TableCell>
+                        <Badge className={getPriorityColor(property.priority)} variant="secondary">
+                          {PRIORITY_LABELS[property.priority || 'medium'] || property.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(property.status)} variant="secondary">
+                          {STATUS_LABELS[property.status] || property.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => router.push(`/properties/${property.id}`)}
+                            data-testid={`view-property-${property.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenEditModal(property)}
+                            data-testid={`edit-property-${property.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeleteProperty(property)}
+                            data-testid={`delete-property-${property.id}`}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* GRID VIEW */}
+      {viewMode === 'grid' && (
+        <div>
+          {properties.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Building2 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Aucune propriété trouvée</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {properties.map((property) => (
+                <Card
+                  key={property.id}
+                  className="overflow-hidden hover:shadow-md transition-shadow group"
+                >
+                  {/* Image */}
+                  <div className="relative h-44 bg-gray-100">
+                    {property.images && (property.images as string[]).length > 0 ? (
+                      <img
+                        src={
+                          (property.images as string[])[0].startsWith('http')
+                            ? (property.images as string[])[0]
+                            : `http://localhost:3001${(property.images as string[])[0]}`
+                        }
+                        className="w-full h-full object-cover"
+                        alt={property.title}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '';
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Home className="h-10 w-10 text-gray-300" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
+                      <Badge className={getStatusColor(property.status)} variant="secondary">
+                        {STATUS_LABELS[property.status] || property.status}
+                      </Badge>
+                      {property.isFeatured && (
+                        <Badge className="bg-purple-600 text-white" variant="secondary">
+                          <Star className="h-3 w-3 mr-0.5" /> Exclusif
+                        </Badge>
+                      )}
+                      {property.priority === 'urgent' && (
+                        <Badge className="bg-red-600 text-white animate-pulse" variant="secondary">
+                          <Zap className="h-3 w-3 mr-0.5" /> Urgent
+                        </Badge>
+                      )}
+                      {property.priority === 'high' && (
+                        <Badge className="bg-orange-500 text-white" variant="secondary">
+                          <Flame className="h-3 w-3 mr-0.5" /> Prioritaire
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="outline" className="bg-white text-xs">
+                        {CATEGORY_LABELS[property.category] || property.category}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <CardContent className="p-4">
+                    <div className="mb-2">
+                      <h3 className="font-semibold text-gray-900 truncate">{property.title}</h3>
+                      {property.city && (
+                        <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {property.city}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-lg font-bold text-primary">
+                        {new Intl.NumberFormat('fr-TN', {
+                          style: 'currency',
+                          currency: 'TND',
+                          maximumFractionDigits: 0,
+                        }).format(property.price)}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {TYPE_LABELS[property.type] || property.type}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                      {property.area && (
+                        <span className="flex items-center gap-1">
+                          <Home className="h-3.5 w-3.5" />
+                          {property.area} m²
+                        </span>
+                      )}
+                      {property.bedrooms ? (
+                        <span className="flex items-center gap-1">
+                          <Bed className="h-3.5 w-3.5" />
+                          {property.bedrooms} ch
+                        </span>
+                      ) : null}
+                      {property.bathrooms ? (
+                        <span className="flex items-center gap-1">
+                          <Bath className="h-3.5 w-3.5" />
+                          {property.bathrooms} sdb
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex justify-between items-center border-t pt-3">
+                      <Badge className={getPriorityColor(property.priority)} variant="secondary">
+                        {PRIORITY_LABELS[property.priority || 'medium']}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => router.push(`/properties/${property.id}`)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleOpenEditModal(property)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-500 hover:bg-red-50"
+                          onClick={() => handleDeleteProperty(property)}
+                        >
+                          <Trash className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

@@ -2,6 +2,23 @@ backend/node_modules/
 frontend/node_modules/
 frontend/Read me/
 
+# ============================================
+# SECRETS — NEVER COMMIT
+# ============================================
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.test
+backend/.env.local
+frontend/.env
+frontend/.env.local
+frontend/.env.test
+
+# Keep .env.example files (no secrets)
+!backend/.env.example
+!backend/.env.notifications.example
+!frontend/.env.example
 
 frontend/*.bat
 frontend/*.md
@@ -17,3 +34,12 @@ backend/tsconfig.tsbuildinfo
 # Next.js build output
 frontend/.next/
 frontend/out/
+.playwright-mcp/
+
+# Build output
+backend/dist/
+
+# Backup files
+*_BACKUP_*
+*.old.ts
+*.old.js

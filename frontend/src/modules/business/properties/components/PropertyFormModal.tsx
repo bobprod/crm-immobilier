@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import {
   Property,
   CreatePropertyData,
@@ -29,7 +29,7 @@ import {
 interface PropertyFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreatePropertyData) => Promise<void>;
+  onSubmit: (data: CreatePropertyData, pendingImages?: File[]) => Promise<void>;
   property?: Property | null; // If provided, we're in edit mode
   isLoading?: boolean;
 }
@@ -59,6 +59,26 @@ const PROPERTY_PRIORITIES: { value: PropertyPriority; label: string }[] = [
   { value: 'urgent', label: 'Urgente' },
 ];
 
+const TUNISIAN_CITIES = [
+  'Tunis',
+  'Ariana',
+  'La Marsa',
+  'Carthage',
+  'Sidi Bou Said',
+  'Gammarth',
+  'Sousse',
+  'Sfax',
+  'Hammamet',
+  'Nabeul',
+  'Monastir',
+  'Bizerte',
+  'Djerba',
+  'Tozeur',
+  'Kairouan',
+  'Gabès',
+  'Mahdia',
+];
+
 const initialFormData: CreatePropertyData = {
   title: '',
   description: '',
@@ -71,6 +91,7 @@ const initialFormData: CreatePropertyData = {
   address: '',
   city: '',
   priority: 'medium',
+  status: 'available',
 };
 
 export function PropertyFormModal({
@@ -83,6 +104,9 @@ export function PropertyFormModal({
   const [formData, setFormData] = useState<CreatePropertyData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = !!property;
 
@@ -102,15 +126,50 @@ export function PropertyFormModal({
           bathrooms: property.bathrooms || 0,
           address: property.address || '',
           city: property.city || '',
+          zipCode: property.zipCode || '',
+          delegation: property.delegation || '',
           priority: property.priority || 'medium',
-        });
+          status: property.status || 'available',
+          latitude: (property as any).latitude || undefined,
+          longitude: (property as any).longitude || undefined,
+        } as any);
       } else {
         // Create mode - reset to initial
         setFormData(initialFormData);
       }
       setErrors({});
+      setPendingImages([]);
+      setImagePreviews([]);
     }
   }, [isOpen, property]);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviews]);
+
+  const handleImageFiles = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const validFiles = Array.from(files).filter(
+      (f) => allowed.includes(f.type) && f.size <= 5 * 1024 * 1024
+    );
+    if (validFiles.length === 0) return;
+    const previews = validFiles.map((f) => URL.createObjectURL(f));
+    setPendingImages((prev) => [...prev, ...validFiles]);
+    setImagePreviews((prev) => [...prev, ...previews]);
+  }, []);
+
+  const removeImage = useCallback(
+    (index: number) => {
+      URL.revokeObjectURL(imagePreviews[index]);
+      setPendingImages((prev) => prev.filter((_, i) => i !== index));
+      setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    },
+    [imagePreviews]
+  );
 
   const handleChange = (field: keyof CreatePropertyData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -144,7 +203,7 @@ export function PropertyFormModal({
 
     setSubmitting(true);
     try {
-      await onSubmit(formData);
+      await onSubmit(formData, pendingImages.length > 0 ? pendingImages : undefined);
       // Don't call onClose() here - let the parent handle it
     } catch (error) {
       // Error is handled by parent component (PropertyList) with toast notification
@@ -296,6 +355,27 @@ export function PropertyFormModal({
               </div>
             </div>
 
+            {/* Status */}
+            <div className="space-y-2">
+              <Label htmlFor="status">Statut</Label>
+              <Select
+                value={(formData as any).status || 'available'}
+                onValueChange={(value) => handleChange('status' as any, value)}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Sélectionner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Disponible</SelectItem>
+                  <SelectItem value="reserved">À réserver</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="sold">Vendu</SelectItem>
+                  <SelectItem value="rented">Loué</SelectItem>
+                  <SelectItem value="archived">Archivé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Address */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -308,15 +388,70 @@ export function PropertyFormModal({
                   placeholder="Ex: 123 Rue de la République"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="city">Ville</Label>
-                <Input
-                  id="city"
-                  data-testid="property-city-input"
+                <Select
                   value={formData.city || ''}
-                  onChange={(e) => handleChange('city', e.target.value)}
-                  placeholder="Ex: Tunis"
+                  onValueChange={(value) => handleChange('city', value)}
+                >
+                  <SelectTrigger id="city" data-testid="property-city-input">
+                    <SelectValue placeholder="Sélectionner une ville" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TUNISIAN_CITIES.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="delegation">Délégation</Label>
+                <Input
+                  id="delegation"
+                  value={(formData as any).delegation || ''}
+                  onChange={(e) => handleChange('delegation' as any, e.target.value)}
+                  placeholder="Ex: La Marsa"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">Code postal</Label>
+                <Input
+                  id="zipCode"
+                  value={(formData as any).zipCode || ''}
+                  onChange={(e) => handleChange('zipCode' as any, e.target.value)}
+                  placeholder="Ex: 2070"
+                />
+              </div>
+            </div>
+
+            {/* Coordonnées GPS */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="0.0001"
+                  value={(formData as any).latitude || ''}
+                  onChange={(e) => handleChange('latitude' as any, parseFloat(e.target.value) || 0)}
+                  placeholder="Ex: 36.8065"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="0.0001"
+                  value={(formData as any).longitude || ''}
+                  onChange={(e) =>
+                    handleChange('longitude' as any, parseFloat(e.target.value) || 0)
+                  }
+                  placeholder="Ex: 10.1815"
                 />
               </div>
             </div>
@@ -332,6 +467,86 @@ export function PropertyFormModal({
                 placeholder="Description détaillée du bien..."
                 rows={4}
               />
+            </div>
+
+            {/* Notes internes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes internes</Label>
+              <Textarea
+                id="notes"
+                value={(formData as any).notes || ''}
+                onChange={(e) => handleChange('notes' as any, e.target.value)}
+                placeholder="Notes visibles uniquement par votre équipe..."
+                rows={2}
+              />
+            </div>
+
+            {/* Images */}
+            <div className="space-y-2">
+              <Label>Photos du bien</Label>
+              <div
+                className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                  handleImageFiles(e.dataTransfer.files);
+                }}
+              >
+                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-500">Cliquer ou glisser des images ici</p>
+                <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP — max 5 Mo / image</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleImageFiles(e.target.files)}
+                />
+              </div>
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="relative group">
+                      <img
+                        src={src}
+                        alt={`img-${i}`}
+                        className="w-full h-20 object-cover rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {property?.images && (property.images as string[]).length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">Photos existantes :</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(property.images as string[]).map((src, i) => (
+                      <img
+                        key={i}
+                        src={src.startsWith('http') ? src : `http://localhost:3001${src}`}
+                        alt={`existing-${i}`}
+                        className="w-full h-20 object-cover rounded border"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="pt-4">

@@ -1,11 +1,14 @@
 import React from 'react';
-import Layout from '../../src/modules/core/layout/components/Layout';
-import MatchingPanel from '@/modules/intelligence/matching/components/MatchingPanel';
+import { MainLayout } from '@/shared/components/layout';
+import { MatchingDashboard } from '@/modules/business/matching/components/MatchingDashboard';
+import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 
 export default function MatchingPage() {
   return (
-    <Layout>
-      <MatchingPanel />
-    </Layout>
+    <ProtectedRoute>
+      <MainLayout title="Matching">
+        <MatchingDashboard />
+      </MainLayout>
+    </ProtectedRoute>
   );
 }
