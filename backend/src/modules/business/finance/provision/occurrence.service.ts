@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../../shared/database/prisma.service';
+import { PrismaService } from '../../../../shared/database/prisma.service';
 import { MarkDoneDto } from './dto/provision.dto';
 
 export type AlertStatus = 'GREEN' | 'ORANGE' | 'RED' | 'CRITICAL';
@@ -13,7 +13,7 @@ export type AlertStatus = 'GREEN' | 'ORANGE' | 'RED' | 'CRITICAL';
 export class OccurrenceService {
   private readonly logger = new Logger(OccurrenceService.name);
 
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: PrismaService) { }
 
   private async getAgencyId(userId: string): Promise<string> {
     const user = await this.db.users.findUnique({

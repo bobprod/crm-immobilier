@@ -17,7 +17,7 @@ import axios from 'axios';
 export class InternationalScraperService {
   private readonly logger = new Logger(InternationalScraperService.name);
 
-  constructor(private antiDetection: AntiDetectionService) {}
+  constructor(private antiDetection: AntiDetectionService) { }
 
   /**
    * Liste des sites par pays
@@ -202,7 +202,7 @@ export class InternationalScraperService {
   }): Promise<any[]> {
     const countryData = this.sitesByCountry[params.country];
     if (!countryData) {
-      throw new Error(`Pays non supporté: ${params.country}`);
+      throw new Error(`Pays non supporté: ${String(params.country)}`);
     }
 
     this.logger.log(`Scraping ${countryData.name} (${countryData.primary})`);
@@ -254,7 +254,7 @@ export class InternationalScraperService {
         return this.scrapeIndia(params);
 
       default:
-        throw new Error(`Scraper non implémenté pour: ${params.country}`);
+        throw new Error(`Scraper non implémenté pour: ${String(params.country)}`);
     }
   }
 
@@ -413,7 +413,7 @@ export class InternationalScraperService {
   private async scrapeBrazil(params: any): Promise<any[]> {
     try {
       const headers = this.antiDetection.generateRealisticHeaders({
-        language: 'pt',
+        language: 'es',
       });
 
       await this.antiDetection.waitRandomDelay(1000, 3000);

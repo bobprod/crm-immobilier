@@ -83,17 +83,17 @@ async function main() {
     }
 
     const commitment = await db.financialCommitment.create({
-      data: { 
-        ...data, 
-        agencyId: agency.id, 
-        createdBy: creator.id,
+      data: {
+        ...data,
+        agency: { connect: { id: agency.id } },
+        creator: { connect: { id: creator.id } },
         isActive: true,
-      },
+      } as any,
     });
 
     // Générer les 12 occurrences
-    const months = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     const occurrences = Array.from({ length: 12 }, (_, i) => ({
       commitmentId: commitment.id,
       agencyId: agency.id,

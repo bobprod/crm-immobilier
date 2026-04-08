@@ -13,46 +13,46 @@ import {
   YearlySummaryResponse,
 } from '../../../shared/utils/provision-api';
 
-const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Juin','Jul','Aoû','Sep','Oct','Nov','Déc'];
+const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 const CATEGORIES: Record<string, string> = {
   INVESTOR: '🏦 Investisseur',
-  RENT:     '🏢 Loyer',
-  LOAN:     '🏛️ Emprunt',
-  TAX:      '📋 Fiscal',
-  SALARY:   '👥 Salaires',
-  CUSTOM:   '⚙️ Autre',
+  RENT: '🏢 Loyer',
+  LOAN: '🏛️ Emprunt',
+  TAX: '📋 Fiscal',
+  SALARY: '👥 Salaires',
+  CUSTOM: '⚙️ Autre',
 };
 
 const ALERT_COLORS: Record<string, string> = {
-  GREEN:    'bg-green-100 text-green-800 border-green-300',
-  ORANGE:   'bg-orange-100 text-orange-800 border-orange-300',
-  RED:      'bg-red-100 text-red-800 border-red-300',
+  GREEN: 'bg-green-100 text-green-800 border-green-300',
+  ORANGE: 'bg-orange-100 text-orange-800 border-orange-300',
+  RED: 'bg-red-100 text-red-800 border-red-300',
   CRITICAL: 'bg-red-200 text-red-900 border-red-500',
 };
 
 const ALERT_LABELS: Record<string, string> = {
-  GREEN:    '✅ Tout est à jour',
-  ORANGE:   '⚠️ Échéances imminentes',
-  RED:      '🔴 Provisions en retard',
+  GREEN: '✅ Tout est à jour',
+  ORANGE: '⚠️ Échéances imminentes',
+  RED: '🔴 Provisions en retard',
   CRITICAL: '🚨 ALERTE CRITIQUE — Action requise',
 };
 
 const STATUS_BADGE: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
-  DONE:    'bg-green-100 text-green-800',
+  DONE: 'bg-green-100 text-green-800',
   OVERDUE: 'bg-red-100 text-red-800',
-  WAIVED:  'bg-gray-100 text-gray-600',
+  WAIVED: 'bg-gray-100 text-gray-600',
 };
 
 const FREQUENCIES: Record<string, string> = {
-  MONTHLY:   'Mensuelle',
+  MONTHLY: 'Mensuelle',
   QUARTERLY: 'Trimestrielle',
-  YEARLY:    'Annuelle',
-  CUSTOM:    'Personnalisée',
+  YEARLY: 'Annuelle',
+  CUSTOM: 'Personnalisée',
 };
 
-interface FormState extends CreateCommitmentData {
+interface FormState extends Omit<CreateCommitmentData, 'alertLevel'> {
   endDate?: string;
   totalOccurrences?: number;
   alertLevel?: string;
@@ -249,8 +249,8 @@ export default function ProvisionsPage() {
               const isCurrent = m === currentMonth;
               const bg = !d?.occurrences?.length ? 'bg-gray-50'
                 : d.hasOverdue ? 'bg-red-100 border-red-300'
-                : d.hasPending ? 'bg-yellow-50 border-yellow-200'
-                : 'bg-green-50 border-green-200';
+                  : d.hasPending ? 'bg-yellow-50 border-yellow-200'
+                    : 'bg-green-50 border-green-200';
               return (
                 <div key={m} className={`rounded-lg border p-2 text-center cursor-pointer hover:opacity-80 ${bg} ${isCurrent ? 'ring-2 ring-blue-500' : ''}`}>
                   <p className="text-xs font-semibold text-gray-600">{MONTHS[m - 1]}</p>
@@ -344,21 +344,21 @@ export default function ProvisionsPage() {
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required
+                <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="ex: Provision capital investisseur" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
-                  <select value={form.category} onChange={e => setForm({...form, category: e.target.value as any})}
+                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fréquence *</label>
-                  <select value={form.frequency} onChange={e => setForm({...form, frequency: e.target.value as any})}
+                  <select value={form.frequency} onChange={e => setForm({ ...form, frequency: e.target.value as any })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     {Object.entries(FREQUENCIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
@@ -367,45 +367,45 @@ export default function ProvisionsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Montant *</label>
-                  <input type="number" step="0.01" value={form.amount} onChange={e => setForm({...form, amount: Number(e.target.value)})} required
+                  <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder="6667" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Devise</label>
-                  <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}
+                  <select value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    {['TND','EUR','USD','MAD','DZD'].map(c => <option key={c} value={c}>{c}</option>)}
+                    {['TND', 'EUR', 'USD', 'MAD', 'DZD'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date début *</label>
-                  <input type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required
+                  <input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} required
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date fin</label>
-                  <input type="date" value={form.endDate || ''} onChange={e => setForm({...form, endDate: e.target.value})}
+                  <input type="date" value={form.endDate || ''} onChange={e => setForm({ ...form, endDate: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nb occurrences</label>
-                  <input type="number" value={form.totalOccurrences || ''} onChange={e => setForm({...form, totalOccurrences: e.target.value ? Number(e.target.value) : undefined})}
+                  <input type="number" value={form.totalOccurrences || ''} onChange={e => setForm({ ...form, totalOccurrences: e.target.value ? Number(e.target.value) : undefined })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Délai de grâce (jours)</label>
-                  <input type="number" value={form.gracePeriodDays} onChange={e => setForm({...form, gracePeriodDays: Number(e.target.value)})}
+                  <input type="number" value={form.gracePeriodDays} onChange={e => setForm({ ...form, gracePeriodDays: Number(e.target.value) })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Niveau d'alerte</label>
-                <select value={form.alertLevel} onChange={e => setForm({...form, alertLevel: e.target.value})}
+                <select value={form.alertLevel} onChange={e => setForm({ ...form, alertLevel: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                   <option value="LOW">🟡 Faible</option>
                   <option value="MEDIUM">🟠 Moyen</option>

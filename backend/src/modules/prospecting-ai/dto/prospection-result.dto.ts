@@ -100,8 +100,6 @@ export interface ProspectionResult {
     urlsTotal?: number;
     /** Erreurs de scraping collectées (optionnel) */
     scrapingErrors?: any[];
-    executionTimeMs: number;
-    cost?: number;
   };
 
   /**

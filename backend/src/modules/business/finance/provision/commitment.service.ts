@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../../shared/database/prisma.service';
+import { PrismaService } from '../../../../shared/database/prisma.service';
 import {
   CreateCommitmentDto,
   UpdateCommitmentDto,
@@ -14,7 +14,7 @@ import {
 export class CommitmentService {
   private readonly logger = new Logger(CommitmentService.name);
 
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: PrismaService) { }
 
   // ─── Helper : récupérer l'agencyId depuis userId ─────────────────────────
   private async getAgencyId(userId: string): Promise<string> {
@@ -225,10 +225,10 @@ export class CommitmentService {
   private advancePeriod(date: Date, frequency: string): Date {
     const d = new Date(date);
     switch (frequency) {
-      case 'MONTHLY':   d.setMonth(d.getMonth() + 1); break;
+      case 'MONTHLY': d.setMonth(d.getMonth() + 1); break;
       case 'QUARTERLY': d.setMonth(d.getMonth() + 3); break;
-      case 'YEARLY':    d.setFullYear(d.getFullYear() + 1); break;
-      default:          d.setMonth(d.getMonth() + 1);
+      case 'YEARLY': d.setFullYear(d.getFullYear() + 1); break;
+      default: d.setMonth(d.getMonth() + 1);
     }
     return d;
   }
@@ -240,8 +240,8 @@ export class CommitmentService {
   }
 
   private formatPeriodLabel(year: number, month: number, frequency: string): string {
-    const months = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                    'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     if (frequency === 'QUARTERLY') return `T${Math.ceil(month / 3)} ${year}`;
     if (frequency === 'YEARLY') return `${year}`;
     return `${months[month - 1]} ${year}`;
