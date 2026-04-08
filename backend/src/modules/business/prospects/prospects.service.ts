@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto';
 import { ProspectHistoryService } from './prospect-history.service';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 import { paginate } from '../../../shared/utils/pagination.utils';
 import { readFileSync, unlinkSync } from 'fs';
+import {
+  ProspectCreatedEvent,
+  ProspectStatusChangedEvent,
+  ProspectConvertedEvent,
+} from '../shared/events/business.events';
 
 interface ProspectFilters {
   type?: string;
@@ -23,6 +29,7 @@ export class ProspectsService {
   constructor(
     private prisma: PrismaService,
     private historyService: ProspectHistoryService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -80,6 +87,9 @@ export class ProspectsService {
 
       // Log creation to history
       await this.historyService.logChange(result.id, userId, 'created', { new: result });
+
+      // Emit analytics event
+      this.eventEmitter.emit('prospect.created', new ProspectCreatedEvent(userId, result));
 
       console.log('[ProspectsService] Prospect created successfully:', result.id);
       return result;
@@ -173,6 +183,18 @@ export class ProspectsService {
       old: oldProspect,
       new: updatedProspect,
     });
+
+    // Emit status changed event if status was updated
+    if (data.status && data.status !== oldProspect.status) {
+      if (data.status === 'converted') {
+        this.eventEmitter.emit('prospect.converted', new ProspectConvertedEvent(userId, updatedProspect));
+      } else {
+        this.eventEmitter.emit(
+          'prospect.status_changed',
+          new ProspectStatusChangedEvent(userId, updatedProspect, oldProspect.status, data.status),
+        );
+      }
+    }
 
     return updatedProspect;
   }

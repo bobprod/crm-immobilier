@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CommunicationsService } from '../../communications/communications.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import {
+  TaskCreatedEvent,
+  TaskCompletedEvent,
+} from '../shared/events/business.events';
 
 @Injectable()
 export class TasksService {
@@ -10,13 +15,14 @@ export class TasksService {
   constructor(
     private prisma: PrismaService,
     private communicationsService: CommunicationsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
    * Créer une tâche
    */
   async create(userId: string, data: any) {
-    return this.prisma.tasks.create({
+    const task = await this.prisma.tasks.create({
       data: {
         userId,
         ...data,
@@ -27,6 +33,10 @@ export class TasksService {
         appointments: true,
       },
     });
+
+    this.eventEmitter.emit('task.created', new TaskCreatedEvent(userId, task));
+
+    return task;
   }
 
   /**
@@ -92,13 +102,17 @@ export class TasksService {
    * Marquer comme terminée
    */
   async complete(id: string, userId: string) {
-    return this.prisma.tasks.update({
+    const task = await this.prisma.tasks.update({
       where: { id },
       data: {
         status: 'done',
         completedAt: new Date(),
       },
     });
+
+    this.eventEmitter.emit('task.completed', new TaskCompletedEvent(userId, task));
+
+    return task;
   }
 
   /**
