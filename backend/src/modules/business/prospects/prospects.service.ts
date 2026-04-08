@@ -453,7 +453,7 @@ export class ProspectsService {
       conversionRate:
         allProspects.length > 0
           ? Math.round(
-              (columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length * 100 * 100,
+              ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
             ) / 100
           : 0,
     };

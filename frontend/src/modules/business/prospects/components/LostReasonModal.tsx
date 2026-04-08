@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, X, ChevronDown } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 
 /**

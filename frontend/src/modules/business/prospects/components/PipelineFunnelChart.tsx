@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { ProspectPipelineColumn } from '@/shared/utils/prospects-api';
 
 /**
