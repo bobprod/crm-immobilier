@@ -100,7 +100,7 @@ export interface ProspectionResult {
     scrapingErrors?: any[];
     executionTimeMs: number;
     cost?: number;
-    
+
   };
 
   /**

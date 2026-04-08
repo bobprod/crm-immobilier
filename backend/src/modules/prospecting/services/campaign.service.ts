@@ -274,173 +274,173 @@ export class CampaignService {
                 })),
                 leadsOverTime: leadsOverTimeArray,
             };
-    } catch(error) {
-        this.logger.error(`Error in getGlobalStats: ${error.message}`);
-        return {
-            totalCampaigns: 0,
-            activeCampaigns: 0,
-            totalLeads: 0,
-            convertedLeads: 0,
-            conversionRate: 0,
-            topCampaigns: [],
-            leadsOverTime: [],
-        };
+        } catch (error) {
+            this.logger.error(`Error in getGlobalStats: ${error.message}`);
+            return {
+                totalCampaigns: 0,
+                activeCampaigns: 0,
+                totalLeads: 0,
+                convertedLeads: 0,
+                conversionRate: 0,
+                topCampaigns: [],
+                leadsOverTime: [],
+            };
+        }
     }
-}
 
     /**
      * Obtenir les statistiques par source
      */
     async getStatsBySource(userId: string) {
-    try {
-        const sourceStats = await this.prisma.prospecting_leads.groupBy({
-            by: ['source'],
-            where: { userId },
-            _count: true,
-            _avg: { score: true },
-        });
+        try {
+            const sourceStats = await this.prisma.prospecting_leads.groupBy({
+                by: ['source'],
+                where: { userId },
+                _count: true,
+                _avg: { score: true },
+            });
 
-        // Taux de conversion par source
-        const conversionBySource = await Promise.all(
-            sourceStats.map(async (stat) => {
-                const converted = await this.prisma.prospecting_leads.count({
-                    where: {
-                        userId,
-                        source: stat.source,
-                        status: 'converted',
-                    },
-                });
+            // Taux de conversion par source
+            const conversionBySource = await Promise.all(
+                sourceStats.map(async (stat) => {
+                    const converted = await this.prisma.prospecting_leads.count({
+                        where: {
+                            userId,
+                            source: stat.source,
+                            status: 'converted',
+                        },
+                    });
 
-                return {
-                    source: stat.source || 'unknown',
-                    totalLeads: stat._count,
-                    avgScore: stat._avg.score || 0,
-                    convertedLeads: converted,
-                    conversionRate: stat._count > 0 ? (converted / stat._count) * 100 : 0,
-                };
-            }),
-        );
+                    return {
+                        source: stat.source || 'unknown',
+                        totalLeads: stat._count,
+                        avgScore: stat._avg.score || 0,
+                        convertedLeads: converted,
+                        conversionRate: stat._count > 0 ? (converted / stat._count) * 100 : 0,
+                    };
+                }),
+            );
 
-        return conversionBySource.sort((a, b) => b.conversionRate - a.conversionRate);
-    } catch (error) {
-        this.logger.error(`Error in getStatsBySource: ${error.message}`);
-        return [];
+            return conversionBySource.sort((a, b) => b.conversionRate - a.conversionRate);
+        } catch (error) {
+            this.logger.error(`Error in getStatsBySource: ${error.message}`);
+            return [];
+        }
     }
-}
 
     /**
      * Obtenir les statistiques de conversion
      */
     async getConversionStats(userId: string) {
-    try {
-        const [totalLeads, convertedLeads] = await Promise.all([
-            this.prisma.prospecting_leads.count({ where: { userId } }),
-            this.prisma.prospecting_leads.count({
-                where: { userId, status: 'converted' },
-            }),
-        ]);
+        try {
+            const [totalLeads, convertedLeads] = await Promise.all([
+                this.prisma.prospecting_leads.count({ where: { userId } }),
+                this.prisma.prospecting_leads.count({
+                    where: { userId, status: 'converted' },
+                }),
+            ]);
 
-        // Temps moyen de conversion
-        const conversions = await this.prisma.prospecting_leads.findMany({
-            where: {
-                userId,
-                status: 'converted',
-                convertedAt: { not: null },
-            },
-            select: {
-                createdAt: true,
-                convertedAt: true,
-            },
-        });
+            // Temps moyen de conversion
+            const conversions = await this.prisma.prospecting_leads.findMany({
+                where: {
+                    userId,
+                    status: 'converted',
+                    convertedAt: { not: null },
+                },
+                select: {
+                    createdAt: true,
+                    convertedAt: true,
+                },
+            });
 
-        let avgDaysToConvert = 0;
-        if (conversions.length > 0) {
-            const totalDays = conversions.reduce((sum, c) => {
-                const days = Math.floor(
-                    ((c.convertedAt?.getTime() || 0) - c.createdAt.getTime()) / (1000 * 60 * 60 * 24),
-                );
-                return sum + days;
-            }, 0);
-            avgDaysToConvert = totalDays / conversions.length;
+            let avgDaysToConvert = 0;
+            if (conversions.length > 0) {
+                const totalDays = conversions.reduce((sum, c) => {
+                    const days = Math.floor(
+                        ((c.convertedAt?.getTime() || 0) - c.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+                    );
+                    return sum + days;
+                }, 0);
+                avgDaysToConvert = totalDays / conversions.length;
+            }
+
+            // Conversion par score range
+            const scoreRanges = [
+                { min: 0, max: 30, label: 'Low (0-30)' },
+                { min: 31, max: 50, label: 'Medium (31-50)' },
+                { min: 51, max: 70, label: 'Good (51-70)' },
+                { min: 71, max: 100, label: 'Excellent (71-100)' },
+            ];
+
+            const conversionByScore = await Promise.all(
+                scoreRanges.map(async (range) => {
+                    const total = await this.prisma.prospecting_leads.count({
+                        where: {
+                            userId,
+                            score: { gte: range.min, lte: range.max },
+                        },
+                    });
+
+                    const converted = await this.prisma.prospecting_leads.count({
+                        where: {
+                            userId,
+                            score: { gte: range.min, lte: range.max },
+                            status: 'converted',
+                        },
+                    });
+
+                    return {
+                        range: range.label,
+                        totalLeads: total,
+                        convertedLeads: converted,
+                        conversionRate: total > 0 ? (converted / total) * 100 : 0,
+                    };
+                }),
+            );
+
+            return {
+                totalLeads,
+                convertedLeads,
+                conversionRate: totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0,
+                avgDaysToConvert,
+                conversionByScore,
+            };
+        } catch (error) {
+            this.logger.error(`Error in getConversionStats: ${error.message}`);
+            return {
+                totalLeads: 0,
+                convertedLeads: 0,
+                conversionRate: 0,
+                avgDaysToConvert: 0,
+                conversionByScore: [],
+            };
         }
-
-        // Conversion par score range
-        const scoreRanges = [
-            { min: 0, max: 30, label: 'Low (0-30)' },
-            { min: 31, max: 50, label: 'Medium (31-50)' },
-            { min: 51, max: 70, label: 'Good (51-70)' },
-            { min: 71, max: 100, label: 'Excellent (71-100)' },
-        ];
-
-        const conversionByScore = await Promise.all(
-            scoreRanges.map(async (range) => {
-                const total = await this.prisma.prospecting_leads.count({
-                    where: {
-                        userId,
-                        score: { gte: range.min, lte: range.max },
-                    },
-                });
-
-                const converted = await this.prisma.prospecting_leads.count({
-                    where: {
-                        userId,
-                        score: { gte: range.min, lte: range.max },
-                        status: 'converted',
-                    },
-                });
-
-                return {
-                    range: range.label,
-                    totalLeads: total,
-                    convertedLeads: converted,
-                    conversionRate: total > 0 ? (converted / total) * 100 : 0,
-                };
-            }),
-        );
-
-        return {
-            totalLeads,
-            convertedLeads,
-            conversionRate: totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0,
-            avgDaysToConvert,
-            conversionByScore,
-        };
-    } catch (error) {
-        this.logger.error(`Error in getConversionStats: ${error.message}`);
-        return {
-            totalLeads: 0,
-            convertedLeads: 0,
-            conversionRate: 0,
-            avgDaysToConvert: 0,
-            conversionByScore: [],
-        };
     }
-}
 
     /**
      * Marquer une campagne comme terminée
      */
     async completeCampaign(campaignId: string, stats: { foundCount: number; matchedCount?: number }) {
-    return this.prisma.prospecting_campaigns.update({
-        where: { id: campaignId },
-        data: {
-            foundCount: stats.foundCount,
-            matchedCount: stats.matchedCount || 0,
-            status: 'completed',
-            completedAt: new Date(),
-        },
-    });
-}
+        return this.prisma.prospecting_campaigns.update({
+            where: { id: campaignId },
+            data: {
+                foundCount: stats.foundCount,
+                matchedCount: stats.matchedCount || 0,
+                status: 'completed',
+                completedAt: new Date(),
+            },
+        });
+    }
 
     /**
      * Incrémenter le compteur de leads d'une campagne
      */
     async incrementLeadCount(campaignId: string, count: number = 1) {
-    return this.prisma.prospecting_campaigns.update({
-        where: { id: campaignId },
-        data: {
-            foundCount: { increment: count },
-        },
-    });
-}
+        return this.prisma.prospecting_campaigns.update({
+            where: { id: campaignId },
+            data: {
+                foundCount: { increment: count },
+            },
+        });
+    }
 }

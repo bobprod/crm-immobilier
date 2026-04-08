@@ -1,12 +1,13 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-25T19:44:37.552Z
+Generated: 2026-04-08T05:47:51.044Z
 
 ## Markdown files (found)
+- AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md  —  mtime: 2026-01-25T22:38:27.407Z
 - AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-24T21:53:29.269Z
 - ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-24T21:53:29.274Z
 - ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-24T21:53:29.278Z
 - ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-24T21:53:29.280Z
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T21:54:23.716Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-02-16T19:55:51.503Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
@@ -18,22 +19,27 @@ Generated: 2026-01-25T19:44:37.552Z
 - BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-24T21:53:29.290Z
 - BUTTON_FIX.md  —  mtime: 2026-01-24T21:53:29.298Z
 - CORRECTIONS_TECHNIQUES.md  —  mtime: 2026-01-24T21:53:29.302Z
+- DOCUMENTS_MODULE_DOCUMENTATION.md  —  mtime: 2026-01-25T22:38:27.407Z
 - FINAL_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.330Z
 - FIX_BOUTONS_TEST.md  —  mtime: 2026-01-24T21:53:29.332Z
 - FIX_ERROR_400.md  —  mtime: 2026-01-24T21:53:29.334Z
 - FLUX_UTILISATEUR.md  —  mtime: 2026-01-24T21:53:29.337Z
 - GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-01-24T21:53:29.339Z
 - IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-24T21:53:29.342Z
+- IMPLEMENTATION_PLANNING_MODULE.md  —  mtime: 2026-01-25T23:39:48.358Z
 - IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.344Z
 - IMPROVEMENTS.md  —  mtime: 2026-01-24T21:53:29.346Z
 - INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
 - MAJ_2026-01-17.md  —  mtime: 2026-01-24T21:53:29.348Z
 - PHASE_1_INTEGRATION_COMPLETE.md  —  mtime: 2026-01-24T21:53:29.349Z
+- PLANNING_ARCHITECTURE_VISUELLE.md  —  mtime: 2026-01-25T23:39:48.360Z
+- PLANNING_MODULE_README.md  —  mtime: 2026-01-25T23:39:48.362Z
 - PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-24T21:53:29.352Z
 - QUICK_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.353Z
 - README_AMELIORATIONS.md  —  mtime: 2026-01-24T21:53:29.355Z
 - README_SOLUTION.md  —  mtime: 2026-01-24T21:53:29.360Z
 - RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.366Z
+- REPONSE_COMMENTAIRES_NOUVEAUX_DOCUMENTS.md  —  mtime: 2026-01-25T22:38:27.407Z
 - TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-24T21:53:29.369Z
 - TEST_GUIDE.md  —  mtime: 2026-01-24T21:53:29.397Z
 - TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.399Z
@@ -51,18 +57,47 @@ Generated: 2026-01-25T19:44:37.552Z
 - backend\PRISMA_SYNC_GUIDE.md  —  mtime: 2026-01-24T00:37:50.590Z
 - backend\RAPPORT-PHASE3-FINAL.md  —  mtime: 2026-01-20T23:40:27.439Z
 - backend\RAPPORT-PHASE3.1-AJUSTEMENTS.md  —  mtime: 2026-01-20T23:45:55.642Z
+- backend\TESTS_IMPROVEMENT.md  —  mtime: 2026-03-04T16:41:55.376Z
 - backend\TESTS_README.md  —  mtime: 2026-01-20T22:39:30.223Z
 - backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-01-24T21:54:07.193Z
 - backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-01-24T21:54:07.196Z
+- backend\src\modules\scraping\INTERNATIONAL_EXPANSION.md  —  mtime: 2026-03-04T17:58:58.468Z
+- backend\src\modules\scraping\INTERNATIONAL_SITES.md  —  mtime: 2026-03-04T17:56:01.057Z
+- backend\src\modules\scraping\README_IMPROVEMENTS.md  —  mtime: 2026-03-04T17:05:25.199Z
 - backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md  —  mtime: 2026-01-24T21:54:07.200Z
 - frontend\src\modules\business\prospecting\PROSPECTION_REFACTORING.md  —  mtime: 2026-01-24T21:54:07.204Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-01-25T10:05:35.022Z
-- frontend  —  mtime: 2026-01-25T10:07:39.853Z
-- backend\prisma\schema.prisma  —  mtime: 2026-01-24T21:53:29.548Z
+- backend  —  mtime: 2026-03-04T16:41:55.385Z
+- frontend  —  mtime: 2026-01-25T23:39:48.401Z
+- backend\prisma\schema.prisma  —  mtime: 2026-03-18T00:26:25.272Z
 
 ## Top of selected files
+
+### AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md
+```
+# 🎯 Module Documents - Résumé des Améliorations
+
+## 📌 Contexte
+
+Le module documents du CRM Immobilier a été considérablement amélioré pour répondre aux besoins spécifiques de la gestion documentaire immobilière et pour s'intégrer de manière transparente avec le module Intelligence.
+
+## 🚀 Objectifs Accomplis
+
+### 1. **Gestion Avancée des Documents Immobiliers**
+
+✅ **Support de 25+ types de documents spécifiques:**
+- Contrats de vente (vente, promesse, mandat)
+- Accords de commission
+- Contrats de promotion et construction
+- Contrats de gestion (immobilière, locative, syndic)
+- Documents administratifs (titres, cadastre, urbanisme)
+- Documents financiers (analyses, projections, évaluations)
+- Autres (baux, assurances, inspections)
+
+✅ **Métadonnées enrichies:**
+- Type d
+```
 
 ### AMELIORATIONS_PROSPECTION.md
 ```
@@ -153,19 +188,19 @@ Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas dét
 ### ANALYSIS_AUTOGEN.md
 ```
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-01-24T21:49:05.269Z
+Generated: 2026-02-16T19:55:51.458Z
 
 ## Markdown files (found)
-- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-20T19:53:05.155Z
-- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-20T22:20:49.890Z
-- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-20T21:27:41.423Z
-- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-20T21:50:51.463Z
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-01-24T20:56:29.284Z
+- AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md  —  mtime: 2026-01-25T22:38:27.407Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-24T21:53:29.269Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-24T21:53:29.274Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-24T21:53:29.278Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-24T21:53:29.280Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-02-16T19:46:37.965Z
 - ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
 - ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
 - ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
-- ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
-- ARCHITECTURE_QUALIFICATION.md
+- ARCHITECTURE_MULTI_PROVIDER.md  
 ```
 
 ### ARCHITECTURE_DIAGRAMMES_VISUELS.md
@@ -293,28 +328,6 @@ Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
 ┌───────────────┐         ┌───────────────┐         ┌───────────────┐
 │   Immobilier  │         │    Voyage     │         │  Autre Métier │
 │   (Existant)  │         │ 
-```
-
-### ARCHITECTURE_VISUALIZATION.md
-```
-# 🎨 VISUALISATION - ARCHITECTURE FINALE
-
-## Frontend User Interface
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   SETTINGS PAGE                         │
-│                  /settings/index.tsx                    │
-├─────────────────────────────────────────────────────────┤
-│ Paramètres                                              │
-│                                                         │
-│ APIs & Intégrations                                     │
-│ ┌────────────────────────────────────────────────────┐ │
-│ │ ◉ Configuration LLM / IA                          │ │
-│ │ ⚙ Stratégie des Providers      ← NEW! 🆕        │ │
-│ │ 🔍 APIs de Scraping                              │ │
-│ │ ⚡ Intégrations                                    │ │
-│
 ```
 
 ## Backend src top-level (if exists)
