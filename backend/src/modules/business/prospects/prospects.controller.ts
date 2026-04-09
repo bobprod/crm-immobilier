@@ -72,6 +72,12 @@ export class ProspectsController {
     return this.prospectsService.getStats(req.user.userId);
   }
 
+  @Get('pipeline')
+  @ApiOperation({ summary: 'Get prospects grouped by pipeline stage (Bitrix24/Odoo style)' })
+  getPipeline(@Request() req) {
+    return this.prospectsService.getPipeline(req.user.userId);
+  }
+
   @Get('export/csv')
   @ApiOperation({ summary: 'Export prospects to CSV' })
   async exportCSV(@Request() req, @Query() filters: any, @Res() res: Response) {

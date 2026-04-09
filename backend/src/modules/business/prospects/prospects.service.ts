@@ -379,6 +379,87 @@ export class ProspectsService {
   }
 
   /**
+   * Get prospects grouped by pipeline stage (Bitrix24/Odoo CRM style Kanban pipeline)
+   * Maps existing status values to visual pipeline stages
+   */
+  async getPipeline(userId: string) {
+    // Pipeline stages inspired by Bitrix24 and Odoo CRM
+    const PIPELINE_STAGES = [
+      { key: 'nouveau', label: 'Nouveau', statuses: ['lead', 'new'], color: '#6366f1' },
+      { key: 'contacte', label: 'Contacté', statuses: ['active', 'contacted'], color: '#3b82f6' },
+      { key: 'qualifie', label: 'Qualifié', statuses: ['qualified'], color: '#8b5cf6' },
+      { key: 'visite', label: 'Visite', statuses: ['meeting', 'visit'], color: '#f59e0b' },
+      { key: 'offre', label: 'Offre', statuses: ['negotiation', 'offer'], color: '#10b981' },
+      { key: 'gagne', label: 'Gagné', statuses: ['converted', 'won', 'closed'], color: '#059669' },
+      { key: 'perdu', label: 'Perdu', statuses: ['lost', 'inactive'], color: '#ef4444' },
+    ];
+
+    const allProspects = await this.prisma.prospects.findMany({
+      where: { userId, deletedAt: null },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        type: true,
+        status: true,
+        score: true,
+        source: true,
+        budget: true,
+        lostReason: true,
+        createdAt: true,
+        updatedAt: true,
+        interactions: {
+          select: {
+            nextActionDate: true,
+            nextAction: true,
+            channel: true,
+          },
+          orderBy: { nextActionDate: 'asc' },
+          where: { nextActionDate: { gte: new Date() } },
+          take: 1,
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const columns = PIPELINE_STAGES.map((stage) => {
+      const cards = allProspects
+        .filter((p) => stage.statuses.includes(p.status.toLowerCase()))
+        .map((p) => ({
+          ...p,
+          nextActivity: p.interactions[0] || null,
+        }));
+
+      return {
+        key: stage.key,
+        label: stage.label,
+        color: stage.color,
+        count: cards.length,
+        totalScore: cards.reduce((sum, c) => sum + (c.score || 0), 0),
+        cards,
+      };
+    });
+
+    // Prospects not in any stage (catch-all)
+    const assignedIds = new Set(columns.flatMap((col) => col.cards.map((c) => c.id)));
+    const unassigned = allProspects.filter((p) => !assignedIds.has(p.id));
+
+    return {
+      columns,
+      unassigned: unassigned.length,
+      total: allProspects.length,
+      conversionRate:
+        allProspects.length > 0
+          ? Math.round(
+              ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
+            ) / 100
+          : 0,
+    };
+  }
+
+  /**
    * Export to CSV
    */
   async exportCSV(userId: string, filters?: ProspectFilters) {

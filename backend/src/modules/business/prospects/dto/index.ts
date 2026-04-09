@@ -87,6 +87,11 @@ export class UpdateProspectDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'Raison de la perte du prospect (inspiré Odoo CRM)' })
+  @IsOptional()
+  @IsString()
+  lostReason?: string;
 }
 
 export { PaginationQueryDto } from './pagination-query.dto';
