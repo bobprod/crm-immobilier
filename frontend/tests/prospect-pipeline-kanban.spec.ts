@@ -193,8 +193,8 @@ test.describe('Pipeline Kanban Prospects', () => {
 
     const cardExists = await firstCard.count();
     if (cardExists === 0) {
-      // Pipeline vide, test skippé gracieusement
-      console.log('No cards in pipeline — skipping lost reason modal test');
+      // Pipeline vide — le test est ignoré proprement
+      test.skip();
       return;
     }
 

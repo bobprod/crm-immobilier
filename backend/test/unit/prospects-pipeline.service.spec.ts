@@ -159,6 +159,9 @@ describe('ProspectsService - Pipeline Kanban', () => {
         });
 
         it('should compute conversionRate = 100 when all prospects are won', async () => {
+            // Both 'converted' and 'won' are accepted aliases for the "gagne" stage
+            // (see PIPELINE_STAGES config: statuses: ['converted', 'won', 'closed'])
+            // This test intentionally uses both values to verify they both count toward conversionRate.
             const prospects = [
                 makeProspect('p1', 'converted'),
                 makeProspect('p2', 'won'),
