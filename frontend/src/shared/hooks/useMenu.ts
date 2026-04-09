@@ -105,6 +105,7 @@ export function useMenu() {
  */
 function getDefaultMenu(): DynamicMenuItem[] {
   return [
+    // ── Tableau de bord ──────────────────────────────────────────────
     {
       id: 'default-dashboard',
       moduleId: 'core',
@@ -113,13 +114,57 @@ function getDefaultMenu(): DynamicMenuItem[] {
       path: '/dashboard',
       order: 0,
     },
+
+    // ── Portefeuille immobilier ──────────────────────────────────────
+    {
+      id: 'default-properties',
+      moduleId: 'inventory-properties',
+      label: 'Propriétés',
+      icon: 'Building2',
+      path: '/properties',
+      order: 2,
+    },
+    {
+      id: 'default-owners',
+      moduleId: 'business-owners',
+      label: 'Propriétaires',
+      icon: 'UserCheck',
+      path: '/owners',
+      order: 3,
+    },
+    {
+      id: 'default-mandates',
+      moduleId: 'business-mandates',
+      label: 'Mandats',
+      icon: 'FileSignature',
+      path: '/mandates',
+      order: 4,
+    },
+    {
+      id: 'default-transactions',
+      moduleId: 'business-transactions',
+      label: 'Transactions',
+      icon: 'ArrowLeftRight',
+      path: '/transactions-dashboard',
+      order: 5,
+    },
+    {
+      id: 'default-finance',
+      moduleId: 'business-finance',
+      label: 'Finance',
+      icon: 'DollarSign',
+      path: '/finance',
+      order: 6,
+    },
+
+    // ── Prospection & Vente ──────────────────────────────────────────
     {
       id: 'default-prospecting',
       moduleId: 'ai-prospecting',
       label: 'Prospection IA',
       icon: 'Search',
-      path: '/prospecting',
-      order: 1,
+      path: '/prospection',
+      order: 10,
     },
     {
       id: 'default-prospects',
@@ -127,15 +172,7 @@ function getDefaultMenu(): DynamicMenuItem[] {
       label: 'Prospects',
       icon: 'Users',
       path: '/prospects',
-      order: 2,
-    },
-    {
-      id: 'default-properties',
-      moduleId: 'inventory-properties',
-      label: 'Propriétés',
-      icon: 'Building',
-      path: '/properties',
-      order: 3,
+      order: 11,
     },
     {
       id: 'default-matching',
@@ -143,23 +180,17 @@ function getDefaultMenu(): DynamicMenuItem[] {
       label: 'Matching',
       icon: 'Target',
       path: '/matching',
-      order: 3,
+      order: 12,
     },
-    {
-      id: 'default-communications',
-      moduleId: 'communications',
-      label: 'Communications',
-      icon: 'MessageSquare',
-      path: '/communications-dashboard',
-      order: 4,
-    },
+
+    // ── Planning & Tâches ────────────────────────────────────────────
     {
       id: 'default-appointments',
       moduleId: 'business-appointments',
       label: 'Rendez-vous',
       icon: 'Calendar',
       path: '/appointments',
-      order: 5,
+      order: 20,
     },
     {
       id: 'default-tasks',
@@ -167,15 +198,43 @@ function getDefaultMenu(): DynamicMenuItem[] {
       label: 'Tâches',
       icon: 'CheckSquare',
       path: '/tasks',
-      order: 6,
+      order: 21,
     },
+    {
+      id: 'default-planification',
+      moduleId: 'business-planification',
+      label: 'Planification',
+      icon: 'CalendarDays',
+      path: '/planification',
+      order: 22,
+    },
+
+    // ── Communications ───────────────────────────────────────────────
+    {
+      id: 'default-communications',
+      moduleId: 'communications',
+      label: 'Communications',
+      icon: 'MessageSquare',
+      path: '/communications-dashboard',
+      order: 30,
+    },
+    {
+      id: 'default-notifications',
+      moduleId: 'business-notifications',
+      label: 'Notifications',
+      icon: 'Bell',
+      path: '/notifications',
+      order: 31,
+    },
+
+    // ── Marketing & Analytiques ──────────────────────────────────────
     {
       id: 'default-marketing',
       moduleId: 'marketing-tracking',
       label: 'Marketing',
       icon: 'TrendingUp',
-      path: '/marketing',
-      order: 8,
+      path: '/marketing-dashboard',
+      order: 40,
     },
     {
       id: 'default-analytics',
@@ -183,23 +242,85 @@ function getDefaultMenu(): DynamicMenuItem[] {
       label: 'Analytiques',
       icon: 'BarChart',
       path: '/analytics',
-      order: 9,
+      order: 41,
     },
+    {
+      id: 'default-ai-assistant',
+      moduleId: 'ai-assistant',
+      label: 'Assistant IA',
+      icon: 'Bot',
+      path: '/ai-assistant',
+      order: 42,
+    },
+    {
+      id: 'default-seo-ai',
+      moduleId: 'seo-ai',
+      label: 'SEO & IA',
+      icon: 'Sparkles',
+      path: '/seo-ai',
+      order: 43,
+    },
+    {
+      id: 'default-investment',
+      moduleId: 'investment-intelligence',
+      label: 'Investissement',
+      icon: 'LineChart',
+      path: '/investment',
+      order: 44,
+    },
+
+    // ── Opérations ───────────────────────────────────────────────────
     {
       id: 'default-documents',
       moduleId: 'business-documents',
       label: 'Documents',
       icon: 'FileText',
       path: '/documents',
-      order: 10,
+      order: 50,
     },
+    {
+      id: 'default-validation',
+      moduleId: 'business-validation',
+      label: 'Validation',
+      icon: 'ShieldCheck',
+      path: '/validation',
+      order: 51,
+    },
+    {
+      id: 'default-scraping',
+      moduleId: 'data-scraping',
+      label: 'Scraping',
+      icon: 'Download',
+      path: '/scraping',
+      order: 52,
+    },
+    {
+      id: 'default-integrations',
+      moduleId: 'integrations',
+      label: 'Intégrations',
+      icon: 'Puzzle',
+      path: '/integrations',
+      order: 53,
+    },
+
+    // ── Vitrine publique ─────────────────────────────────────────────
+    {
+      id: 'default-vitrine',
+      moduleId: 'public-vitrine',
+      label: 'Vitrine',
+      icon: 'Globe',
+      path: '/vitrine',
+      order: 60,
+    },
+
+    // ── Administration ───────────────────────────────────────────────
     {
       id: 'default-personnel',
       moduleId: 'business-personnel',
       label: 'Personnel',
       icon: 'Users',
       path: '/personnel',
-      order: 11,
+      order: 80,
     },
     {
       id: 'default-settings',

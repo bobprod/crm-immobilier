@@ -28,12 +28,15 @@ type ModuleManifestLite = {
 };
 
 const modulesToRegister: ModuleManifestLite[] = [
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 1 : Suite CRM Immobilier (cœur métier)
+    // ════════════════════════════════════════════════════════════════
     {
         code: 'core-suite',
         name: 'Suite CRM Immobilier',
-        version: '1.0.0',
+        version: '1.1.0',
         category: 'BUSINESS',
-        description: 'Module par défaut regroupant les principales fonctionnalités CRM.',
+        description: 'Module principal regroupant le portefeuille immobilier et les transactions.',
         menus: [
             {
                 label: 'Tableau de bord',
@@ -41,9 +44,54 @@ const modulesToRegister: ModuleManifestLite[] = [
                 icon: 'LayoutDashboard',
                 order: 0,
             },
+            // Portefeuille immobilier
+            {
+                label: 'Propriétés',
+                path: '/properties',
+                icon: 'Building2',
+                order: 2,
+            },
+            {
+                label: 'Propriétaires',
+                path: '/owners',
+                icon: 'UserCheck',
+                order: 3,
+            },
+            {
+                label: 'Mandats',
+                path: '/mandates',
+                icon: 'FileSignature',
+                order: 4,
+            },
+            {
+                label: 'Transactions',
+                path: '/transactions-dashboard',
+                icon: 'ArrowLeftRight',
+                order: 5,
+            },
+            {
+                label: 'Finance',
+                path: '/finance',
+                icon: 'DollarSign',
+                order: 6,
+            },
+        ],
+        permissions: ['properties:read', 'owners:read', 'mandates:read', 'transactions:read', 'finance:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 2 : Prospection & Vente
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'sales-suite',
+        name: 'Prospection & Vente',
+        version: '1.0.0',
+        category: 'BUSINESS',
+        description: 'Prospection IA, gestion des prospects et matching automatique.',
+        menus: [
             {
                 label: 'Prospection IA',
-                path: '/prospecting',
+                path: '/prospection',
                 icon: 'Bot',
                 order: 10,
             },
@@ -51,77 +99,201 @@ const modulesToRegister: ModuleManifestLite[] = [
                 label: 'Prospects',
                 path: '/prospects',
                 icon: 'Users',
-                order: 20,
-            },
-            {
-                label: 'Biens',
-                path: '/properties',
-                icon: 'Building2',
-                order: 30,
+                order: 11,
             },
             {
                 label: 'Matching',
                 path: '/matching',
                 icon: 'Target',
-                order: 40,
+                order: 12,
+            },
+        ],
+        permissions: ['prospects:read', 'matching:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 3 : Planning & Tâches
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'planning-suite',
+        name: 'Planning & Tâches',
+        version: '1.0.0',
+        category: 'BUSINESS',
+        description: 'Gestion des rendez-vous, tâches et planification.',
+        menus: [
+            {
+                label: 'Rendez-vous',
+                path: '/appointments',
+                icon: 'Calendar',
+                order: 20,
+            },
+            {
+                label: 'Tâches',
+                path: '/tasks',
+                icon: 'CheckSquare',
+                order: 21,
             },
             {
                 label: 'Planification',
                 path: '/planification',
-                icon: 'CalendarClock',
-                order: 50,
-                children: [
-                    {
-                        label: 'Rendez-vous',
-                        path: '/appointments',
-                        icon: 'CalendarCheck',
-                        order: 51,
-                    },
-                    {
-                        label: 'Tâches',
-                        path: '/tasks',
-                        icon: 'CheckSquare',
-                        order: 52,
-                    },
-                ],
+                icon: 'CalendarDays',
+                order: 22,
             },
+        ],
+        permissions: ['appointments:read', 'tasks:read', 'planification:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 4 : Communications
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'communications-suite',
+        name: 'Communications',
+        version: '1.0.0',
+        category: 'COMMUNICATION',
+        description: 'Centre de communications multi-canaux et notifications.',
+        menus: [
             {
                 label: 'Communications',
-                path: '/communications',
+                path: '/communications-dashboard',
                 icon: 'MessageSquare',
-                order: 60,
+                order: 30,
             },
+            {
+                label: 'Notifications',
+                path: '/notifications',
+                icon: 'Bell',
+                order: 31,
+            },
+        ],
+        permissions: ['communications:read', 'notifications:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 5 : Marketing & Analytiques
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'marketing-suite',
+        name: 'Marketing & Analytiques',
+        version: '1.0.0',
+        category: 'MARKETING',
+        description: 'Campagnes marketing, tracking, analytiques et outils IA.',
+        menus: [
+            {
+                label: 'Marketing',
+                path: '/marketing-dashboard',
+                icon: 'TrendingUp',
+                order: 40,
+            },
+            {
+                label: 'Analytiques',
+                path: '/analytics',
+                icon: 'BarChart3',
+                order: 41,
+            },
+            {
+                label: 'Assistant IA',
+                path: '/ai-assistant',
+                icon: 'Bot',
+                order: 42,
+            },
+            {
+                label: 'SEO & IA',
+                path: '/seo-ai',
+                icon: 'Sparkles',
+                order: 43,
+            },
+            {
+                label: 'Investissement',
+                path: '/investment',
+                icon: 'LineChart',
+                order: 44,
+            },
+        ],
+        permissions: ['marketing:read', 'analytics:read', 'ai:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 6 : Opérations
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'operations-suite',
+        name: 'Opérations',
+        version: '1.0.0',
+        category: 'BUSINESS',
+        description: 'Documents, validation, scraping de données et intégrations.',
+        menus: [
             {
                 label: 'Documents',
                 path: '/documents',
                 icon: 'FileText',
-                order: 70,
+                order: 50,
                 children: [
                     {
                         label: 'Génération IA',
                         path: '/documents/generate',
                         icon: 'Sparkles',
-                        order: 71,
+                        order: 51,
                     },
                 ],
             },
             {
-                label: 'Marketing',
-                path: '/marketing-dashboard',
-                icon: 'TrendingUp',
+                label: 'Validation',
+                path: '/validation',
+                icon: 'ShieldCheck',
+                order: 52,
+            },
+            {
+                label: 'Scraping',
+                path: '/scraping',
+                icon: 'Download',
+                order: 53,
+            },
+            {
+                label: 'Intégrations',
+                path: '/integrations',
+                icon: 'Puzzle',
+                order: 54,
+            },
+        ],
+        permissions: ['documents:read', 'validation:read', 'scraping:read', 'integrations:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 7 : Vitrine publique
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'public-vitrine',
+        name: 'Vitrine Publique',
+        version: '1.0.0',
+        category: 'INTEGRATION',
+        description: 'Site vitrine public, éditeur de pages et référencement.',
+        menus: [
+            {
+                label: 'Vitrine',
+                path: '/vitrine',
+                icon: 'Globe',
+                order: 60,
+            },
+        ],
+        permissions: ['vitrine:read'],
+    },
+
+    // ════════════════════════════════════════════════════════════════
+    // MODULE 8 : Administration
+    // ════════════════════════════════════════════════════════════════
+    {
+        code: 'admin-suite',
+        name: 'Administration',
+        version: '1.0.0',
+        category: 'BUSINESS',
+        description: 'Gestion du personnel et des paramètres de l\'agence.',
+        menus: [
+            {
+                label: 'Personnel',
+                path: '/personnel',
+                icon: 'Users',
                 order: 80,
-            },
-            {
-                label: 'Transactions',
-                path: '/transactions-dashboard',
-                icon: 'Handshake',
-                order: 90,
-            },
-            {
-                label: 'Analytics',
-                path: '/analytics',
-                icon: 'BarChart3',
-                order: 100,
             },
             {
                 label: 'Paramètres',
@@ -131,6 +303,7 @@ const modulesToRegister: ModuleManifestLite[] = [
                 requiredRole: 'ADMIN',
             },
         ],
+        permissions: ['personnel:read', 'settings:read'],
     },
 ];
 
