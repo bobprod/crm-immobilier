@@ -36,32 +36,27 @@ export class FinanceService {
         ...createDto,
         userId,
       },
-      include: {
-        transaction: {
-          select: {
-            id: true,
-            reference: true,
-            finalPrice: true,
-          },
-        },
-        agent: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
     });
 
+    // Fetch related data in parallel
+    const [txn, agent] = await Promise.all([
+      this.db.transaction.findFirst({ where: { id: commission.transactionId } }),
+      commission.agentId ? this.db.users.findFirst({ where: { id: commission.agentId } }) : null,
+    ]);
+
+    const result = {
+      ...commission,
+      transaction: txn ? { id: txn.id, reference: txn.reference, finalPrice: txn.finalPrice } : null,
+      agent: agent ? { id: agent.id, firstName: agent.firstName, lastName: agent.lastName, email: agent.email } : null,
+    };
+
     // 🆕 NOTIFICATION: Notify manual commission created
-    await this.notificationHelper.notifyCommissionCreated(userId, commission);
+    try { await this.notificationHelper.notifyCommissionCreated(userId, result); } catch (_) { }
 
     // 🆕 ACTIVITY LOG: Log manual commission creation
-    await this.activityLogger.logCommissionCreated(userId, commission, false);
+    try { await this.activityLogger.logCommissionCreated(userId, result, false); } catch (_) { }
 
-    return commission;
+    return result;
   }
 
   async findAllCommissions(userId: string, filters?: {
@@ -75,76 +70,75 @@ export class FinanceService {
     if (filters?.agentId) where.agentId = filters.agentId;
     if (filters?.transactionId) where.transactionId = filters.transactionId;
 
-    return this.db.commission.findMany({
+    const commissions = await this.db.commission.findMany({
       where,
-      include: {
-        transaction: {
-          select: {
-            id: true,
-            reference: true,
-            property: {
-              select: {
-                id: true,
-                title: true,
-              },
-            },
-          },
-        },
-        agent: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            payments: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Collect unique IDs for batch fetching
+    const txnIds = [...new Set(commissions.map(c => c.transactionId).filter(Boolean))];
+    const agentIds = [...new Set(commissions.map(c => c.agentId).filter(Boolean))];
+    const commissionIds = commissions.map(c => c.id);
+
+    const [transactions, agents, payments] = await Promise.all([
+      txnIds.length ? this.db.transaction.findMany({ where: { id: { in: txnIds } } }) : [],
+      agentIds.length ? this.db.users.findMany({ where: { id: { in: agentIds } } }) : [],
+      commissionIds.length ? this.db.payment.findMany({ where: { commissionId: { in: commissionIds } } }) : [],
+    ]);
+
+    const txnMap = new Map((transactions as any[]).map(t => [t.id, t]));
+    const agentMap = new Map((agents as any[]).map(a => [a.id, a]));
+
+    // Count payments per commission
+    const paymentCounts = new Map<string, number>();
+    for (const p of payments as any[]) {
+      paymentCounts.set(p.commissionId, (paymentCounts.get(p.commissionId) || 0) + 1);
+    }
+
+    return commissions.map((c: any) => {
+      const txn = txnMap.get(c.transactionId);
+      const agent = agentMap.get(c.agentId);
+      return {
+        ...c,
+        transaction: txn ? { id: txn.id, reference: txn.reference } : null,
+        agent: agent ? { id: agent.id, firstName: agent.firstName, lastName: agent.lastName } : null,
+        _count: { payments: paymentCounts.get(c.id) || 0 },
+      };
     });
   }
 
   async findOneCommission(id: string, userId: string) {
     const commission = await this.db.commission.findFirst({
       where: { id, userId },
-      include: {
-        transaction: {
-          include: {
-            property: true,
-          },
-        },
-        agent: true,
-        payments: {
-          orderBy: {
-            paidAt: 'desc',
-          },
-        },
-      },
     });
 
     if (!commission) {
       throw new NotFoundException(`Commission with ID ${id} not found`);
     }
 
-    return commission;
+    const [txn, agent, payments] = await Promise.all([
+      commission.transactionId ? this.db.transaction.findFirst({ where: { id: commission.transactionId } }) : null,
+      commission.agentId ? this.db.users.findFirst({ where: { id: commission.agentId } }) : null,
+      this.db.payment.findMany({ where: { commissionId: id }, orderBy: { paidAt: 'desc' } }),
+    ]);
+
+    return {
+      ...commission,
+      transaction: txn || null,
+      agent: agent || null,
+      payments: payments || [],
+    };
   }
 
   async updateCommission(id: string, userId: string, updateDto: UpdateCommissionDto) {
     await this.findOneCommission(id, userId);
 
-    return this.db.commission.update({
+    const updated = await this.db.commission.update({
       where: { id },
       data: updateDto,
-      include: {
-        transaction: true,
-        agent: true,
-      },
     });
+
+    return updated;
   }
 
   async deleteCommission(id: string, userId: string) {
@@ -181,27 +175,24 @@ export class FinanceService {
         ...createDto,
         userId,
       },
-      include: {
-        transaction: {
-          select: {
-            id: true,
-            reference: true,
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
     });
 
-    // 🆕 ACTIVITY LOG: Log invoice creation
-    await this.activityLogger.logInvoiceCreated(userId, invoice);
+    // Fetch related data
+    const [txn, owner] = await Promise.all([
+      invoice.transactionId ? this.db.transaction.findFirst({ where: { id: invoice.transactionId } }) : null,
+      invoice.ownerId ? this.db.owner.findFirst({ where: { id: invoice.ownerId } }) : null,
+    ]);
 
-    return invoice;
+    const result = {
+      ...invoice,
+      transaction: txn ? { id: txn.id, reference: txn.reference } : null,
+      owner: owner ? { id: owner.id, firstName: owner.firstName, lastName: owner.lastName } : null,
+    };
+
+    // 🆕 ACTIVITY LOG: Log invoice creation
+    try { await this.activityLogger.logInvoiceCreated(userId, result); } catch (_) { }
+
+    return result;
   }
 
   async findAllInvoices(userId: string, filters?: {
@@ -223,57 +214,61 @@ export class FinanceService {
       where.dueDate = { lt: new Date() };
     }
 
-    return this.db.invoice.findMany({
+    const invoices = await this.db.invoice.findMany({
       where,
-      include: {
-        transaction: {
-          select: {
-            id: true,
-            reference: true,
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            payments: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const txnIds = [...new Set((invoices as any[]).map(i => i.transactionId).filter(Boolean))];
+    const ownerIds = [...new Set((invoices as any[]).map(i => i.ownerId).filter(Boolean))];
+    const invoiceIds = (invoices as any[]).map(i => i.id);
+
+    const [transactions, owners, payments] = await Promise.all([
+      txnIds.length ? this.db.transaction.findMany({ where: { id: { in: txnIds } } }) : [],
+      ownerIds.length ? this.db.owner.findMany({ where: { id: { in: ownerIds } } }) : [],
+      invoiceIds.length ? this.db.payment.findMany({ where: { invoiceId: { in: invoiceIds } } }) : [],
+    ]);
+
+    const txnMap = new Map((transactions as any[]).map(t => [t.id, t]));
+    const ownerMap = new Map((owners as any[]).map(o => [o.id, o]));
+    const paymentCounts = new Map<string, number>();
+    for (const p of payments as any[]) {
+      paymentCounts.set(p.invoiceId, (paymentCounts.get(p.invoiceId) || 0) + 1);
+    }
+
+    return (invoices as any[]).map(inv => {
+      const txn = txnMap.get(inv.transactionId);
+      const owner = ownerMap.get(inv.ownerId);
+      return {
+        ...inv,
+        transaction: txn ? { id: txn.id, reference: txn.reference } : null,
+        owner: owner ? { id: owner.id, firstName: owner.firstName, lastName: owner.lastName } : null,
+        _count: { payments: paymentCounts.get(inv.id) || 0 },
+      };
     });
   }
 
   async findOneInvoice(id: string, userId: string) {
     const invoice = await this.db.invoice.findFirst({
       where: { id, userId },
-      include: {
-        transaction: {
-          include: {
-            property: true,
-          },
-        },
-        owner: true,
-        payments: {
-          orderBy: {
-            paidAt: 'desc',
-          },
-        },
-      },
     });
 
     if (!invoice) {
       throw new NotFoundException(`Invoice with ID ${id} not found`);
     }
 
-    return invoice;
+    const [txn, owner, payments] = await Promise.all([
+      invoice.transactionId ? this.db.transaction.findFirst({ where: { id: invoice.transactionId } }) : null,
+      invoice.ownerId ? this.db.owner.findFirst({ where: { id: invoice.ownerId } }) : null,
+      this.db.payment.findMany({ where: { invoiceId: id }, orderBy: { paidAt: 'desc' } }),
+    ]);
+
+    return {
+      ...invoice,
+      transaction: txn || null,
+      owner: owner || null,
+      payments: payments || [],
+    };
   }
 
   async updateInvoice(id: string, userId: string, updateDto: UpdateInvoiceDto) {
@@ -282,10 +277,6 @@ export class FinanceService {
     return this.db.invoice.update({
       where: { id },
       data: updateDto,
-      include: {
-        transaction: true,
-        owner: true,
-      },
     });
   }
 
@@ -314,14 +305,10 @@ export class FinanceService {
         ...createDto,
         userId,
       },
-      include: {
-        invoice: true,
-        commission: true,
-      },
     });
 
     // 🆕 ACTIVITY LOG: Log payment creation
-    await this.activityLogger.logPaymentCreated(userId, payment);
+    try { await this.activityLogger.logPaymentCreated(userId, payment); } catch (_) { }
 
     // Auto-update invoice/commission status if fully paid
     if (payment.invoiceId) {
@@ -346,41 +333,37 @@ export class FinanceService {
     if (filters?.commissionId) where.commissionId = filters.commissionId;
     if (filters?.method) where.method = filters.method;
 
-    return this.db.payment.findMany({
+    const payments = await this.db.payment.findMany({
       where,
-      include: {
-        invoice: {
-          select: {
-            id: true,
-            number: true,
-            clientName: true,
-          },
-        },
-        commission: {
-          select: {
-            id: true,
-            agent: {
-              select: {
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        paidAt: 'desc',
-      },
+      orderBy: { paidAt: 'desc' },
+    });
+
+    // Batch-fetch related invoices and commissions
+    const invoiceIds = [...new Set((payments as any[]).map(p => p.invoiceId).filter(Boolean))];
+    const commissionIds = [...new Set((payments as any[]).map(p => p.commissionId).filter(Boolean))];
+
+    const [invoices, commissions] = await Promise.all([
+      invoiceIds.length ? this.db.invoice.findMany({ where: { id: { in: invoiceIds } } }) : [],
+      commissionIds.length ? this.db.commission.findMany({ where: { id: { in: commissionIds } } }) : [],
+    ]);
+
+    const invoiceMap = new Map((invoices as any[]).map(i => [i.id, i]));
+    const commissionMap = new Map((commissions as any[]).map(c => [c.id, c]));
+
+    return (payments as any[]).map(p => {
+      const inv = invoiceMap.get(p.invoiceId);
+      const comm = commissionMap.get(p.commissionId);
+      return {
+        ...p,
+        invoice: inv ? { id: inv.id, number: inv.number, clientName: inv.clientName } : null,
+        commission: comm ? { id: comm.id } : null,
+      };
     });
   }
 
   async findOnePayment(id: string, userId: string) {
     const payment = await this.db.payment.findFirst({
       where: { id, userId },
-      include: {
-        invoice: true,
-        commission: true,
-      },
     });
 
     if (!payment) {
@@ -423,14 +406,15 @@ export class FinanceService {
   private async updateInvoicePaymentStatus(invoiceId: string, userId: string) {
     const invoice = await this.db.invoice.findUnique({
       where: { id: invoiceId },
-      include: {
-        payments: true,
-      },
     });
 
     if (!invoice) return;
 
-    const totalPaid = invoice.payments.reduce((sum, p) => sum + p.amount, 0);
+    const payments = await this.db.payment.findMany({
+      where: { invoiceId },
+    });
+
+    const totalPaid = (payments as any[]).reduce((sum, p) => sum + p.amount, 0);
 
     const oldStatus = invoice.status;
     let newStatus = invoice.status;
@@ -447,21 +431,22 @@ export class FinanceService {
       });
 
       // 🆕 ACTIVITY LOG: Log invoice status change
-      await this.activityLogger.logInvoiceStatusChanged(userId, updated, oldStatus, newStatus);
+      try { await this.activityLogger.logInvoiceStatusChanged(userId, updated, oldStatus, newStatus); } catch (_) { }
     }
   }
 
   private async updateCommissionPaymentStatus(commissionId: string, userId: string) {
     const commission = await this.db.commission.findUnique({
       where: { id: commissionId },
-      include: {
-        payments: true,
-      },
     });
 
     if (!commission) return;
 
-    const totalPaid = commission.payments.reduce((sum, p) => sum + p.amount, 0);
+    const payments = await this.db.payment.findMany({
+      where: { commissionId },
+    });
+
+    const totalPaid = (payments as any[]).reduce((sum, p) => sum + p.amount, 0);
 
     const oldStatus = commission.status;
     let newStatus = commission.status;
@@ -478,7 +463,7 @@ export class FinanceService {
       });
 
       // 🆕 ACTIVITY LOG: Log commission status change
-      await this.activityLogger.logCommissionStatusChanged(userId, updated, oldStatus, newStatus);
+      try { await this.activityLogger.logCommissionStatusChanged(userId, updated, oldStatus, newStatus); } catch (_) { }
     }
   }
 
@@ -488,13 +473,21 @@ export class FinanceService {
     const [
       totalCommissions,
       pendingCommissions,
+      paidCommissions,
       totalInvoices,
+      draftInvoices,
+      sentInvoices,
+      paidInvoices,
       overdueInvoices,
       totalPayments,
     ] = await Promise.all([
       this.db.commission.count({ where: { userId } }),
       this.db.commission.count({ where: { userId, status: 'pending' } }),
+      this.db.commission.count({ where: { userId, status: 'paid' } }),
       this.db.invoice.count({ where: { userId } }),
+      this.db.invoice.count({ where: { userId, status: 'draft' } }),
+      this.db.invoice.count({ where: { userId, status: 'sent' } }),
+      this.db.invoice.count({ where: { userId, status: 'paid' } }),
       this.db.invoice.count({
         where: {
           userId,
@@ -505,40 +498,66 @@ export class FinanceService {
       this.db.payment.count({ where: { userId } }),
     ]);
 
-    // Calculate financial totals
-    const [commissions, invoices, payments] = await Promise.all([
-      this.db.commission.findMany({
-        where: { userId, status: 'paid' },
-        select: { amount: true },
-      }),
-      this.db.invoice.findMany({
-        where: { userId, status: 'paid' },
-        select: { totalAmount: true },
-      }),
-      this.db.payment.findMany({
-        where: { userId },
-        select: { amount: true },
-      }),
+    // Calculate financial totals — all commissions / invoices (not just paid)
+    const [allCommissions, paidCommissionsList, allInvoices, paidInvoicesList, allPayments] = await Promise.all([
+      this.db.commission.findMany({ where: { userId } }),
+      this.db.commission.findMany({ where: { userId, status: 'paid' } }),
+      this.db.invoice.findMany({ where: { userId } }),
+      this.db.invoice.findMany({ where: { userId, status: 'paid' } }),
+      this.db.payment.findMany({ where: { userId } }),
     ]);
 
-    const totalCommissionValue = commissions.reduce((sum, c) => sum + c.amount, 0);
-    const totalInvoiceValue = invoices.reduce((sum, i) => sum + i.totalAmount, 0);
-    const totalPaymentValue = payments.reduce((sum, p) => sum + p.amount, 0);
+    const commissionTotalAmount = allCommissions.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const commissionPaidAmount = paidCommissionsList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+    const commissionPendingAmount = commissionTotalAmount - commissionPaidAmount;
+
+    const invoiceTotalAmount = allInvoices.reduce((sum, i) => sum + (Number(i.totalAmount) || Number(i.amount) || 0), 0);
+    const invoicePaidAmount = paidInvoicesList.reduce((sum, i) => sum + (Number(i.totalAmount) || Number(i.amount) || 0), 0);
+    const invoicePendingAmount = invoiceTotalAmount - invoicePaidAmount;
+
+    const paymentTotalAmount = allPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+    // Payment breakdown by method
+    const byMethod: Record<string, { count: number; totalAmount: number }> = {};
+    for (const p of allPayments) {
+      const m = p.method || 'other';
+      if (!byMethod[m]) byMethod[m] = { count: 0, totalAmount: 0 };
+      byMethod[m].count++;
+      byMethod[m].totalAmount += Number(p.amount) || 0;
+    }
 
     return {
       commissions: {
         total: totalCommissions,
         pending: pendingCommissions,
-        value: totalCommissionValue,
+        paid: paidCommissions,
+        totalAmount: commissionTotalAmount,
+        paidAmount: commissionPaidAmount,
+        pendingAmount: commissionPendingAmount,
       },
       invoices: {
         total: totalInvoices,
+        draft: draftInvoices,
+        sent: sentInvoices,
+        paid: paidInvoices,
         overdue: overdueInvoices,
-        value: totalInvoiceValue,
+        totalAmount: invoiceTotalAmount,
+        paidAmount: invoicePaidAmount,
+        pendingAmount: invoicePendingAmount,
       },
       payments: {
         total: totalPayments,
-        value: totalPaymentValue,
+        totalAmount: paymentTotalAmount,
+        byMethod: Object.entries(byMethod).map(([method, data]) => ({
+          method,
+          count: data.count,
+          totalAmount: data.totalAmount,
+        })),
+      },
+      revenue: {
+        current: commissionPaidAmount + invoicePaidAmount,
+        previous: 0,
+        growth: 0,
       },
     };
   }

@@ -24,6 +24,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     providerPerformance: 'provider_performance',
     agencyApiKeys: 'agency_api_keys',
     globalSettings: 'global_settings',
+    // Tables Module Registry
+    businessModule: 'business_modules',
+    moduleAgencySubscription: 'module_agency_subscriptions',
+    dynamicMenuItem: 'dynamic_menu_items',
+    moduleAiAction: 'module_ai_actions',
+    dynamicSchema: 'dynamic_schemas',
     // Tables utilisateur
     user: 'users',
     users: 'users',
@@ -94,6 +100,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     aiChatMessages: 'ai_chat_messages',
     // Tables Documents-Intelligence
     documentInvestmentLink: 'document_investment_links',
+    // Tables Planning/Kanban
+    taskBoard: 'task_boards',
+    taskColumn: 'task_columns',
+    planningView: 'planning_views',
     // Tables Page Builder (PascalCase = pas de @@map)
     page: 'Page',
     pages: 'Page',
@@ -157,6 +167,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'campaigns',
       'activity',
       'activities',
+      // Tables Module Registry
+      'businessModule',
+      'moduleAgencySubscription',
+      'dynamicMenuItem',
+      'moduleAiAction',
+      'dynamicSchema',
       'prospect_interactions',
       'prospect_preferences',
       'prospect_properties_shown',
@@ -220,13 +236,17 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'investmentAlert',
       // Tables Intégrations
       'userIntegration',
-      // Tables Business (Mandates, Owners, Transactions, Invoices)
+      // Tables Business (Mandates, Owners, Transactions, Invoices, Commissions, Payments)
       'mandate',
       'mandates',
       'owner',
       'owners',
       'invoice',
       'invoices',
+      'commission',
+      'commissions',
+      'payment',
+      'payments',
       // Autres
       'propertyTrackingStats',
       // Tables Vitrine Publique
@@ -239,6 +259,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'aiChatMessage',
       // Tables Documents-Intelligence
       'documentInvestmentLink',
+      // Tables Planning/Kanban
+      'taskBoard',
+      'taskColumn',
+      'planningView',
     ];
 
     tables.forEach((table) => {
@@ -516,27 +540,27 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           _count: parseInt(row._count || '0', 10),
           _sum: args._sum
             ? Object.keys(args._sum).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+              {},
+            )
             : null,
           _avg: args._avg
             ? Object.keys(args._avg).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+              {},
+            )
             : null,
           _min: args._min
             ? Object.keys(args._min).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+              {},
+            )
             : null,
           _max: args._max
             ? Object.keys(args._max).reduce(
-                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
-                {},
-              )
+              (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+              {},
+            )
             : null,
         };
       },

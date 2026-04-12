@@ -11,19 +11,19 @@ class ApiClient {
 
   setToken(token: string) {
     this.token = token;
-    localStorage.setItem('crm-token', token);
+    localStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
     if (!this.token) {
-      this.token = localStorage.getItem('crm-token');
+      this.token = localStorage.getItem('auth_token');
     }
     return this.token;
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('crm-token');
+    localStorage.removeItem('auth_token');
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {

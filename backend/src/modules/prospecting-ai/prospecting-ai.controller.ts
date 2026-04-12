@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { ProspectionService } from './services/prospection.service';
 import { ProspectionExportService, ExportFormat } from './services/prospection-export.service';
 import { StartProspectionDto } from './dto';
+import { PrismaService } from '../../shared/database/prisma.service';
 
 /**
  * Controller de prospection IA
@@ -35,7 +36,8 @@ export class ProspectingAiController {
   constructor(
     private readonly prospectionService: ProspectionService,
     private readonly exportService: ProspectionExportService,
-  ) {}
+    private readonly prisma: PrismaService,
+  ) { }
 
   /**
    * POST /api/prospecting-ai/start
@@ -163,13 +165,13 @@ export class ProspectingAiController {
   /**
    * POST /api/prospecting-ai/:id/convert-to-prospects
    *
-   * Convertir les leads en prospects CRM
+   * Convertir les leads IA en prospects CRM (avec déduplication et persistance DB)
    */
   @Post(':id/convert-to-prospects')
-  @ApiOperation({ summary: 'Convert leads to CRM prospects' })
-  @ApiResponse({ status: 200, description: 'Leads converted successfully' })
+  @ApiOperation({ summary: 'Convert AI leads to CRM prospects (persisted)' })
+  @ApiResponse({ status: 200, description: 'Leads converted and saved' })
   @ApiResponse({ status: 404, description: 'Prospection not found' })
-  async convertToProspects(@Param('id') id: string) {
+  async convertToProspects(@Request() req, @Param('id') id: string, @Body() body?: { leadIds?: string[] }) {
     const result = this.resultsCache.get(id);
 
     if (!result) {
@@ -182,14 +184,86 @@ export class ProspectingAiController {
       );
     }
 
-    // Convertir les leads au format CRM
-    const crmLeads = this.exportService.convertToCrmFormat(result.leads);
+    const userId = req.user.userId;
+    // Filter leads if specific leadIds provided
+    const leadsToConvert = body?.leadIds?.length
+      ? result.leads.filter((l) => body.leadIds.includes(l.id))
+      : result.leads;
+    const crmLeads = this.exportService.convertToCrmFormat(leadsToConvert);
+    const created: string[] = [];
+    const merged: string[] = [];
+    const skipped: string[] = [];
+
+    for (const lead of crmLeads) {
+      try {
+        // Deduplication: check by email or phone
+        let existing: any = null;
+        if (lead.email) {
+          existing = await this.prisma.prospects.findFirst({
+            where: { userId, email: lead.email },
+          });
+        }
+        if (!existing && lead.phone) {
+          existing = await this.prisma.prospects.findFirst({
+            where: { userId, phone: lead.phone },
+          });
+        }
+
+        if (existing) {
+          // Merge: update with new data that's missing
+          const updates: Record<string, any> = {};
+          if (!existing.phone && lead.phone) updates.phone = lead.phone;
+          if (!existing.email && lead.email) updates.email = lead.email;
+          if (!existing.budget && lead.budget) updates.budget = lead.budget;
+          if (!existing.city && lead.city) updates.city = lead.city;
+
+          if (Object.keys(updates).length > 0) {
+            await this.prisma.prospects.update({
+              where: { id: existing.id },
+              data: updates,
+            });
+          }
+          merged.push(existing.id);
+        } else {
+          // Create new prospect
+          const prospect = await this.prisma.prospects.create({
+            data: {
+              userId,
+              firstName: lead.firstName || lead.name?.split(' ')[0] || 'Lead',
+              lastName: lead.lastName || lead.name?.split(' ').slice(1).join(' ') || '',
+              email: lead.email || null,
+              phone: lead.phone || null,
+              type: lead.type || 'buyer',
+              status: 'new',
+              score: lead.score || 0,
+              source: `Prospection IA: ${result.metadata?.zone || id}`,
+              city: lead.city || null,
+              budget: lead.budget || null,
+              profiling: {
+                aiProspectionId: id,
+                originalSource: lead.source || null,
+                qualificationScore: lead.qualificationScore || null,
+                urgency: lead.urgency || null,
+              },
+            },
+          });
+          created.push(prospect.id);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to convert lead: ${error.message}`);
+        skipped.push(lead.email || lead.phone || 'unknown');
+      }
+    }
 
     return {
       prospectionId: id,
       totalLeads: crmLeads.length,
-      leads: crmLeads,
-      message: 'Leads converted to CRM format. You can now import them into the Prospects module.',
+      created: created.length,
+      merged: merged.length,
+      skipped: skipped.length,
+      createdIds: created,
+      mergedIds: merged,
+      message: `${created.length} prospects créés, ${merged.length} fusionnés, ${skipped.length} ignorés.`,
     };
   }
 }

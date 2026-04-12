@@ -37,7 +37,7 @@ export default function CompareProjectsPage() {
 
   const loadProjects = async () => {
     try {
-      const res = await apiClient.get('/investment/projects');
+      const res = await apiClient.get('/investment-intelligence/projects');
       setProjects(res.data?.data || res.data || []);
     } catch (error) {
       console.error('Erreur chargement projets:', error);
@@ -187,9 +187,8 @@ export default function CompareProjectsPage() {
                     <div
                       key={project.id}
                       onClick={() => toggleProject(project)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        isSelected ? 'border-primary bg-primary/5' : 'hover:bg-accent/50'
-                      } ${selectedProjects.length >= 5 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'hover:bg-accent/50'
+                        } ${selectedProjects.length >= 5 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <h3 className="font-semibold">{project.title}</h3>
                       <p className="text-sm text-muted-foreground">{project.city}</p>

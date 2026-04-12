@@ -51,16 +51,16 @@ export const ChatbotFloatingButton: React.FC = () => {
             </p>
 
             {[
-              { label: 'Estimer un bien', emoji: '\uD83C\uDFE0' },
-              { label: 'Analyser le march\u00e9', emoji: '\uD83D\uDCC8' },
-              { label: 'R\u00e9diger une annonce', emoji: '\u270D\uFE0F' },
-              { label: 'Qualifier un prospect', emoji: '\uD83C\uDFAF' },
+              { label: 'Estimer un bien', emoji: '\uD83C\uDFE0', action: 'estimate' },
+              { label: 'Analyser le march\u00e9', emoji: '\uD83D\uDCC8', action: 'market-analysis' },
+              { label: 'R\u00e9diger une annonce', emoji: '\u270D\uFE0F', action: 'write-listing' },
+              { label: 'Qualifier un prospect', emoji: '\uD83C\uDFAF', action: 'qualify-prospect' },
             ].map((action) => (
               <button
                 key={action.label}
                 onClick={() => {
                   setIsOpen(false);
-                  router.push('/ai-assistant');
+                  router.push(`/ai-assistant?action=${action.action}`);
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-700
                            hover:bg-slate-50 transition-colors text-left group"
@@ -97,10 +97,9 @@ export const ChatbotFloatingButton: React.FC = () => {
           w-14 h-14 rounded-full shadow-lg
           flex items-center justify-center
           transition-all duration-300 ease-out
-          ${
-            isOpen
-              ? 'bg-slate-800 rotate-0 shadow-slate-300'
-              : 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-200 hover:shadow-xl hover:scale-105'
+          ${isOpen
+            ? 'bg-slate-800 rotate-0 shadow-slate-300'
+            : 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-200 hover:shadow-xl hover:scale-105'
           }
         `}
         title="Assistant IA"

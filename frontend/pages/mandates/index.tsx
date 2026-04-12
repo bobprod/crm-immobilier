@@ -1,10 +1,10 @@
-import { MainLayout } from '@/shared/components/layout';
-import { MandateList } from '../../src/modules/business/mandates/components/MandateList';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function MandatesPage() {
-  return (
-    <MainLayout title="Mandats" breadcrumbs={[{ label: 'Mandats' }]}>
-      <MandateList />
-    </MainLayout>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/gestion-immobiliere?tab=mandates');
+  }, []);
+  return null;
 }

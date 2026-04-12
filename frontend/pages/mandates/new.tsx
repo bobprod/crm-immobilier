@@ -16,6 +16,29 @@ export default function NewMandatePage() {
     const [category, setCategory] = React.useState<string>('sale');
     const [commissionType, setCommissionType] = React.useState<string>('percentage');
 
+    // Owner and property search
+    const [owners, setOwners] = React.useState<any[]>([]);
+    const [properties, setProperties] = React.useState<any[]>([]);
+    const [selectedOwnerId, setSelectedOwnerId] = React.useState<string>('');
+    const [selectedPropertyId, setSelectedPropertyId] = React.useState<string>('');
+    const [ownerSearch, setOwnerSearch] = React.useState('');
+    const [propertySearch, setPropertySearch] = React.useState('');
+
+    // Pre-fill from URL params (e.g. /mandates/new?ownerId=xxx)
+    React.useEffect(() => {
+        if (router.query.ownerId) setSelectedOwnerId(router.query.ownerId as string);
+        if (router.query.propertyId) setSelectedPropertyId(router.query.propertyId as string);
+    }, [router.query]);
+
+    // Fetch owners and properties on mount
+    React.useEffect(() => {
+        apiClient.get('/owners').then(r => setOwners(r.data || [])).catch(() => { });
+        apiClient.get('/properties').then(r => {
+            const data = r.data;
+            setProperties(Array.isArray(data) ? data : data?.data || []);
+        }).catch(() => { });
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
@@ -24,8 +47,8 @@ export default function NewMandatePage() {
         const formData = new FormData(e.currentTarget);
 
         const data = {
-            ownerId: formData.get('ownerId') as string,
-            propertyId: formData.get('propertyId') as string || undefined,
+            ownerId: selectedOwnerId || formData.get('ownerId') as string,
+            propertyId: selectedPropertyId || formData.get('propertyId') as string || undefined,
             reference: formData.get('reference') as string,
             type: mandateType,
             category: category,
@@ -91,15 +114,6 @@ export default function NewMandatePage() {
                             </div>
                         )}
 
-                        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-                            <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                            <div className="text-blue-700 text-sm">
-                                <p className="font-medium mb-1">Comment trouver les IDs ?</p>
-                                <p>• ID Propriétaire : Allez dans Propriétaires, cliquez sur un propriétaire, l'ID est dans l'URL</p>
-                                <p>• ID Propriété (optionnel) : Allez dans Propriétés, cliquez sur une propriété, l'ID est dans l'URL</p>
-                            </div>
-                        </div>
-
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Informations de base */}
                             <div className="space-y-4">
@@ -154,28 +168,96 @@ export default function NewMandatePage() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label htmlFor="ownerId" className="text-sm font-medium">
-                                            ID Propriétaire *
+                                        <label className="text-sm font-medium">
+                                            Propriétaire *
                                         </label>
-                                        <Input
-                                            id="ownerId"
-                                            name="ownerId"
-                                            placeholder="clxxx..."
-                                            required
-                                        />
-                                        <p className="text-xs text-gray-500">Copiez l'ID depuis la page du propriétaire</p>
+                                        {owners.length > 0 ? (
+                                            <>
+                                                <Input
+                                                    placeholder="Rechercher un propriétaire..."
+                                                    value={ownerSearch}
+                                                    onChange={e => setOwnerSearch(e.target.value)}
+                                                    className="mb-1"
+                                                />
+                                                <Select value={selectedOwnerId} onValueChange={setSelectedOwnerId}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Sélectionner un propriétaire" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {owners
+                                                            .filter((o: any) => {
+                                                                if (!o.id) return false;
+                                                                if (!ownerSearch) return true;
+                                                                const q = ownerSearch.toLowerCase();
+                                                                return (o.firstName || '').toLowerCase().includes(q) ||
+                                                                    (o.lastName || '').toLowerCase().includes(q) ||
+                                                                    (o.email || '').toLowerCase().includes(q);
+                                                            })
+                                                            .map((o: any) => (
+                                                                <SelectItem key={o.id} value={o.id}>
+                                                                    {o.firstName} {o.lastName} {o.email ? `(${o.email})` : ''}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </>
+                                        ) : (
+                                            <div className="text-sm text-gray-500">
+                                                <Input
+                                                    name="ownerId"
+                                                    placeholder="ID du propriétaire (clxxx...)"
+                                                    value={selectedOwnerId}
+                                                    onChange={e => setSelectedOwnerId(e.target.value)}
+                                                    required
+                                                />
+                                                <p className="text-xs mt-1">Aucun propriétaire trouvé. <a href="/owners/new" className="text-blue-600 underline">Créer un propriétaire</a></p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label htmlFor="propertyId" className="text-sm font-medium">
-                                            ID Propriété (optionnel)
+                                        <label className="text-sm font-medium">
+                                            Propriété (optionnel)
                                         </label>
-                                        <Input
-                                            id="propertyId"
-                                            name="propertyId"
-                                            placeholder="clxxx..."
-                                        />
-                                        <p className="text-xs text-gray-500">Optionnel si le bien n'existe pas encore</p>
+                                        {properties.length > 0 ? (
+                                            <>
+                                                <Input
+                                                    placeholder="Rechercher une propriété..."
+                                                    value={propertySearch}
+                                                    onChange={e => setPropertySearch(e.target.value)}
+                                                    className="mb-1"
+                                                />
+                                                <Select value={selectedPropertyId} onValueChange={(v) => setSelectedPropertyId(v === '__none__' ? '' : v)}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Sélectionner une propriété" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="__none__">Aucune</SelectItem>
+                                                        {properties
+                                                            .filter((p: any) => {
+                                                                if (!p.id) return false;
+                                                                if (!propertySearch) return true;
+                                                                const q = propertySearch.toLowerCase();
+                                                                return (p.title || '').toLowerCase().includes(q) ||
+                                                                    (p.city || '').toLowerCase().includes(q) ||
+                                                                    (p.address || '').toLowerCase().includes(q);
+                                                            })
+                                                            .map((p: any) => (
+                                                                <SelectItem key={p.id} value={p.id}>
+                                                                    {p.title} {p.city ? `- ${p.city}` : ''} {p.price ? `(${p.price.toLocaleString()} TND)` : ''}
+                                                                </SelectItem>
+                                                            ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </>
+                                        ) : (
+                                            <Input
+                                                name="propertyId"
+                                                placeholder="ID propriété (optionnel)"
+                                                value={selectedPropertyId}
+                                                onChange={e => setSelectedPropertyId(e.target.value)}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -101,7 +101,7 @@ export function LLMProviderSelector({
     try {
       const res = await fetch('/api/llm-config/user-providers', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
 
@@ -120,7 +120,7 @@ export function LLMProviderSelector({
     try {
       const res = await fetch(`/api/llm-config/suggest/${operationType}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
 
@@ -259,18 +259,17 @@ export function LLMProviderSelector({
               {/* Progress bar */}
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full transition-all ${
-                    selectedProvider.budgetRemaining &&
-                    selectedProvider.budgetRemaining > 0
+                  className={`h-2 rounded-full transition-all ${selectedProvider.budgetRemaining &&
+                      selectedProvider.budgetRemaining > 0
                       ? 'bg-green-500'
                       : 'bg-red-500'
-                  }`}
+                    }`}
                   style={{
                     width: `${Math.min(
                       100,
                       (selectedProvider.monthlyUsage /
                         selectedProvider.monthlyBudget) *
-                        100,
+                      100,
                     )}%`,
                   }}
                 />

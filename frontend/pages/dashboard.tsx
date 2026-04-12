@@ -86,7 +86,7 @@ const DashboardPage: React.FC = () => {
         if (statsData.status === 'fulfilled') setStats(statsData.value);
 
         // Fetch recent properties & prospects directly
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -404,6 +404,38 @@ const DashboardPage: React.FC = () => {
                   <p className="text-xs text-slate-500">Prospect ↔ Propriété</p>
                 </div>
               </a>
+            </div>
+          </div>
+
+          {/* Module Quick Access - Extended */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
+              Modules
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { label: 'Marketing', path: '/marketing-dashboard', icon: '📊', color: 'bg-red-50 hover:bg-red-100' },
+                { label: 'Analytics', path: '/analytics', icon: '📈', color: 'bg-blue-50 hover:bg-blue-100' },
+                { label: 'Assistant IA', path: '/ai-assistant', icon: '🤖', color: 'bg-amber-50 hover:bg-amber-100' },
+                { label: 'Investissement', path: '/investment', icon: '💰', color: 'bg-green-50 hover:bg-green-100' },
+                { label: 'SEO & IA', path: '/seo-ai', icon: '🔍', color: 'bg-purple-50 hover:bg-purple-100' },
+                { label: 'WhatsApp', path: '/communication/whatsapp', icon: '💬', color: 'bg-emerald-50 hover:bg-emerald-100' },
+                { label: 'Documents', path: '/documents', icon: '📄', color: 'bg-slate-50 hover:bg-slate-100' },
+                { label: 'Scraping', path: '/scraping', icon: '🕷️', color: 'bg-orange-50 hover:bg-orange-100' },
+                { label: 'Facturation IA', path: '/settings/ai-billing', icon: '💳', color: 'bg-cyan-50 hover:bg-cyan-100' },
+                { label: 'Vitrine', path: '/vitrine', icon: '🌐', color: 'bg-indigo-50 hover:bg-indigo-100' },
+                { label: 'Intégrations', path: '/integrations', icon: '🔗', color: 'bg-pink-50 hover:bg-pink-100' },
+                { label: 'Personnel', path: '/personnel', icon: '👥', color: 'bg-teal-50 hover:bg-teal-100' },
+              ].map((mod) => (
+                <a
+                  key={mod.path}
+                  href={mod.path}
+                  className={`flex flex-col items-center p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all text-center ${mod.color}`}
+                >
+                  <span className="text-2xl mb-2">{mod.icon}</span>
+                  <span className="text-xs font-semibold text-slate-700">{mod.label}</span>
+                </a>
+              ))}
             </div>
           </div>
         </div>

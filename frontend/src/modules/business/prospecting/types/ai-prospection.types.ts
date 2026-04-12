@@ -121,15 +121,14 @@ export interface ProspectionResult {
 }
 
 export interface ConvertToProspectsResponse {
-  converted: number;
-  prospects: Array<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    email?: string;
-    phone?: string;
-    source: string;
-  }>;
+  prospectionId: string;
+  totalLeads: number;
+  created: number;
+  merged: number;
+  skipped: number;
+  createdIds: string[];
+  mergedIds: string[];
+  message: string;
 }
 
 // ============================================================================

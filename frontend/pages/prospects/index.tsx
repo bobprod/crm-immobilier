@@ -70,7 +70,7 @@ export default function ProspectsListPage() {
     apiClient
       .get('/prospects/stats')
       .then((r) => setStats(r.data))
-      .catch(() => {});
+      .catch(() => { });
   }, [prospects]);
 
   const filteredProspects = prospects.filter((p: any) => {
@@ -141,15 +141,9 @@ export default function ProspectsListPage() {
             <p className="text-gray-600 mt-1">{prospects.length} prospects au total</p>
           </div>
           <div className="flex gap-2">
-            <Link href="/prospects/pipeline">
-              <Button variant="outline" size="sm" title="Vue Pipeline Kanban (Bitrix24/Odoo style)">
-                <KanbanSquare className="h-4 w-4 mr-2" />
-                Vue Pipeline
-              </Button>
-            </Link>
             <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={exporting}>
               <Download className="h-4 w-4 mr-2" />
-              {exporting ? 'Export...' : 'Exporter CSV'}
+              {exporting ? 'Export...' : 'CSV'}
             </Button>
             <Button variant="outline" size="sm" onClick={() => refresh()}>
               <RefreshCw className="h-4 w-4" />
@@ -157,10 +151,34 @@ export default function ProspectsListPage() {
             <Link href="/prospects/new">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Nouveau Prospect
+                Nouveau
               </Button>
             </Link>
           </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200">
+          <nav className="flex gap-0 -mb-px">
+            <button
+              className="flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors border-purple-600 text-purple-600"
+            >
+              <Users className="h-4 w-4" />
+              Liste
+            </button>
+            <Link href="/prospects/pipeline">
+              <button className="flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <KanbanSquare className="h-4 w-4" />
+                Pipeline
+              </button>
+            </Link>
+            <Link href="/prospects/gestion">
+              <button className="flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <TrendingUp className="h-4 w-4" />
+                Gestion
+              </button>
+            </Link>
+          </nav>
         </div>
 
         {/* Stats */}

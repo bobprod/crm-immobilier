@@ -333,22 +333,59 @@ export class ModuleRegistryService {
         agencyId,
         isActive: true,
       },
-      include: {
-        module: {
-          include: {
-            menuItems: {
-              orderBy: { order: 'asc' },
-            },
-            aiActions: {
-              where: { enabled: true },
-              include: { pricing: true },
-            },
-          },
-        },
-      },
+      orderBy: { activatedAt: 'asc' },
     });
 
-    return subscriptions.map(sub => sub.module);
+    if (!subscriptions || subscriptions.length === 0) {
+      return [];
+    }
+
+    const moduleIds = subscriptions.map((sub) => sub.moduleId);
+
+    const [modules, menuItems, aiActions] = await Promise.all([
+      this.prisma.businessModule.findMany({
+        where: {
+          id: { in: moduleIds },
+          status: 'ACTIVE',
+        },
+      }),
+      this.prisma.dynamicMenuItem.findMany({
+        where: { moduleId: { in: moduleIds } },
+        orderBy: { order: 'asc' },
+      }),
+      this.prisma.moduleAiAction.findMany({
+        where: {
+          moduleId: { in: moduleIds },
+          enabled: true,
+        },
+      }),
+    ]);
+
+    const moduleMap = new Map<string, any>((modules as any[]).map((m: any) => [m.id, m]));
+
+    return moduleIds
+      .map((moduleId) => {
+        const module = moduleMap.get(moduleId) as any;
+        if (!module) return null;
+
+        return {
+          id: module.id,
+          code: module.code,
+          name: module.name,
+          description: module.description,
+          version: module.version,
+          status: module.status,
+          category: module.category,
+          manifest: module.manifest,
+          basePrice: module.basePrice,
+          creditsIncluded: module.creditsIncluded,
+          createdAt: module.createdAt,
+          updatedAt: module.updatedAt,
+          menuItems: menuItems.filter((item) => item.moduleId === moduleId),
+          aiActions: aiActions.filter((action) => action.moduleId === moduleId),
+        };
+      })
+      .filter(Boolean);
   }
 
   /**

@@ -3,7 +3,7 @@ import { PrismaService } from '../../shared/database/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Statistiques globales
@@ -18,6 +18,11 @@ export class DashboardService {
         activeCampaigns,
         pendingTasks,
         totalCommunications,
+        totalTransactions,
+        activeTransactions,
+        completedTransactions,
+        pendingCommissions,
+        totalRevenue,
       ] = await Promise.all([
         this.prisma.prospects.count({ where: { userId, status: 'active' } }).catch(() => 0),
         this.prisma.properties.count({ where: { userId, status: 'available' } }).catch(() => 0),
@@ -59,6 +64,21 @@ export class DashboardService {
           })
           .catch(() => 0),
         this.prisma.communications.count({ where: { userId } }).catch(() => 0),
+        // Transaction & Finance KPIs
+        this.prisma.transaction.count({ where: { userId } }).catch(() => 0),
+        this.prisma.transaction.count({
+          where: { userId, status: { notIn: ['final_deed_signed', 'cancelled'] } },
+        }).catch(() => 0),
+        this.prisma.transaction.count({
+          where: { userId, status: 'final_deed_signed' },
+        }).catch(() => 0),
+        this.prisma.commission.count({
+          where: { userId, status: 'pending' },
+        }).catch(() => 0),
+        this.prisma.commission.aggregate({
+          where: { userId, status: 'paid' },
+          _sum: { amount: true },
+        }).then(r => r._sum?.amount || 0).catch(() => 0),
       ]);
 
       const conversionRate = await this.calculateConversionRate(userId).catch(() => 0);
@@ -74,6 +94,12 @@ export class DashboardService {
         totalCommunications,
         conversionRate: Math.round(conversionRate * 10) / 10,
         matchSuccessRate: Math.round(matchSuccessRate * 10) / 10,
+        // Finance / Transactions
+        totalTransactions,
+        activeTransactions,
+        completedTransactions,
+        pendingCommissions,
+        totalRevenue: Number(totalRevenue) || 0,
       };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -88,6 +114,11 @@ export class DashboardService {
         totalCommunications: 0,
         conversionRate: 0,
         matchSuccessRate: 0,
+        totalTransactions: 0,
+        activeTransactions: 0,
+        completedTransactions: 0,
+        pendingCommissions: 0,
+        totalRevenue: 0,
       };
     }
   }

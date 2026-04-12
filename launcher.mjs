@@ -74,7 +74,7 @@ function killProcessOnPort(port) {
           console.log(
             `[Launcher] ✖ Processus ancien (PID ${pid}) sur :${port} arrêté`,
           );
-        } catch {}
+        } catch { }
       }
     } else {
       // Linux / macOS
@@ -90,10 +90,10 @@ function killProcessOnPort(port) {
               console.log(
                 `[Launcher] ✖ Processus ancien (PID ${pid.trim()}) sur :${port} arrêté`,
               );
-            } catch {}
+            } catch { }
           }
         }
-      } catch {}
+      } catch { }
     }
   } catch {
     // Pas de processus sur ce port, c'est OK
@@ -106,8 +106,8 @@ function cleanupOldPidFile() {
     const data = JSON.parse(readFileSync(PID_FILE, "utf8"));
     console.log(
       "[Launcher] Session précédente détectée (PID launcher: " +
-        data.launcher +
-        ")",
+      data.launcher +
+      ")",
     );
 
     // Tuer l'ancien launcher si encore vivant
@@ -119,9 +119,9 @@ function cleanupOldPidFile() {
           execSync(`kill -9 ${data.launcher}`);
         }
         console.log("[Launcher] ✖ Ancien launcher arrêté");
-      } catch {} // déjà mort
+      } catch { } // déjà mort
     }
-  } catch {}
+  } catch { }
 }
 
 async function cleanupOldSessions() {
@@ -183,7 +183,7 @@ function writePidFile() {
 function removePidFile() {
   try {
     unlinkSync(PID_FILE);
-  } catch {}
+  } catch { }
 }
 
 // ── Charge .env ────────────────────────────────────────────────────────────
@@ -232,26 +232,34 @@ function startBackend() {
     env: { ...process.env, PORT: String(BACKEND_PORT) },
   });
 
+  function checkBackendReady(line) {
+    if (
+      line.includes("application is running") ||
+      line.includes("Nest application successfully started") ||
+      line.includes("Application démarrée") ||
+      line.includes("listening on")
+    ) {
+      backendReady = true;
+      console.log(
+        "[Launcher] ✅ Backend prêt sur http://localhost:" + BACKEND_PORT,
+      );
+    }
+  }
+
   backendProcess.stdout.on("data", (d) => {
     const line = d.toString().trim();
     if (line) {
       pushLog(backendLogs, line);
-      if (
-        line.includes("application is running") ||
-        line.includes("Nest application successfully started") ||
-        line.includes("listening on")
-      ) {
-        backendReady = true;
-        console.log(
-          "[Launcher] ✅ Backend prêt sur http://localhost:" + BACKEND_PORT,
-        );
-      }
+      checkBackendReady(line);
     }
   });
 
   backendProcess.stderr.on("data", (d) => {
     const line = d.toString().trim();
-    if (line) pushLog(backendLogs, "[ERR] " + line);
+    if (line) {
+      pushLog(backendLogs, line);
+      checkBackendReady(line);
+    }
   });
 
   backendProcess.on("exit", (code) => {
@@ -272,26 +280,33 @@ function startFrontend() {
     env: { ...process.env, PORT: String(FRONTEND_PORT) },
   });
 
+  function checkFrontendReady(line) {
+    if (
+      line.includes("Ready") ||
+      line.includes("started server") ||
+      line.includes("localhost:" + FRONTEND_PORT)
+    ) {
+      frontendReady = true;
+      console.log(
+        "[Launcher] ✅ Frontend prêt sur http://localhost:" + FRONTEND_PORT,
+      );
+    }
+  }
+
   frontendProcess.stdout.on("data", (d) => {
     const line = d.toString().trim();
     if (line) {
       pushLog(frontendLogs, line);
-      if (
-        line.includes("Ready") ||
-        line.includes("started server") ||
-        line.includes("localhost:" + FRONTEND_PORT)
-      ) {
-        frontendReady = true;
-        console.log(
-          "[Launcher] ✅ Frontend prêt sur http://localhost:" + FRONTEND_PORT,
-        );
-      }
+      checkFrontendReady(line);
     }
   });
 
   frontendProcess.stderr.on("data", (d) => {
     const line = d.toString().trim();
-    if (line) pushLog(frontendLogs, "[ERR] " + line);
+    if (line) {
+      pushLog(frontendLogs, line);
+      checkFrontendReady(line);
+    }
   });
 
   frontendProcess.on("exit", (code) => {
@@ -299,6 +314,31 @@ function startFrontend() {
     frontendReady = false;
     frontendProcess = null;
   });
+}
+
+// ── Fallback : détection par port si les logs ne suffisent pas ─────────────
+
+function startReadinessPoller() {
+  const interval = setInterval(async () => {
+    if (backendReady && frontendReady) {
+      clearInterval(interval);
+      return;
+    }
+    if (!backendReady && backendProcess) {
+      const up = await isPortInUse(BACKEND_PORT);
+      if (up) {
+        backendReady = true;
+        console.log("[Launcher] ✅ Backend détecté en ligne (via port check)");
+      }
+    }
+    if (!frontendReady && frontendProcess) {
+      const up = await isPortInUse(FRONTEND_PORT);
+      if (up) {
+        frontendReady = true;
+        console.log("[Launcher] ✅ Frontend détecté en ligne (via port check)");
+      }
+    }
+  }, 5000);
 }
 
 // ── Page HTML du launcher ──────────────────────────────────────────────────
@@ -475,11 +515,10 @@ function getHTML() {
     <div class="card logs-card">
       <h2>📋 Logs récents</h2>
       <div class="logs-box" id="logs">
-        ${
-          [...backendLogs.slice(-15), ...frontendLogs.slice(-15)]
-            .map((l) => l.replace(/</g, "&lt;"))
-            .join("<br>") || "<em>En attente de logs...</em>"
-        }
+        ${[...backendLogs.slice(-15), ...frontendLogs.slice(-15)]
+      .map((l) => l.replace(/</g, "&lt;"))
+      .join("<br>") || "<em>En attente de logs...</em>"
+    }
       </div>
     </div>
   </div>
@@ -556,6 +595,7 @@ const server = createServer((req, res) => {
       await new Promise((r) => setTimeout(r, 1000));
       startBackend();
       startFrontend();
+      startReadinessPoller();
       startupMessage =
         "♻️ Redémarré manuellement à " + new Date().toLocaleTimeString("fr-FR");
     }, 1500);
@@ -583,6 +623,7 @@ async function main() {
   } else {
     startBackend();
     startFrontend();
+    startReadinessPoller();
   }
 
   server.listen(LAUNCHER_PORT, () => {
@@ -607,7 +648,7 @@ async function main() {
         spawn("cmd", ["/c", "start", url], { shell: true });
       else if (platform === "darwin") spawn("open", [url]);
       else spawn("xdg-open", [url]);
-    } catch {}
+    } catch { }
   });
 }
 

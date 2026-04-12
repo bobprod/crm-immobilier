@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { ownersAPI, Owner, getOwnerFullName, formatOwnerAddress, formatOwnerContact, getOwnerStatusColor } from '@/shared/utils/owners-api';
+import apiClient from '@/shared/utils/api-client';
 
 export default function OwnerDetailsPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function OwnerDetailsPage() {
   const [owner, setOwner] = useState<Owner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [counts, setCounts] = useState({ properties: 0, mandates: 0, invoices: 0 });
 
   useEffect(() => {
     if (id) {
@@ -23,6 +25,20 @@ export default function OwnerDetailsPage() {
       setError(null);
       const data = await ownersAPI.getById(id as string);
       setOwner(data);
+
+      // Fetch related counts separately (PrismaService doesn't support _count)
+      try {
+        const [propsRes, mandatesRes, invoicesRes] = await Promise.allSettled([
+          apiClient.get('/properties', { params: { ownerId: id, limit: 0 } }),
+          apiClient.get('/mandates', { params: { ownerId: id, limit: 0 } }),
+          apiClient.get('/finance/invoices', { params: { ownerId: id, limit: 0 } }),
+        ]);
+        setCounts({
+          properties: propsRes.status === 'fulfilled' ? (Array.isArray(propsRes.value.data) ? propsRes.value.data.length : propsRes.value.data?.total || 0) : 0,
+          mandates: mandatesRes.status === 'fulfilled' ? (Array.isArray(mandatesRes.value.data) ? mandatesRes.value.data.length : mandatesRes.value.data?.total || 0) : 0,
+          invoices: invoicesRes.status === 'fulfilled' ? (Array.isArray(invoicesRes.value.data) ? invoicesRes.value.data.length : invoicesRes.value.data?.total || 0) : 0,
+        });
+      } catch (_) { /* counts are non-critical */ }
     } catch (err: any) {
       console.error('Erreur lors du chargement:', err);
       setError(err.message || 'Erreur lors du chargement du propriétaire');
@@ -152,6 +168,12 @@ export default function OwnerDetailsPage() {
             </div>
             <div className="mt-4 flex space-x-3 md:mt-0 md:ml-4">
               <Link
+                href={`/mandates/new?ownerId=${owner.id}`}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+              >
+                + Mandat
+              </Link>
+              <Link
                 href={`/owners/${owner.id}/edit`}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -243,19 +265,19 @@ export default function OwnerDetailsPage() {
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Propriétés</dt>
                     <dd className="mt-1 text-2xl font-semibold text-gray-900">
-                      {owner._count?.properties || 0}
+                      {counts.properties}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Mandats</dt>
                     <dd className="mt-1 text-2xl font-semibold text-gray-900">
-                      {owner._count?.mandates || 0}
+                      {counts.mandates}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Factures</dt>
                     <dd className="mt-1 text-2xl font-semibold text-gray-900">
-                      {owner._count?.invoices || 0}
+                      {counts.invoices}
                     </dd>
                   </div>
                 </dl>

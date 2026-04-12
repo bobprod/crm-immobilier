@@ -5,5 +5,5 @@
  * Phase 2: UX/UI Restructuring
  */
 
-export { Sidebar, type SidebarProps, type MenuItem } from './Sidebar';
+export { Sidebar, type SidebarProps } from './Sidebar';
 export { MainLayout, type MainLayoutProps } from './MainLayout';

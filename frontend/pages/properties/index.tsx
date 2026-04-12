@@ -1,10 +1,10 @@
-import { MainLayout } from '@/shared/components/layout';
-import { PropertyList } from '@/modules/business/properties/components/PropertyList';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function PropertiesPage() {
-  return (
-    <MainLayout title="Propriétés" breadcrumbs={[{ label: 'Propriétés' }]}>
-      <PropertyList />
-    </MainLayout>
-  );
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/gestion-immobiliere?tab=properties');
+  }, []);
+  return null;
 }

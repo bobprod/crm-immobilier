@@ -105,29 +105,33 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
     setIsAddingToCrm(leadId);
 
     try {
-      // Créer un prospect dans le CRM
-      const response = await apiClient.post('/prospects', {
-        firstName: lead.name.split(' ')[0] || lead.name,
-        lastName: lead.name.split(' ').slice(1).join(' ') || '',
-        email: lead.email || undefined,
-        phone: lead.phone || undefined,
-        city: lead.location?.city || undefined,
-        address: lead.location?.address || undefined,
-        budget: lead.budget ? {
-          min: lead.budget.min,
-          max: lead.budget.max,
-        } : undefined,
-        propertyType: lead.propertyInterest || undefined,
-        source: `prospection-ai:${prospectionResult.id}`,
-        sourceDetails: lead.source || undefined,
-        confidence: lead.confidence,
-        status: 'new',
-        notes: `Lead généré par prospection IA\nConfiance: ${lead.confidence}%\nSource: ${lead.source || 'N/A'}`,
-      });
+      // Utiliser l'endpoint de conversion avec déduplication
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/prospecting-ai/${prospectionResult.id}/convert-to-prospects`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ leadIds: [leadId] }),
+        }
+      );
 
-      const prospect = response.data;
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ message: 'Erreur serveur' }));
+        throw new Error(err.message);
+      }
 
-      alert(`✅ Lead ajouté au CRM avec succès!\n\nProspect créé: ${prospect.firstName} ${prospect.lastName}\nID: ${prospect.id}`);
+      const result = await response.json();
+
+      if (result.created > 0) {
+        alert(`✅ Lead "${lead.name}" ajouté au CRM avec succès!`);
+      } else if (result.merged > 0) {
+        alert(`✅ Lead "${lead.name}" fusionné avec un prospect existant.`);
+      } else {
+        alert(`ℹ️ Lead "${lead.name}" déjà présent dans le CRM.`);
+      }
     } catch (error) {
       console.error('Erreur lors de l\'ajout au CRM:', error);
       alert(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible d\'ajouter le lead au CRM'}`);

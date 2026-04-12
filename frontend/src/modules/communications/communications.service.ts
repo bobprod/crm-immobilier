@@ -2,7 +2,7 @@ import apiClient from '@/shared/utils/backend-api';
 
 export interface Communication {
   id: string;
-  type: 'email' | 'sms' | 'whatsapp';
+  type: 'email' | 'sms' | 'whatsapp' | 'messenger' | 'instagram' | 'linkedin' | 'other';
   to: string;
   from?: string;
   subject?: string;

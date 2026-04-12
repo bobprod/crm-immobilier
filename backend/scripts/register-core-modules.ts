@@ -158,15 +158,73 @@ const modulesToRegister: ModuleManifestLite[] = [
                 path: '/communications-dashboard',
                 icon: 'MessageSquare',
                 order: 30,
+                children: [
+                    {
+                        label: 'Email',
+                        path: '/communications/email',
+                        icon: 'Mail',
+                        order: 301,
+                    },
+                    {
+                        label: 'Templates',
+                        path: '/communications/templates',
+                        icon: 'FileText',
+                        order: 302,
+                    },
+                ],
+            },
+            {
+                label: 'WhatsApp',
+                path: '/communication/whatsapp',
+                icon: 'MessageCircle',
+                order: 32,
+                children: [
+                    {
+                        label: 'Conversations',
+                        path: '/communication/whatsapp/conversations',
+                        icon: 'MessagesSquare',
+                        order: 321,
+                    },
+                    {
+                        label: 'Contacts',
+                        path: '/communication/whatsapp/contacts',
+                        icon: 'Users',
+                        order: 322,
+                    },
+                    {
+                        label: 'Campagnes',
+                        path: '/communication/whatsapp/campaigns',
+                        icon: 'Send',
+                        order: 323,
+                    },
+                    {
+                        label: 'Templates',
+                        path: '/communication/whatsapp/templates',
+                        icon: 'FileText',
+                        order: 324,
+                    },
+                    {
+                        label: 'Analytics',
+                        path: '/communication/whatsapp/analytics',
+                        icon: 'BarChart3',
+                        order: 325,
+                    },
+                    {
+                        label: 'Configuration',
+                        path: '/communication/whatsapp/config',
+                        icon: 'Settings',
+                        order: 326,
+                    },
+                ],
             },
             {
                 label: 'Notifications',
                 path: '/notifications',
                 icon: 'Bell',
-                order: 31,
+                order: 33,
             },
         ],
-        permissions: ['communications:read', 'notifications:read'],
+        permissions: ['communications:read', 'notifications:read', 'whatsapp:read'],
     },
 
     // ════════════════════════════════════════════════════════════════
@@ -175,7 +233,7 @@ const modulesToRegister: ModuleManifestLite[] = [
     {
         code: 'marketing-suite',
         name: 'Marketing & Analytiques',
-        version: '1.0.0',
+        version: '1.1.0',
         category: 'MARKETING',
         description: 'Campagnes marketing, tracking, analytiques et outils IA.',
         menus: [
@@ -184,6 +242,52 @@ const modulesToRegister: ModuleManifestLite[] = [
                 path: '/marketing-dashboard',
                 icon: 'TrendingUp',
                 order: 40,
+                children: [
+                    {
+                        label: 'Campagnes',
+                        path: '/marketing/campaigns',
+                        icon: 'Megaphone',
+                        order: 401,
+                    },
+                    {
+                        label: 'Tracking',
+                        path: '/marketing/tracking',
+                        icon: 'Activity',
+                        order: 402,
+                        children: [
+                            {
+                                label: 'Analytics',
+                                path: '/marketing/tracking/analytics',
+                                icon: 'BarChart3',
+                                order: 4021,
+                            },
+                            {
+                                label: 'Temps réel',
+                                path: '/marketing/tracking/realtime',
+                                icon: 'Radio',
+                                order: 4022,
+                            },
+                            {
+                                label: 'Heatmap',
+                                path: '/marketing/tracking/heatmap',
+                                icon: 'Flame',
+                                order: 4023,
+                            },
+                            {
+                                label: 'Attribution',
+                                path: '/marketing/tracking/attribution',
+                                icon: 'GitBranch',
+                                order: 4024,
+                            },
+                            {
+                                label: 'A/B Tests',
+                                path: '/marketing/tracking/ab-tests',
+                                icon: 'FlaskConical',
+                                order: 4025,
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 label: 'Analytiques',
@@ -208,6 +312,26 @@ const modulesToRegister: ModuleManifestLite[] = [
                 path: '/investment',
                 icon: 'LineChart',
                 order: 44,
+                children: [
+                    {
+                        label: 'Projets',
+                        path: '/investment/projects',
+                        icon: 'FolderOpen',
+                        order: 441,
+                    },
+                    {
+                        label: 'Comparaison',
+                        path: '/investment/compare',
+                        icon: 'Scale',
+                        order: 442,
+                    },
+                    {
+                        label: 'Alertes',
+                        path: '/investment/alerts',
+                        icon: 'AlertTriangle',
+                        order: 443,
+                    },
+                ],
             },
         ],
         permissions: ['marketing:read', 'analytics:read', 'ai:read'],
@@ -285,9 +409,9 @@ const modulesToRegister: ModuleManifestLite[] = [
     {
         code: 'admin-suite',
         name: 'Administration',
-        version: '1.0.0',
+        version: '1.1.0',
         category: 'BUSINESS',
-        description: 'Gestion du personnel et des paramètres de l\'agence.',
+        description: 'Gestion du personnel, paramètres, facturation IA et orchestrateur.',
         menus: [
             {
                 label: 'Personnel',
@@ -301,9 +425,92 @@ const modulesToRegister: ModuleManifestLite[] = [
                 icon: 'Settings',
                 order: 999,
                 requiredRole: 'ADMIN',
+                children: [
+                    {
+                        label: 'Facturation IA',
+                        path: '/settings/ai-billing',
+                        icon: 'CreditCard',
+                        order: 9001,
+                        requiredRole: 'ADMIN',
+                        children: [
+                            {
+                                label: 'Tarification',
+                                path: '/settings/ai-billing/pricing',
+                                icon: 'DollarSign',
+                                order: 90011,
+                                requiredRole: 'ADMIN',
+                            },
+                            {
+                                label: 'Consommation',
+                                path: '/settings/ai-billing/usage',
+                                icon: 'BarChart3',
+                                order: 90012,
+                                requiredRole: 'ADMIN',
+                            },
+                            {
+                                label: 'Crédits',
+                                path: '/settings/ai-billing/credits',
+                                icon: 'Coins',
+                                order: 90013,
+                                requiredRole: 'ADMIN',
+                            },
+                            {
+                                label: 'Clés API',
+                                path: '/settings/ai-billing/api-keys',
+                                icon: 'Key',
+                                order: 90014,
+                                requiredRole: 'ADMIN',
+                            },
+                        ],
+                    },
+                    {
+                        label: 'Orchestrateur IA',
+                        path: '/settings/ai-orchestrator',
+                        icon: 'Cpu',
+                        order: 9002,
+                        requiredRole: 'ADMIN',
+                        children: [
+                            {
+                                label: 'Providers',
+                                path: '/settings/ai-orchestrator/providers',
+                                icon: 'Server',
+                                order: 90021,
+                                requiredRole: 'ADMIN',
+                            },
+                            {
+                                label: 'Requêtes',
+                                path: '/settings/ai-orchestrator/requests',
+                                icon: 'Network',
+                                order: 90022,
+                                requiredRole: 'ADMIN',
+                            },
+                        ],
+                    },
+                    {
+                        label: 'Modules',
+                        path: '/settings/modules',
+                        icon: 'Package',
+                        order: 9003,
+                        requiredRole: 'ADMIN',
+                    },
+                    {
+                        label: 'Fournisseurs LLM',
+                        path: '/settings/llm-providers',
+                        icon: 'Brain',
+                        order: 9004,
+                        requiredRole: 'ADMIN',
+                    },
+                    {
+                        label: 'Configuration',
+                        path: '/settings/config',
+                        icon: 'Wrench',
+                        order: 9005,
+                        requiredRole: 'ADMIN',
+                    },
+                ],
             },
         ],
-        permissions: ['personnel:read', 'settings:read'],
+        permissions: ['personnel:read', 'settings:read', 'ai-billing:read', 'ai-orchestrator:read'],
     },
 ];
 

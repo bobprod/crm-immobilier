@@ -4,6 +4,7 @@ import {
   ProspectionPanelState,
   ProspectionPanelStateData,
   ProspectionResult,
+  ProspectionLead,
   StartProspectionRequest,
   StartProspectionResponse,
   ConvertToProspectsResponse,
@@ -29,24 +30,24 @@ async function startProspection(
     // Include appropriate fields based on mode
     ...(config.inputMode === 'urls'
       ? {
-          urls: config.urls,
-          options: {
-            maxCost: config.campaignSettings.maxCost,
-            timeout: config.campaignSettings.timeout || 300,
-          },
-        }
+        urls: config.urls,
+        options: {
+          maxCost: config.campaignSettings.maxCost,
+          timeout: config.campaignSettings.timeout || 300,
+        },
+      }
       : {
-          zone: config.zone,
-          targetType: config.targetType,
-          propertyType: config.propertyType,
-          budget: config.budget,
-          keywords: config.keywords,
-          maxLeads: config.campaignSettings.maxLeads,
-          options: {
-            maxCost: config.campaignSettings.maxCost,
-            timeout: config.campaignSettings.timeout || 300,
-          },
-        }),
+        zone: config.zone,
+        targetType: config.targetType,
+        propertyType: config.propertyType,
+        budget: config.budget,
+        keywords: config.keywords,
+        maxLeads: config.campaignSettings.maxLeads,
+        options: {
+          maxCost: config.campaignSettings.maxCost,
+          timeout: config.campaignSettings.timeout || 300,
+        },
+      }),
   };
 
   const response = await fetch(`${API_BASE_URL}/api/prospecting-ai/start`, {
@@ -222,58 +223,47 @@ function validateConfiguration(config: Partial<ProspectionConfiguration>): Confi
 }
 
 // ============================================================================
-// MOCK FUNNEL DATA (TODO: Replace with real data from backend)
+// FUNNEL DATA COMPUTED FROM REAL LEAD ATTRIBUTES
 // ============================================================================
 
-function generateMockFunnelData(prospectionId: string, totalLeads: number): ConversionFunnelData {
-  // Taux de conversion simulés
-  const contactedRate = 0.489; // 48.9%
-  const qualifiedRate = 0.255; // 25.5%
-  const convertedRate = 0.064; // 6.4%
+function computeFunnelData(prospectionId: string, leads: ProspectionLead[]): ConversionFunnelData {
+  const totalLeads = leads.length;
+  if (totalLeads === 0) {
+    return {
+      prospectionId,
+      totalLeads: 0,
+      stages: [],
+      conversionRate: 0,
+    };
+  }
 
-  const contacted = Math.round(totalLeads * contactedRate);
-  const qualified = Math.round(totalLeads * qualifiedRate);
-  const converted = Math.round(totalLeads * convertedRate);
-  const rejected = totalLeads - contacted - qualified - converted;
+  // Contactable: leads with email or phone
+  const contacted = leads.filter((l) => l.email || l.phone).length;
+  // Qualified: contactable + confidence >= 60
+  const qualified = leads.filter((l) => (l.email || l.phone) && l.confidence >= 60).length;
+  // High value: qualified + confidence >= 80 (ready to convert)
+  const converted = leads.filter((l) => (l.email || l.phone) && l.confidence >= 80).length;
+  // Rejected: confidence < 30
+  const rejected = leads.filter((l) => l.confidence < 30).length;
+
+  const avgBudget = leads.reduce((sum, l) => {
+    if (l.budget) return sum + ((l.budget.min + l.budget.max) / 2);
+    return sum;
+  }, 0) / totalLeads;
 
   return {
     prospectionId,
     totalLeads,
     stages: [
-      {
-        stage: 'new',
-        count: totalLeads,
-        percentage: 100,
-        avgTimeInStage: 0,
-      },
-      {
-        stage: 'contacted',
-        count: contacted,
-        percentage: (contacted / totalLeads) * 100,
-        avgTimeInStage: 24, // 1 jour
-      },
-      {
-        stage: 'qualified',
-        count: qualified,
-        percentage: (qualified / totalLeads) * 100,
-        avgTimeInStage: 72, // 3 jours
-      },
-      {
-        stage: 'converted',
-        count: converted,
-        percentage: (converted / totalLeads) * 100,
-        avgTimeInStage: 288, // 12 jours
-      },
-      {
-        stage: 'rejected',
-        count: rejected,
-        percentage: (rejected / totalLeads) * 100,
-        avgTimeInStage: 48, // 2 jours
-      },
+      { stage: 'new', count: totalLeads, percentage: 100, avgTimeInStage: 0 },
+      { stage: 'contacted', count: contacted, percentage: (contacted / totalLeads) * 100, avgTimeInStage: 0 },
+      { stage: 'qualified', count: qualified, percentage: (qualified / totalLeads) * 100, avgTimeInStage: 0 },
+      { stage: 'converted', count: converted, percentage: (converted / totalLeads) * 100, avgTimeInStage: 0 },
+      { stage: 'rejected', count: rejected, percentage: (rejected / totalLeads) * 100, avgTimeInStage: 0 },
     ],
-    conversionRate: convertedRate * 100,
-    totalValue: converted * 283333, // ~283k TND par conversion (moyenne)
-    avgConversionTime: 12, // jours
+    conversionRate: totalLeads > 0 ? (converted / totalLeads) * 100 : 0,
+    totalValue: converted * Math.round(avgBudget || 250000),
+    avgConversionTime: 0,
   };
 }
 
@@ -390,8 +380,8 @@ export function useAiProspection(authToken: string): UseAiProspectionReturn {
               pollingIntervalRef.current = null;
             }
 
-            // Generate funnel data
-            const funnel = generateMockFunnelData(prospectionId, result.metadata.totalLeads);
+            // Generate funnel data from real lead attributes
+            const funnel = computeFunnelData(prospectionId, result.leads || []);
             setFunnelData(funnel);
           } else if (result.status === 'failed' || result.status === 'timeout') {
             setPanelState('ERROR');
@@ -524,7 +514,7 @@ export function useAiProspection(authToken: string): UseAiProspectionReturn {
 
     try {
       const response = await convertToProspects(prospectionResult.id, authToken);
-      alert(`${response.converted} leads convertis en prospects CRM avec succès!`);
+      alert(response.message || `${response.created} créés, ${response.merged} fusionnés, ${response.skipped} ignorés.`);
     } catch (err) {
       console.error('Convert error:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors de la conversion');

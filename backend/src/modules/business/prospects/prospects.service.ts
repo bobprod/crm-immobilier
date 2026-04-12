@@ -30,7 +30,7 @@ export class ProspectsService {
     private prisma: PrismaService,
     private historyService: ProspectHistoryService,
     private eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   /**
    * Calculate prospect score (0-100)
@@ -130,28 +130,9 @@ export class ProspectsService {
   }
 
   async findOne(id: string, userId: string, includes?: string[]) {
-    const include: any = {};
-
-    if (!includes || includes.length === 0) {
-      // Par défaut : matches et appointments
-      include.matches = { include: { properties: true } };
-      include.appointments = true;
-    } else {
-      if (includes.includes('matches')) include.matches = { include: { properties: true } };
-      if (includes.includes('appointments')) include.appointments = true;
-      if (includes.includes('interactions')) include.interactions = { orderBy: { date: 'desc' } };
-      if (includes.includes('timeline'))
-        include.timelineStages = { orderBy: { enteredAt: 'desc' } };
-      if (includes.includes('preferences')) include.preferences_details = true;
-      if (includes.includes('documents')) include.documents = true;
-      if (includes.includes('tasks')) include.tasks = true;
-      if (includes.includes('communications'))
-        include.communications = { orderBy: { sentAt: 'desc' } };
-    }
-
+    // Flat query — no include (custom PrismaService shim doesn't support it)
     const prospect = await this.prisma.prospects.findFirst({
       where: { id, userId, deletedAt: null },
-      include,
     });
 
     return ErrorHandler.ensureExists(prospect, 'Prospect', id);
@@ -298,13 +279,6 @@ export class ProspectsService {
           take,
           ...cursorQuery,
           orderBy: { createdAt: 'desc' },
-          include: {
-            matches: {
-              include: {
-                properties: true,
-              },
-            },
-          },
         }),
       () => this.prisma.prospects.count({ where }),
     );
@@ -334,28 +308,26 @@ export class ProspectsService {
    * Advanced statistics
    */
   async getStats(userId: string) {
-    const [total, active, converted, qualified, rejected, avgScore, byType, bySource] =
+    const [total, active, converted, qualified, rejected, allProspects] =
       await Promise.all([
         this.prisma.prospects.count({ where: { userId, deletedAt: null } }),
         this.prisma.prospects.count({ where: { userId, status: 'active', deletedAt: null } }),
         this.prisma.prospects.count({ where: { userId, status: 'converted', deletedAt: null } }),
         this.prisma.prospects.count({ where: { userId, status: 'qualified', deletedAt: null } }),
         this.prisma.prospects.count({ where: { userId, status: 'rejected', deletedAt: null } }),
-        this.prisma.prospects.aggregate({
-          where: { userId, deletedAt: null },
-          _avg: { score: true },
-        }),
-        this.prisma.prospects.groupBy({
-          by: ['type'],
-          where: { userId, deletedAt: null },
-          _count: true,
-        }),
-        this.prisma.prospects.groupBy({
-          by: ['source'],
-          where: { userId, deletedAt: null, source: { not: null } },
-          _count: true,
-        }),
+        this.prisma.prospects.findMany({ where: { userId, deletedAt: null } }),
       ]);
+
+    // Calculate avg score, byType, bySource in memory
+    let totalScore = 0;
+    const byTypeMap: Record<string, number> = {};
+    const bySourceMap: Record<string, number> = {};
+    for (const p of allProspects as any[]) {
+      totalScore += p.score || 0;
+      byTypeMap[p.type] = (byTypeMap[p.type] || 0) + 1;
+      if (p.source) bySourceMap[p.source] = (bySourceMap[p.source] || 0) + 1;
+    }
+    const avgScore = total > 0 ? totalScore / total : 0;
 
     const conversionRate = total > 0 ? (converted / total) * 100 : 0;
 
@@ -365,13 +337,13 @@ export class ProspectsService {
       converted,
       qualified,
       rejected,
-      avgScore: avgScore._avg.score || 0,
+      avgScore: Math.round(avgScore * 100) / 100,
       conversionRate: Math.round(conversionRate * 100) / 100,
-      byType: byType.reduce((acc, item) => ({ ...acc, [item.type]: item._count }), {}),
-      bySource: bySource.reduce((acc, item) => ({ ...acc, [item.source!]: item._count }), {}),
+      byType: byTypeMap,
+      bySource: bySourceMap,
       // Extra fields expected by frontend ProspectStats interface
       activeProspects: active,
-      averageScore: avgScore._avg.score || 0,
+      averageScore: Math.round(avgScore * 100) / 100,
       byStatus: { active, converted, qualified, rejected },
       convertedThisMonth: converted,
       newThisMonth: 0,
@@ -396,40 +368,38 @@ export class ProspectsService {
 
     const allProspects = await this.prisma.prospects.findMany({
       where: { userId, deletedAt: null },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        type: true,
-        status: true,
-        score: true,
-        source: true,
-        budget: true,
-        lostReason: true,
-        createdAt: true,
-        updatedAt: true,
-        interactions: {
-          select: {
-            nextActionDate: true,
-            nextAction: true,
-            channel: true,
-          },
-          orderBy: { nextActionDate: 'asc' },
-          where: { nextActionDate: { gte: new Date() } },
-          take: 1,
-        },
-      },
       orderBy: { updatedAt: 'desc' },
     });
 
+    // Fetch next interactions separately (flat query, no nested select)
+    const prospectIds = allProspects.map((p: any) => p.id);
+    let interactionsMap = new Map<string, any>();
+    if (prospectIds.length > 0) {
+      try {
+        const interactions = await this.prisma.prospect_interactions.findMany({
+          where: { prospectId: { in: prospectIds }, nextActionDate: { gte: new Date() } },
+          orderBy: { nextActionDate: 'asc' },
+        });
+        for (const inter of interactions as any[]) {
+          if (!interactionsMap.has(inter.prospectId)) {
+            interactionsMap.set(inter.prospectId, inter);
+          }
+        }
+      } catch (_) {
+        // Table may not exist, gracefully degrade
+      }
+    }
+
     const columns = PIPELINE_STAGES.map((stage) => {
       const cards = allProspects
-        .filter((p) => stage.statuses.includes(p.status.toLowerCase()))
-        .map((p) => ({
-          ...p,
-          nextActivity: p.interactions[0] || null,
+        .filter((p: any) => stage.statuses.includes((p.status || '').toLowerCase()))
+        .map((p: any) => ({
+          id: p.id, firstName: p.firstName, lastName: p.lastName,
+          email: p.email, phone: p.phone, type: p.type,
+          status: p.status, score: p.score, source: p.source,
+          budget: p.budget, lostReason: p.lostReason,
+          createdAt: p.createdAt, updatedAt: p.updatedAt,
+          nextActivity: interactionsMap.get(p.id) || null,
         }));
 
       return {
@@ -443,8 +413,8 @@ export class ProspectsService {
     });
 
     // Prospects not in any stage (catch-all)
-    const assignedIds = new Set(columns.flatMap((col) => col.cards.map((c) => c.id)));
-    const unassigned = allProspects.filter((p) => !assignedIds.has(p.id));
+    const assignedIds = new Set(columns.flatMap((col) => col.cards.map((c: any) => c.id)));
+    const unassigned = allProspects.filter((p: any) => !assignedIds.has(p.id));
 
     return {
       columns,
@@ -453,8 +423,8 @@ export class ProspectsService {
       conversionRate:
         allProspects.length > 0
           ? Math.round(
-              ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
-            ) / 100
+            ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
+          ) / 100
           : 0,
     };
   }

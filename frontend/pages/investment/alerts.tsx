@@ -46,7 +46,7 @@ export default function InvestmentAlertsPage() {
 
   const loadAlerts = async () => {
     try {
-      const res = await apiClient.get('/investment/alerts');
+      const res = await apiClient.get('/investment-intelligence/alerts');
       setAlerts(res.data?.data || res.data || []);
     } catch (error) {
       console.error('Erreur chargement alertes:', error);
@@ -57,7 +57,7 @@ export default function InvestmentAlertsPage() {
 
   const handleCreate = async () => {
     try {
-      await apiClient.post('/investment/alerts', {
+      await apiClient.post('/investment-intelligence/alerts', {
         name: formData.name,
         criteria: {
           minYield: formData.minYield ? parseFloat(formData.minYield) : undefined,
@@ -75,7 +75,7 @@ export default function InvestmentAlertsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await apiClient.delete(`/investment/alerts/${id}`);
+      await apiClient.delete(`/investment-intelligence/alerts/${id}`);
       loadAlerts();
     } catch (error) {
       console.error('Erreur suppression alerte:', error);
@@ -84,7 +84,7 @@ export default function InvestmentAlertsPage() {
 
   const toggleAlert = async (alert: Alert) => {
     try {
-      await apiClient.patch(`/investment/alerts/${alert.id}`, {
+      await apiClient.patch(`/investment-intelligence/alerts/${alert.id}`, {
         isActive: !alert.isActive,
       });
       loadAlerts();

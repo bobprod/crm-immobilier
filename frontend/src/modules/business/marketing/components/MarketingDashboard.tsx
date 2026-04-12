@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 interface MarketingDashboardProps {
     language?: 'fr' | 'en';
@@ -8,13 +9,10 @@ type TabType = 'campaigns' | 'tracking' | 'seo';
 
 /**
  * Module Marketing - Dashboard avec tabs Campagnes, Tracking et SEO
- * Format identique au CommunicationsDashboard et autres modules
  */
 export const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ language = 'fr' }) => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<TabType>('campaigns');
-    const [campaigns, setCampaigns] = useState<any[]>([]);
-    const [tracking, setTracking] = useState<any[]>([]);
-    const [seo, setSeo] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Load data based on active tab
@@ -69,8 +67,8 @@ export const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ language
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`px-6 py-3 font-medium transition-colors ${activeTab === tab.id
-                                ? 'text-red-600 border-b-2 border-red-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                            ? 'text-red-600 border-b-2 border-red-600'
+                            : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         <span className="mr-2">{tab.icon}</span>
@@ -136,9 +134,20 @@ export const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ language
                             <span className="text-6xl mb-4 block">🎯</span>
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune campagne créée</h3>
                             <p className="text-gray-600 mb-6">Lancez votre première campagne marketing</p>
-                            <button className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-orange-700 transition">
-                                + Créer une campagne
-                            </button>
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={() => router.push('/marketing/campaigns/new')}
+                                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-orange-700 transition"
+                                >
+                                    + Créer une campagne
+                                </button>
+                                <button
+                                    onClick={() => router.push('/marketing/campaigns')}
+                                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
+                                >
+                                    Voir toutes les campagnes
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -193,11 +202,41 @@ export const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ language
                             </div>
                         </div>
 
+                        {/* Quick Actions */}
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Outils de Tracking</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {[
+                                    { label: 'Configuration Pixels', path: '/marketing/tracking', icon: '⚙️' },
+                                    { label: 'Analytics en direct', path: '/marketing/tracking/realtime', icon: '📡' },
+                                    { label: 'Heatmap', path: '/marketing/tracking/heatmap', icon: '🔥' },
+                                    { label: 'Attribution', path: '/marketing/tracking/attribution', icon: '🔀' },
+                                    { label: 'A/B Tests', path: '/marketing/tracking/ab-tests', icon: '🧪' },
+                                    { label: 'Analytics détaillés', path: '/marketing/tracking/analytics', icon: '📈' },
+                                ].map((tool) => (
+                                    <button
+                                        key={tool.path}
+                                        onClick={() => router.push(tool.path)}
+                                        className="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 hover:border-blue-200 border border-gray-200 transition text-left"
+                                    >
+                                        <span className="text-2xl block mb-2">{tool.icon}</span>
+                                        <span className="text-sm font-medium text-gray-700">{tool.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Empty State */}
                         <div className="bg-white rounded-lg shadow p-12 text-center">
                             <span className="text-6xl mb-4 block">📊</span>
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune donnée de tracking</h3>
-                            <p className="text-gray-600 mb-6">Les données de tracking s'afficheront ici une fois collectées</p>
+                            <p className="text-gray-600 mb-6">Configurez vos pixels pour commencer à collecter des données</p>
+                            <button
+                                onClick={() => router.push('/marketing/tracking')}
+                                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition"
+                            >
+                                Configurer le tracking
+                            </button>
                         </div>
                     </div>
                 )}
@@ -257,7 +296,10 @@ export const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ language
                             <span className="text-6xl mb-4 block">🔍</span>
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Aucune analyse SEO</h3>
                             <p className="text-gray-600 mb-6">Lancez une analyse SEO pour voir vos données</p>
-                            <button className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition">
+                            <button
+                                onClick={() => router.push('/seo-ai')}
+                                className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-teal-700 transition"
+                            >
                                 + Lancer une analyse
                             </button>
                         </div>

@@ -72,7 +72,28 @@ export default function AnalyticsPage() {
     setError(null);
     try {
       const response = await apiClient.get('/analytics/dashboard');
-      setAnalytics(response.data || {});
+      const data = response.data || {};
+      // Map nested API response to flat analytics structure
+      setAnalytics({
+        totalProspects: data.prospects?.total ?? 0,
+        totalProperties: data.properties?.total ?? 0,
+        totalRevenue: 0, // Revenue calculated from transactions
+        conversionRate: data.prospects?.conversionRate ?? 0,
+        prospectsByStatus: (data.prospects?.byStatus || []).reduce(
+          (acc: Record<string, number>, item: any) => {
+            acc[item.status] = item.count;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        propertiesByType: (data.properties?.byType || []).reduce(
+          (acc: Record<string, number>, item: any) => {
+            acc[item.type] = item.count;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+      });
     } catch (err: any) {
       console.error('Erreur chargement overview:', err);
       if (err.response?.status === 401) {

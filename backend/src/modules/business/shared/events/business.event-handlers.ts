@@ -16,6 +16,7 @@ import {
   PropertyPublishedEvent,
   PropertyCreatedEvent,
   OwnerCreatedEvent,
+  ProspectConvertedEvent,
 } from './business.events';
 import { BusinessNotificationHelper } from '../notification.helper';
 import { BusinessActivityLogger } from '../activity-logger.helper';
@@ -42,7 +43,7 @@ export class BusinessEventHandlers {
     private readonly activityLogger: BusinessActivityLogger,
     private readonly emailService: EmailService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   // ========== MANDATE EVENT HANDLERS ==========
 
@@ -393,6 +394,50 @@ export class BusinessEventHandlers {
       }
     } catch (error) {
       this.logger.error('Error handling property.created matching event:', error);
+    }
+  }
+
+  // ========== PROSPECT CONVERSION HANDLER ==========
+
+  @OnEvent('prospect.converted')
+  async handleProspectConverted(event: ProspectConvertedEvent) {
+    this.logger.debug(`📢 Event: prospect.converted - ${event.prospect?.firstName} ${event.prospect?.lastName}`);
+
+    try {
+      const prospect = event.prospect;
+      const reference = `TX-${Date.now().toString(36).toUpperCase()}`;
+
+      // Auto-create a draft transaction from the converted prospect
+      await this.prisma.transaction.create({
+        data: {
+          reference,
+          type: prospect.transactionType || 'sale',
+          status: 'offer_received',
+          buyerName: `${prospect.firstName || ''} ${prospect.lastName || ''}`.trim(),
+          buyerEmail: prospect.email || null,
+          buyerPhone: prospect.phone || null,
+          propertyId: prospect.propertyId || null,
+          offerPrice: prospect.budget ? Number(prospect.budget) : 0,
+          userId: event.userId,
+          notes: `Transaction auto-créée depuis le prospect converti: ${prospect.firstName} ${prospect.lastName}`,
+        },
+      });
+
+      this.logger.log(`✅ Draft transaction ${reference} created from prospect conversion`);
+
+      // Notification
+      await this.prisma.notification.create({
+        data: {
+          userId: event.userId,
+          type: 'transaction_created',
+          title: `Nouvelle transaction créée`,
+          message: `La transaction ${reference} a été auto-créée suite à la conversion du prospect ${prospect.firstName} ${prospect.lastName}`,
+          metadata: { reference, prospectId: prospect.id },
+          isRead: false,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Error handling prospect.converted event:', error);
     }
   }
 }

@@ -1,9 +1,17 @@
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/router';
 import { MainLayout } from '@/shared/components/layout';
 import { ProtectedRoute } from '@/modules/core/auth/components/ProtectedRoute';
 import { apiClient } from '../../src/shared/utils/api-client-backend';
 
 const DEFAULT_CONVERSATION_TITLE = 'Nouvelle conversation';
+
+const ACTION_PROMPTS: Record<string, string> = {
+  estimate: 'Je souhaite estimer la valeur d\'un bien immobilier. Peux-tu m\'aider ?',
+  'market-analysis': 'Peux-tu analyser le marché immobilier actuel et me donner les tendances ?',
+  'write-listing': 'Aide-moi à rédiger une annonce immobilière professionnelle et attractive.',
+  'qualify-prospect': 'J\'ai un nouveau prospect à qualifier. Peux-tu m\'aider à évaluer son profil ?',
+};
 
 interface Message {
   id: string;
@@ -29,6 +37,7 @@ interface ErrorState {
 }
 
 export default function AIAssistant() {
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,11 +45,25 @@ export default function AIAssistant() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<ErrorState | null>(null);
+  const [actionHandled, setActionHandled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  // Pre-fill input from quick action query parameter
+  useEffect(() => {
+    if (!actionHandled && router.isReady) {
+      const action = router.query.action as string;
+      if (action && ACTION_PROMPTS[action]) {
+        setInputMessage(ACTION_PROMPTS[action]);
+        setActionHandled(true);
+        // Clean URL without reload
+        router.replace('/ai-assistant', undefined, { shallow: true });
+      }
+    }
+  }, [router.isReady, router.query.action, actionHandled]);
 
   useEffect(() => {
     scrollToBottom();

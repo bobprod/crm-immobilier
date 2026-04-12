@@ -1,261 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import * as LucideIcons from 'lucide-react';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
+import { useMenu } from '@/shared/hooks/useMenu';
+import type { DynamicMenuItem } from '@/shared/utils/module-registry-api';
 import {
-  LayoutDashboard,
-  Search,
-  Target,
-  CalendarDays,
-  MessageSquare,
-  FileText,
-  HeartHandshake,
-  Megaphone,
-  TrendingUp,
-  Globe,
-  BarChart3,
-  Bot,
-  Bell,
-  Settings,
-  KeyRound,
-  Puzzle,
-  Wrench,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
   Building2,
   UserCircle,
-  Users,
+  Circle,
 } from 'lucide-react';
 
-/**
- * Sidebar Navigation Component
- *
- * Elegant sidebar navigation with:
- * - Lucide icons (professional, consistent)
- * - Dark theme for a sophisticated real estate look
- * - Hierarchical menu structure
- * - Active state highlighting
- * - Expandable sub-menus
- * - Notification badges
- * - Responsive (collapsible)
- */
-
-export interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  path?: string;
-  badge?: number;
-  subItems?: MenuItem[];
-}
-
 export interface SidebarProps {
-  /** Show sidebar collapsed (icons only) */
   collapsed?: boolean;
-  /** Callback when collapse state changes */
   onToggleCollapse?: () => void;
 }
 
-const MENU_ITEMS: MenuItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    path: '/dashboard',
-  },
-  {
-    id: 'prospection',
-    label: 'Prospection',
-    icon: Search,
-    path: '/prospection',
-  },
-  {
-    id: 'prospects',
-    label: 'Prospects',
-    icon: UserCircle,
-    path: '/prospects',
-  },
-  {
-    id: 'properties',
-    label: 'Propriétés',
-    icon: Building2,
-    path: '/properties',
-  },
-  {
-    id: 'matching',
-    label: 'Matching',
-    icon: Target,
-    path: '/matching',
-  },
-  {
-    id: 'planification',
-    label: 'Planification',
-    icon: CalendarDays,
-    path: '/planification',
-  },
-  {
-    id: 'communications',
-    label: 'Communications',
-    icon: MessageSquare,
-    path: '/communications-dashboard',
-  },
-  {
-    id: 'documents',
-    label: 'Documents',
-    icon: FileText,
-    path: '/documents',
-  },
-  {
-    id: 'transactions',
-    label: 'Transactions',
-    icon: HeartHandshake,
-    path: '/transactions-dashboard',
-  },
-  {
-    id: 'marketing',
-    label: 'Marketing',
-    icon: Megaphone,
-    path: '/marketing-dashboard',
-  },
-  {
-    id: 'investment',
-    label: 'Investissement',
-    icon: TrendingUp,
-    path: '/investment',
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    path: '/analytics',
-  },
-  {
-    id: 'personnel',
-    label: 'Personnel',
-    icon: Users,
-    path: '/personnel',
-  },
-  {
-    id: 'settings',
-    label: 'Paramètres',
-    icon: Settings,
-    subItems: [
-      {
-        id: 'settings-api-keys',
-        label: 'Clés API',
-        icon: KeyRound,
-        path: '/settings/ai-api-keys',
-      },
-      {
-        id: 'settings-modules',
-        label: 'Modules',
-        icon: Puzzle,
-        path: '/settings/modules',
-      },
-      {
-        id: 'settings-config',
-        label: 'Configuration',
-        icon: Wrench,
-        path: '/settings/config',
-      },
-      {
-        id: 'settings-integrations',
-        label: 'Intégrations',
-        icon: Globe,
-        path: '/settings/integrations',
-      },
-    ],
-  },
-];
-
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCollapse }) => {
   const router = useRouter();
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['prospection']));
+  const { menuItems, loading } = useMenu();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Auto-expand parent items when the current route matches a child
+  useEffect(() => {
+    const path = router.pathname;
+    const toExpand = new Set<string>();
+    const checkChildren = (items: DynamicMenuItem[]) => {
+      for (const item of items) {
+        if (item.children && item.children.length > 0) {
+          const childMatch = item.children.some(
+            (c) => path === c.path || path.startsWith(c.path + '/')
+          );
+          if (childMatch) toExpand.add(item.id);
+          // Check deeper nesting
+          for (const child of item.children) {
+            if (child.children && child.children.length > 0) {
+              const deepMatch = child.children.some(
+                (gc) => path === gc.path || path.startsWith(gc.path + '/')
+              );
+              if (deepMatch) {
+                toExpand.add(item.id);
+                toExpand.add(child.id);
+              }
+            }
+          }
+        }
+      }
+    };
+    checkChildren(menuItems);
+    if (toExpand.size > 0) {
+      setExpandedItems((prev) => new Set([...prev, ...toExpand]));
+    }
+  }, [router.pathname, menuItems]);
 
   const isActive = (path?: string) => {
     if (!path) return false;
+    // Support query params in menu paths (e.g. /gestion-immobiliere?tab=owners)
+    if (path.includes('?')) {
+      const [basePath, query] = path.split('?');
+      if (router.pathname !== basePath) return false;
+      const params = new URLSearchParams(query);
+      for (const [key, value] of params.entries()) {
+        if (router.query[key] !== value) return false;
+      }
+      return true;
+    }
     return router.pathname === path || router.pathname.startsWith(path + '/');
   };
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
-      }
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
       return next;
     });
   };
 
-  const renderMenuItem = (item: MenuItem, level: number = 0) => {
+  const getIcon = (iconName?: string): React.ElementType => {
+    if (!iconName) return Circle;
+    const Icon = (LucideIcons as any)[iconName];
+    return Icon || Circle;
+  };
+
+  const renderMenuItem = (item: DynamicMenuItem, level: number = 0) => {
+    // Render section headers
+    if (item.moduleId === 'section') {
+      if (collapsed) return null;
+      return (
+        <div key={item.id} className="px-4 pt-5 pb-1">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            {item.label}
+          </span>
+        </div>
+      );
+    }
+
     const active = isActive(item.path);
-    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.has(item.id);
-    const Icon = item.icon;
+    const Icon = getIcon(item.icon);
 
     return (
       <div key={item.id}>
-        {/* Main Item */}
         <div
           className={`
-            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-1
-            ${level > 0 ? 'pl-9 pr-3 py-2' : 'px-3 py-2.5'}
-            ${
-              active
-                ? 'bg-white/15 text-white'
-                : 'text-slate-300 hover:bg-white/10 hover:text-white'
-            }
+            flex items-center gap-3 cursor-pointer transition-all duration-150 rounded-lg mx-2 my-0.5
+            ${level === 0 ? 'px-3 py-2.5' : level === 1 ? 'pl-9 pr-3 py-2' : 'pl-12 pr-3 py-1.5'}
+            ${active ? 'bg-white/15 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'}
             ${collapsed ? 'justify-center px-2' : ''}
           `}
           onClick={() => {
-            if (hasSubItems) {
+            if (hasChildren) {
               toggleExpanded(item.id);
+              // Also navigate to the parent path
+              if (item.path) router.push(item.path);
             } else if (item.path) {
               router.push(item.path);
             }
           }}
         >
-          {/* Icon */}
           <Icon
             className={`flex-shrink-0 ${active ? 'text-amber-400' : 'text-slate-400'} ${level > 0 ? 'w-4 h-4' : 'w-5 h-5'}`}
           />
-
-          {/* Label & Badge */}
           {!collapsed && (
             <>
-              <span
-                className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'}`}
-              >
+              <span className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'} truncate`}>
                 {item.label}
               </span>
-
-              {/* Badge */}
-              {item.badge && (
-                <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center">
-                  {item.badge}
-                </span>
-              )}
-
-              {/* Expand Arrow */}
-              {hasSubItems && (
+              {hasChildren && (
                 <span className="text-slate-400">
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
+                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
               )}
             </>
           )}
         </div>
 
-        {/* Sub Items */}
-        {hasSubItems && isExpanded && !collapsed && (
+        {hasChildren && isExpanded && !collapsed && (
           <div className="mt-0.5">
-            {item.subItems!.map((subItem) => renderMenuItem(subItem, level + 1))}
+            {item.children!.map((child) => renderMenuItem(child, level + 1))}
           </div>
         )}
       </div>
@@ -271,9 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       `}
     >
       {/* Header */}
-      <div
-        className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}
-      >
+      <div className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}>
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
@@ -285,14 +169,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
             </div>
           </div>
         )}
-
         {collapsed && (
           <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
             <Building2 className="w-5 h-5 text-white" />
           </div>
         )}
-
-        {/* Toggle Button */}
         <button
           onClick={onToggleCollapse}
           className="p-1.5 hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-white"
@@ -302,9 +183,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
         </button>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation Menu - Dynamic from API */}
       <nav className="flex-1 overflow-y-auto py-4 px-1 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
-        <div className="space-y-0.5">{MENU_ITEMS.map((item) => renderMenuItem(item))}</div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400" />
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            {menuItems.map((item) => renderMenuItem(item))}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
