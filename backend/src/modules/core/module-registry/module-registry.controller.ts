@@ -24,7 +24,7 @@ export class ModuleRegistryController {
   constructor(
     private moduleRegistry: ModuleRegistryService,
     private prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * ═══════════════════════════════════════════════════════════
@@ -164,15 +164,25 @@ export class ModuleRegistryController {
       };
     }
 
-    const menu = await this.moduleRegistry.getMenuForAgency(
-      user.agencyId,
-      user.role,
-    );
+    try {
+      const menu = await this.moduleRegistry.getMenuForAgency(
+        user.agencyId,
+        user.role,
+      );
 
-    return {
-      menu,
-      count: menu.length,
-    };
+      return {
+        menu,
+        count: menu.length,
+      };
+    } catch (error) {
+      console.error('Error in getMyMenu:', {
+        userId: req.user?.userId,
+        agencyId: user?.agencyId,
+        role: user?.role,
+        error: error?.message || error,
+      });
+      throw error;
+    }
   }
 
   /**

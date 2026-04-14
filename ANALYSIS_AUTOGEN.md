@@ -1,8 +1,55 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-04-12T15:21:19.564Z
+Generated: 2026-04-08T05:47:51.044Z
 
 ## Markdown files (found)
-- README.md  —  mtime: 2026-04-09T21:42:17.792Z
+- AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md  —  mtime: 2026-01-25T22:38:27.407Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-24T21:53:29.269Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-24T21:53:29.274Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-24T21:53:29.278Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-24T21:53:29.280Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-02-16T19:55:51.503Z
+- ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
+- ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
+- ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
+- ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-01-11T23:34:25.897Z
+- ARCHITECTURE_QUALIFICATION.md  —  mtime: 2026-01-24T21:53:29.287Z
+- ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-01-01T20:00:57.976Z
+- ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-01-11T23:34:25.899Z
+- ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-01-11T23:34:25.902Z
+- BOUTONS_TEST_AJOUTES.md  —  mtime: 2026-01-24T21:53:29.290Z
+- BUTTON_FIX.md  —  mtime: 2026-01-24T21:53:29.298Z
+- CORRECTIONS_TECHNIQUES.md  —  mtime: 2026-01-24T21:53:29.302Z
+- DOCUMENTS_MODULE_DOCUMENTATION.md  —  mtime: 2026-01-25T22:38:27.407Z
+- FINAL_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.330Z
+- FIX_BOUTONS_TEST.md  —  mtime: 2026-01-24T21:53:29.332Z
+- FIX_ERROR_400.md  —  mtime: 2026-01-24T21:53:29.334Z
+- FLUX_UTILISATEUR.md  —  mtime: 2026-01-24T21:53:29.337Z
+- GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-01-24T21:53:29.339Z
+- IMPLEMENTATION_AI_API_KEYS.md  —  mtime: 2026-01-24T21:53:29.342Z
+- IMPLEMENTATION_PLANNING_MODULE.md  —  mtime: 2026-01-25T23:39:48.358Z
+- IMPLEMENTATION_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.344Z
+- IMPROVEMENTS.md  —  mtime: 2026-01-24T21:53:29.346Z
+- INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-01-01T20:00:58.007Z
+- MAJ_2026-01-17.md  —  mtime: 2026-01-24T21:53:29.348Z
+- PHASE_1_INTEGRATION_COMPLETE.md  —  mtime: 2026-01-24T21:53:29.349Z
+- PLANNING_ARCHITECTURE_VISUELLE.md  —  mtime: 2026-01-25T23:39:48.360Z
+- PLANNING_MODULE_README.md  —  mtime: 2026-01-25T23:39:48.362Z
+- PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-01-24T21:53:29.352Z
+- QUICK_SUMMARY.md  —  mtime: 2026-01-24T21:53:29.353Z
+- README_AMELIORATIONS.md  —  mtime: 2026-01-24T21:53:29.355Z
+- README_SOLUTION.md  —  mtime: 2026-01-24T21:53:29.360Z
+- RECAP_FINAL_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.366Z
+- REPONSE_COMMENTAIRES_NOUVEAUX_DOCUMENTS.md  —  mtime: 2026-01-25T22:38:27.407Z
+- TEST_API_KEYS_GUIDE.md  —  mtime: 2026-01-24T21:53:29.369Z
+- TEST_GUIDE.md  —  mtime: 2026-01-24T21:53:29.397Z
+- TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-01-24T21:53:29.399Z
+- TROUBLESHOOTING.md  —  mtime: 2026-01-24T21:53:29.401Z
+- VISUAL_ARCHITECTURE_GUIDE.md  —  mtime: 2026-01-11T23:34:26.095Z
+- analysis\db-read-rows.md  —  mtime: 2026-01-24T21:53:29.407Z
+- analysis\db-read-tests.md  —  mtime: 2026-01-24T21:53:29.407Z
+- analysis\frontend-modules.md  —  mtime: 2026-01-24T21:53:29.411Z
+- analysis\prisma-db-inventory.md  —  mtime: 2026-01-24T21:53:29.427Z
+- analysis\sensitive-fields.md  —  mtime: 2026-01-24T21:53:29.428Z
 - backend\INTEGRATION-PHASE2.md  —  mtime: 2026-01-20T23:19:31.737Z
 - backend\PHASE1_TEST_GUIDE.md  —  mtime: 2026-01-20T22:34:06.624Z
 - backend\PHASE1_TEST_RESULTS.md  —  mtime: 2026-01-20T22:35:07.879Z
@@ -10,441 +57,277 @@ Generated: 2026-04-12T15:21:19.564Z
 - backend\PRISMA_SYNC_GUIDE.md  —  mtime: 2026-01-24T00:37:50.590Z
 - backend\RAPPORT-PHASE3-FINAL.md  —  mtime: 2026-01-20T23:40:27.439Z
 - backend\RAPPORT-PHASE3.1-AJUSTEMENTS.md  —  mtime: 2026-01-20T23:45:55.642Z
+- backend\TESTS_IMPROVEMENT.md  —  mtime: 2026-03-04T16:41:55.376Z
 - backend\TESTS_README.md  —  mtime: 2026-01-20T22:39:30.223Z
-- backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-04-09T21:42:13.354Z
-- backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-04-09T21:42:13.356Z
-- backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md  —  mtime: 2026-04-09T21:42:13.357Z
-- docs\analysis\db-read-rows.md  —  mtime: 2026-04-09T21:42:18.060Z
-- docs\analysis\db-read-tests.md  —  mtime: 2026-04-09T21:42:18.063Z
-- docs\analysis\frontend-modules.md  —  mtime: 2026-04-09T21:42:18.065Z
-- docs\analysis\prisma-db-inventory.md  —  mtime: 2026-04-09T21:42:18.081Z
-- docs\analysis\sensitive-fields.md  —  mtime: 2026-04-09T21:42:18.083Z
-- docs\architecture\ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-04-09T21:42:18.086Z
-- docs\architecture\ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-04-09T21:42:18.088Z
-- docs\architecture\ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-04-09T21:42:18.090Z
-- docs\architecture\ARCHITECTURE_MULTI_PROVIDER.md  —  mtime: 2026-04-09T21:42:18.128Z
-- docs\architecture\ARCHITECTURE_QUALIFICATION.md  —  mtime: 2026-04-09T21:42:18.131Z
-- docs\architecture\ARCHITECTURE_SAAS_CORE_VISUAL.md  —  mtime: 2026-04-09T21:42:18.133Z
-- docs\architecture\ARCHITECTURE_VISUALIZATION.md  —  mtime: 2026-04-09T21:42:18.135Z
-- docs\architecture\ARCHITECTURE_VISUELLE_PROSPECTION_AI.md  —  mtime: 2026-04-09T21:42:18.137Z
-- docs\architecture\VISUAL_ARCHITECTURE_GUIDE.md  —  mtime: 2026-04-09T21:42:18.137Z
-- docs\guides\AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md  —  mtime: 2026-04-09T21:42:18.139Z
-- docs\guides\AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-04-09T21:42:18.141Z
-- docs\guides\ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-04-09T21:42:18.143Z
-- docs\guides\ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-04-09T21:42:18.146Z
-- docs\guides\ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-04-09T21:42:18.148Z
-- docs\guides\FLUX_UTILISATEUR.md  —  mtime: 2026-04-09T21:42:18.150Z
-- docs\guides\GUIDE_QUALIFICATION_LEADS.md  —  mtime: 2026-04-09T21:42:18.150Z
-- docs\guides\IMPLEMENTATION_PLANNING_MODULE.md  —  mtime: 2026-04-09T21:42:18.152Z
-- docs\guides\IMPROVEMENTS.md  —  mtime: 2026-04-09T21:42:18.154Z
-- docs\guides\INVESTMENT_INTELLIGENCE_MULTI_SOURCE_ARCHITECTURE.md  —  mtime: 2026-04-09T21:42:18.154Z
-- docs\guides\PLANNING_ARCHITECTURE_VISUELLE.md  —  mtime: 2026-04-09T21:42:18.158Z
-- docs\guides\PLANNING_MODULE_README.md  —  mtime: 2026-04-09T21:42:18.160Z
-- docs\guides\PLAYWRIGHT_TEST_RESULTS.md  —  mtime: 2026-04-09T21:42:18.163Z
-- docs\guides\TEST_API_KEYS_GUIDE.md  —  mtime: 2026-04-09T21:42:18.163Z
-- docs\guides\TEST_GUIDE.md  —  mtime: 2026-04-09T21:42:18.167Z
-- docs\guides\TEST_GUIDE_SAVE_LOAD.md  —  mtime: 2026-04-09T21:42:18.177Z
-- docs\guides\TROUBLESHOOTING.md  —  mtime: 2026-04-09T21:42:18.179Z
+- backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-01-24T21:54:07.193Z
+- backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-01-24T21:54:07.196Z
+- backend\src\modules\scraping\INTERNATIONAL_EXPANSION.md  —  mtime: 2026-03-04T17:58:58.468Z
+- backend\src\modules\scraping\INTERNATIONAL_SITES.md  —  mtime: 2026-03-04T17:56:01.057Z
+- backend\src\modules\scraping\README_IMPROVEMENTS.md  —  mtime: 2026-03-04T17:05:25.199Z
+- backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md  —  mtime: 2026-01-24T21:54:07.200Z
 - frontend\src\modules\business\prospecting\PROSPECTION_REFACTORING.md  —  mtime: 2026-01-24T21:54:07.204Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-04-11T21:44:57.185Z
-- frontend  —  mtime: 2026-04-09T23:35:07.012Z
-- backend\prisma\schema.prisma  —  mtime: 2026-04-09T21:42:17.825Z
+- backend  —  mtime: 2026-03-04T16:41:55.385Z
+- frontend  —  mtime: 2026-01-25T23:39:48.401Z
+- backend\prisma\schema.prisma  —  mtime: 2026-03-18T00:26:25.272Z
 
 ## Top of selected files
 
-### README.md
+### AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md
 ```
-# Immo SaaS — CRM Immobilier
+# 🎯 Module Documents - Résumé des Améliorations
 
-CRM SaaS complet pour la gestion immobilière : propriétés, prospects, transactions, mandats, communications, IA et marketing.
+## 📌 Contexte
 
-## Stack technique
+Le module documents du CRM Immobilier a été considérablement amélioré pour répondre aux besoins spécifiques de la gestion documentaire immobilière et pour s'intégrer de manière transparente avec le module Intelligence.
 
-| Couche     | Technologie                                               |
-| ---------- | --------------------------------------------------------- |
-| Frontend   | Next.js 16.1, React 19.2, TypeScript, MUI 7, Tailwind CSS |
-| Backend    | NestJS 10.3, TypeScript, Prisma 6.19, PostgreSQL          |
-| Temps réel | Socket.io (WebSockets)                                    |
-| Queue      | Bull (Redis)                                              |
-| Auth       | JWT + OAuth 2.0 (Google, Facebook)                        |
-| IA         | Anthropic, OpenAI, Gemini, DeepSeek, OpenRouter           |
-| Cartes 
-```
+## 🚀 Objectifs Accomplis
 
-### backend\INTEGRATION-PHASE2.md
-```
-# Phase 2 - Intégration UnifiedValidationService ✅
+### 1. **Gestion Avancée des Documents Immobiliers**
 
-## Résumé de l'intégration
+✅ **Support de 25+ types de documents spécifiques:**
+- Contrats de vente (vente, promesse, mandat)
+- Accords de commission
+- Contrats de promotion et construction
+- Contrats de gestion (immobilière, locative, syndic)
+- Documents administratifs (titres, cadastre, urbanisme)
+- Documents financiers (analyses, projections, évaluations)
+- Autres (baux, assurances, inspections)
 
-### ✅ Étape 1: Service de validation créé (910 lignes)
-**Fichier**: `src/shared/validation/unified-validation.service.ts`
-
-Fonctionnalités:
-- **Validation email** (RFC 5322, MX records, détection fournisseurs jetables, suggestions typos)
-- **Validation téléphone** (E.164, détection opérateurs tunisiens: Ooredoo/Orange/TT)
-- **Détection spam** (6 catégories, scoring multi-critères 0-100)
-- **Validation complète** (email + téléphone + spam avec scoring global)
-
-Performance: < 100ms par validation ✅
-
-### ✅ Étape 2: Tests manuels (100% succès)
-**Fichier**: `backend/manual-test-validation.ts`
-
-Résultats:
-```
-✅ Email valide: score 65
-✅ Email invalide: détecté
-✅ Email jetable: spam détecté
-✅ Téléphone mobile: +216 20 
+✅ **Métadonnées enrichies:**
+- Type d
 ```
 
-### backend\PHASE1_TEST_GUIDE.md
+### AMELIORATIONS_PROSPECTION.md
 ```
-# 🧪 Phase 1 - Guide de Test Complet
+# 🎉 RÉCAPITULATIF DES AMÉLIORATIONS - CRM Immobilier
 
-## 📋 Vue d'Ensemble
+## ✅ Problèmes Résolus
 
-Ce guide contient toutes les instructions pour tester l'intégration Phase 1 entre **Prospecting-AI** et **Prospecting Module** via l'**AI Orchestrator**.
+### 1. **Boutons Non Fonctionnels** ✔️
 
-## 🎯 Objectifs des Tests
-
-1. ✅ Vérifier que AI Orchestrator peut invoquer les outils prospecting
-2. ✅ Vérifier que Prospecting-AI délègue correctement au Prospecting Module
-3. ✅ Vérifier que tous les outils fonctionnent (scrape, analyze, qualify, match, validate)
-4. ✅ Vérifier la gestion des erreurs
-5. ✅ Vérifier les performances et les coûts
-
-## 📁 Fichiers de Test Créés
-
-### 1. Tests E2E (End-to-End)
-**Fichier**: `backend/test/e2e/phase1-integration.e2e-spec.ts`
-
-Tests du workflow complet:
-- Prospection complète via Prospecting-AI
-- Tests des outils individuels via AI Orchest
+**Avant:**
+```
+❌ Bouton "Vérifier Emails" - Pas de onClick
+❌ Bouton "Vérifier Téléphones" - Pas de onClick
+❌ Bouton "Détecter Spams" - Pas de onClick
+❌ Bouton "Supprimer Doublons" - Pas de onClick
+❌ Boutons "Ciblage Géographique" - Redirige vers tab inexistant
+❌ Bouton "Tunnel de Vente" - Redirige vers tab inexistant
 ```
 
-### backend\PHASE1_TEST_RESULTS.md
+**Après:**
 ```
-# ✅ Phase 1 - Tests Complétés avec Succès
-
-## 🎉 Résumé
-
-La Phase 1 d'intégration entre **Prospecting-AI** et **Prospecting Module** via l'**AI Orchestrator** a été **implémentée et testée avec succès**.
-
-**Date**: 20 janvier 2026
-**Durée**: ~2 semaines (selon planning)
-**Statut**: ✅ **COMPLÉTÉ**
+✅ Tous les boutons fonctionnent correctement
+✅ Handlers implémentés pour chaque action
+✅ Navigation corrigée vers les bons onglets
+✅ Feedback visuel (disabled state) ajouté
+```
 
 ---
 
-## 📦 Livrables Créés
+### 2. **Détection de Spam Améliorée** ✔️
 
-### 1. **Code d'Intégration** ✅
-
-| Fichier | Modifications |
-|---------|---------------|
-| `tool-executor.service.ts` | ➕ 6 outils prospecting (scrape, analyze, qualify, match, validate, createLead) |
-| `tool-call.type.ts` | ➕ Type `'prospecting'` au ToolType |
-| `ai-orchestrator.module.ts` | ➕ Import ProspectingModule |
-| `prospection.service.ts` | 🔄 Workflow multi-étapes via orchestrator |
-
-### 2. **Tests Complets** ✅
-
-| Type | Fichier | Tests |
-|------|---------|--
+**Avant:**
+```
+❌ Pas de détection automatique
+❌ Spams passent dans le pipeline
+❌ Age
 ```
 
-### backend\PHASE3-STAGING.md
+### ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md
 ```
-# Phase 3 - Déploiement Staging & Tests d'Intégration
+# 📊 Analyse Complète: Modules Business, Intelligence, Prospecting & Core
 
-## 🎯 Objectifs Phase 3
-- ✅ Déployer endpoints API pour validation
-- ✅ Tester avec données réelles du marché tunisien
-- ✅ Monitorer performance (<100ms par validation)
-- ✅ Collecter métriques qualité
-- ✅ Dashboard de suivi
+## 🎯 Vue d'Ensemble
 
-## 📡 Endpoints API Créés
+Cette analyse couvre 5 modules majeurs du CRM Immobilier qui n'étaient pas détaillés dans le document principal:
 
-### 1. Validation Endpoints
-**Base URL**: `http://localhost:3000/api/validation`
-
-#### GET /health
-Vérifie le statut du service de validation
-```bash
-curl http://localhost:3000/api/validation/health
-```
-Response:
-```json
-{
-  "status": "ok",
-  "service": "UnifiedValidationService"
-}
-```
-
-#### POST /email
-Valide une adresse email
-```bash
-curl -X POST http://localhost:3000/api/validation/email \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "contact@agence-immobiliere.tn",
-    
-```
-
-### backend\PRISMA_SYNC_GUIDE.md
-```
-# 🔄 Guide de Synchronisation Prisma
-
-## 📋 Vue d'ensemble
-
-Ce guide explique comment synchroniser votre schéma Prisma avec la base de données **sans perdre de données**.
-
-## 🛡️ Approche Sécurisée (Recommandée)
-
-### Utilisation des Migrations
-
-Les migrations Prisma permettent de modifier la structure de la base de données de manière **incrémentale et sécurisée**.
+1. **Business Module** - Orchestration métier (mandats, transactions, propriétés, prospects)
+2. **Intelligence Module** - IA & Analytics (AI Orchestrator, LLM Router, Semantic Search, Matching)
+3. **Prospecting Module** - Acquisition leads (campagnes, scraping, matching, validation)
+4. **Prospecting-AI Module** - Prospection automatisée pilotée par IA
+5. **Core Module** - Infrastructure centrale (auth, users, providers registry, settings)
 
 ---
 
-## 🖥️ Commandes Disponibles
+## 🏢 Module 1: Business Module (Orchestration Métier)
 
-### 1. Vérifier le statut des migrations
-
-```bash
-npm run prisma:migrate:status
+### 📍 Localisation
+`backend/src/modules/business/` (Multi-services
 ```
 
-Affiche :
-- ✅ Migrations appliquées
-- ⏳ Migrations en attente
-- ❌ Conflits éventuels
-
----
-
-### 2. Synchroniser en DÉVELOPPEMENT (Local)
-
-```bash
-npm run prisma:sync
+### ANALYSE_MODULES_VALIDATION_IA.md
 ```
+# 📊 Analyse Complète: Modules de Validation, Spam & Intelligence Artificielle
 
-**Ce que fait cette commande :**
-1. ✅ Formate le schéma Prisma
-2. ✅ Génère le client Prisma TypeScript
-3. ✅ Crée une nouvelle migration
-4. ✅ A
-```
+## 🎯 Vue d'Ensemble de l'Architecture
 
-### backend\RAPPORT-PHASE3-FINAL.md
-```
-# RAPPORT FINAL - PHASE 3 STAGING
-
-**Date**: 21 janvier 2026
-**Statut**: ✅ **VALIDÉE**
-**Taux de réussite**: 88.9% (8/9 tests)
-
----
-
-## 📊 Résultats des Tests
-
-### Tests Exécutés: 9
-- ✅ **8 tests réussis** (88.9%)
-- ⚠️ **1 test partiel** (Test 2: Gmail non valide car provider gratuit)
-
-### Détail des Tests
-
-#### ✅ Test 1: Email Professionnel
-- Email: `contact@agence-immobiliere.tn`
-- **Résultat**: Valid ✅, Score: 65/100
-- **Type**: Professional
-- **Durée**: 3ms
-- **Status**: PASSED
-
-#### ⚠️ Test 2: Email Gmail (Gratuit)
-- Email: `ahmed.benali@gmail.com`
-- **Résultat**: Invalid ❌, Score: 45/100
-- **Type**: Free Provider
-- **Durée**: 2ms
-- **Status**: PASSED (comportement attendu - score réduit pour fournisseur gratuit)
-- **Note**: Le service fonctionne correctement en pénalisant les emails 
-```
-
-### backend\RAPPORT-PHASE3.1-AJUSTEMENTS.md
-```
-# RAPPORT PHASE 3.1 - AJUSTEMENTS
-
-**Date**: 21 janvier 2026
-**Statut**: ✅ **TERMINÉ**
-**Résultats**: 🎉 **100% DE RÉUSSITE**
-
----
-
-## 🎯 Objectifs Phase 3.1
-
-### Ajustements Demandés
-1. ✅ Améliorer le scoring des emails gratuits (Gmail, Yahoo)
-2. ✅ Ajouter détection carriers pour lignes fixes tunisiennes
-
----
-
-## 🔧 Modifications Effectuées
-
-### 1. Scoring Emails Gratuits
-
-#### Avant
-```typescript
-let score = 40; // Base score
-
-if (isFreeProvider) {
-    score -= 5;  // Pénalité -5 pour gratuits
-} else {
-    score += 15; // Bonus +15 pour pros
-}
-// Gmail: 40 - 5 + 10 (pas MX check) = 45
-```
-
-#### Après
-```typescript
-let score = 50; // Base score augmenté de 40 → 50
-
-if (isFreeProvider) {
-    score += 5;  // Bonus +5 pour gratuits valides (au lieu de -5)
-} else {
-    score += 20; // Bonus +
-```
-
-### backend\TESTS_README.md
-```
-# 🧪 Phase 1 Testing Suite - README
-
-## 📁 Structure des Fichiers de Test
+### Architecture Multi-Couches
 
 ```
-backend/
-├── test/
-│   ├── e2e/
-│   │   └── phase1-integration.e2e-spec.ts    # Tests End-to-End
-│   └── unit/
-│       └── tool-executor-prospecting.spec.ts # Tests Unitaires
-├── test-phase1.sh                             # Suite complète de tests
-├── test-phase1-curl.sh                        # Tests cURL/REST
-├── PHASE1_TEST_GUIDE.md                       # Guide de test complet
-└── PHASE1_TEST_RESULTS.md                     # Rapport de résultats
+┌─────────────────────────────────────────────────────────────────┐
+│                         FRONTEND                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │   LeadQualificationService (Client-Side)               │    │
+│  │   - Validation Email/Phone (RFC 5322, E.164)           │    │
+│  │   - Détection Spam (15+ patterns)                      │    │
+│  │   - Scoring Multi-Critères (5 dimensions)              │    │
+│  │   - Classification: qualified/needs-review/rejected    │    │
+│  └─────────────────
 ```
 
-## 🚀 Quick Start
-
-### Option 1: Suite Complète (Recommandé)
-```bash
-cd backend
-chmod +x test-phase1.sh
-./test-phase1.sh
+### ANALYSE_MODULES_VALIDATION_IA_PART2.md
 ```
-
-### Option 2: Tests Individuels
-```bash
-# Tests unitaires uniquement
-cd backend
-npm test -- test/unit/tool-executor-prospecting.spec.ts
+---\n\n## Module 9: Business Module
 
 ```
 
-### backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md
+### ANALYSIS_AUTOGEN.md
 ```
-# Plan d'Amélioration - Scraping Intelligent avec IA
+# ANALYSIS_AUTOGEN - Résumé automatique
+Generated: 2026-02-16T19:55:51.458Z
 
-## 🎯 Vision
-
-**Objectif:** Créer un système de prospection où l'utilisateur donne simplement ses objectifs en langage naturel, et l'IA orchestre automatiquement le scraping multi-sources pour trouver les meilleurs leads.
-
-### Exemple d'Utilisation Cible
-
-```
-UTILISATEUR: "Je veux 100 appartements à louer à La Marsa,
-              budget 1000-2000 TND/mois, minimum 2 chambres"
-
-IA SYSTÈME:  ✅ Objectif compris
-             ✅ Recherche sur Tayara.tn → 45 résultats
-             ✅ Recherche sur Mubawab.tn → 38 résultats
-             ✅ Recherche Google SERP → 22 résultats
-             ✅ Total: 105 leads uniques
-             ✅ Qualité moyenne: 82/100
-             ✅ Prêts à exporter vers Pipeline
+## Markdown files (found)
+- AMELIORATIONS_MODULE_DOCUMENTS_RESUME.md  —  mtime: 2026-01-25T22:38:27.407Z
+- AMELIORATIONS_PROSPECTION.md  —  mtime: 2026-01-24T21:53:29.269Z
+- ANALYSE_MODULES_BUSINESS_INTELLIGENCE_PROSPECTING_CORE.md  —  mtime: 2026-01-24T21:53:29.274Z
+- ANALYSE_MODULES_VALIDATION_IA.md  —  mtime: 2026-01-24T21:53:29.278Z
+- ANALYSE_MODULES_VALIDATION_IA_PART2.md  —  mtime: 2026-01-24T21:53:29.280Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-02-16T19:46:37.965Z
+- ARCHITECTURE_DIAGRAMMES_VISUELS.md  —  mtime: 2026-01-11T23:34:25.891Z
+- ARCHITECTURE_DIAGRAMS.md  —  mtime: 2026-01-11T23:35:02.636Z
+- ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md  —  mtime: 2026-01-11T23:34:25.894Z
+- ARCHITECTURE_MULTI_PROVIDER.md  
 ```
 
-**OU**
+### ARCHITECTURE_DIAGRAMMES_VISUELS.md
+```
+# 🎪 FLUX VISUEL COMPLET: Web Data + AI Orchestrator + LLM Router
+
+## Diagramme 1: Architecture en couches
 
 ```
-UTILIS
+┌────────────────────────────────────────────────────────────────────────┐
+│                         🎯 PROSECTING-AI API                           │
+│  POST /api/prospecting-ai/start {zone, targetType, propertyType}     │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │
+                             ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│               🎪 AI-ORCHESTRATOR (Orchestration Moteur)                │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [1] INTEN
 ```
 
-### backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md
+### ARCHITECTURE_DIAGRAMS.md
 ```
-# Analyse du Système de Prospection IA Existant
+# 📐 Architecture & Diagrammes - API Keys Implementation
 
-## 📊 Architecture Actuelle
+## 1. Flux de Sauvegarde des Clés API
 
-### ✅ Ce qui EXISTE déjà
-
-#### **Frontend** (`AiProspectionPanel`)
-
-**Structure:**
-```typescript
-frontend/src/modules/business/prospecting/
-├── components/
-│   ├── AiProspectionPanel.tsx          // ✅ Composant principal
-│   └── ai-prospection/
-│       ├── ConfigurationSection.tsx     // ✅ Config manuelle
-│       ├── LauncherSection.tsx          // ✅ Lancement
-│       └── ResultsSection.tsx           // ✅ Affichage résultats
-├── hooks/
-│   └── useAiProspection.ts              // ✅ Hook état & API calls
-└── types/
-    └── ai-prospection.types.ts          // ✅ Types TypeScript
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    FRONTEND (React/Next.js)                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────┐      │
+│  │   api-keys-enhanced.tsx                             │      │
+│  │                                                       │      │
+│  │  1. Input: API Keys (optionnel)                      │      │
+│  │     - openaiApiKey: "sk-..."                         │      │
+│  │     - geminiApiKey: "AIza..."                        │      │
+│  │   
 ```
 
-**Workflow Utilisateur:**
-1. ✅ Configure manuellement:
-   - Zone géographique (ville)
-   - Type de cible (ach
+### ARCHITECTURE_MODULES_ANALYSE_COMPLETE.md
+```
+# 📊 ANALYSE COMPLÈTE : Architecture Web Data + AI Orchestrator + LLM Router
+
+## 🏗️ Vue d'ensemble de l'architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PROSPECTING-AI MODULE                          │
+│  (Utilise AI Orchestrator pour générer des leads automatiquement)  │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  AI-ORCHESTRATOR MODULE                           │
+│                 (Orchestre le workflow complet)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Intent Analyzer    → Comprend l'objectif (pr
 ```
 
-### backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md
+### ARCHITECTURE_MULTI_PROVIDER.md
 ```
-# Plan d'Amélioration - Module Scraping & Prospection
+/**
+ * ARCHITECTURE MULTI-PROVIDER - Résumé d'implémentation
+ *
+ * Crée: January 8, 2026
+ * Objectif: Permettre à l'utilisateur de choisir les providers de scraping/recherche
+ *          selon la disponibilité des clés API en mode BYOK
+ */
 
-## 📊 Analyse du Système Actuel
+=============================================================================
+1. STRUCTURE À DEUX NIVEAUX
+=============================================================================
 
-### ✅ Points Forts
+Niveau 1: RECHERCHE & ORCHESTRATION (ai-orchestrator module)
+─────────────────────────────────────
+  ├─ ProviderSelectorService (NOUVEAU)
+  │  ├─ Vérifie la disponibilité des clés API
+  │  ├─ Sélectionne la stratégie optimale de provider
+  │  ├─ Retourne les tools disponibles pour IntentAnalyzer
+  │  └─ Supporte dynamiquement: SerpAPI, Firecrawl, Puppete
+```
 
-#### Architecture Solide
-- **3 providers de scraping** bien intégrés:
-  - `CheerioService`: Gratuit, rapide, HTML statique
-  - `PuppeteerService`: Gratuit, sites JS dynamiques
-  - `FirecrawlService`: Payant, IA intégrée
+### ARCHITECTURE_QUALIFICATION.md
+```
+# 🏗️ ARCHITECTURE DU SYSTÈME DE QUALIFICATION
 
-- **Sélection intelligente** du provider selon l'URL
-- **Fallback automatique** si un provider échoue
-- **Analyse LLM des données** scrapées:
-  - Analyse individuelle
-  - Analyse batch (économie 90% coûts)
-  - Extraction structurée des leads
+## 📐 Vue d'Ensemble
 
-#### Fonctionnalités Existantes
-- Extraction emails/téléphones
-- Normalisation numéros tunisiens (+216)
-- Déduplication automatique
-- Metadata extraction (title, description)
-- Tracking usage LLM
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PROSPECTION DASHBOARD                     │
+│                    (ProspectingDashboard.tsx)                │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+           ▼               ▼               ▼
+    ┌──────────┐   ┌─────────────┐  ┌──────────┐
+    │ Campagnes│   │   Leads     │  │ AI Prosp.│
+    └──────────┘   └──────┬──────┘  └──────────┘
+                          │
+              ┌───────────┼───────────┐
+              │           │           │
+              ▼           ▼   
+```
 
----
+### ARCHITECTURE_SAAS_CORE_VISUAL.md
+```
+# Architecture Visuelle - SaaS Core CRM Immobilier
 
+## 🏗️ Vue d'Ensemble de l'Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          SaaS CORE Platform                          │
+│                       (Modules Réutilisables 85%+)                   │
+└─────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌──────────────────────────┼──────────────────────────┐
+        │                          │                          │
+        ▼                          ▼                          ▼
+┌───────────────┐         ┌───────────────┐         ┌───────────────┐
+│   Immobilier  │         │    Voyage     │         │  Autre Métier │
+│   (Existant)  │         │ 
 ```
 
 ## Backend src top-level (if exists)
@@ -465,7 +348,6 @@ frontend/src/modules/business/prospecting/
 - frontend\src\components
 - frontend\src\env.d.ts
 - frontend\src\lib
-- frontend\src\locales
 - frontend\src\modules
 - frontend\src\pages
 - frontend\src\shared

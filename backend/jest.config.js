@@ -1,16 +1,22 @@
 module.exports = {
-    moduleFileExtensions: ['js', 'json', 'ts'],
-    rootDir: '.',
-    testMatch: ['**/*.spec.ts', '!**/node_modules/**', '!**/dist/**'],
-    transform: {
-        '^.+\\.(t|j)s$': 'ts-jest',
-    },
-    collectCoverageFrom: ['src/**/*.(t|j)s'],
-    coverageDirectory: './coverage',
+    preset: 'ts-jest',
     testEnvironment: 'node',
-    globals: {
-        'ts-jest': {
-            tsconfig: 'tsconfig.jest.json',
-        },
+    rootDir: './',
+    modulePaths: ['<rootDir>'],
+    testMatch: ['**/*.spec.ts'],
+    transform: {
+        '^.+\\.ts$': 'ts-jest',
     },
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+    collectCoverageFrom: [
+        'src/**/*.{ts,js}',
+        '!src/**/*.spec.ts',
+        '!src/**/*.module.ts',
+        '!src/**/*.dto.ts',
+        '!src/**/*.interface.ts',
+        '!src/**/*.d.ts',
+        '!src/main.ts',
+    ],
+    coverageDirectory: 'coverage',
+    testTimeout: 30000,
 };

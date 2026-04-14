@@ -15,7 +15,7 @@ export class ScheduledTasksService {
     private readonly db: DatabaseService,
     private readonly notificationHelper: BusinessNotificationHelper,
     private readonly activityLogger: BusinessActivityLogger,
-  ) {}
+  ) { }
 
   /**
    * 🕐 Exécuté tous les jours à minuit
@@ -293,6 +293,50 @@ export class ScheduledTasksService {
     }
   }
 
+  // ─── PROVISION MODULE CRONS ───────────────────────────────────────────────
+
+  /**
+   * 🏦 Le 1er de chaque mois à 7h00 — génère les occurrences du mois
+   */
+  @Cron('0 7 1 * *')
+  async generateMonthlyProvisionOccurrences() {
+    this.logger.log('⏰ [Provision] Generating monthly occurrences...');
+    try {
+      const activeCommitments = await this.db.financialCommitment.findMany({
+        where: { isActive: true },
+      });
+      for (const c of activeCommitments) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const exists = await this.db.provisionOccurrence.findFirst({
+          where: { commitmentId: c.id, periodYear: year, periodMonth: month },
+        });
+        if (!exists) {
+          const dueDate = new Date(year, month - 1, c.customDayOfMonth ?? 1);
+          const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+          await this.db.provisionOccurrence.create({
+            data: {
+              commitmentId: c.id,
+              agencyId: c.agencyId,
+              periodLabel: `${months[month - 1]} ${year}`,
+              periodYear: year,
+              periodMonth: month,
+              dueDate,
+              expectedAmount: c.amount,
+              currency: c.currency,
+              status: 'PENDING',
+            },
+          });
+        }
+      }
+      this.logger.log('✅ [Provision] Monthly occurrences generated');
+    } catch (err) {
+      this.logger.error('❌ [Provision] Error generating monthly occurrences', err);
+    }
+  }
+
   /**
    * 🕐 Exécuté tous les jours à minuit
    * Vérifie et marque les annonces de propriétés expirées
@@ -387,6 +431,47 @@ export class ScheduledTasksService {
       }
     } catch (error) {
       this.logger.error('❌ Error checking expired properties:', error);
+    }
+  }
+
+  /**
+   * 🚨 Tous les jours à 8h30 — vérifie les retards et envoie les alertes
+   */
+  @Cron('30 8 * * *')
+  async checkProvisionAlerts() {
+    this.logger.log('⏰ [Provision] Checking overdue occurrences...');
+    try {
+      const now = new Date();
+      const agencies = await this.db.agencies.findMany({ select: { id: true } });
+      for (const agency of agencies) {
+        // Chercher les occurrences PENDING dont la dueDate + grace est dépassée
+        const commitments = await this.db.financialCommitment.findMany({
+          where: { agencyId: agency.id, isActive: true },
+          select: { id: true, gracePeriodDays: true },
+        });
+        for (const c of commitments) {
+          const grace = c.gracePeriodDays ?? 5;
+          const graceDate = new Date();
+          graceDate.setDate(graceDate.getDate() - grace);
+          const overdueOccs = await this.db.provisionOccurrence.findMany({
+            where: {
+              commitmentId: c.id,
+              status: 'PENDING',
+              dueDate: { lt: graceDate },
+            },
+          });
+          for (const occ of overdueOccs) {
+            await this.db.provisionOccurrence.update({
+              where: { id: occ.id },
+              data: { status: 'OVERDUE', alertSentAt: now, alertCount: { increment: 1 } },
+            });
+            this.logger.warn(`🚨 [Provision] OVERDUE: ${occ.periodLabel} - agency ${agency.id}`);
+          }
+        }
+      }
+      this.logger.log('✅ [Provision] Alert check complete');
+    } catch (err) {
+      this.logger.error('❌ [Provision] Error checking alerts', err);
     }
   }
 

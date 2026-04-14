@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, Req, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { WebDataService, WebDataProvider } from './services/web-data.service';
+import { InternationalScraperService } from './services/international-scraper.service';
 import {
   ScrapeUrlDto,
   ScrapeMultipleUrlsDto,
@@ -32,7 +33,10 @@ function isValidProvider(provider: any): provider is WebDataProvider {
 export class ScrapingController {
   private readonly logger = new Logger(ScrapingController.name);
 
-  constructor(private readonly webDataService: WebDataService) {}
+  constructor(
+    private readonly webDataService: WebDataService,
+    private readonly internationalScraperService: InternationalScraperService,
+  ) {}
 
   @Post('scrape')
   @ApiOperation({
@@ -180,6 +184,27 @@ export class ScrapingController {
     return {
       success: true,
       providers,
+    };
+  }
+
+  @Get('international/countries')
+  @ApiOperation({
+    summary: 'Liste des pays supportés pour le scraping international',
+    description: 'Retourne la liste des 20+ pays avec leurs sites, langue, devise',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des pays supportés',
+  })
+  async getSupportedCountries() {
+    this.logger.log('Récupération de la liste des pays supportés');
+
+    const countries = await this.internationalScraperService.getSupportedCountries();
+
+    return {
+      success: true,
+      count: countries.length,
+      countries,
     };
   }
 }

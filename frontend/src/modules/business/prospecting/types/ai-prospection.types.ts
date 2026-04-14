@@ -24,7 +24,30 @@ export type PropertyType = 'apartment' | 'villa' | 'terrain' | 'commercial' | 'a
 export interface BudgetRange {
   min: number;
   max: number;
-  currency?: 'TND' | 'EUR' | 'USD';
+  currency?: 'TND' | 'EUR' | 'USD' | 'MAD' | 'DZD' | 'NGN' | 'BRL' | 'COP' | 'CAD' | 'GBP' | 'JPY' | 'KRW' | 'TWD' | 'INR';
+}
+
+// Country codes for international scraping (20+ countries)
+export type CountryCode =
+  | 'france' // Default (France)
+  // Africa
+  | 'morocco' | 'algeria' | 'tunisia' | 'cameroon' | 'ivory-coast' | 'senegal' | 'nigeria' | 'congo'
+  // Latin America
+  | 'brazil' | 'colombia' | 'ecuador' | 'bolivia'
+  // Europe + Canada
+  | 'canada' | 'uk' | 'germany' | 'netherlands'
+  // Asia
+  | 'japan' | 'south-korea' | 'taiwan' | 'india';
+
+export interface CountryInfo {
+  code: CountryCode;
+  name: string;
+  flag: string; // emoji flag
+  sites: string[];
+  primary: string;
+  language: string;
+  currency: string;
+  continent: 'Africa' | 'Americas' | 'Europe' | 'Asia';
 }
 
 export interface CampaignSettings {
@@ -38,6 +61,8 @@ export type ProspectionInputMode = 'criteria' | 'urls';
 
 export interface ProspectionConfiguration {
   inputMode: ProspectionInputMode;
+  // Country selection (for international scraping)
+  country?: CountryCode;
   // Criteria mode fields
   zone: GeographicZone;
   targetType: TargetType;
@@ -56,6 +81,8 @@ export interface ProspectionConfiguration {
 export interface StartProspectionRequest {
   // Input mode
   inputMode: ProspectionInputMode;
+  // Country selection (optional, defaults to France)
+  country?: CountryCode;
   // Criteria mode (required if inputMode === 'criteria')
   zone?: GeographicZone;
   targetType?: TargetType;

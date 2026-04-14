@@ -49,7 +49,21 @@ export class MandatesController {
     if (propertyId) filters.propertyId = propertyId;
     if (expiringInDays) filters.expiringInDays = parseInt(expiringInDays);
 
-    return this.mandatesService.findAll(req.user.sub, filters);
+    try {
+      return this.mandatesService.findAll(req.user.sub, filters);
+    } catch (error) {
+      try {
+        console.error('[MandatesController] findAll error', {
+          userId: req?.user?.sub,
+          filters,
+          message: error?.message,
+          stack: error?.stack,
+        });
+      } catch (logErr) {
+        console.error('[MandatesController] logging failed', logErr);
+      }
+      throw error;
+    }
   }
 
   @Get('stats')

@@ -113,6 +113,7 @@ model agencies {
   users                 users[]
   whatsappConfigs       WhatsAppConfig?            @relation("AgencyWhatsAppConfig")
   whatsappConversations WhatsAppConversation[]     @relation("AgencyWhatsAppConversations")
+  financialCommitments  FinancialCommitment[]
   agentProfiles         AgentProfile[]
   commissionConfig      CommissionConfig?
   annualBonusConfig     AnnualBonusConfig?
@@ -453,6 +454,7 @@ model users {
   whatsappConversations   WhatsAppConversation[]    @relation("UserWhatsAppConversations")
   whatsappMessages        WhatsAppMessage[]         @relation("UserWhatsAppMessages")
   aiChatConversations     AiChatConversation[]      @relation("UserAiChatConversations")
+  createdCommitments      FinancialCommitment[]     @relation("CommitmentCreator")
   agentProfile            AgentProfile?
 }
 
@@ -3061,6 +3063,118 @@ enum DocumentStatus {
   expired
   cancelled
   archived
+}
+
+// ============================================
+// PROVISION MODULE — FINANCIAL COMMITMENTS
+// ============================================
+
+model FinancialCommitment {
+  id               String              @id @default(cuid())
+  agencyId         String
+  createdBy        String
+
+  name             String
+  description      String?
+  category         CommitmentCategory
+  type             String
+
+  amount           Float
+  currency         String              @default("TND")
+
+  frequency        CommitmentFrequency
+  customDayOfMonth Int?
+  gracePeriodDays  Int                 @default(5)
+
+  startDate        DateTime
+  endDate          DateTime?
+  totalOccurrences Int?
+
+  alertLevel       AlertLevel          @default(HIGH)
+  alertChannels    Json                @default("[\"notification\",\"email\"]")
+
+  isActive         Boolean             @default(true)
+  metadata         Json?
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  agency           agencies            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  creator          users               @relation("CommitmentCreator", fields: [createdBy], references: [id])
+  occurrences      ProvisionOccurrence[]
+
+  @@index([agencyId])
+  @@index([agencyId, isActive])
+  @@index([category])
+  @@map("financial_commitments")
+}
+
+model ProvisionOccurrence {
+  id             String              @id @default(cuid())
+  commitmentId   String
+  agencyId       String
+
+  periodLabel    String
+  periodYear     Int
+  periodMonth    Int?
+  periodQuarter  Int?
+  dueDate        DateTime
+
+  expectedAmount Float
+  paidAmount     Float               @default(0)
+  currency       String              @default("TND")
+
+  status         OccurrenceStatus    @default(PENDING)
+
+  paidAt         DateTime?
+  paidBy         String?
+  paymentRef     String?
+  notes          String?
+
+  alertSentAt    DateTime?
+  alertCount     Int                 @default(0)
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  commitment     FinancialCommitment @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+
+  @@unique([commitmentId, periodYear, periodMonth])
+  @@index([agencyId])
+  @@index([agencyId, status])
+  @@index([dueDate])
+  @@index([status])
+  @@map("provision_occurrences")
+}
+
+enum CommitmentCategory {
+  INVESTOR
+  RENT
+  LOAN
+  TAX
+  SALARY
+  CUSTOM
+}
+
+enum CommitmentFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum AlertLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum OccurrenceStatus {
+  PENDING
+  DONE
+  OVERDUE
+  WAIVED
 }
 
 // ============================================================
