@@ -225,8 +225,21 @@ function checkDeps() {
 
 function startBackend() {
   const cwd = join(__dirname, "backend");
+  const distMain = join(__dirname, "backend", "dist", "main.js");
+  const hasDist = existsSync(distMain);
+
+  if (hasDist) {
+    console.log("[Launcher] ⚡ dist/ trouvé — démarrage rapide (node dist/main)...");
+  } else {
+    console.log("[Launcher] ⚠️  dist/ absent — démarrage lent en mode dev (peut prendre 30-60s)...");
+  }
+
+  const spawnArgs = hasDist
+    ? ["npm", ["run", "start:prod"]]
+    : ["npm", ["run", "start:dev"]];
+
   console.log("[Launcher] Démarrage backend NestJS sur :3001...");
-  backendProcess = spawn("npm", ["run", "start:dev"], {
+  backendProcess = spawn(spawnArgs[0], spawnArgs[1], {
     cwd,
     shell: true,
     env: { ...process.env, PORT: String(BACKEND_PORT) },
@@ -482,6 +495,7 @@ function getHTML() {
       </div>
       <div class="info-row">DB : <span>${dbUrl.split("/").pop()?.split("?")[0] || "?"}</span></div>
       <button class="btn-restart" onclick="doRestart(this)">🔄 Redémarrer les services</button>
+      <button class="btn-restart" style="margin-top:6px;border-color:rgba(168,85,247,0.3);background:rgba(168,85,247,0.1);color:#c4b5fd" onclick="doRebuild(this)">🔨 Rebuild backend (code modifié)</button>
     </div>
 
     <!-- Accès rapide -->
@@ -535,6 +549,13 @@ function getHTML() {
       fetch('/api/restart', { method: 'POST' })
         .then(() => { setTimeout(() => location.reload(), 3000); })
         .catch(() => { btn.disabled = false; btn.textContent = '🔄 Redémarrer les services'; });
+    }
+    function doRebuild(btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Rebuild en cours (1-2 min)...';
+      fetch('/api/rebuild', { method: 'POST' })
+        .then(() => { setTimeout(() => location.reload(), 5000); })
+        .catch(() => { btn.disabled = false; btn.textContent = '🔨 Rebuild backend (code modifié)'; });
     }
   </script>
 </body>
@@ -601,6 +622,40 @@ const server = createServer((req, res) => {
     }, 1500);
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end('{"ok":true,"message":"Redémarrage en cours"}');
+    return;
+  }
+
+  if (req.url === "/api/rebuild" && req.method === "POST") {
+    console.log("[Launcher] 🔨 Rebuild backend demandé...");
+    // Arrêter le backend en cours
+    if (backendProcess) {
+      backendProcess.kill();
+      backendProcess = null;
+    }
+    backendReady = false;
+    backendLogs = [];
+    startupMessage = "🔨 Rebuild en cours (1-2 min)...";
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end('{"ok":true,"message":"Rebuild lancé"}');
+
+    // Lancer nest build puis redémarrer
+    const buildProc = spawn("npm", ["run", "build"], {
+      cwd: join(__dirname, "backend"),
+      shell: true,
+    });
+    buildProc.stdout.on("data", (d) => pushLog(backendLogs, "[BUILD] " + d.toString().trim()));
+    buildProc.stderr.on("data", (d) => pushLog(backendLogs, "[BUILD] " + d.toString().trim()));
+    buildProc.on("exit", (code) => {
+      if (code === 0) {
+        startupMessage = "✅ Rebuild terminé — redémarrage rapide...";
+        console.log("[Launcher] ✅ Build OK — démarrage prod...");
+        startBackend();
+        startReadinessPoller();
+      } else {
+        startupMessage = "❌ Rebuild échoué (code " + code + ") — voir les logs";
+        console.log("[Launcher] ❌ Build échoué (code " + code + ")");
+      }
+    });
     return;
   }
 

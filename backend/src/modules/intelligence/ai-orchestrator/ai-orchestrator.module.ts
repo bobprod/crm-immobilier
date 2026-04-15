@@ -3,7 +3,7 @@ import { PrismaModule } from '../../../shared/database/prisma.module';
 import { ScrapingModule } from '../../../modules/scraping/scraping.module';
 import { LLMConfigModule } from '../llm-config/llm-config.module';
 import { CommunicationsModule } from '../../communications/communications.module';
-import { AiBillingModule } from '../../../shared/ai-billing/ai-billing.module';
+import { AiBillingModule } from '../../ai-billing/ai-billing.module';
 import { ProspectingModule } from '../../prospecting/prospecting.module';
 
 // Services d'outils

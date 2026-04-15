@@ -6,7 +6,7 @@ import { PuppeteerService } from './services/puppeteer.service';
 import { FirecrawlService } from './services/firecrawl.service';
 import { WebDataService } from './services/web-data.service';
 import { SerpService } from './services/serp.service';
-import { AiBillingModule } from '../../shared/ai-billing/ai-billing.module';
+import { AiBillingModule } from '../ai-billing/ai-billing.module';
 
 // Nouveaux services externes et avancés
 import { ApifyService } from './services/apify.service';
