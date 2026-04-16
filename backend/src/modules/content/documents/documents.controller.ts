@@ -31,6 +31,7 @@ import {
   UpdateDocumentDto,
   LinkDocumentToInvestmentDto,
   GenerateDocumentFromInvestmentDto,
+  SmartGenerateDto,
 } from './dto';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -116,6 +117,15 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Générer un document avec AI' })
   async generateDocument(@Request() req, @Body() dto: GenerateDocumentDto) {
     return this.documentsService.generateDocument(req.user.userId, dto);
+  }
+
+  @Post('ai/smart-generate')
+  @ApiOperation({
+    summary:
+      'Wizard IA : combiner des documents scannés (OCR) et une instruction pour générer un document immobilier',
+  })
+  async smartGenerateDocument(@Request() req, @Body() dto: SmartGenerateDto) {
+    return this.documentsService.smartGenerateDocument(req.user.userId, dto);
   }
 
   @Get('ai/history')

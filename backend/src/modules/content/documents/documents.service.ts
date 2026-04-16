@@ -346,6 +346,88 @@ export class DocumentsService {
   }
 
   // ============================================
+  // SMART WIZARD (OCR → AI)
+  // ============================================
+
+  /**
+   * Génération intelligente : combine les textes OCR extraits de documents scannés
+   * et l'instruction en langage naturel de l'agent pour produire un document
+   * immobilier complet via IA.
+   */
+  async smartGenerateDocument(userId: string, data: any) {
+    this.logger.log('Smart wizard: OCR → AI document generation');
+
+    // Build context from scanned documents
+    let scannedContext = '';
+    if (data.scannedDocuments && data.scannedDocuments.length > 0) {
+      scannedContext = data.scannedDocuments
+        .map(
+          (doc: { docType: string; text: string }, idx: number) =>
+            `--- Document scanné #${idx + 1} (${doc.docType}) ---\n${doc.text}`,
+        )
+        .join('\n\n');
+    }
+
+    const documentTypeLabel = data.documentType || 'document immobilier';
+
+    const prompt = [
+      'Tu es un expert juridique spécialisé en droit immobilier français et maghrébin.',
+      'Tu rédiges des documents immobiliers professionnels, clairs et juridiquement corrects.',
+      '',
+      scannedContext
+        ? `### Informations extraites des documents scannés\n${scannedContext}`
+        : '',
+      '',
+      `### Instruction de l'agent`,
+      data.userInstruction,
+      '',
+      `### Tâche`,
+      `Génère un ${documentTypeLabel} complet en français.`,
+      "Utilise les informations extraites des documents scannés ci-dessus pour renseigner automatiquement les champs (noms, adresses, numéros de pièce d'identité, etc.).",
+      "Si une information est manquante dans les documents scannés, utilise l'instruction de l'agent ou laisse un espace '[À COMPLÉTER]'.",
+      'Le document doit inclure : en-tête, articles numérotés, clauses légales adaptées, signatures des parties.',
+      'Formate la réponse en HTML propre et professionnel.',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const result = await this.aiService.generateText(userId, {
+      prompt,
+      provider: data.provider,
+      model: data.model,
+      temperature: 0.4,
+      maxTokens: 4000,
+      documentType: documentTypeLabel,
+      prospectId: data.prospectId,
+      propertyId: data.propertyId,
+    });
+
+    const filename = `smart-${documentTypeLabel.replace(/\s+/g, '_')}-${Date.now()}.html`;
+    const filePath = path.join(this.uploadDir, filename);
+    fs.writeFileSync(filePath, result.response, 'utf8');
+
+    const document = await this.prisma.documents.create({
+      data: {
+        userId,
+        name: documentTypeLabel,
+        originalName: filename,
+        description: `Généré par Wizard IA — ${result.provider}`,
+        fileUrl: `/uploads/documents/${filename}`,
+        filePath,
+        mimeType: 'text/html',
+        fileSize: Buffer.byteLength(result.response, 'utf8'),
+        extension: 'html',
+        prospectId: data.prospectId,
+        propertyId: data.propertyId,
+        aiGenerated: true,
+        aiGenerationId: result.generationId,
+      },
+    });
+
+    return { ...result, document };
+  }
+
+  // ============================================
   // STATISTIQUES
   // ============================================
 

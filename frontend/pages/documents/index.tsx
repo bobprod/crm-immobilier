@@ -13,11 +13,12 @@ import { useTranslation } from '@/shared/hooks/useTranslation';
 import { api } from '../../lib/api-client';
 import {
   Search, FileText, Download, Trash2, Upload, Folder, Tag, Eye,
-  ScanLine, Sparkles, LayoutTemplate, FolderOpen
+  ScanLine, Sparkles, LayoutTemplate, FolderOpen, Wand2
 } from 'lucide-react';
 import DocumentOcr from '@/modules/content/documents/components/DocumentOcr';
 import DocumentGenerator from '@/modules/content/documents/components/DocumentGenerator';
 import DocumentTemplates from '@/modules/content/documents/components/DocumentTemplates';
+import DocumentSmartWizard from '@/modules/content/documents/components/DocumentSmartWizard';
 
 interface Document {
   id: string;
@@ -208,9 +209,12 @@ export default function DocumentsPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => router.push({ query: { tab: v } }, undefined, { shallow: true })}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="documents" className="flex items-center gap-2">
                 <FolderOpen className="h-4 w-4" /> {t('documents.tabs.documents')}
+              </TabsTrigger>
+              <TabsTrigger value="wizard" className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4" /> Wizard IA
               </TabsTrigger>
               <TabsTrigger value="generate" className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" /> {t('documents.tabs.generate')}
@@ -323,6 +327,11 @@ export default function DocumentsPage() {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            {/* ──── TAB: WIZARD IA ──── */}
+            <TabsContent value="wizard" className="mt-4">
+              <DocumentSmartWizard />
             </TabsContent>
 
             {/* ──── TAB: GENERATE ──── */}

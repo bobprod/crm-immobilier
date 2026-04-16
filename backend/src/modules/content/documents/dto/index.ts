@@ -6,3 +6,4 @@ export * from './create-template.dto';
 export * from './update-ai-settings.dto';
 export * from './update-document.dto';
 export * from './intelligence-sync.dto';
+export * from './smart-generate.dto';
