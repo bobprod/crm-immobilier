@@ -402,8 +402,11 @@ export class DocumentsService {
       propertyId: data.propertyId,
     });
 
-    const filename = `smart-${documentTypeLabel.replace(/\s+/g, '_')}-${Date.now()}.html`;
-    const filePath = path.join(this.uploadDir, filename);
+    const sanitizedType = documentTypeLabel
+      .replace(/[^a-zA-Z0-9_\-]/g, '_')
+      .substring(0, 50);
+    const filename = `smart-${sanitizedType}-${Date.now()}.html`;
+    const filePath = path.join(this.uploadDir, path.basename(filename));
     fs.writeFileSync(filePath, result.response, 'utf8');
 
     const document = await this.prisma.documents.create({
