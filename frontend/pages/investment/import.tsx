@@ -58,22 +58,21 @@ export default function ImportProjectPage() {
         router.push(`/investment/projects/${result.projectId}`);
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Erreur lors de l\'import');
+      setError(err.response?.data?.message || err.message || "Erreur lors de l'import");
     } finally {
       setImporting(false);
     }
   };
 
   return (
-    <MainLayout title="Importer un Projet" breadcrumbs={[{ label: 'Investissement', href: '/investment' }, { label: 'Importer' }]}>
+    <MainLayout
+      title="Importer un Projet"
+      breadcrumbs={[{ label: 'Immo Market', href: '/investment' }, { label: 'Importer' }]}
+    >
       <div className="container max-w-3xl mx-auto py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/investment')}
-          >
+          <Button variant="ghost" size="icon" onClick={() => router.push('/investment')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -294,16 +293,16 @@ export default function ImportProjectPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>
-              <strong>Bricks & Homunity:</strong> L'import est automatique et fiable.
-              Toutes les données sont extraites et normalisées.
+              <strong>Bricks & Homunity:</strong> L'import est automatique et fiable. Toutes les
+              données sont extraites et normalisées.
             </p>
             <p>
-              <strong>URL générique:</strong> L'IA tente d'extraire les informations.
-              Vous devrez peut-être compléter manuellement certains champs.
+              <strong>URL générique:</strong> L'IA tente d'extraire les informations. Vous devrez
+              peut-être compléter manuellement certains champs.
             </p>
             <p>
-              <strong>Après l'import:</strong> Le projet est analysé automatiquement et
-              vous recevez un score global avec recommandations.
+              <strong>Après l'import:</strong> Le projet est analysé automatiquement et vous recevez
+              un score global avec recommandations.
             </p>
           </CardContent>
         </Card>

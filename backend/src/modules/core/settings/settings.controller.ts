@@ -14,7 +14,7 @@ import { SettingsService } from './settings.service';
 @UseGuards(JwtAuthGuard)
 @Controller('settings')
 export class SettingsController {
-  constructor(private settingsService: SettingsService) { }
+  constructor(private settingsService: SettingsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Obtenir tous les paramètres' })
@@ -32,6 +32,24 @@ export class SettingsController {
   @ApiOperation({ summary: 'Obtenir un paramètre spécifique' })
   getSetting(@Request() req, @Param('section') section: string, @Param('key') key: string) {
     return this.settingsService.getSetting(req.user.userId, section, key);
+  }
+
+  @Post(':section/bulk')
+  @ApiOperation({ summary: 'Mettre à jour plusieurs paramètres' })
+  @ApiResponse({ status: 200, type: [SettingResponseDto] })
+  updateSectionSettings(
+    @Request() req,
+    @Param('section') section: string,
+    @Body() data: BulkUpdateSettingsDto,
+  ) {
+    return this.settingsService.updateSectionSettings(req.user.userId, section, data.settings);
+  }
+
+  @Post(':section/test')
+  @ApiOperation({ summary: 'Tester une connexion' })
+  @ApiResponse({ status: 200, type: TestConnectionResponseDto })
+  testConnection(@Request() req, @Param('section') section: string) {
+    return this.settingsService.testConnection(req.user.userId, section);
   }
 
   @Post(':section/:key')
@@ -53,17 +71,6 @@ export class SettingsController {
     );
   }
 
-  @Post(':section/bulk')
-  @ApiOperation({ summary: 'Mettre à jour plusieurs paramètres' })
-  @ApiResponse({ status: 200, type: [SettingResponseDto] })
-  updateSectionSettings(
-    @Request() req,
-    @Param('section') section: string,
-    @Body() data: BulkUpdateSettingsDto,
-  ) {
-    return this.settingsService.updateSectionSettings(req.user.userId, section, data.settings);
-  }
-
   @Delete(':section/:key')
   @ApiOperation({ summary: 'Supprimer un paramètre' })
   deleteSetting(@Request() req, @Param('section') section: string, @Param('key') key: string) {
@@ -74,13 +81,6 @@ export class SettingsController {
   @ApiOperation({ summary: 'Supprimer une section' })
   deleteSection(@Request() req, @Param('section') section: string) {
     return this.settingsService.deleteSection(req.user.userId, section);
-  }
-
-  @Post(':section/test')
-  @ApiOperation({ summary: 'Tester une connexion' })
-  @ApiResponse({ status: 200, type: TestConnectionResponseDto })
-  testConnection(@Request() req, @Param('section') section: string) {
-    return this.settingsService.testConnection(req.user.userId, section);
   }
 
   @Get('pica-ai/config')

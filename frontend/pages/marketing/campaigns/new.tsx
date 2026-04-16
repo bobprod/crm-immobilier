@@ -89,6 +89,17 @@ export default function NewCampaignPage() {
               Retour aux campagnes
             </Button>
           </Link>
+          <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+            <Link href="/marketing-dashboard" className="hover:text-blue-500 transition">
+              Hub Marketing
+            </Link>
+            <span>/</span>
+            <Link href="/marketing/campaigns" className="hover:text-blue-500 transition">
+              Campagnes
+            </Link>
+            <span>/</span>
+            <span className="text-gray-600">Nouvelle</span>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">Nouvelle Campagne</h1>
           <p className="text-gray-600 mt-1">Créez une nouvelle campagne marketing</p>
         </div>

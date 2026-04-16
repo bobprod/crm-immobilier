@@ -148,18 +148,19 @@ export class TrackingEventsService {
       limit?: number;
     },
   ) {
+    const timestampFilter: any = {};
+    if (filters?.startDate) timestampFilter.gte = filters.startDate;
+    if (filters?.endDate) timestampFilter.lte = filters.endDate;
+
     return this.prisma.trackingEvent.findMany({
       where: {
         userId,
-        platform: filters?.platform,
-        eventName: filters?.eventName,
-        timestamp: {
-          gte: filters?.startDate,
-          lte: filters?.endDate,
-        },
+        ...(filters?.platform && { platform: filters.platform }),
+        ...(filters?.eventName && { eventName: filters.eventName }),
+        ...(Object.keys(timestampFilter).length > 0 && { timestamp: timestampFilter }),
       },
       orderBy: { timestamp: 'desc' },
-      take: filters?.limit || 100,
+      take: filters?.limit ? Number(filters.limit) : 100,
     });
   }
 

@@ -43,3 +43,4 @@ backend/dist/
 *_BACKUP_*
 *.old.ts
 *.old.js
+nul

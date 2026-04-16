@@ -37,7 +37,7 @@ export class PlanningController {
   @ApiOperation({ summary: 'Get unified planning data with tasks, appointments, boards, and views' })
   @ApiResponse({ status: 200, description: 'Returns unified planning data' })
   async getUnifiedPlanningData(@Request() req, @Query() query: UnifiedPlanningQueryDto) {
-    return this.planningService.getUnifiedPlanningData(req.user.id, query);
+    return this.planningService.getUnifiedPlanningData(req.user.userId, query);
   }
 
   // ==================== TaskBoard Endpoints ====================
@@ -46,21 +46,21 @@ export class PlanningController {
   @ApiOperation({ summary: 'Create a new task board' })
   @ApiResponse({ status: 201, description: 'Board created successfully' })
   async createTaskBoard(@Request() req, @Body() dto: CreateTaskBoardDto) {
-    return this.planningService.createTaskBoard(req.user.id, dto);
+    return this.planningService.createTaskBoard(req.user.userId, dto);
   }
 
   @Get('boards')
   @ApiOperation({ summary: 'Get all task boards for the current user' })
   @ApiResponse({ status: 200, description: 'Returns list of boards' })
   async getTaskBoards(@Request() req) {
-    return this.planningService.getTaskBoards(req.user.id);
+    return this.planningService.getTaskBoards(req.user.userId);
   }
 
   @Get('boards/initialize')
   @ApiOperation({ summary: 'Initialize default board with standard columns' })
   @ApiResponse({ status: 200, description: 'Returns initialized board' })
   async initializeDefaultBoard(@Request() req) {
-    return this.planningService.initializeDefaultBoard(req.user.id);
+    return this.planningService.initializeDefaultBoard(req.user.userId);
   }
 
   @Get('boards/:boardId')
@@ -68,7 +68,7 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'Returns board details' })
   @ApiResponse({ status: 404, description: 'Board not found' })
   async getTaskBoard(@Request() req, @Param('boardId') boardId: string) {
-    return this.planningService.getTaskBoard(req.user.id, boardId);
+    return this.planningService.getTaskBoard(req.user.userId, boardId);
   }
 
   @Put('boards/:boardId')
@@ -80,7 +80,7 @@ export class PlanningController {
     @Param('boardId') boardId: string,
     @Body() dto: UpdateTaskBoardDto,
   ) {
-    return this.planningService.updateTaskBoard(req.user.id, boardId, dto);
+    return this.planningService.updateTaskBoard(req.user.userId, boardId, dto);
   }
 
   @Delete('boards/:boardId')
@@ -88,7 +88,7 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'Board deleted successfully' })
   @ApiResponse({ status: 404, description: 'Board not found' })
   async deleteTaskBoard(@Request() req, @Param('boardId') boardId: string) {
-    return this.planningService.deleteTaskBoard(req.user.id, boardId);
+    return this.planningService.deleteTaskBoard(req.user.userId, boardId);
   }
 
   // ==================== TaskColumn Endpoints ====================
@@ -98,7 +98,7 @@ export class PlanningController {
   @ApiResponse({ status: 201, description: 'Column created successfully' })
   @ApiResponse({ status: 404, description: 'Board not found' })
   async createTaskColumn(@Request() req, @Body() dto: CreateTaskColumnDto) {
-    return this.planningService.createTaskColumn(req.user.id, dto);
+    return this.planningService.createTaskColumn(req.user.userId, dto);
   }
 
   @Put('columns/:columnId')
@@ -110,7 +110,7 @@ export class PlanningController {
     @Param('columnId') columnId: string,
     @Body() dto: UpdateTaskColumnDto,
   ) {
-    return this.planningService.updateTaskColumn(req.user.id, columnId, dto);
+    return this.planningService.updateTaskColumn(req.user.userId, columnId, dto);
   }
 
   @Delete('columns/:columnId')
@@ -118,7 +118,7 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'Column deleted successfully' })
   @ApiResponse({ status: 404, description: 'Column not found' })
   async deleteTaskColumn(@Request() req, @Param('columnId') columnId: string) {
-    return this.planningService.deleteTaskColumn(req.user.id, columnId);
+    return this.planningService.deleteTaskColumn(req.user.userId, columnId);
   }
 
   // ==================== Task Movement ====================
@@ -128,7 +128,7 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'Task moved successfully' })
   @ApiResponse({ status: 404, description: 'Task, board, or column not found' })
   async moveTask(@Request() req, @Body() dto: MoveTaskDto) {
-    return this.planningService.moveTask(req.user.id, dto);
+    return this.planningService.moveTask(req.user.userId, dto);
   }
 
   // ==================== PlanningView Endpoints ====================
@@ -137,14 +137,14 @@ export class PlanningController {
   @ApiOperation({ summary: 'Create a new planning view preference' })
   @ApiResponse({ status: 201, description: 'View created successfully' })
   async createPlanningView(@Request() req, @Body() dto: CreatePlanningViewDto) {
-    return this.planningService.createPlanningView(req.user.id, dto);
+    return this.planningService.createPlanningView(req.user.userId, dto);
   }
 
   @Get('views')
   @ApiOperation({ summary: 'Get all planning views for the current user' })
   @ApiResponse({ status: 200, description: 'Returns list of views' })
   async getPlanningViews(@Request() req) {
-    return this.planningService.getPlanningViews(req.user.id);
+    return this.planningService.getPlanningViews(req.user.userId);
   }
 
   @Get('views/:viewId')
@@ -152,7 +152,7 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'Returns view details' })
   @ApiResponse({ status: 404, description: 'View not found' })
   async getPlanningView(@Request() req, @Param('viewId') viewId: string) {
-    return this.planningService.getPlanningView(req.user.id, viewId);
+    return this.planningService.getPlanningView(req.user.userId, viewId);
   }
 
   @Put('views/:viewId')
@@ -164,7 +164,7 @@ export class PlanningController {
     @Param('viewId') viewId: string,
     @Body() dto: UpdatePlanningViewDto,
   ) {
-    return this.planningService.updatePlanningView(req.user.id, viewId, dto);
+    return this.planningService.updatePlanningView(req.user.userId, viewId, dto);
   }
 
   @Delete('views/:viewId')
@@ -172,6 +172,6 @@ export class PlanningController {
   @ApiResponse({ status: 200, description: 'View deleted successfully' })
   @ApiResponse({ status: 404, description: 'View not found' })
   async deletePlanningView(@Request() req, @Param('viewId') viewId: string) {
-    return this.planningService.deletePlanningView(req.user.id, viewId);
+    return this.planningService.deletePlanningView(req.user.userId, viewId);
   }
 }

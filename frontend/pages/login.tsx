@@ -18,7 +18,7 @@ export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState('admin@crm.com');
-  const [password, setPassword] = useState('Admin123!');
+  const [password, setPassword] = useState('Test1234!');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -66,15 +66,23 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
       {/* ─── Left panel ─────────────────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between p-14"
-        style={{ background: 'linear-gradient(135deg, hsl(222,70%,16%) 0%, hsl(222,60%,24%) 50%, hsl(230,55%,28%) 100%)' }}>
-
+      <div
+        className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between p-14"
+        style={{
+          background:
+            'linear-gradient(135deg, hsl(222,70%,16%) 0%, hsl(222,60%,24%) 50%, hsl(230,55%,28%) 100%)',
+        }}
+      >
         {/* Animated background shapes */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-10"
-            style={{ background: 'radial-gradient(circle, #f59e0b, transparent 70%)' }} />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
-            style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)' }} />
+          <div
+            className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #f59e0b, transparent 70%)' }}
+          />
+          <div
+            className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #3b82f6, transparent 70%)' }}
+          />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full opacity-5 border border-white" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-5 border border-white" />
         </div>
@@ -82,7 +90,10 @@ export default function Login() {
         {/* Top logo */}
         <div
           className="relative z-10 transition-all duration-700"
-          style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(-20px)' }}
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(-20px)',
+          }}
         >
           <div className="flex items-center gap-3 mb-14">
             <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30">
@@ -95,14 +106,18 @@ export default function Login() {
           </div>
 
           <h1 className="text-5xl font-extrabold text-white leading-tight mb-5 tracking-tight">
-            Gestion<br />
-            <span className="text-transparent bg-clip-text"
-              style={{ backgroundImage: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}>
+            Gestion
+            <br />
+            <span
+              className="text-transparent bg-clip-text"
+              style={{ backgroundImage: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}
+            >
               Immobilière IA
             </span>
           </h1>
           <p className="text-slate-300 text-base leading-relaxed max-w-sm mb-12">
-            Pilotez votre agence, automatisez votre prospection et convertissez plus de leads grâce à l'intelligence artificielle.
+            Pilotez votre agence, automatisez votre prospection et convertissez plus de leads grâce
+            à l'intelligence artificielle.
           </p>
 
           {/* Feature list */}
@@ -129,14 +144,21 @@ export default function Login() {
         {/* Bottom stats */}
         <div
           className="relative z-10 flex gap-6 transition-all duration-700"
-          style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '500ms' }}
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(20px)',
+            transitionDelay: '500ms',
+          }}
         >
           {[
             { value: '98%', label: 'Satisfaction' },
             { value: '3×', label: 'Plus de leads' },
             { value: '50+', label: 'Agences actives' },
           ].map((stat) => (
-            <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/10 flex-1 text-center">
+            <div
+              key={stat.label}
+              className="bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-4 border border-white/10 flex-1 text-center"
+            >
               <p className="text-2xl font-bold text-white">{stat.value}</p>
               <p className="text-slate-400 text-xs mt-0.5">{stat.label}</p>
             </div>
@@ -148,7 +170,10 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center py-12 px-8 bg-white">
         <div
           className="w-full max-w-[400px] transition-all duration-700"
-          style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(24px)' }}
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
+          }}
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
@@ -159,7 +184,9 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">Bon retour 👋</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">
+              Bon retour 👋
+            </h2>
             <p className="text-slate-500 text-sm">Connectez-vous à votre espace de gestion.</p>
           </div>
 
@@ -186,7 +213,10 @@ export default function Login() {
                   autoComplete="email"
                   required
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError('');
+                  }}
                   className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-2xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[hsl(222,65%,28%)] focus:border-transparent transition-all bg-slate-50 focus:bg-white hover:border-slate-300"
                   placeholder="vous@exemple.fr"
                 />
@@ -202,7 +232,10 @@ export default function Login() {
                 <a
                   href="#"
                   className="text-xs text-[hsl(222,65%,40%)] hover:text-[hsl(222,65%,28%)] font-medium transition-colors"
-                  onClick={(e) => { e.preventDefault(); alert('Contactez votre administrateur pour réinitialiser votre mot de passe.'); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert('Contactez votre administrateur pour réinitialiser votre mot de passe.');
+                  }}
                 >
                   Mot de passe oublié ?
                 </a>
@@ -216,7 +249,10 @@ export default function Login() {
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
                   className="w-full pl-10 pr-11 py-3 border border-slate-200 rounded-2xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[hsl(222,65%,28%)] focus:border-transparent transition-all bg-slate-50 focus:bg-white hover:border-slate-300"
                   placeholder="••••••••"
                 />
@@ -249,9 +285,7 @@ export default function Login() {
                   <span>Connexion en cours…</span>
                 </span>
               ) : (
-                <span className="flex items-center justify-center gap-2">
-                  Se connecter
-                </span>
+                <span className="flex items-center justify-center gap-2">Se connecter</span>
               )}
             </button>
           </form>
@@ -259,7 +293,8 @@ export default function Login() {
           {/* Footer hint */}
           <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
             <p className="text-xs text-slate-500 text-center font-medium">
-              🔐 Compte par défaut · <span className="font-mono text-slate-700">admin@crm.com</span> / <span className="font-mono text-slate-700">Admin123!</span>
+              🔐 Compte par défaut · <span className="font-mono text-slate-700">admin@crm.com</span>{' '}
+              / <span className="font-mono text-slate-700">Admin123!</span>
             </p>
           </div>
 

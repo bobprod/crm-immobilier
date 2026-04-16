@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import apiClient from '@/shared/utils/backend-api';
 import {
+  ArrowLeft,
   MousePointer,
   Activity,
   Eye,
@@ -22,6 +23,7 @@ import {
   Monitor,
   Tablet,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface HeatmapStats {
   totalClicks: number;
@@ -133,6 +135,12 @@ export default function HeatmapPage() {
     <div className="container mx-auto py-8">
       {/* Header */}
       <div className="mb-6">
+        <Link href="/marketing-dashboard">
+          <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
+            Hub Marketing
+          </Button>
+        </Link>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <MousePointer className="h-8 w-8 text-purple-600" />
           Heatmaps
@@ -278,7 +286,13 @@ export default function HeatmapPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                Heatmap {heatmapType === 'click' ? 'Clics' : heatmapType === 'move' ? 'Mouvements' : 'Scroll'} - {deviceType}
+                Heatmap{' '}
+                {heatmapType === 'click'
+                  ? 'Clics'
+                  : heatmapType === 'move'
+                    ? 'Mouvements'
+                    : 'Scroll'}{' '}
+                - {deviceType}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -326,7 +340,7 @@ export default function HeatmapPage() {
                       <p className="text-sm text-gray-600">Points Moyens</p>
                       <p className="text-xl font-bold">
                         {Math.round(
-                          heatmapData.reduce((sum, p) => sum + p.value, 0) / heatmapData.length,
+                          heatmapData.reduce((sum, p) => sum + p.value, 0) / heatmapData.length
                         )}
                       </p>
                     </div>
@@ -370,20 +384,24 @@ export default function HeatmapPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {Object.entries(scrollDepth.scrollReachPercentages).map(([depth, percentage]) => (
-                      <div key={depth}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">Scrollé jusqu'à {depth}</span>
-                          <span className="text-sm text-gray-600">{percentage}% des visiteurs</span>
+                    {Object.entries(scrollDepth.scrollReachPercentages).map(
+                      ([depth, percentage]) => (
+                        <div key={depth}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Scrollé jusqu'à {depth}</span>
+                            <span className="text-sm text-gray-600">
+                              {percentage}% des visiteurs
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className="bg-blue-500 h-3 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div
-                            className="bg-blue-500 h-3 rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -420,7 +438,9 @@ export default function HeatmapPage() {
                   ))}
 
                   {stats.topClickedElements.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">Aucune donnée de clics disponible</p>
+                    <p className="text-center text-gray-500 py-8">
+                      Aucune donnée de clics disponible
+                    </p>
                   )}
                 </div>
               </CardContent>

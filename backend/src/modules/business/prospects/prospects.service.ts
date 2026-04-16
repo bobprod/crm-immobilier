@@ -30,7 +30,7 @@ export class ProspectsService {
     private prisma: PrismaService,
     private historyService: ProspectHistoryService,
     private eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   /**
    * Calculate prospect score (0-100)
@@ -85,8 +85,8 @@ export class ProspectsService {
         data: prospectData,
       });
 
-      // Log creation to history
-      await this.historyService.logChange(result.id, userId, 'created', { new: result });
+      // Log creation to history (non-blocking)
+      this.historyService.logChange(result.id, userId, 'created', { new: result }).catch(() => {});
 
       // Emit analytics event
       this.eventEmitter.emit('prospect.created', new ProspectCreatedEvent(userId, result));
@@ -159,16 +159,21 @@ export class ProspectsService {
       data: updatedData,
     });
 
-    // Log update to history
-    await this.historyService.logChange(id, userId, 'updated', {
-      old: oldProspect,
-      new: updatedProspect,
-    });
+    // Log update to history (non-blocking)
+    this.historyService
+      .logChange(id, userId, 'updated', {
+        old: oldProspect,
+        new: updatedProspect,
+      })
+      .catch(() => {});
 
     // Emit status changed event if status was updated
     if (data.status && data.status !== oldProspect.status) {
       if (data.status === 'converted') {
-        this.eventEmitter.emit('prospect.converted', new ProspectConvertedEvent(userId, updatedProspect));
+        this.eventEmitter.emit(
+          'prospect.converted',
+          new ProspectConvertedEvent(userId, updatedProspect),
+        );
       } else {
         this.eventEmitter.emit(
           'prospect.status_changed',
@@ -196,8 +201,8 @@ export class ProspectsService {
       data: { deletedAt: new Date() },
     });
 
-    // Log deletion to history
-    await this.historyService.logChange(id, userId, 'deleted', { old: prospect });
+    // Log deletion to history (non-blocking)
+    this.historyService.logChange(id, userId, 'deleted', { old: prospect }).catch(() => {});
 
     return deleted;
   }
@@ -219,8 +224,8 @@ export class ProspectsService {
       data: { deletedAt: null },
     });
 
-    // Log restoration to history
-    await this.historyService.logChange(id, userId, 'restored', { new: restored });
+    // Log restoration to history (non-blocking)
+    this.historyService.logChange(id, userId, 'restored', { new: restored }).catch(() => {});
 
     return restored;
   }
@@ -247,8 +252,10 @@ export class ProspectsService {
       throw new NotFoundException('Prospect non trouvé');
     }
 
-    // Log permanent deletion before deleting
-    await this.historyService.logChange(id, userId, 'permanently_deleted', { old: prospect });
+    // Log permanent deletion before deleting (non-blocking)
+    this.historyService
+      .logChange(id, userId, 'permanently_deleted', { old: prospect })
+      .catch(() => {});
 
     return this.prisma.prospects.delete({
       where: { id },
@@ -308,15 +315,14 @@ export class ProspectsService {
    * Advanced statistics
    */
   async getStats(userId: string) {
-    const [total, active, converted, qualified, rejected, allProspects] =
-      await Promise.all([
-        this.prisma.prospects.count({ where: { userId, deletedAt: null } }),
-        this.prisma.prospects.count({ where: { userId, status: 'active', deletedAt: null } }),
-        this.prisma.prospects.count({ where: { userId, status: 'converted', deletedAt: null } }),
-        this.prisma.prospects.count({ where: { userId, status: 'qualified', deletedAt: null } }),
-        this.prisma.prospects.count({ where: { userId, status: 'rejected', deletedAt: null } }),
-        this.prisma.prospects.findMany({ where: { userId, deletedAt: null } }),
-      ]);
+    const [total, active, converted, qualified, rejected, allProspects] = await Promise.all([
+      this.prisma.prospects.count({ where: { userId, deletedAt: null } }),
+      this.prisma.prospects.count({ where: { userId, status: 'active', deletedAt: null } }),
+      this.prisma.prospects.count({ where: { userId, status: 'converted', deletedAt: null } }),
+      this.prisma.prospects.count({ where: { userId, status: 'qualified', deletedAt: null } }),
+      this.prisma.prospects.count({ where: { userId, status: 'rejected', deletedAt: null } }),
+      this.prisma.prospects.findMany({ where: { userId, deletedAt: null } }),
+    ]);
 
     // Calculate avg score, byType, bySource in memory
     let totalScore = 0;
@@ -394,11 +400,19 @@ export class ProspectsService {
       const cards = allProspects
         .filter((p: any) => stage.statuses.includes((p.status || '').toLowerCase()))
         .map((p: any) => ({
-          id: p.id, firstName: p.firstName, lastName: p.lastName,
-          email: p.email, phone: p.phone, type: p.type,
-          status: p.status, score: p.score, source: p.source,
-          budget: p.budget, lostReason: p.lostReason,
-          createdAt: p.createdAt, updatedAt: p.updatedAt,
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          phone: p.phone,
+          type: p.type,
+          status: p.status,
+          score: p.score,
+          source: p.source,
+          budget: p.budget,
+          lostReason: p.lostReason,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
           nextActivity: interactionsMap.get(p.id) || null,
         }));
 
@@ -423,8 +437,8 @@ export class ProspectsService {
       conversionRate:
         allProspects.length > 0
           ? Math.round(
-            ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
-          ) / 100
+              ((columns.find((c) => c.key === 'gagne')?.count || 0) / allProspects.length) * 10000,
+            ) / 100
           : 0,
     };
   }

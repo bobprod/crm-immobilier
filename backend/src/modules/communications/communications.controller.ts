@@ -27,6 +27,7 @@ import {
   AutoCompleteDto,
   ImproveTextDto,
   TranslateMessageDto,
+  CommunicationsSettingsDto,
 } from './dto';
 
 @ApiTags('Communications')
@@ -120,6 +121,19 @@ export class CommunicationsController {
     return this.communicationsService.sendTestEmail(body.to);
   }
 
+  @Get('settings')
+  @ApiOperation({ summary: 'Récupérer la configuration communications (SMTP, Twilio, WhatsApp)' })
+  getSettings() {
+    return this.communicationsService.getSettings();
+  }
+
+  @Put('settings')
+  @ApiOperation({ summary: 'Sauvegarder la configuration communications' })
+  @ApiBody({ type: CommunicationsSettingsDto })
+  saveSettings(@Body() dto: CommunicationsSettingsDto) {
+    return this.communicationsService.saveSettings(dto);
+  }
+
   // ========== AI-POWERED ENDPOINTS ==========
 
   @Post('ai/generate-email')
@@ -154,22 +168,18 @@ export class CommunicationsController {
   @ApiOperation({ summary: 'Auto-complétion intelligente pendant la frappe' })
   @ApiBody({ type: AutoCompleteDto })
   autoComplete(@Request() req, @Body() dto: AutoCompleteDto) {
-    return this.communicationsAIService.autoComplete(
-      req.user.userId,
-      dto.partialText,
-      { type: dto.type, prospectId: dto.prospectId, propertyId: dto.propertyId },
-    );
+    return this.communicationsAIService.autoComplete(req.user.userId, dto.partialText, {
+      type: dto.type,
+      prospectId: dto.prospectId,
+      propertyId: dto.propertyId,
+    });
   }
 
   @Post('ai/improve-text')
   @ApiOperation({ summary: 'Améliorer un texte existant avec AI' })
   @ApiBody({ type: ImproveTextDto })
   improveText(@Request() req, @Body() dto: ImproveTextDto) {
-    return this.communicationsAIService.improveText(
-      req.user.userId,
-      dto.text,
-      dto.improvements,
-    );
+    return this.communicationsAIService.improveText(req.user.userId, dto.text, dto.improvements);
   }
 
   @Post('ai/translate')

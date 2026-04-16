@@ -12,7 +12,9 @@ import {
   Clock,
   AlertCircle,
   Filter,
+  ArrowLeft,
 } from 'lucide-react';
+import Link from 'next/link';
 import { io, Socket } from 'socket.io-client';
 
 interface RealtimeEvent {
@@ -154,13 +156,17 @@ export default function TrackingRealtimeDashboard() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
+            <Link href="/marketing-dashboard">
+              <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                Hub Marketing
+              </Button>
+            </Link>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Activity className="h-8 w-8 text-red-600 animate-pulse" />
               Tracking Temps Réel
             </h1>
-            <p className="text-gray-600 mt-2">
-              Visualisez les événements de tracking en direct
-            </p>
+            <p className="text-gray-600 mt-2">Visualisez les événements de tracking en direct</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -257,23 +263,28 @@ export default function TrackingRealtimeDashboard() {
               <div className="border-t pt-4">
                 <h4 className="text-sm font-semibold mb-3">Plateformes</h4>
                 <div className="space-y-2">
-                  {['meta', 'google_tag_manager', 'google_analytics', 'tiktok', 'linkedin', 'vitrine'].map(
-                    (platform) => (
-                      <button
-                        key={platform}
-                        onClick={() => togglePlatformFilter(platform)}
-                        className={`w-full text-left px-3 py-2 rounded text-sm ${
-                          filters.platforms.includes(platform)
-                            ? 'bg-blue-50 border-2 border-blue-500'
-                            : 'bg-gray-50 border border-gray-200'
-                        }`}
-                      >
-                        <Badge className={platformColors[platform] || 'bg-gray-500'}>
-                          {platform}
-                        </Badge>
-                      </button>
-                    ),
-                  )}
+                  {[
+                    'meta',
+                    'google_tag_manager',
+                    'google_analytics',
+                    'tiktok',
+                    'linkedin',
+                    'vitrine',
+                  ].map((platform) => (
+                    <button
+                      key={platform}
+                      onClick={() => togglePlatformFilter(platform)}
+                      className={`w-full text-left px-3 py-2 rounded text-sm ${
+                        filters.platforms.includes(platform)
+                          ? 'bg-blue-50 border-2 border-blue-500'
+                          : 'bg-gray-50 border border-gray-200'
+                      }`}
+                    >
+                      <Badge className={platformColors[platform] || 'bg-gray-500'}>
+                        {platform}
+                      </Badge>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -314,9 +325,7 @@ export default function TrackingRealtimeDashboard() {
                 <Activity className="h-5 w-5" />
                 Événements en Direct
               </span>
-              {connected && (
-                <Badge className="bg-green-500 text-white animate-pulse">● LIVE</Badge>
-              )}
+              {connected && <Badge className="bg-green-500 text-white animate-pulse">● LIVE</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -334,10 +343,7 @@ export default function TrackingRealtimeDashboard() {
               </div>
             )}
 
-            <div
-              ref={eventsContainerRef}
-              className="space-y-3 max-h-[600px] overflow-y-auto pr-2"
-            >
+            <div ref={eventsContainerRef} className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
               {events.map((event, index) => (
                 <div
                   key={`${event.id}-${index}`}

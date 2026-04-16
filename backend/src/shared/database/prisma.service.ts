@@ -116,6 +116,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     // Autres tables
     propertyTrackingStats: 'property_tracking_stats',
     activities: 'activities',
+    // Tables Chat Interne
+    chatConversation: 'chat_conversations',
+    chatConversations: 'chat_conversations',
+    chatParticipant: 'chat_participants',
+    chatParticipants: 'chat_participants',
+    chatMessage: 'chat_messages',
+    chatMessages: 'chat_messages',
+    // Tables Prospects History
+    prospectHistory: 'prospect_history',
   };
 
   constructor() {
@@ -263,6 +272,12 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'taskBoard',
       'taskColumn',
       'planningView',
+      // Tables Chat Interne
+      'chatConversation',
+      'chatParticipant',
+      'chatMessage',
+      // Tables Prospects History
+      'prospectHistory',
     ];
 
     tables.forEach((table) => {
@@ -540,27 +555,27 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
           _count: parseInt(row._count || '0', 10),
           _sum: args._sum
             ? Object.keys(args._sum).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`sum_${k}`]) || 0 }),
+                {},
+              )
             : null,
           _avg: args._avg
             ? Object.keys(args._avg).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`avg_${k}`]) || null }),
+                {},
+              )
             : null,
           _min: args._min
             ? Object.keys(args._min).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`min_${k}`]) || null }),
+                {},
+              )
             : null,
           _max: args._max
             ? Object.keys(args._max).reduce(
-              (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
-              {},
-            )
+                (acc, k) => ({ ...acc, [k]: parseFloat(row[`max_${k}`]) || null }),
+                {},
+              )
             : null,
         };
       },
@@ -779,6 +794,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     const compositeKeyMap: Record<string, string[]> = {
       userId_provider: ['userId', 'provider'],
       userId_agencyId: ['userId', 'agencyId'],
+      section_key_userId: ['section', 'key', 'userId'],
     };
 
     // Check if a value looks like a Prisma operator object
@@ -847,6 +863,21 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       if (value === null) {
         conditions.push(`"${key}" IS NULL`);
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // Evaluate JSON Path operator first
+        const valObj = value as Record<string, any>;
+        if (valObj.path && Array.isArray(valObj.path) && valObj.equals !== undefined) {
+          let jsonPath = `"${key}"`;
+          for (let i = 0; i < valObj.path.length; i++) {
+            if (i === valObj.path.length - 1) {
+              jsonPath += `->>'${valObj.path[i]}'`;
+            } else {
+              jsonPath += `->'${valObj.path[i]}'`;
+            }
+          }
+          conditions.push(`${jsonPath} = '${formatValue(valObj.equals)}'`);
+          continue;
+        }
+
         // Check if this is an operator object or a nested query
         if (isPrismaOperator(value)) {
           // Handle operators like { gte: x, lte: y }
@@ -915,16 +946,25 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   }
 
   private buildOrderByClause(orderBy: any): string {
+    console.log('ORDERBY INPUT:', JSON.stringify(orderBy, null, 2));
     if (Array.isArray(orderBy)) {
       return orderBy
         .map((o) => {
           const [key, dir] = Object.entries(o)[0];
+          if (typeof dir === 'object' && dir !== null) {
+            const val = Object.values(dir)[0];
+            return `"${key}" ${(val as string).toUpperCase()}`;
+          }
           return `"${key}" ${(dir as string).toUpperCase()}`;
         })
         .join(', ');
     }
 
     const [key, dir] = Object.entries(orderBy)[0];
+    if (typeof dir === 'object' && dir !== null) {
+      const val = Object.values(dir)[0];
+      return `"${key}" ${(val as string).toUpperCase()}`;
+    }
     return `"${key}" ${(dir as string).toUpperCase()}`;
   }
 }

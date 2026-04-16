@@ -14,6 +14,7 @@ import {
 } from '@/shared/components/ui/dialog';
 import apiClient from '@/shared/utils/backend-api';
 import {
+  ArrowLeft,
   FlaskConical,
   Plus,
   TrendingUp,
@@ -24,6 +25,7 @@ import {
   Pause,
   BarChart3,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface ABTest {
   id: string;
@@ -158,6 +160,12 @@ export default function ABTestsPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
+          <Link href="/marketing-dashboard">
+            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Hub Marketing
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <FlaskConical className="h-8 w-8 text-blue-600" />
             Tests A/B
@@ -288,7 +296,9 @@ export default function ABTestsPage() {
                         setNewTest({ ...newTest, trafficSplit: parseInt(e.target.value) })
                       }
                     />
-                    <p className="text-xs text-gray-500 mt-1">Variante A: {newTest.trafficSplit}%</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Variante A: {newTest.trafficSplit}%
+                    </p>
                   </div>
                   <div className="flex-1">
                     <Input type="number" value={100 - newTest.trafficSplit} disabled />

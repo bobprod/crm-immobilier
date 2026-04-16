@@ -6,6 +6,7 @@ import {
   SendWhatsAppDto,
   CreateTemplateDto,
   UpdateTemplateDto,
+  CommunicationsSettingsDto,
 } from './dto';
 import * as nodemailer from 'nodemailer';
 
@@ -279,6 +280,179 @@ export class CommunicationsService {
       failed,
       byType: { email: emails, sms: sms, whatsapp: whatsapp },
     };
+  }
+
+  /**
+   * Récupérer la configuration communications depuis global_settings
+   */
+  async getSettings() {
+    const keys = [
+      'smtp_host',
+      'smtp_port',
+      'smtp_secure',
+      'smtp_user',
+      'smtp_password',
+      'smtp_from',
+      'twilio_account_sid',
+      'twilio_auth_token',
+      'twilio_phone_number',
+      'whatsapp_api_key',
+      'whatsapp_phone_number_id',
+      'email_provider',
+      'resend_api_key',
+      'sendgrid_api_key',
+      'meta_app_id',
+      'meta_app_secret',
+      'meta_page_access_token',
+      'meta_page_id',
+      'meta_instagram_account_id',
+      'meta_webhook_verify_token',
+      'meta_graph_api_version',
+      'tiktok_app_id',
+      'tiktok_app_secret',
+      'tiktok_access_token',
+      'tiktok_business_id',
+      'tiktok_webhook_secret',
+      'linkedin_client_id',
+      'linkedin_client_secret',
+      'linkedin_access_token',
+      'linkedin_organization_id',
+    ];
+    const rows = await this.prisma.globalSettings.findMany({
+      where: { key: { in: keys } },
+    });
+    const map: Record<string, string> = {};
+    for (const row of rows) map[row.key] = row.value;
+
+    return {
+      smtpHost: map.smtp_host || process.env.SMTP_HOST || '',
+      smtpPort: parseInt(map.smtp_port || process.env.SMTP_PORT || '587'),
+      smtpSecure: (map.smtp_secure || process.env.SMTP_SECURE || 'false') === 'true',
+      smtpUser: map.smtp_user || process.env.SMTP_USER || '',
+      smtpPassword: map.smtp_password ? '••••••••' : process.env.SMTP_PASSWORD ? '••••••••' : '',
+      smtpFrom: map.smtp_from || process.env.SMTP_FROM || process.env.SMTP_USER || '',
+      twilioAccountSid: map.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID || '',
+      twilioAuthToken: map.twilio_auth_token
+        ? '••••••••'
+        : process.env.TWILIO_AUTH_TOKEN
+          ? '••••••••'
+          : '',
+      twilioPhoneNumber: map.twilio_phone_number || process.env.TWILIO_PHONE_NUMBER || '',
+      whatsappApiKey: map.whatsapp_api_key ? '••••••••' : '',
+      whatsappPhoneNumberId: map.whatsapp_phone_number_id || '',
+      emailProvider: map.email_provider || process.env.EMAIL_PROVIDER || 'smtp',
+      resendApiKey: map.resend_api_key ? '••••••••' : process.env.RESEND_API_KEY ? '••••••••' : '',
+      sendgridApiKey: map.sendgrid_api_key
+        ? '••••••••'
+        : process.env.SENDGRID_API_KEY
+          ? '••••••••'
+          : '',
+      // Meta Platform
+      metaAppId: map.meta_app_id || '',
+      metaAppSecret: map.meta_app_secret ? '••••••••' : '',
+      metaPageAccessToken: map.meta_page_access_token ? '••••••••' : '',
+      metaPageId: map.meta_page_id || '',
+      metaInstagramAccountId: map.meta_instagram_account_id || '',
+      metaWebhookVerifyToken: map.meta_webhook_verify_token || '',
+      metaGraphApiVersion: map.meta_graph_api_version || 'v21.0',
+      // Statut actuel
+      smtpConfigured: !!(map.smtp_user || process.env.SMTP_USER),
+      twilioConfigured: !!(map.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID),
+      metaConfigured: !!(map.meta_page_access_token && map.meta_page_id),
+      instagramConfigured: !!(map.meta_page_access_token && map.meta_instagram_account_id),
+      // TikTok Business
+      tiktokAppId: map.tiktok_app_id || '',
+      tiktokAppSecret: map.tiktok_app_secret ? '••••••••' : '',
+      tiktokAccessToken: map.tiktok_access_token ? '••••••••' : '',
+      tiktokBusinessId: map.tiktok_business_id || '',
+      tiktokWebhookSecret: map.tiktok_webhook_secret || '',
+      tiktokConfigured: !!(map.tiktok_access_token && map.tiktok_business_id),
+      // LinkedIn Page
+      linkedinClientId: map.linkedin_client_id || '',
+      linkedinClientSecret: map.linkedin_client_secret ? '••••••••' : '',
+      linkedinAccessToken: map.linkedin_access_token ? '••••••••' : '',
+      linkedinOrganizationId: map.linkedin_organization_id || '',
+      linkedinConfigured: !!(map.linkedin_access_token && map.linkedin_organization_id),
+    };
+  }
+
+  /**
+   * Sauvegarder la configuration communications dans global_settings
+   */
+  async saveSettings(dto: CommunicationsSettingsDto) {
+    const mapping: Record<string, string | undefined> = {
+      smtp_host: dto.smtpHost,
+      smtp_port: dto.smtpPort?.toString(),
+      smtp_secure: dto.smtpSecure?.toString(),
+      smtp_user: dto.smtpUser,
+      smtp_from: dto.smtpFrom,
+      twilio_account_sid: dto.twilioAccountSid,
+      twilio_phone_number: dto.twilioPhoneNumber,
+      whatsapp_phone_number_id: dto.whatsappPhoneNumberId,
+      email_provider: dto.emailProvider,
+      meta_app_id: dto.metaAppId,
+      meta_page_id: dto.metaPageId,
+      meta_instagram_account_id: dto.metaInstagramAccountId,
+      meta_webhook_verify_token: dto.metaWebhookVerifyToken,
+      meta_graph_api_version: dto.metaGraphApiVersion,
+      tiktok_app_id: dto.tiktokAppId,
+      tiktok_business_id: dto.tiktokBusinessId,
+      tiktok_webhook_secret: dto.tiktokWebhookSecret,
+      linkedin_client_id: dto.linkedinClientId,
+      linkedin_organization_id: dto.linkedinOrganizationId,
+    };
+    // Mots de passe seulement si non-masqué
+    if (dto.smtpPassword && !dto.smtpPassword.includes('•'))
+      mapping.smtp_password = dto.smtpPassword;
+    if (dto.twilioAuthToken && !dto.twilioAuthToken.includes('•'))
+      mapping.twilio_auth_token = dto.twilioAuthToken;
+    if (dto.whatsappApiKey && !dto.whatsappApiKey.includes('•'))
+      mapping.whatsapp_api_key = dto.whatsappApiKey;
+    if (dto.resendApiKey && !dto.resendApiKey.includes('•'))
+      mapping.resend_api_key = dto.resendApiKey;
+    if (dto.sendgridApiKey && !dto.sendgridApiKey.includes('•'))
+      mapping.sendgrid_api_key = dto.sendgridApiKey;
+    if (dto.metaAppSecret && !dto.metaAppSecret.includes('•'))
+      mapping.meta_app_secret = dto.metaAppSecret;
+    if (dto.metaPageAccessToken && !dto.metaPageAccessToken.includes('•'))
+      mapping.meta_page_access_token = dto.metaPageAccessToken;
+    if (dto.tiktokAppSecret && !dto.tiktokAppSecret.includes('•'))
+      mapping.tiktok_app_secret = dto.tiktokAppSecret;
+    if (dto.tiktokAccessToken && !dto.tiktokAccessToken.includes('•'))
+      mapping.tiktok_access_token = dto.tiktokAccessToken;
+    if (dto.linkedinClientSecret && !dto.linkedinClientSecret.includes('•'))
+      mapping.linkedin_client_secret = dto.linkedinClientSecret;
+    if (dto.linkedinAccessToken && !dto.linkedinAccessToken.includes('•'))
+      mapping.linkedin_access_token = dto.linkedinAccessToken;
+
+    for (const [key, value] of Object.entries(mapping)) {
+      if (value === undefined || value === '') continue;
+      const existing = await this.prisma.globalSettings.findFirst({ where: { key } });
+      if (existing) {
+        await this.prisma.globalSettings.update({ where: { id: existing.id }, data: { value } });
+      } else {
+        await this.prisma.globalSettings.create({ data: { key, value } });
+      }
+    }
+
+    // Réinitialiser le transporter SMTP avec les nouvelles valeurs
+    const host = dto.smtpHost || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = dto.smtpPort || parseInt(process.env.SMTP_PORT || '587');
+    const user = dto.smtpUser || process.env.SMTP_USER;
+    const pass =
+      dto.smtpPassword && !dto.smtpPassword.includes('•')
+        ? dto.smtpPassword
+        : process.env.SMTP_PASSWORD;
+    if (user && pass) {
+      this.transporter = require('nodemailer').createTransport({
+        host,
+        port,
+        secure: dto.smtpSecure ?? false,
+        auth: { user, pass },
+      });
+    }
+
+    return { success: true, message: 'Configuration sauvegardée' };
   }
 
   /**

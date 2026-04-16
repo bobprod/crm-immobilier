@@ -18,6 +18,7 @@ import {
   Copy,
   Trash2,
   BarChart3,
+  ArrowLeft,
 } from 'lucide-react';
 import { campaignsAPI } from '@/shared/utils/campaigns-api';
 import { useToast } from '@/shared/components/ui/use-toast';
@@ -189,6 +190,12 @@ export default function CampaignsListPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
+            <Link href="/marketing-dashboard">
+              <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                Hub Marketing
+              </Button>
+            </Link>
             <h1 className="text-3xl font-bold text-gray-900">Campagnes Marketing</h1>
             <p className="text-gray-600 mt-1">Gérez vos campagnes email, SMS et WhatsApp</p>
           </div>

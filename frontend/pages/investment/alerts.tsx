@@ -47,7 +47,8 @@ export default function InvestmentAlertsPage() {
   const loadAlerts = async () => {
     try {
       const res = await apiClient.get('/investment-intelligence/alerts');
-      setAlerts(res.data?.data || res.data || []);
+      const raw = res.data?.data ?? res.data?.alerts ?? res.data;
+      setAlerts(Array.isArray(raw) ? raw : []);
     } catch (error) {
       console.error('Erreur chargement alertes:', error);
     } finally {

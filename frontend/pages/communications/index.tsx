@@ -1,11 +1,14 @@
-import React from 'react';
-import { MainLayout } from '@/shared/components/layout';
-import CommunicationCenter from '@/modules/communications/components/CommunicationCenter';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 
-export default function CommunicationsPage() {
-  return (
-    <MainLayout title="Communications" breadcrumbs={[{ label: 'Communications' }]}>
-      <CommunicationCenter />
-    </MainLayout>
-  );
+/**
+ * Redirect vers le tableau de bord Communications unifié.
+ * L'ancien CommunicationCenter a été remplacé par CommunicationsDashboard.
+ */
+export default function CommunicationsRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/communications-dashboard');
+  }, [router]);
+  return null;
 }
