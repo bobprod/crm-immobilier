@@ -132,5 +132,82 @@
     "available": "Available",
     "soldRented": "Sold/Rented",
     "avgPrice": "Avg. Price"
+  },
+  "documents": {
+    "pageTitle": "Document Management",
+    "pageSubtitle": "Real estate DMS — Upload, generate and manage your documents",
+    "totalDocs": "Total Documents",
+    "totalSize": "Total Size",
+    "categories": "Categories",
+    "thisMonth": "This month",
+    "tabs": {
+      "documents": "Documents",
+      "generate": "Generate",
+      "ocr": "OCR",
+      "templates": "Templates"
+    },
+    "templates": {
+      "title": "Document Templates",
+      "subtitle": "Create and manage reusable templates with drag & drop",
+      "new": "New Template",
+      "empty": "No templates yet",
+      "emptyCreate": "Create your first template",
+      "loadError": "Unable to load templates",
+      "saveSuccess": "Template created",
+      "updateSuccess": "Template updated",
+      "saveError": "Unable to save",
+      "deleteSuccess": "Template deleted",
+      "deleteError": "Unable to delete",
+      "deleteConfirm": "Delete this template?",
+      "back": "Back",
+      "editor": "Editor",
+      "preview": "Preview",
+      "editTitle": "Edit Template",
+      "newTitle": "New Template",
+      "nameLabel": "Template Name",
+      "namePlaceholder": "Standard Sale Contract",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Sale contract template...",
+      "categoryLabel": "Category",
+      "languageLabel": "Content Language",
+      "variablesDetected": "Detected Variables",
+      "save": "Update",
+      "create": "Create Template",
+      "created": "Created on",
+      "variables": "variable(s)",
+      "dragHint": "Drag and drop blocks to organize your template",
+      "addBlock": "Add Block",
+      "blockContent": "Block content",
+      "aiGenerate": "Generate with AI",
+      "aiGenerating": "Generating...",
+      "aiPromptLabel": "Describe the content to generate",
+      "aiPromptPlaceholder": "E.g.: Early termination clause, warranty conditions...",
+      "aiGenBtn": "Generate",
+      "aiCancel": "Cancel",
+      "aiError": "Unable to generate content",
+      "requiredFields": "Name and at least one block required",
+      "blocks": {
+        "header": "Header",
+        "paragraph": "Paragraph",
+        "clause": "Clause",
+        "signature": "Signature",
+        "variable": "Variable"
+      },
+      "blockPlaceholders": {
+        "header": "Document title or header...",
+        "paragraph": "Body text, general information...",
+        "clause": "Contractual clause: Between the undersigned...",
+        "signature": "Signature: {{name}}, Date: {{date}}",
+        "variable": "{{variableName}}"
+      }
+    },
+    "ocr": {
+      "languages": {
+        "fra": "French",
+        "eng": "English",
+        "ara": "Arabic",
+        "fraEng": "French + English"
+      }
+    }
   }
 }

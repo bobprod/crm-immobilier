@@ -9,6 +9,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useAuth } from '@/modules/core/auth/components/AuthProvider';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { api } from '../../lib/api-client';
 import {
   Search, FileText, Download, Trash2, Upload, Folder, Tag, Eye,
@@ -36,6 +37,7 @@ export default function DocumentsPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -146,8 +148,8 @@ export default function DocumentsPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestion des Documents</h1>
-              <p className="text-gray-600 mt-1">GED immobilière — Téléversez, générez et gérez vos documents</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('documents.pageTitle')}</h1>
+              <p className="text-gray-600 mt-1">{t('documents.pageSubtitle')}</p>
             </div>
           </div>
 
@@ -157,7 +159,7 @@ export default function DocumentsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Documents</p>
+                    <p className="text-sm text-gray-600">{t('documents.totalDocs')}</p>
                     <p className="text-2xl font-bold">{documents.length}</p>
                   </div>
                   <FileText className="h-8 w-8 text-blue-600" />
@@ -168,7 +170,7 @@ export default function DocumentsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Taille Totale</p>
+                    <p className="text-sm text-gray-600">{t('documents.totalSize')}</p>
                     <p className="text-2xl font-bold">{formatFileSize(documents.reduce((s, d) => s + (d.size || 0), 0))}</p>
                   </div>
                   <Folder className="h-8 w-8 text-green-600" />
@@ -179,7 +181,7 @@ export default function DocumentsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Catégories</p>
+                    <p className="text-sm text-gray-600">{t('documents.categories')}</p>
                     <p className="text-2xl font-bold">{new Set(documents.map((d) => d.category).filter(Boolean)).size}</p>
                   </div>
                   <Tag className="h-8 w-8 text-purple-600" />
@@ -190,7 +192,7 @@ export default function DocumentsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Ce mois</p>
+                    <p className="text-sm text-gray-600">{t('documents.thisMonth')}</p>
                     <p className="text-2xl font-bold">
                       {documents.filter((d) => {
                         const dt = new Date(d.createdAt), now = new Date();
@@ -208,16 +210,16 @@ export default function DocumentsPage() {
           <Tabs value={activeTab} onValueChange={(v) => router.push({ query: { tab: v } }, undefined, { shallow: true })}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="documents" className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4" /> Documents
+                <FolderOpen className="h-4 w-4" /> {t('documents.tabs.documents')}
               </TabsTrigger>
               <TabsTrigger value="generate" className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" /> Générer
+                <Sparkles className="h-4 w-4" /> {t('documents.tabs.generate')}
               </TabsTrigger>
               <TabsTrigger value="ocr" className="flex items-center gap-2">
-                <ScanLine className="h-4 w-4" /> OCR
+                <ScanLine className="h-4 w-4" /> {t('documents.tabs.ocr')}
               </TabsTrigger>
               <TabsTrigger value="templates" className="flex items-center gap-2">
-                <LayoutTemplate className="h-4 w-4" /> Modèles
+                <LayoutTemplate className="h-4 w-4" /> {t('documents.tabs.templates')}
               </TabsTrigger>
             </TabsList>
 

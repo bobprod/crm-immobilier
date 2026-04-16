@@ -132,5 +132,82 @@
     "available": "متاحة",
     "soldRented": "مباعة/مؤجرة",
     "avgPrice": "متوسط السعر"
+  },
+  "documents": {
+    "pageTitle": "إدارة المستندات",
+    "pageSubtitle": "نظام إدارة المستندات العقارية — رفع وإنشاء وإدارة مستنداتك",
+    "totalDocs": "إجمالي المستندات",
+    "totalSize": "الحجم الإجمالي",
+    "categories": "الفئات",
+    "thisMonth": "هذا الشهر",
+    "tabs": {
+      "documents": "المستندات",
+      "generate": "إنشاء",
+      "ocr": "OCR",
+      "templates": "القوالب"
+    },
+    "templates": {
+      "title": "قوالب المستندات",
+      "subtitle": "أنشئ وأدر قوالب قابلة لإعادة الاستخدام بالسحب والإفلات",
+      "new": "قالب جديد",
+      "empty": "لا توجد قوالب بعد",
+      "emptyCreate": "إنشاء أول قالب",
+      "loadError": "تعذر تحميل القوالب",
+      "saveSuccess": "تم إنشاء القالب",
+      "updateSuccess": "تم تحديث القالب",
+      "saveError": "تعذر الحفظ",
+      "deleteSuccess": "تم حذف القالب",
+      "deleteError": "تعذر الحذف",
+      "deleteConfirm": "حذف هذا القالب؟",
+      "back": "رجوع",
+      "editor": "المحرر",
+      "preview": "معاينة",
+      "editTitle": "تعديل القالب",
+      "newTitle": "قالب جديد",
+      "nameLabel": "اسم القالب",
+      "namePlaceholder": "عقد بيع قياسي",
+      "descriptionLabel": "الوصف",
+      "descriptionPlaceholder": "قالب عقد البيع...",
+      "categoryLabel": "الفئة",
+      "languageLabel": "لغة المحتوى",
+      "variablesDetected": "المتغيرات المكتشفة",
+      "save": "تحديث",
+      "create": "إنشاء القالب",
+      "created": "تاريخ الإنشاء",
+      "variables": "متغير(ات)",
+      "dragHint": "اسحب وأفلت الأقسام لتنظيم القالب",
+      "addBlock": "إضافة قسم",
+      "blockContent": "محتوى القسم",
+      "aiGenerate": "الإنشاء بالذكاء الاصطناعي",
+      "aiGenerating": "جاري الإنشاء...",
+      "aiPromptLabel": "صف المحتوى المراد إنشاؤه",
+      "aiPromptPlaceholder": "مثال: بند الإنهاء المبكر، شروط الضمان...",
+      "aiGenBtn": "إنشاء",
+      "aiCancel": "إلغاء",
+      "aiError": "تعذر إنشاء المحتوى",
+      "requiredFields": "الاسم وقسم واحد على الأقل مطلوبان",
+      "blocks": {
+        "header": "رأس الصفحة",
+        "paragraph": "فقرة",
+        "clause": "بند",
+        "signature": "توقيع",
+        "variable": "متغير"
+      },
+      "blockPlaceholders": {
+        "header": "عنوان المستند أو رأس الصفحة...",
+        "paragraph": "نص الجسم، معلومات عامة...",
+        "clause": "البند التعاقدي: بين الموقعين أدناه...",
+        "signature": "التوقيع: {{الاسم}}، التاريخ: {{التاريخ}}",
+        "variable": "{{اسم_المتغير}}"
+      }
+    },
+    "ocr": {
+      "languages": {
+        "fra": "الفرنسية",
+        "eng": "الإنجليزية",
+        "ara": "العربية",
+        "fraEng": "الفرنسية + الإنجليزية"
+      }
+    }
   }
 }
