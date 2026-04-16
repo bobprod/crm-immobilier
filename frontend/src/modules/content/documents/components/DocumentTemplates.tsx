@@ -79,8 +79,10 @@ const CONTENT_LANGUAGES = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-let _blockCounter = 0;
-const newBlockId = () => `blk-${++_blockCounter}-${Date.now()}`;
+const newBlockId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `blk-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 
 const parseContentToBlocks = (content: string): TemplateBlock[] => {
   if (!content.trim()) return [{ id: newBlockId(), type: 'paragraph', content: '' }];
@@ -210,7 +212,12 @@ function SortableBlock({
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder={tAi.promptPlaceholder}
                 className="text-sm"
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleGenerate()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerate().catch(() => {});
+                  }
+                }}
               />
               <div className="flex gap-2">
                 <Button
@@ -711,11 +718,14 @@ export default function DocumentTemplates() {
       {/* Preview modal */}
       {preview && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={preview.name}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setPreview(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setPreview(null)}
         >
-          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */}
-          <div
+          <article
             className="max-w-2xl w-full max-h-[80vh] overflow-auto m-4"
             onClick={(e) => e.stopPropagation()}
           >
@@ -734,7 +744,7 @@ export default function DocumentTemplates() {
               </pre>
             </CardContent>
           </Card>
-          </div>
+          </article>
         </div>
       )}
     </div>
