@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/shared/utils/api-client-backend';
 import {
@@ -20,6 +26,8 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 type AttributionModel = 'first_touch' | 'last_touch' | 'linear' | 'time_decay' | 'position_based';
 
@@ -135,7 +143,7 @@ export default function AttributionPage() {
       );
       setAttribution(response.data);
     } catch (error) {
-      console.error('Erreur lors du calcul de l\'attribution:', error);
+      console.error("Erreur lors du calcul de l'attribution:", error);
     }
   };
 
@@ -199,7 +207,9 @@ export default function AttributionPage() {
 
   // Préparer les données pour le graphique de comparaison des modèles
   const comparisonChartData = modelComparison.map((comparison) => {
-    const data: any = { model: MODEL_LABELS[comparison.model as AttributionModel] || comparison.model };
+    const data: any = {
+      model: MODEL_LABELS[comparison.model as AttributionModel] || comparison.model,
+    };
     comparison.attribution.forEach((attr) => {
       data[attr.platform] = attr.credit;
     });
@@ -208,21 +218,28 @@ export default function AttributionPage() {
 
   // Extraire toutes les plateformes uniques pour le graphique
   const allPlatforms = Array.from(
-    new Set(
-      modelComparison.flatMap((comp) => comp.attribution.map((attr) => attr.platform))
-    )
+    new Set(modelComparison.flatMap((comp) => comp.attribution.map((attr) => attr.platform)))
   );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <Link href="/marketing-dashboard">
+            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Hub Marketing
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold">Attribution Multi-Touch</h1>
           <p className="text-muted-foreground mt-1">
             Analysez le parcours complet du lead et attribuez le crédit à chaque point de contact
           </p>
         </div>
-        <Select value={selectedModel} onValueChange={(value) => setSelectedModel(value as AttributionModel)}>
+        <Select
+          value={selectedModel}
+          onValueChange={(value) => setSelectedModel(value as AttributionModel)}
+        >
           <SelectTrigger className="w-[280px]">
             <SelectValue placeholder="Modèle d'attribution" />
           </SelectTrigger>
@@ -244,12 +261,8 @@ export default function AttributionPage() {
               ℹ️
             </div>
             <div>
-              <h3 className="font-semibold text-blue-900 mb-1">
-                {MODEL_LABELS[selectedModel]}
-              </h3>
-              <p className="text-blue-800 text-sm">
-                {MODEL_DESCRIPTIONS[selectedModel]}
-              </p>
+              <h3 className="font-semibold text-blue-900 mb-1">{MODEL_LABELS[selectedModel]}</h3>
+              <p className="text-blue-800 text-sm">{MODEL_DESCRIPTIONS[selectedModel]}</p>
             </div>
           </div>
         </CardContent>
@@ -314,10 +327,11 @@ export default function AttributionPage() {
                 {conversions.map((conversion) => (
                   <div
                     key={conversion.sessionId}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedConversion?.sessionId === conversion.sessionId
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedConversion?.sessionId === conversion.sessionId
                         ? 'bg-blue-50 border-blue-300'
                         : 'hover:bg-gray-50'
-                      }`}
+                    }`}
                     onClick={() => setSelectedConversion(conversion)}
                   >
                     <div className="flex items-center justify-between">
@@ -389,7 +403,10 @@ export default function AttributionPage() {
                             </Badge>
                           )}
                           {index === journey.length - 1 && (
-                            <Badge variant="outline" className="mt-2 text-xs bg-green-50 text-green-700 border-green-300">
+                            <Badge
+                              variant="outline"
+                              className="mt-2 text-xs bg-green-50 text-green-700 border-green-300"
+                            >
                               Conversion
                             </Badge>
                           )}
@@ -537,9 +554,7 @@ export default function AttributionPage() {
                             <div className="text-xs text-muted-foreground mb-1">
                               {attr.platform}
                             </div>
-                            <div className="text-xl font-bold">
-                              {attr.credit.toFixed(1)}%
-                            </div>
+                            <div className="text-xl font-bold">{attr.credit.toFixed(1)}%</div>
                             <div className="text-xs text-muted-foreground">
                               {attr.touchpoints} touchpoint{attr.touchpoints > 1 ? 's' : ''}
                             </div>
@@ -560,7 +575,8 @@ export default function AttributionPage() {
             <CardHeader>
               <CardTitle>ROI par Plateforme - {MODEL_LABELS[selectedModel]}</CardTitle>
               <CardDescription>
-                Valeur générée par chaque plateforme selon l'attribution {MODEL_LABELS[selectedModel].toLowerCase()}
+                Valeur générée par chaque plateforme selon l'attribution{' '}
+                {MODEL_LABELS[selectedModel].toLowerCase()}
               </CardDescription>
             </CardHeader>
             <CardContent>

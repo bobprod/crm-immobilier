@@ -11,6 +11,16 @@ export interface Communication {
   sentAt: string;
   prospectId?: string;
   propertyId?: string;
+  // Relations enrichies (si incluses par le backend)
+  prospects?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+    type?: string;
+    status?: string;
+  };
 }
 
 export interface SendEmailDto {
@@ -19,6 +29,7 @@ export interface SendEmailDto {
   body: string;
   prospectId?: string;
   propertyId?: string;
+  templateId?: string;
 }
 
 export interface SendSmsDto {
@@ -62,6 +73,26 @@ export interface CommunicationFilters {
   status?: string;
   startDate?: string;
   endDate?: string;
+  prospectId?: string;
+}
+
+export interface CommSettings {
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpFrom: string;
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  twilioPhoneNumber: string;
+  whatsappApiKey: string;
+  whatsappPhoneNumberId: string;
+  emailProvider: 'smtp' | 'resend' | 'sendgrid';
+  resendApiKey: string;
+  sendgridApiKey: string;
+  smtpConfigured: boolean;
+  twilioConfigured: boolean;
 }
 
 const communicationsService = {
@@ -114,8 +145,24 @@ const communicationsService = {
     return response.data;
   },
 
+  deleteTemplate: async (id: string) => {
+    const response = await apiClient.delete(`/communications/templates/${id}`);
+    return response.data;
+  },
+
   sendTestEmail: async (to: string) => {
     const response = await apiClient.post('/communications/smtp/test-email', { to });
+    return response.data;
+  },
+
+  // Settings (SMTP / Twilio / WhatsApp)
+  getSettings: async (): Promise<CommSettings> => {
+    const response = await apiClient.get<CommSettings>('/communications/settings');
+    return response.data;
+  },
+
+  saveSettings: async (settings: Partial<CommSettings>) => {
+    const response = await apiClient.put('/communications/settings', settings);
     return response.data;
   },
 

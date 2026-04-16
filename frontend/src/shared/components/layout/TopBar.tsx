@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { Bell, Globe, Bot, Search } from 'lucide-react';
+import { Bell, Globe, Bot, Search, Settings } from 'lucide-react';
 
 /**
  * TopBar - Barre d'outils secondaire (toolbar)
@@ -44,6 +44,13 @@ const TOOLBAR_ITEMS: TopBarItem[] = [
     accent: true,
   },
 ];
+
+const SETTINGS_ITEM: TopBarItem = {
+  id: 'settings',
+  label: 'Paramètres',
+  icon: Settings,
+  path: '/settings',
+};
 
 export const TopBar: React.FC = () => {
   const router = useRouter();
@@ -105,6 +112,29 @@ export const TopBar: React.FC = () => {
             </button>
           );
         })}
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-slate-200 mx-1" />
+
+        {/* Settings — toujours en dernier, proche du profil (pattern UX standard) */}
+        <button
+          onClick={() => router.push(SETTINGS_ITEM.path)}
+          className={`
+            relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+            transition-all duration-150
+            ${
+              isActive(SETTINGS_ITEM.path)
+                ? 'bg-slate-100 text-slate-900'
+                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+            }
+          `}
+          title={SETTINGS_ITEM.label}
+        >
+          <Settings
+            className={`w-[18px] h-[18px] ${isActive(SETTINGS_ITEM.path) ? 'text-amber-500' : ''}`}
+          />
+          <span className="hidden lg:inline">{SETTINGS_ITEM.label}</span>
+        </button>
       </div>
     </div>
   );

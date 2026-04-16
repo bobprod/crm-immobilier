@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/shared/utils/api-client-backend';
 import {
@@ -20,6 +26,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 interface PropertyStat {
@@ -59,7 +66,16 @@ interface ButtonStats {
   percentage: number;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
+const COLORS = [
+  '#3B82F6',
+  '#10B981',
+  '#F59E0B',
+  '#EF4444',
+  '#8B5CF6',
+  '#EC4899',
+  '#14B8A6',
+  '#F97316',
+];
 
 const BUTTON_TYPE_LABELS: Record<string, string> = {
   contact: 'Contact',
@@ -96,7 +112,9 @@ export default function PropertyAnalyticsPage() {
 
       const [globalRes, topPropsRes, buttonsRes] = await Promise.all([
         apiClient.get(`/marketing-tracking/property-analytics/global-stats?period=${period}`),
-        apiClient.get(`/marketing-tracking/property-analytics/top-properties?period=${period}&limit=10`),
+        apiClient.get(
+          `/marketing-tracking/property-analytics/top-properties?period=${period}&limit=10`
+        ),
         apiClient.get(`/marketing-tracking/property-analytics/buttons-stats?period=${period}`),
       ]);
 
@@ -134,6 +152,12 @@ export default function PropertyAnalyticsPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <Link href="/marketing-dashboard">
+            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Hub Marketing
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold">Analytics Biens Immobiliers</h1>
           <p className="text-muted-foreground mt-1">
             Analysez la performance de vos biens sur les pages vitrines
@@ -159,7 +183,9 @@ export default function PropertyAnalyticsPage() {
               <CardTitle className="text-sm font-medium">Vues Totales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{globalStats.totalImpressions.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {globalStats.totalImpressions.toLocaleString()}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {globalStats.uniquePropertiesViewed} biens uniques
               </p>
@@ -171,7 +197,9 @@ export default function PropertyAnalyticsPage() {
               <CardTitle className="text-sm font-medium">Temps Moyen</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatDuration(globalStats.averageTimeSpent)}</div>
+              <div className="text-2xl font-bold">
+                {formatDuration(globalStats.averageTimeSpent)}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">par bien</p>
             </CardContent>
           </Card>
@@ -181,7 +209,9 @@ export default function PropertyAnalyticsPage() {
               <CardTitle className="text-sm font-medium">Taux de Clic</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{globalStats.globalClickThroughRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">
+                {globalStats.globalClickThroughRate.toFixed(1)}%
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {globalStats.totalButtonClicks} clics
               </p>
@@ -216,9 +246,7 @@ export default function PropertyAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Top 10 - Biens les Plus Vus</CardTitle>
-              <CardDescription>
-                Classement des biens par nombre d'impressions
-              </CardDescription>
+              <CardDescription>Classement des biens par nombre d'impressions</CardDescription>
             </CardHeader>
             <CardContent>
               {topByViews.length > 0 ? (
@@ -263,7 +291,8 @@ export default function PropertyAnalyticsPage() {
                             <td className="p-3">
                               <div className="font-medium">{property.propertyData.title}</div>
                               <div className="text-sm text-muted-foreground">
-                                {property.propertyData.city} • {formatCurrency(property.propertyData.price)}
+                                {property.propertyData.city} •{' '}
+                                {formatCurrency(property.propertyData.price)}
                               </div>
                             </td>
                             <td className="text-right p-3 font-semibold">{property.impressions}</td>
@@ -272,12 +301,16 @@ export default function PropertyAnalyticsPage() {
                               {property.leads}
                             </td>
                             <td className="text-right p-3">
-                              <Badge variant={property.conversionRate > 5 ? 'default' : 'secondary'}>
+                              <Badge
+                                variant={property.conversionRate > 5 ? 'default' : 'secondary'}
+                              >
                                 {property.conversionRate.toFixed(1)}%
                               </Badge>
                             </td>
                             <td className="text-center p-3">
-                              <Link href={`/marketing/tracking/property-heatmap/${property.propertyId}`}>
+                              <Link
+                                href={`/marketing/tracking/property-heatmap/${property.propertyId}`}
+                              >
                                 <Button size="sm" variant="outline">
                                   Heatmap
                                 </Button>
@@ -323,7 +356,8 @@ export default function PropertyAnalyticsPage() {
                       <YAxis />
                       <Tooltip
                         formatter={(value: any, name: string) => {
-                          if (name === 'conversionRate') return [value.toFixed(2) + '%', 'Taux Conv.'];
+                          if (name === 'conversionRate')
+                            return [value.toFixed(2) + '%', 'Taux Conv.'];
                           return [value, name];
                         }}
                       />
@@ -450,9 +484,7 @@ export default function PropertyAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Top 10 - Meilleur Engagement</CardTitle>
-              <CardDescription>
-                Biens avec le meilleur taux de clic (CTR)
-              </CardDescription>
+              <CardDescription>Biens avec le meilleur taux de clic (CTR)</CardDescription>
             </CardHeader>
             <CardContent>
               {topByEngagement.length > 0 ? (

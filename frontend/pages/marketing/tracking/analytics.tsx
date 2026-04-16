@@ -20,7 +20,9 @@ import {
   PieChart,
   LineChart,
   RefreshCw,
+  ArrowLeft,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface DashboardData {
   realTimeEvents: any[];
@@ -110,6 +112,12 @@ export default function TrackingAnalyticsDashboard() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
+          <Link href="/marketing-dashboard">
+            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Hub Marketing
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Activity className="h-8 w-8 text-blue-600" />
             Analytics Tracking Temps Réel
@@ -174,9 +182,7 @@ export default function TrackingAnalyticsDashboard() {
             <div className="text-3xl font-bold text-green-600">
               {dashboardData.conversionRate.toFixed(2)}%
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Lead, Purchase, Schedule, etc.
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Lead, Purchase, Schedule, etc.</p>
           </CardContent>
         </Card>
 
@@ -205,9 +211,7 @@ export default function TrackingAnalyticsDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold">
-              {new Date().toLocaleTimeString('fr-FR')}
-            </div>
+            <div className="text-lg font-bold">{new Date().toLocaleTimeString('fr-FR')}</div>
             <p className="text-xs text-gray-500 mt-1">
               {autoRefresh ? 'Auto-refresh actif (30s)' : 'Manuel'}
             </p>
@@ -386,9 +390,7 @@ export default function TrackingAnalyticsDashboard() {
                         <Badge className={platformColors[platform.platform] || 'bg-gray-500'}>
                           {platform.platform}
                         </Badge>
-                        <span className="font-semibold">
-                          {platform.totalEvents} événements
-                        </span>
+                        <span className="font-semibold">{platform.totalEvents} événements</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-gray-600">Taux de livraison</div>

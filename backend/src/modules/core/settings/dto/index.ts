@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsNotEmpty, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -36,6 +36,7 @@ export class BulkUpdateSettingsDto {
       },
     },
   })
+  @IsArray()
   settings: Array<{
     key: string;
     value: any;

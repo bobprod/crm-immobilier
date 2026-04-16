@@ -185,43 +185,18 @@ function getDefaultMenu(): DynamicMenuItem[] {
       id: 'default-marketing',
       moduleId: 'marketing-tracking',
       label: 'Marketing',
-      icon: 'TrendingUp',
+      icon: 'Megaphone',
       path: '/marketing-dashboard',
       order: 40,
     },
     {
-      id: 'default-analytics',
-      moduleId: 'business-analytics',
-      label: 'Analytiques',
-      icon: 'BarChart',
-      path: '/analytics',
-      order: 41,
-    },
-    {
-      id: 'default-ai-assistant',
-      moduleId: 'ai-assistant',
-      label: 'Assistant IA',
-      icon: 'Bot',
-      path: '/ai-assistant',
-      order: 42,
-    },
-    {
       id: 'default-investment',
       moduleId: 'investment-intelligence',
-      label: 'Investissement',
+      label: 'Immo Market',
       icon: 'TrendingUp',
       path: '/investment',
       order: 43,
     },
-    {
-      id: 'default-vitrine',
-      moduleId: 'public-vitrine',
-      label: 'Vitrine',
-      icon: 'Globe',
-      path: '/vitrine',
-      order: 44,
-    },
-
     // ── Section: Administration ──────────────────────────────────────
     {
       id: 'section-admin',
@@ -254,14 +229,6 @@ function getDefaultMenu(): DynamicMenuItem[] {
       icon: 'FileText',
       path: '/documents',
       order: 82,
-    },
-    {
-      id: 'default-settings',
-      moduleId: 'core',
-      label: 'Paramètres',
-      icon: 'Settings',
-      path: '/settings',
-      order: 999,
     },
   ];
 }

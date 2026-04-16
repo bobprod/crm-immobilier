@@ -70,6 +70,9 @@ import { CommunicationsModule } from './modules/communications/communications.mo
 import { EmailAIResponseModule } from './modules/communications/email-ai-response/email-ai-response.module';
 import { WhatsAppModule } from './modules/communications/whatsapp/whatsapp.module';
 
+// CHAT MODULE
+import { ChatModule } from './modules/chat/chat.module';
+
 // DASHBOARD MODULE
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
@@ -164,6 +167,9 @@ import { databaseConfig, jwtConfig, mailConfig, integrationsConfig } from './con
     CommunicationsModule,
     EmailAIResponseModule,
     WhatsAppModule,
+
+    // CHAT - 1 module (Messagerie interne entre agents)
+    ChatModule,
 
     // DASHBOARD - 1 module
     DashboardModule,

@@ -5,7 +5,8 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import apiClient from '@/shared/utils/backend-api';
-import { Settings, BarChart3, Brain, Zap } from 'lucide-react';
+import { Settings, BarChart3, Brain, Zap, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MarketingTrackingPage() {
   const [configs, setConfigs] = useState<any[]>([]);
@@ -25,7 +26,9 @@ export default function MarketingTrackingPage() {
         apiClient.get('/marketing-tracking/config').catch(() => ({ data: [] })),
         apiClient.get('/marketing-tracking/automation/config').catch(() => ({ data: null })),
         apiClient.get('/marketing-tracking/automation/suggestions').catch(() => ({ data: [] })),
-        apiClient.get('/marketing-tracking/ml/anomalies?platform=facebook').catch(() => ({ data: [] })),
+        apiClient
+          .get('/marketing-tracking/ml/anomalies?platform=facebook')
+          .catch(() => ({ data: [] })),
       ]);
 
       setConfigs(configsData.data || []);
@@ -53,44 +56,27 @@ export default function MarketingTrackingPage() {
     <MainLayout>
       <div className="container mx-auto py-8">
         <div className="mb-6">
+          <Link href="/marketing-dashboard">
+            <Button variant="ghost" size="sm" className="mb-2 -ml-2">
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Hub Marketing
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <BarChart3 className="h-8 w-8" />
-            Marketing Tracking + IA
+            Intelligence Artificielle Marketing
           </h1>
           <p className="text-gray-600 mt-2">
-            Pixels marketing avec intelligence artificielle intégrée
+            Amélioration de vos campagnes via intelligence artificielle (Suggestions & Anomalies)
           </p>
         </div>
 
-        <Tabs defaultValue="config" className="space-y-6">
+        <Tabs defaultValue="ai" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="config">Configuration Pixels</TabsTrigger>
             <TabsTrigger value="ai">Intelligence Artificielle</TabsTrigger>
             <TabsTrigger value="suggestions">Suggestions IA ({suggestions.length})</TabsTrigger>
             <TabsTrigger value="anomalies">Anomalies ({anomalies.length})</TabsTrigger>
           </TabsList>
-
-          {/* Configuration Pixels */}
-          <TabsContent value="config">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['Facebook', 'TikTok', 'GA4', 'GTM', 'Google Ads', 'LinkedIn'].map((platform) => {
-                const config = configs.find((c) => c.platform === platform.toLowerCase());
-                return (
-                  <Card key={platform}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        {platform} Pixel
-                        {config?.isActive && <Badge className="bg-green-500">Actif</Badge>}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Button>Configurer</Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
 
           {/* IA Configuration */}
           <TabsContent value="ai">
