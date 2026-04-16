@@ -132,5 +132,82 @@
     "available": "Disponibles",
     "soldRented": "Vendus/Loués",
     "avgPrice": "Prix moyen"
+  },
+  "documents": {
+    "pageTitle": "Gestion des Documents",
+    "pageSubtitle": "GED immobilière — Téléversez, générez et gérez vos documents",
+    "totalDocs": "Total Documents",
+    "totalSize": "Taille Totale",
+    "categories": "Catégories",
+    "thisMonth": "Ce mois",
+    "tabs": {
+      "documents": "Documents",
+      "generate": "Générer",
+      "ocr": "OCR",
+      "templates": "Modèles"
+    },
+    "templates": {
+      "title": "Modèles de documents",
+      "subtitle": "Créez et gérez vos modèles réutilisables avec glisser-déposer",
+      "new": "Nouveau modèle",
+      "empty": "Aucun modèle pour le moment",
+      "emptyCreate": "Créer votre premier modèle",
+      "loadError": "Impossible de charger les modèles",
+      "saveSuccess": "Modèle créé",
+      "updateSuccess": "Modèle mis à jour",
+      "saveError": "Impossible de sauvegarder",
+      "deleteSuccess": "Modèle supprimé",
+      "deleteError": "Impossible de supprimer",
+      "deleteConfirm": "Supprimer ce modèle ?",
+      "back": "Retour",
+      "editor": "Éditeur",
+      "preview": "Aperçu",
+      "editTitle": "Modifier le modèle",
+      "newTitle": "Nouveau modèle",
+      "nameLabel": "Nom du modèle",
+      "namePlaceholder": "Contrat de vente standard",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Modèle de contrat de vente...",
+      "categoryLabel": "Catégorie",
+      "languageLabel": "Langue du contenu",
+      "variablesDetected": "Variables détectées",
+      "save": "Mettre à jour",
+      "create": "Créer le modèle",
+      "created": "Créé le",
+      "variables": "variable(s)",
+      "dragHint": "Glissez-déposez les blocs pour organiser votre modèle",
+      "addBlock": "Ajouter un bloc",
+      "blockContent": "Contenu du bloc",
+      "aiGenerate": "Générer avec l'IA",
+      "aiGenerating": "Génération...",
+      "aiPromptLabel": "Décrivez le contenu à générer",
+      "aiPromptPlaceholder": "Ex: Clause de résiliation anticipée, conditions de garantie...",
+      "aiGenBtn": "Générer",
+      "aiCancel": "Annuler",
+      "aiError": "Impossible de générer le contenu",
+      "requiredFields": "Nom et au moins un bloc requis",
+      "blocks": {
+        "header": "En-tête",
+        "paragraph": "Paragraphe",
+        "clause": "Clause",
+        "signature": "Signature",
+        "variable": "Variable"
+      },
+      "blockPlaceholders": {
+        "header": "Titre ou en-tête du document...",
+        "paragraph": "Corps du texte, informations générales...",
+        "clause": "Clause contractuelle : Entre les soussignés...",
+        "signature": "Signature : {{nom}}, Date : {{date}}",
+        "variable": "{{nomVariable}}"
+      }
+    },
+    "ocr": {
+      "languages": {
+        "fra": "Français",
+        "eng": "Anglais",
+        "ara": "Arabe",
+        "fraEng": "Français + Anglais"
+      }
+    }
   }
 }

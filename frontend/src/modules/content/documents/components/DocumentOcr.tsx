@@ -43,6 +43,7 @@ export default function DocumentOcr() {
   const languages = [
     { value: 'fra', label: 'Français' },
     { value: 'eng', label: 'Anglais' },
+    { value: 'ara', label: 'Arabe' },
     { value: 'fra+eng', label: 'Français + Anglais' },
   ];
 
