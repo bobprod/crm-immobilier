@@ -74,10 +74,24 @@ export default function CommunicationCenter() {
     <div className="h-[calc(100vh-100px)] flex flex-col space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <MessageSquare className="h-6 w-6 text-green-600" />
-          Centre de Communications
+          <MessageSquare className="h-6 w-6 text-blue-600" />
+          Centre de Contact Omnicanal
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="flex bg-gray-100 p-1 rounded-lg mr-4">
+            <button className="px-3 py-1.5 text-sm font-medium rounded-md bg-white shadow-sm text-gray-900 border border-gray-200">
+              Tous
+            </button>
+            <button className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-green-600 hover:bg-gray-50 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>WhatsApp
+            </button>
+            <button className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-50 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>Email
+            </button>
+            <button className="px-3 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-purple-600 hover:bg-gray-50 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>Messenger
+            </button>
+          </div>
           <Button variant="outline" size="icon" onClick={loadMessages} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>

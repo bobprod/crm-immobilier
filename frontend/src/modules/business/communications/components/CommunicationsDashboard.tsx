@@ -178,12 +178,110 @@ export const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = (
   const [lastSentProspectId, setLastSentProspectId] = useState<string | null>(null);
   const [creatingFollowUp, setCreatingFollowUp] = useState(false);
 
+  // Connectors — statut dérivé des vraies données paramètres
+  const [connSettingsData, setConnSettingsData] = useState<any>(null);
+  const [selectedConnector, setSelectedConnector] = useState<{
+    id: string;
+    name: string;
+    icon: React.ReactNode;
+    iconBg: string;
+    label?: string;
+    settingsSection?: string;
+  } | null>(null);
+
+  const getConnectorStatus = (id: string): boolean => {
+    if (!connSettingsData) return id === 'chat-live';
+    switch (id) {
+      case 'email':
+        return !!connSettingsData.smtpConfigured;
+      case 'telephony':
+        return !!connSettingsData.twilioConfigured;
+      case 'whatsapp':
+        return !!(connSettingsData.whatsappApiKey && connSettingsData.whatsappPhoneNumberId);
+      case 'facebook':
+        return !!connSettingsData.metaConfigured;
+      case 'instagram':
+        return !!connSettingsData.metaConfigured;
+      case 'chat-live':
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const CONNECTORS = [
+    {
+      id: 'email',
+      name: 'Messagerie',
+      icon: <Mail className="w-6 h-6" />,
+      iconBg: 'bg-green-500',
+      settingsSection: 'email',
+    },
+    {
+      id: 'telephony',
+      name: 'Téléphonie',
+      icon: <Phone className="w-6 h-6" />,
+      iconBg: 'bg-blue-500',
+      settingsSection: 'sms',
+    },
+    {
+      id: 'chat-live',
+      name: 'Chat live',
+      icon: <MessageCircle className="w-6 h-6" />,
+      iconBg: 'bg-orange-500',
+      outline: 'border-orange-400 bg-orange-50 text-orange-900',
+      shadow: 'shadow-md',
+    },
+    {
+      id: 'whatsapp',
+      name: 'WhatsApp',
+      icon: <MessageCircle className="w-6 h-6" />,
+      iconBg: 'bg-green-600',
+      settingsSection: 'whatsapp',
+    },
+    {
+      id: 'viber',
+      name: 'Viber',
+      icon: <MessageCircle className="w-6 h-6" />,
+      iconBg: 'bg-purple-600',
+    },
+    { id: 'telegram', name: 'Telegram', icon: <Send className="w-6 h-6" />, iconBg: 'bg-sky-500' },
+    {
+      id: 'apple-messages',
+      name: 'Apple Messages for Business',
+      icon: <MessageCircle className="w-6 h-6" />,
+      iconBg: 'bg-green-500',
+      multiLine: true,
+    },
+    {
+      id: 'facebook',
+      name: 'Facebook',
+      icon: <Globe className="w-6 h-6" />,
+      iconBg: 'bg-blue-600',
+      settingsSection: 'meta',
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram Direct',
+      icon: <Instagram className="w-6 h-6" />,
+      iconBg: 'bg-pink-600',
+      label: 'NOUVEAU',
+      settingsSection: 'meta',
+    },
+    {
+      id: 'immo-saas',
+      name: 'Réseau ImmoSaaS',
+      icon: <Hash className="w-6 h-6" />,
+      iconBg: 'bg-blue-400',
+    },
+  ];
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const filter = activeChannel !== 'all' ? { type: activeChannel } : undefined;
-      const [comms, statsData, tpls, settingsData] = await Promise.all([
+      const [comms, statsData, tpls, sData] = await Promise.all([
         communicationsService.getHistory(filter).catch(() => []),
         communicationsService.getStats().catch(() => null),
         communicationsService.getTemplates().catch(() => []),
@@ -192,7 +290,10 @@ export const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = (
       setCommunications(comms);
       setStats(statsData);
       setTemplates(tpls);
-      if (settingsData) setSmtpConfigured(settingsData.smtpConfigured);
+      if (sData) {
+        setSmtpConfigured(sData.smtpConfigured);
+        setConnSettingsData(sData);
+      }
     } catch (err) {
       console.error('Error loading communications:', err);
     } finally {
@@ -454,7 +555,7 @@ export const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = (
         </div>
       )}
 
-      {/* Post-send follow-up prompt */}
+      {/* Alertes de suivi */}
       {showFollowUp && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -496,7 +597,187 @@ export const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = (
         </div>
       )}
 
-      {/* KPIs */}
+      {/* Bitrix24 Style: Omnichannel Connectors Grid */}
+      <div className="bg-white rounded-xl border p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Centre de contact</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {CONNECTORS.map((connector) => {
+            const isConnected = getConnectorStatus(connector.id);
+            return (
+              <div
+                key={connector.id}
+                onClick={() => setSelectedConnector(connector)}
+                className={`border p-4 flex flex-col items-center justify-center cursor-pointer min-h-[120px] relative transition-all rounded-xl ${
+                  (connector as any).outline
+                    ? `border-2 ${(connector as any).outline} ${(connector as any).shadow || ''}`
+                    : isConnected
+                      ? 'border-2 border-green-500 bg-green-50 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-blue-400 hover:shadow-md'
+                }`}
+              >
+                {(connector as any).label && !isConnected && (
+                  <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                    {(connector as any).label}
+                  </div>
+                )}
+                {isConnected && (
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-0.5 shadow">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-white mb-3 ${connector.iconBg}`}
+                >
+                  {connector.icon}
+                </div>
+                <span
+                  className={`text-sm font-medium text-center leading-tight ${(connector as any).outline ? '' : 'text-gray-700'}`}
+                >
+                  {(connector as any).multiLine
+                    ? connector.name.split(' ').map((word: string, i: number) => (
+                        <React.Fragment key={i}>
+                          {word}
+                          {i === 1 ? <br /> : ' '}
+                        </React.Fragment>
+                      ))
+                    : connector.name}
+                </span>
+                {isConnected && !(connector as any).outline && (
+                  <span className="text-[10px] font-semibold tracking-wider text-green-700 uppercase mt-1">
+                    Connecté
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Modale de statut — redirige vers les vrais paramètres de configuration */}
+      {selectedConnector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"
+            onClick={() => setSelectedConnector(null)}
+          />
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md z-10 overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-white">
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-md ${selectedConnector.iconBg}`}
+              >
+                {selectedConnector.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                  {selectedConnector.name}
+                </h3>
+                <p className="text-sm text-gray-500">Canal de communication</p>
+              </div>
+              <button
+                onClick={() => setSelectedConnector(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Statut réel */}
+            <div className="p-6">
+              {getConnectorStatus(selectedConnector.id) ? (
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 border-4 border-green-50 shadow-sm">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-900">
+                    Canal actif et synchronisé
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2 max-w-xs">
+                    Les messages via <strong>{selectedConnector.name}</strong> remontent
+                    automatiquement dans votre Centre de Communication.
+                  </p>
+                  {(selectedConnector as any).settingsSection && (
+                    <button
+                      onClick={() => {
+                        router.push(`/settings?tab=communications`);
+                        setSelectedConnector(null);
+                      }}
+                      className="mt-5 flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      <Settings className="w-4 h-4" /> Modifier la configuration
+                    </button>
+                  )}
+                </div>
+              ) : selectedConnector.id === 'chat-live' ? (
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                    <MessageCircle className="w-8 h-8 text-orange-600" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-900">
+                    Chat Live — natif ImmoSaaS
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2 max-w-xs">
+                    Ce canal est intégré nativement. Aucune configuration externe requise.
+                  </p>
+                </div>
+              ) : !(selectedConnector as any).settingsSection ? (
+                <div className="flex flex-col items-center text-center py-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Clock className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-700">Bientôt disponible</p>
+                  <p className="text-sm text-gray-500 mt-2 max-w-xs">
+                    Ce canal est en cours d'intégration. Il sera disponible dans une prochaine mise
+                    à jour.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+                    <p className="text-sm text-amber-800 font-medium">
+                      {selectedConnector.name} n'est pas encore configuré.
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Renseignez vos identifiants dans les Paramètres pour activer ce canal.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      router.push(`/settings?tab=communications`);
+                      setSelectedConnector(null);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-md"
+                  >
+                    <Settings className="w-5 h-5" /> Configurer dans les Paramètres
+                  </button>
+                  <p className="text-xs text-center text-gray-400 mt-3">
+                    Onglet <strong>Communications</strong> → section{' '}
+                    {(selectedConnector as any).settingsSection === 'email' &&
+                      "Fournisseur d'email / SMTP"}
+                    {(selectedConnector as any).settingsSection === 'sms' && 'SMS — Twilio'}
+                    {(selectedConnector as any).settingsSection === 'whatsapp' &&
+                      'WhatsApp Business API'}
+                    {(selectedConnector as any).settingsSection === 'meta' &&
+                      'Meta — Messenger & Instagram'}
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end rounded-b-2xl">
+              <button
+                onClick={() => setSelectedConnector(null)}
+                className="px-5 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KPIs & History */}
+      <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-2">Historique et Statistiques</h2>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total', value: totalComms, color: 'text-gray-900' },

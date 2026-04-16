@@ -34,6 +34,7 @@ import {
   Delete,
   Refresh,
   Info,
+  Map,
 } from '@mui/icons-material';
 import { apiClient } from '@/shared/utils/backend-api';
 
@@ -97,11 +98,26 @@ export default function IntegrationsPage() {
   const [twilioForm, setTwilioForm] = useState<FormData>({});
   const [firebaseForm, setFirebaseForm] = useState<FormData>({});
 
+  // Google Maps — stocké en localStorage (clé frontend uniquement)
+  const [gmapsApiKey, setGmapsApiKey] = useState('');
+  const [gmapsSaved, setGmapsSaved] = useState(false);
+  const [gmapsEnabled, setGmapsEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('crm_gmaps_key') || '';
+    const enabled = localStorage.getItem('crm_gmaps_enabled') === 'true';
+    setGmapsApiKey(stored);
+    setGmapsEnabled(enabled);
+    setGmapsSaved(!!stored);
+  }, []);
+
   const providers = [
     { id: 'resend', name: 'Resend', icon: <Email />, color: '#000000' },
     { id: 'sendgrid', name: 'SendGrid', icon: <Email />, color: '#1A82E2' },
     { id: 'twilio', name: 'Twilio', icon: <Sms />, color: '#F22F46' },
     { id: 'firebase', name: 'Firebase', icon: <CloudUpload />, color: '#FFA000' },
+    { id: 'googlemaps', name: 'Google Maps', icon: <Map />, color: '#4285F4' },
   ];
 
   useEffect(() => {
@@ -660,6 +676,162 @@ export default function IntegrationsPage() {
     );
   };
 
+  const renderGoogleMapsForm = () => {
+    const handleSaveGmaps = () => {
+      if (typeof window !== 'undefined') {
+        if (gmapsApiKey) {
+          localStorage.setItem('crm_gmaps_key', gmapsApiKey);
+        } else {
+          localStorage.removeItem('crm_gmaps_key');
+        }
+        localStorage.setItem('crm_gmaps_enabled', String(gmapsEnabled));
+      }
+      setGmapsSaved(true);
+      setMessage({
+        type: 'success',
+        text: 'Clé Google Maps sauvegardée. La carte utilisera automatiquement Google Maps.',
+      });
+    };
+
+    const handleDeleteGmaps = () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('crm_gmaps_key');
+        localStorage.removeItem('crm_gmaps_enabled');
+      }
+      setGmapsApiKey('');
+      setGmapsEnabled(false);
+      setGmapsSaved(false);
+      setMessage({ type: 'success', text: 'Clé Google Maps supprimée.' });
+    };
+
+    const handleTestGmaps = async () => {
+      if (!gmapsApiKey) return;
+      setTesting(true);
+      try {
+        // Test via Geocoding API (endpoint public)
+        const res = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=Tunis,Tunisia&key=${gmapsApiKey}`
+        );
+        const data = await res.json();
+        if (data.status === 'OK') {
+          setMessage({
+            type: 'success',
+            text: '✅ Clé Google Maps valide — Géocodage fonctionnel.',
+          });
+        } else if (data.status === 'REQUEST_DENIED') {
+          setMessage({
+            type: 'error',
+            text: `❌ Clé refusée : ${data.error_message || 'vérifiez les restrictions de la clé et les API activées.'}`,
+          });
+        } else {
+          setMessage({ type: 'error', text: `❌ Erreur : ${data.status}` });
+        }
+      } catch {
+        setMessage({ type: 'error', text: 'Impossible de joindre l’API Google Maps.' });
+      } finally {
+        setTesting(false);
+      }
+    };
+
+    return (
+      <Box sx={{ maxWidth: 800, mx: 'auto', mt: 3 }}>
+        <Card>
+          <CardContent>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Map sx={{ fontSize: 40, color: '#4285F4' }} />
+                <Box>
+                  <Typography variant="h5">Google Maps Platform</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Cartes interactives, géocodage, Street View
+                  </Typography>
+                </Box>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={gmapsEnabled}
+                    onChange={(e) => setGmapsEnabled(e.target.checked)}
+                  />
+                }
+                label="Activer"
+              />
+            </Box>
+
+            {gmapsSaved && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                ✅ Clé API configurée — Google Maps est disponible dans le sélecteur de fond de
+                carte.
+              </Alert>
+            )}
+
+            <Grid2 container spacing={2}>
+              <Grid2 xs={12}>
+                <TextField
+                  fullWidth
+                  label="Clé API Google Maps"
+                  type="password"
+                  value={gmapsApiKey}
+                  onChange={(e) => {
+                    setGmapsApiKey(e.target.value);
+                    setGmapsSaved(false);
+                  }}
+                  placeholder="AIzaSy..."
+                  helperText="Créez une clé sur https://console.cloud.google.com/apis/credentials"
+                />
+              </Grid2>
+            </Grid2>
+
+            <Alert severity="info" sx={{ mt: 2, mb: 3 }}>
+              <Typography variant="body2" component="div">
+                <strong>📋 APIs à activer dans Google Cloud Console :</strong>
+                <ul style={{ marginTop: 4, paddingLeft: 16 }}>
+                  <li>
+                    Maps JavaScript API — <em>carte interactive</em>
+                  </li>
+                  <li>
+                    Geocoding API — <em>conversion adresse ↔ coordonnées</em>
+                  </li>
+                  <li>
+                    Places API — <em>POI et recherche de lieux</em> (optionnel)
+                  </li>
+                </ul>
+              </Typography>
+            </Alert>
+
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                sx={{ bgcolor: '#4285F4', '&:hover': { bgcolor: '#3367d6' } }}
+                onClick={handleSaveGmaps}
+                disabled={!gmapsApiKey}
+              >
+                {gmapsSaved ? 'Mettre à jour' : 'Sauvegarder'}
+              </Button>
+              {gmapsApiKey && (
+                <Button variant="outlined" onClick={handleTestGmaps} disabled={testing}>
+                  {testing ? 'Test en cours...' : 'Tester la clé'}
+                </Button>
+              )}
+              {gmapsSaved && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={handleDeleteGmaps}
+                >
+                  Supprimer
+                </Button>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -717,6 +889,7 @@ export default function IntegrationsPage() {
       {activeTab === 1 && renderSendGridForm()}
       {activeTab === 2 && renderTwilioForm()}
       {activeTab === 3 && renderFirebaseForm()}
+      {activeTab === 4 && renderGoogleMapsForm()}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog !== null} onClose={() => setDeleteDialog(null)}>

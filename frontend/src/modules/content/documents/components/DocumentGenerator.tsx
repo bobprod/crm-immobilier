@@ -20,7 +20,17 @@ import {
   HandIcon,
   KeyRound,
   ScrollText,
+  Globe,
 } from 'lucide-react';
+
+const LANGUAGES = [
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'ar', label: 'العربية', flag: '🇹🇳' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+];
 
 interface DocumentType {
   id: string;
@@ -356,6 +366,7 @@ export default function DocumentGenerator() {
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [generatedFilePath, setGeneratedFilePath] = useState('');
+  const [language, setLanguage] = useState('fr');
 
   const categories = [...new Set(DOCUMENT_TYPES.map((t) => t.category))];
 
@@ -387,20 +398,26 @@ export default function DocumentGenerator() {
     try {
       setGenerating(true);
 
+      // Build a detailed prompt from form data
+      const fieldDescriptions = selectedType.fields
+        .filter((f) => formData[f.name])
+        .map((f) => `${f.label}: ${formData[f.name]}`)
+        .join('\n');
+
+      const langName = LANGUAGES.find((l) => l.code === language)?.label || 'Français';
+      const prompt = `Génère un document immobilier professionnel de type "${selectedType.label}" (${selectedType.description}) en ${langName}.\n\nInformations fournies:\n${fieldDescriptions}\n\nGénère un document complet, structuré et prêt à l'emploi avec un formatage HTML professionnel. Rédige entièrement en ${langName}.`;
+
       const response = await api.post('/documents/ai/generate', {
-        type: selectedType.id,
-        title:
-          `${selectedType.label} - ${formData.propertyTitle || formData.clientName || formData.invoiceNumber || ''}`.trim(),
-        description: `Génération automatique d'un document: ${selectedType.label}`,
-        context: JSON.stringify(formData),
-        format: 'pdf',
+        prompt,
+        documentType: selectedType.id,
+        saveAsDocument: true,
       });
 
-      if (response.data?.content) {
-        setGeneratedContent(response.data.content);
+      if (response.data?.response || response.data?.content) {
+        setGeneratedContent(response.data.response || response.data.content);
       }
-      if (response.data?.filePath || response.data?.id) {
-        setGeneratedFilePath(response.data.id || response.data.filePath);
+      if (response.data?.document?.id || response.data?.id) {
+        setGeneratedFilePath(response.data.document?.id || response.data.id);
       }
 
       toast({ title: 'Document généré', description: `${selectedType.label} créé avec succès` });
@@ -452,30 +469,40 @@ export default function DocumentGenerator() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-bold">Choisissez un type de document</h2>
-          <p className="text-gray-600 mt-1">
-            Sélectionnez le modèle de document immobilier à générer
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-violet-500" />
+            Choisissez un type de document
+          </h2>
+          <p className="text-gray-500 mt-1">
+            Sélectionnez le modèle de document immobilier à générer avec l'IA
           </p>
         </div>
 
         {categories.map((cat) => (
           <div key={cat}>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <div className="h-px flex-1 bg-gray-100" />
               {cat}
+              <div className="h-px flex-1 bg-gray-100" />
             </h3>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-6">
               {DOCUMENT_TYPES.filter((t) => t.category === cat).map((docType) => (
                 <Card
                   key={docType.id}
-                  className="cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all"
+                  className="cursor-pointer hover:shadow-lg hover:border-blue-300 hover:-translate-y-0.5 transition-all group"
                   onClick={() => handleSelectType(docType)}
                 >
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center text-center space-y-3">
-                      <div className="p-3 bg-blue-50 rounded-xl text-blue-600">{docType.icon}</div>
-                      <h4 className="font-semibold">{docType.label}</h4>
-                      <p className="text-xs text-gray-500">{docType.description}</p>
-                      <Badge variant="outline">{docType.category}</Badge>
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-100 transition-colors shrink-0">
+                        {docType.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-sm">{docType.label}</h4>
+                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                          {docType.description}
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -499,6 +526,26 @@ export default function DocumentGenerator() {
           <h2 className="text-xl font-bold">{selectedType.label}</h2>
         </div>
         <Badge variant="outline">{selectedType.category}</Badge>
+
+        <div className="ml-auto flex items-center gap-2">
+          <Globe className="h-4 w-4 text-gray-400" />
+          <div className="flex gap-1">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => setLanguage(lang.code)}
+                title={lang.label}
+                className={`px-2.5 py-1.5 rounded-md text-sm border transition-all ${
+                  language === lang.code
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                {lang.flag}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -580,13 +627,23 @@ export default function DocumentGenerator() {
           </CardHeader>
           <CardContent>
             {generatedContent ? (
-              <div className="bg-gray-50 rounded-lg p-6 max-h-[600px] overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
+              <div className="bg-white border rounded-lg p-6 max-h-[600px] overflow-y-auto">
+                {generatedContent.includes('<') ? (
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: generatedContent }}
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
+                )}
               </div>
             ) : (
               <div className="text-center py-16 text-gray-400">
-                <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>Remplissez le formulaire et cliquez sur "Générer"</p>
+                <FileText className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                <p className="text-sm">Remplissez le formulaire et cliquez sur "Générer"</p>
+                <p className="text-xs mt-1 text-gray-300">
+                  Le document sera créé par intelligence artificielle
+                </p>
               </div>
             )}
           </CardContent>

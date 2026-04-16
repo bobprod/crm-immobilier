@@ -10,6 +10,7 @@ import {
   Eye,
   Maximize2,
   Minimize2,
+  Layers,
   School,
   Building2,
   ShoppingCart,
@@ -36,6 +37,74 @@ interface NearbyPlace {
   lat: number;
   lng: number;
 }
+
+// ── Map tile providers ────────────────────────────────────────────────────────
+type TileProvider = {
+  id: string;
+  label: string;
+  icon: string;
+  url: string;
+  attribution: string;
+  maxZoom: number;
+  subdomains?: string;
+};
+
+const MAP_PROVIDERS: TileProvider[] = [
+  {
+    id: 'osm',
+    label: 'Standard',
+    icon: '🗺️',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  },
+  {
+    id: 'carto-light',
+    label: 'Clair',
+    icon: '☀️',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 20,
+    subdomains: 'abcd',
+  },
+  {
+    id: 'carto-dark',
+    label: 'Sombre',
+    icon: '🌙',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 20,
+    subdomains: 'abcd',
+  },
+  {
+    id: 'esri-satellite',
+    label: 'Satellite',
+    icon: '🛰️',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  {
+    id: 'topo',
+    label: 'Topo',
+    icon: '⛰️',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution:
+      '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17,
+  },
+  {
+    id: 'google',
+    label: 'Google Maps',
+    icon: '🌐',
+    url: '',
+    attribution: '© Google Maps',
+    maxZoom: 22,
+  },
+];
 
 // Sample nearby places database by Tunisian city
 const NEARBY_PLACES_DB: Record<string, NearbyPlace[]> = {
@@ -190,12 +259,30 @@ export function PropertyMap({
   const mapInstance = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const poiMarkersRef = useRef<any[]>([]);
+  const tileLayerRef = useRef<any>(null);
+  const layerMenuRef = useRef<HTMLDivElement>(null);
+  const activeProviderRef = useRef<TileProvider>(MAP_PROVIDERS[0]);
+  // Google Maps
+  const gmapRef = useRef<HTMLDivElement>(null);
+  const gmapInstance = useRef<any>(null);
+  const gmapMarkersRef = useRef<any[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [poiVisible, setPoiVisible] = useState(showNearbyPlaces);
   const [activePoiTypes, setActivePoiTypes] = useState<Set<string>>(
     new Set(['school', 'hospital', 'shop', 'transport', 'restaurant', 'park'])
   );
+  const [activeProvider, setActiveProvider] = useState<TileProvider>(MAP_PROVIDERS[0]);
+  const [layerMenuOpen, setLayerMenuOpen] = useState(false);
+  const [gmapsKey, setGmapsKey] = useState<string>('');
+
+  // Charger la clé Google Maps depuis localStorage au montage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored =
+      localStorage.getItem('crm_gmaps_key') || (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '');
+    setGmapsKey(stored);
+  }, []);
 
   // Filtrer les propriétés avec coordonnées
   const geoProperties = properties.filter(
@@ -231,10 +318,15 @@ export function PropertyMap({
         scrollWheelZoom: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19,
-      }).addTo(map);
+      const provider = activeProviderRef.current;
+      tileLayerRef.current = L.tileLayer(
+        provider.url || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+          attribution: provider.attribution,
+          maxZoom: provider.maxZoom,
+          ...(provider.subdomains ? { subdomains: provider.subdomains } : {}),
+        }
+      ).addTo(map);
 
       mapInstance.current = map;
       setMapReady(true);
@@ -346,6 +438,132 @@ export function PropertyMap({
     loadAndToggle();
   }, [poiVisible, activePoiTypes]);
 
+  // Changer le fond de carte sans réinitialiser la vue
+  useEffect(() => {
+    activeProviderRef.current = activeProvider;
+    if (!mapInstance.current || typeof window === 'undefined') return;
+
+    if (activeProvider.id === 'google') return;
+
+    setTimeout(() => mapInstance.current?.invalidateSize?.(), 100);
+
+    const switchTile = async () => {
+      const L = (await import('leaflet')).default;
+      if (tileLayerRef.current) tileLayerRef.current.remove();
+      tileLayerRef.current = L.tileLayer(activeProvider.url, {
+        attribution: activeProvider.attribution,
+        maxZoom: activeProvider.maxZoom,
+        ...(activeProvider.subdomains ? { subdomains: activeProvider.subdomains } : {}),
+      }).addTo(mapInstance.current);
+    };
+
+    switchTile();
+  }, [activeProvider]);
+
+  // Google Maps — initialisation et mise à jour des marqueurs
+  useEffect(() => {
+    if (activeProvider.id !== 'google' || !gmapsKey || typeof window === 'undefined') return;
+    if (!gmapRef.current) return;
+
+    const initGmap = async () => {
+      if (!(window as any).google?.maps) {
+        await new Promise<void>((resolve, reject) => {
+          const existing = document.querySelector('script[data-gmaps]');
+          if (existing) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${gmapsKey}`;
+          script.setAttribute('data-gmaps', '1');
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Impossible de charger Google Maps'));
+          document.head.appendChild(script);
+        });
+      }
+
+      const G = (window as any).google.maps;
+      const defaultCenter = center || [36.8065, 10.1815];
+
+      if (!gmapInstance.current) {
+        gmapInstance.current = new G.Map(gmapRef.current, {
+          center: { lat: defaultCenter[0], lng: defaultCenter[1] },
+          zoom,
+          mapTypeId: 'roadmap',
+          mapTypeControl: true,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+      }
+
+      const map = gmapInstance.current;
+      gmapMarkersRef.current.forEach((m) => m.setMap(null));
+      gmapMarkersRef.current = [];
+
+      const bounds = new G.LatLngBounds();
+      const infoWindowActive = new G.InfoWindow();
+
+      geoProperties.forEach((property) => {
+        const color = STATUS_COLORS[property.status] || '#6b7280';
+        const marker = new G.Marker({
+          position: { lat: property.latitude!, lng: property.longitude! },
+          map,
+          title: property.title,
+          label: {
+            text: formatPrice(property.price) + ' TND',
+            color: 'white',
+            fontSize: '11px',
+            fontWeight: 'bold',
+          },
+          icon: {
+            path: G.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2,
+            scale: 14,
+          },
+        });
+
+        const content = `
+          <div style="font-family:system-ui;min-width:200px;">
+            <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${escapeHtml(property.title)}</div>
+            ${property.city ? `<div style="color:#6b7280;font-size:12px;margin-bottom:6px;">📍 ${escapeHtml(property.city)}</div>` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:700;color:#7C3AED;font-size:14px;">${formatPrice(property.price)} TND</span>
+              <span style="background:${color};color:white;padding:2px 8px;border-radius:12px;font-size:11px;">${STATUS_LABELS[property.status] || property.status}</span>
+            </div>
+          </div>`;
+
+        marker.addListener('click', () => {
+          infoWindowActive.setContent(content);
+          infoWindowActive.open(map, marker);
+          if (onPropertyClick) onPropertyClick(property);
+        });
+
+        gmapMarkersRef.current.push(marker);
+        bounds.extend({ lat: property.latitude!, lng: property.longitude! });
+      });
+
+      if (geoProperties.length > 0) map.fitBounds(bounds);
+    };
+
+    initGmap().catch(console.error);
+  }, [activeProvider, gmapsKey, properties]);
+
+  // Fermer le menu layers en cliquant ailleurs
+  useEffect(() => {
+    if (!layerMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (layerMenuRef.current && !layerMenuRef.current.contains(e.target as Node)) {
+        setLayerMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [layerMenuOpen]);
+
   function addPoiMarkers(L: any, map: any) {
     poiMarkersRef.current.forEach((m) => m.remove());
     poiMarkersRef.current = [];
@@ -425,6 +643,45 @@ export function PropertyMap({
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {/* Sélecteur de fond de carte */}
+          <div className="relative" ref={layerMenuRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1 px-2"
+              onClick={() => setLayerMenuOpen((v) => !v)}
+              title="Changer le fond de carte"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>{activeProvider.icon}</span>
+              <span className="hidden sm:inline">{activeProvider.label}</span>
+            </Button>
+            {layerMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 z-[9999] bg-white border rounded-lg shadow-xl py-1 w-44 text-sm">
+                <div className="px-3 py-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b mb-1">
+                  Fond de carte
+                </div>
+                {MAP_PROVIDERS.map((p) => (
+                  <button
+                    key={p.id}
+                    className={`w-full text-left px-3 py-1.5 flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                      activeProvider.id === p.id
+                        ? 'font-semibold text-primary bg-primary/5'
+                        : 'text-gray-700'
+                    }`}
+                    onClick={() => {
+                      setActiveProvider(p);
+                      setLayerMenuOpen(false);
+                    }}
+                  >
+                    <span className="text-base leading-none">{p.icon}</span>
+                    <span className="flex-1 text-xs">{p.label}</span>
+                    {activeProvider.id === p.id && <span className="text-primary text-xs">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Button
             variant={poiVisible ? 'default' : 'outline'}
             size="sm"
@@ -469,7 +726,31 @@ export function PropertyMap({
           })}
         </div>
       )}
-      <div ref={mapRef} style={{ height: expanded ? '700px' : height, width: '100%' }} />
+      {/* Leaflet container — masqué quand Google Maps est actif */}
+      <div
+        ref={mapRef}
+        style={{
+          height: expanded ? '700px' : height,
+          width: '100%',
+          display: activeProvider.id === 'google' ? 'none' : 'block',
+        }}
+      />
+      {/* Google Maps container */}
+      {activeProvider.id === 'google' &&
+        (gmapsKey ? (
+          <div ref={gmapRef} style={{ height: expanded ? '700px' : height, width: '100%' }} />
+        ) : (
+          <div
+            style={{ height: expanded ? '700px' : height }}
+            className="flex flex-col items-center justify-center text-center p-8 bg-gray-50"
+          >
+            <span className="text-5xl mb-3">🌐</span>
+            <p className="font-semibold text-gray-700">Clé Google Maps non configurée</p>
+            <p className="text-xs text-gray-500 mt-1 max-w-xs">
+              Allez dans <strong>Intégrations → Google Maps</strong> pour ajouter votre clé API.
+            </p>
+          </div>
+        ))}
       {/* Leaflet CSS */}
       <link
         rel="stylesheet"

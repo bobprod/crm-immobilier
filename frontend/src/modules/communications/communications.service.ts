@@ -93,6 +93,7 @@ export interface CommSettings {
   sendgridApiKey: string;
   smtpConfigured: boolean;
   twilioConfigured: boolean;
+  metaConfigured?: boolean;
 }
 
 const communicationsService = {

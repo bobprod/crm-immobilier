@@ -56,8 +56,7 @@ export default function DocumentOcr() {
       // 1. Upload
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('title', file.name);
-      formData.append('category', 'ocr');
+      formData.append('name', file.name);
       const uploadRes = await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

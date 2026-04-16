@@ -104,6 +104,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     taskBoard: 'task_boards',
     taskColumn: 'task_columns',
     planningView: 'planning_views',
+    // Tables Personnel
+    agentProfile: 'agent_profiles',
+    agentProfiles: 'agent_profiles',
+    commissionConfig: 'commission_configs',
+    agentCommissionOverride: 'agent_commission_overrides',
+    annualBonusConfig: 'annual_bonus_configs',
+    agentMonthlyPerformance: 'agent_monthly_performances',
     // Tables Page Builder (PascalCase = pas de @@map)
     page: 'Page',
     pages: 'Page',
@@ -278,6 +285,13 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       'chatMessage',
       // Tables Prospects History
       'prospectHistory',
+      // Tables Personnel
+      'agentProfile',
+      'agentProfiles',
+      'commissionConfig',
+      'agentCommissionOverride',
+      'annualBonusConfig',
+      'agentMonthlyPerformance',
     ];
 
     tables.forEach((table) => {
