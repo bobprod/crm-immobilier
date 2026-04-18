@@ -51,7 +51,7 @@ export class ProspectingIntegrationService {
     private llmRouter: LLMRouterService,
     private validationService: UnifiedValidationService,
     private webDataService: WebDataService,
-  ) { }
+  ) {}
 
   // ============================================
   // CONFIGURATION - Recuperation des cles API
@@ -219,8 +219,44 @@ export class ProspectingIntegrationService {
     const rejectedCount = leadsToCreate.length - validLeads.length;
     const createdIds: string[] = [];
 
+    // 2b) Dedup check against existing leads in this campaign
+    const existingLeads = await this.prisma.prospecting_leads.findMany({
+      where: { campaignId },
+      select: { email: true, phone: true },
+    });
+    const existingEmails = new Set(
+      existingLeads.map((l) => l.email?.toLowerCase()).filter(Boolean),
+    );
+    const existingPhones = new Set(
+      existingLeads.map((l) => l.phone?.replace(/\s/g, '')).filter(Boolean),
+    );
+
+    let dupCount = 0;
+    const dedupedLeads = validLeads.filter((lead) => {
+      const emailLower = lead.email?.toLowerCase();
+      const phoneCleaned = lead.phone?.replace(/\s/g, '');
+
+      if (emailLower && existingEmails.has(emailLower)) {
+        dupCount++;
+        return false;
+      }
+      if (phoneCleaned && existingPhones.has(phoneCleaned)) {
+        dupCount++;
+        return false;
+      }
+
+      // Track for intra-batch dedup
+      if (emailLower) existingEmails.add(emailLower);
+      if (phoneCleaned) existingPhones.add(phoneCleaned);
+      return true;
+    });
+
+    if (dupCount > 0) {
+      this.logger.log(`Dedup: ${dupCount} duplicate leads filtered`);
+    }
+
     // 3) Inserer dans la table prospecting_leads
-    for (const lead of validLeads) {
+    for (const lead of dedupedLeads) {
       try {
         const created = await this.prisma.prospecting_leads.create({
           data: {
@@ -234,10 +270,10 @@ export class ProspectingIntegrationService {
             propertyType: lead.propertyTypes?.[0],
             budget: lead.budgetMax
               ? {
-                min: lead.budgetMin,
-                max: lead.budgetMax,
-                currency: lead.budgetCurrency || 'TND',
-              }
+                  min: lead.budgetMin,
+                  max: lead.budgetMax,
+                  currency: lead.budgetCurrency || 'TND',
+                }
               : undefined,
             source: lead.source,
             sourceUrl: lead.url,
@@ -383,7 +419,9 @@ export class ProspectingIntegrationService {
       return { success: true, leads, count: leads.length };
     } catch (error) {
       this.logger.error(`Pica API error: ${error.message}`);
-      // Fallback sur le scraping mock en dev
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, leads: [], count: 0, error: error.message };
+      }
       return this.generateMockLeads(config, 'pica');
     }
   }
@@ -422,6 +460,9 @@ export class ProspectingIntegrationService {
       return { success: true, leads: allLeads, count: allLeads.length };
     } catch (error) {
       this.logger.error(`SERP API error: ${error.message}`);
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, leads: [], count: 0, error: error.message };
+      }
       return this.generateMockLeads(config, 'serp');
     }
   }
@@ -472,9 +513,7 @@ export class ProspectingIntegrationService {
   // ============================================
 
   async scrapeWithFirecrawl(userId: string, urls: string[], config?: any): Promise<any> {
-    this.logger.log(
-      `Scraping avec Firecrawl (via WebDataService) pour l'utilisateur ${userId}`,
-    );
+    this.logger.log(`Scraping avec Firecrawl (via WebDataService) pour l'utilisateur ${userId}`);
 
     try {
       const allLeads: LeadData[] = [];
@@ -601,6 +640,9 @@ export class ProspectingIntegrationService {
       }
     } catch (error) {
       this.logger.error(`Social scraping error: ${error.message}`);
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, leads: [], count: 0, error: error.message };
+      }
       return this.generateMockLeads(data.config || {}, data.platform);
     }
   }
@@ -645,7 +687,9 @@ export class ProspectingIntegrationService {
 
   private async scrapeFromLinkedIn(config: any, data: any): Promise<any> {
     // LinkedIn API (necessite OAuth)
-    // Implementation simplifiee
+    if (process.env.NODE_ENV === 'production') {
+      return { success: false, leads: [], count: 0, error: 'LinkedIn scraping non implémenté' };
+    }
     return this.generateMockLeads(data.config || {}, 'linkedin');
   }
 
@@ -883,10 +927,7 @@ export class ProspectingIntegrationService {
 
     try {
       // ✅ Routing intelligent
-      const provider = await this.llmRouter.selectBestProvider(
-        userId,
-        'prospecting_qualify',
-      );
+      const provider = await this.llmRouter.selectBestProvider(userId, 'prospecting_qualify');
       providerName = provider.name.toLowerCase();
 
       const response = await provider.generate(prompt, {
@@ -981,10 +1022,7 @@ export class ProspectingIntegrationService {
 
     try {
       // ✅ Routing intelligent
-      const provider = await this.llmRouter.selectBestProvider(
-        userId,
-        'prospecting_qualify',
-      );
+      const provider = await this.llmRouter.selectBestProvider(userId, 'prospecting_qualify');
       providerName = provider.name.toLowerCase();
 
       const response = await provider.generate(prompt, {
@@ -1035,7 +1073,11 @@ export class ProspectingIntegrationService {
 
       // Scoring basique
       const score = this.calculateBasicScore(lead);
-      return { success: true, qualification: { score, reasons: ['Scoring automatique'] }, method: 'fallback' };
+      return {
+        success: true,
+        qualification: { score, reasons: ['Scoring automatique'] },
+        method: 'fallback',
+      };
     }
   }
 
@@ -1056,7 +1098,7 @@ export class ProspectingIntegrationService {
       lead.email || undefined,
       lead.phone || undefined,
       lead.metadata?.rawText || undefined,
-      { country: 'TN', detectSpam: true }
+      { country: 'TN', detectSpam: true },
     );
 
     enrichments.validation = {
@@ -1226,7 +1268,6 @@ export class ProspectingIntegrationService {
       score: this.calculateBasicScore(lead),
     }));
   }
-
 
   // Validation déplacée vers UnifiedValidationService
 

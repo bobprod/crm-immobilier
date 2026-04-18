@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../shared/database/prisma.service';
+import Redis from 'ioredis';
 
 interface CacheEntry<T> {
   data: T;
@@ -7,37 +9,64 @@ interface CacheEntry<T> {
 }
 
 @Injectable()
-export class CacheService {
+export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
-  private readonly cache = new Map<string, CacheEntry<any>>();
 
-  // TODO: Intégrer Redis pour production
-  // constructor(private redis: Redis) {}
+  // Fallback in-memory cache (used when Redis is unavailable)
+  private readonly memCache = new Map<string, CacheEntry<any>>();
+  private redis: Redis | null = null;
+  private useRedis = false;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
+
+  async onModuleInit() {
+    const host = this.configService.get('REDIS_HOST') || 'localhost';
+    const port = parseInt(this.configService.get('REDIS_PORT') || '6379', 10);
+
+    try {
+      this.redis = new Redis({ host, port, lazyConnect: true, connectTimeout: 3000 });
+      await this.redis.connect();
+      await this.redis.ping();
+      this.useRedis = true;
+      this.logger.log(`✅ CacheService: Redis connected at ${host}:${port}`);
+    } catch {
+      this.useRedis = false;
+      this.redis = null;
+      this.logger.warn('⚠️  CacheService: Redis unavailable, using in-memory fallback');
+    }
+  }
+
+  async onModuleDestroy() {
+    if (this.redis) {
+      await this.redis.quit();
+    }
+  }
 
   /**
    * Récupérer une valeur du cache
    */
   async get<T>(key: string): Promise<T | null> {
     try {
-      // TODO: Utiliser Redis en production
-      // const value = await this.redis.get(key);
-      // return value ? JSON.parse(value) : null;
-
-      const entry = this.cache.get(key);
-
-      if (!entry) {
+      if (this.useRedis && this.redis) {
+        const value = await this.redis.get(key);
+        if (value) {
+          this.logger.debug(`Cache hit (Redis): ${key}`);
+          return JSON.parse(value) as T;
+        }
         return null;
       }
 
-      // Vérifier si le cache est expiré
+      // Fallback: in-memory
+      const entry = this.memCache.get(key);
+      if (!entry) return null;
       if (Date.now() > entry.expiresAt) {
-        this.cache.delete(key);
+        this.memCache.delete(key);
         return null;
       }
-
-      this.logger.debug(`Cache hit for key: ${key}`);
+      this.logger.debug(`Cache hit (memory): ${key}`);
       return entry.data as T;
     } catch (error) {
       this.logger.error(`Error getting cache for key ${key}: ${error.message}`);
@@ -50,16 +79,15 @@ export class CacheService {
    */
   async set<T>(key: string, value: T, ttlSeconds: number = 300): Promise<void> {
     try {
-      // TODO: Utiliser Redis en production
-      // await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+      if (this.useRedis && this.redis) {
+        await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+        this.logger.debug(`Cached (Redis): ${key} for ${ttlSeconds}s`);
+        return;
+      }
 
-      const expiresAt = Date.now() + ttlSeconds * 1000;
-      this.cache.set(key, {
-        data: value,
-        expiresAt,
-      });
-
-      this.logger.debug(`Cached key: ${key} for ${ttlSeconds}s`);
+      // Fallback: in-memory
+      this.memCache.set(key, { data: value, expiresAt: Date.now() + ttlSeconds * 1000 });
+      this.logger.debug(`Cached (memory): ${key} for ${ttlSeconds}s`);
     } catch (error) {
       this.logger.error(`Error setting cache for key ${key}: ${error.message}`);
     }
@@ -70,10 +98,11 @@ export class CacheService {
    */
   async del(key: string): Promise<void> {
     try {
-      // TODO: Utiliser Redis en production
-      // await this.redis.del(key);
-
-      this.cache.delete(key);
+      if (this.useRedis && this.redis) {
+        await this.redis.del(key);
+      } else {
+        this.memCache.delete(key);
+      }
       this.logger.debug(`Deleted cache key: ${key}`);
     } catch (error) {
       this.logger.error(`Error deleting cache for key ${key}: ${error.message}`);
@@ -81,25 +110,27 @@ export class CacheService {
   }
 
   /**
-   * Supprimer plusieurs clés par pattern
+   * Supprimer plusieurs clés par pattern (Redis SCAN ou filtre mémoire)
    */
   async delPattern(pattern: string): Promise<void> {
     try {
-      // TODO: Utiliser Redis SCAN en production
-      // const keys = await this.redis.keys(pattern);
-      // if (keys.length > 0) {
-      //   await this.redis.del(...keys);
-      // }
-
-      const keysToDelete: string[] = [];
-      for (const key of this.cache.keys()) {
-        if (key.includes(pattern.replace('*', ''))) {
-          keysToDelete.push(key);
+      if (this.useRedis && this.redis) {
+        const keys = await this.redis.keys(pattern);
+        if (keys.length > 0) {
+          await this.redis.del(...keys);
+          this.logger.debug(`Deleted ${keys.length} Redis keys matching: ${pattern}`);
         }
+        return;
       }
 
-      keysToDelete.forEach((key) => this.cache.delete(key));
-      this.logger.debug(`Deleted ${keysToDelete.length} cache keys matching pattern: ${pattern}`);
+      // Fallback: in-memory pattern match
+      const prefix = pattern.replace(/\*/g, '');
+      const keysToDelete: string[] = [];
+      for (const key of this.memCache.keys()) {
+        if (key.includes(prefix)) keysToDelete.push(key);
+      }
+      keysToDelete.forEach((key) => this.memCache.delete(key));
+      this.logger.debug(`Deleted ${keysToDelete.length} memory keys matching: ${pattern}`);
     } catch (error) {
       this.logger.error(`Error deleting cache pattern ${pattern}: ${error.message}`);
     }
@@ -110,14 +141,25 @@ export class CacheService {
    */
   async flush(): Promise<void> {
     try {
-      // TODO: Utiliser Redis en production
-      // await this.redis.flushall();
-
-      this.cache.clear();
+      if (this.useRedis && this.redis) {
+        await this.redis.flushdb(); // flushdb instead of flushall (only current DB)
+      } else {
+        this.memCache.clear();
+      }
       this.logger.log('Cache flushed');
     } catch (error) {
       this.logger.error(`Error flushing cache: ${error.message}`);
     }
+  }
+
+  /**
+   * Statut du backend de cache
+   */
+  getStatus(): { backend: 'redis' | 'memory'; connected: boolean } {
+    return {
+      backend: this.useRedis ? 'redis' : 'memory',
+      connected: this.useRedis ? !!this.redis : true,
+    };
   }
 
   /**
@@ -372,9 +414,9 @@ export class CacheService {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of this.memCache.entries()) {
       if (now > entry.expiresAt) {
-        this.cache.delete(key);
+        this.memCache.delete(key);
         cleaned++;
       }
     }

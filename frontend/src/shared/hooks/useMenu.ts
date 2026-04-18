@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { moduleRegistryApi, DynamicMenuItem } from '@/shared/utils/module-registry-api';
+import { useState } from 'react';
+import { DynamicMenuItem } from '@/shared/utils/module-registry-api';
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -37,36 +37,17 @@ import { moduleRegistryApi, DynamicMenuItem } from '@/shared/utils/module-regist
  * ```
  */
 export function useMenu() {
-  const [menuItems, setMenuItems] = useState<DynamicMenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchMenu = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Toujours utiliser le menu structuré avec sections
-      // L'API peut retourner les modules actifs mais le layout est côté client
-      setMenuItems(getDefaultMenu());
-    } catch (err) {
-      console.error('❌ Erreur lors du chargement du menu:', err);
-      setError(err as Error);
-      setMenuItems(getDefaultMenu());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMenu();
-  }, []);
+  // Menu is entirely static (client-side) — no API call needed.
+  // Initialize synchronously to avoid loading flash on every page navigation.
+  const [menuItems] = useState<DynamicMenuItem[]>(getDefaultMenu);
+  const loading = false;
+  const error = null;
 
   return {
     menuItems,
     loading,
     error,
-    refetch: fetchMenu,
+    refetch: () => {},
   };
 }
 

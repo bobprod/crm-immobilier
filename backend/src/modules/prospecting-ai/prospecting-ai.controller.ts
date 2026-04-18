@@ -19,6 +19,8 @@ import { ProspectionService } from './services/prospection.service';
 import { ProspectionExportService, ExportFormat } from './services/prospection-export.service';
 import { StartProspectionDto } from './dto';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { UnifiedValidationService } from '../../shared/validation/unified-validation.service';
+import { CacheService } from '../cache/cache.service';
 
 /**
  * Controller de prospection IA
@@ -30,14 +32,17 @@ import { PrismaService } from '../../shared/database/prisma.service';
 export class ProspectingAiController {
   private readonly logger = new Logger(ProspectingAiController.name);
 
-  // Stockage en mémoire des résultats (en prod, utiliser Redis ou DB)
-  private readonly resultsCache = new Map<string, any>();
+  // TTL: 2h (résultats d'une prospection restent disponibles 2h)
+  private readonly CACHE_TTL = 7200;
+  private readonly CACHE_PREFIX = 'prospection:result:';
 
   constructor(
     private readonly prospectionService: ProspectionService,
     private readonly exportService: ProspectionExportService,
     private readonly prisma: PrismaService,
-  ) { }
+    private readonly validationService: UnifiedValidationService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * POST /api/prospecting-ai/start
@@ -61,13 +66,8 @@ export class ProspectingAiController {
         request,
       });
 
-      // Stocker le résultat en cache (pour récupération ultérieure)
-      this.resultsCache.set(result.id, result);
-
-      // Nettoyer le cache après 1h
-      setTimeout(() => {
-        this.resultsCache.delete(result.id);
-      }, 3600000);
+      // Persister en Redis (survit aux restarts)
+      await this.cacheService.set(`${this.CACHE_PREFIX}${result.id}`, result, this.CACHE_TTL);
 
       return {
         prospectionId: result.id,
@@ -100,7 +100,7 @@ export class ProspectingAiController {
   @ApiResponse({ status: 200, description: 'Prospection found' })
   @ApiResponse({ status: 404, description: 'Prospection not found' })
   async getProspectionResult(@Param('id') id: string) {
-    const result = this.resultsCache.get(id);
+    const result = await this.cacheService.get<any>(`${this.CACHE_PREFIX}${id}`);
 
     if (!result) {
       throw new HttpException(
@@ -130,7 +130,7 @@ export class ProspectingAiController {
     @Query('format') format: ExportFormat = ExportFormat.JSON,
     @Res() res: Response,
   ) {
-    const result = this.resultsCache.get(id);
+    const result = await this.cacheService.get<any>(`${this.CACHE_PREFIX}${id}`);
 
     if (!result) {
       throw new HttpException(
@@ -171,8 +171,12 @@ export class ProspectingAiController {
   @ApiOperation({ summary: 'Convert AI leads to CRM prospects (persisted)' })
   @ApiResponse({ status: 200, description: 'Leads converted and saved' })
   @ApiResponse({ status: 404, description: 'Prospection not found' })
-  async convertToProspects(@Request() req, @Param('id') id: string, @Body() body?: { leadIds?: string[] }) {
-    const result = this.resultsCache.get(id);
+  async convertToProspects(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body?: { leadIds?: string[] },
+  ) {
+    const result = await this.cacheService.get<any>(`${this.CACHE_PREFIX}${id}`);
 
     if (!result) {
       throw new HttpException(
@@ -209,11 +213,21 @@ export class ProspectingAiController {
           });
         }
 
+        // Smart validation before saving
+        const validationResult = await this.validateLeadBeforeConversion(lead);
+        if (validationResult.isSpam) {
+          this.logger.warn(`Lead rejected (spam): ${lead.email || lead.name}`);
+          skipped.push(lead.email || lead.phone || 'spam');
+          continue;
+        }
+
         if (existing) {
           // Merge: update with new data that's missing
           const updates: Record<string, any> = {};
-          if (!existing.phone && lead.phone) updates.phone = lead.phone;
-          if (!existing.email && lead.email) updates.email = lead.email;
+          if (!existing.phone && lead.phone && validationResult.phoneValid)
+            updates.phone = lead.phone;
+          if (!existing.email && lead.email && validationResult.emailValid)
+            updates.email = lead.email;
           if (!existing.budget && lead.budget) updates.budget = lead.budget;
           if (!existing.city && lead.city) updates.city = lead.city;
 
@@ -265,5 +279,63 @@ export class ProspectingAiController {
       mergedIds: merged,
       message: `${created.length} prospects créés, ${merged.length} fusionnés, ${skipped.length} ignorés.`,
     };
+  }
+
+  /**
+   * Valider un lead avant conversion en prospect
+   */
+  private async validateLeadBeforeConversion(lead: any) {
+    let emailValid = true;
+    let phoneValid = true;
+    let isSpam = false;
+    const warnings: string[] = [];
+
+    // Validate email
+    if (lead.email) {
+      try {
+        const emailResult = await this.validationService.validateEmail(lead.email);
+        emailValid = emailResult.isValid;
+        if (emailResult.format?.isDisposable) {
+          warnings.push('Email jetable');
+          isSpam = true;
+        }
+        if (emailResult.risk?.isSpam) {
+          isSpam = true;
+        }
+      } catch {
+        // Validation service down, allow through
+      }
+    }
+
+    // Validate phone
+    if (lead.phone) {
+      try {
+        const phoneResult = await this.validationService.validatePhone(lead.phone);
+        phoneValid = phoneResult.isValid;
+      } catch {
+        // Allow through
+      }
+    }
+
+    // Validate name — suspect patterns
+    const name = `${lead.firstName || ''} ${lead.lastName || lead.name || ''}`;
+    if (/^(test|spam|fake|admin|user\d)/i.test(name.trim())) {
+      isSpam = true;
+      warnings.push('Nom suspect');
+    }
+
+    // Spam detection on raw text if available
+    if (lead.rawText || lead.notes) {
+      try {
+        const spamResult = await this.validationService.detectSpam(lead.rawText || lead.notes);
+        if (spamResult.isSpam) {
+          isSpam = true;
+        }
+      } catch {
+        // Allow through
+      }
+    }
+
+    return { emailValid, phoneValid, isSpam, warnings };
   }
 }

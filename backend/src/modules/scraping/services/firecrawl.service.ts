@@ -24,18 +24,18 @@ export interface FirecrawlScrapingResult {
 
 /**
  * Service de scraping avec Firecrawl (API externe)
- * 
+ *
  * Avantages:
  * - Intelligence artificielle intégrée
  * - Extraction structurée avec LLM
  * - Gère les sites complexes
  * - Markdown formaté
- * 
+ *
  * Limitations:
  * - Nécessite une clé API
  * - Coût par requête (~$0.001 par page)
  * - Tier gratuit limité
- * 
+ *
  * Cas d'usage:
  * - Sites complexes (Bricks.co, Homunity)
  * - Extraction structurée avec IA
@@ -69,8 +69,8 @@ export class FirecrawlService {
       if (!apiKey) {
         throw new Error(
           'Clé API Firecrawl non configurée. ' +
-          'Veuillez configurer votre clé Firecrawl dans les paramètres (Settings > API Keys) ' +
-          'ou contactez votre administrateur d\'agence.',
+            'Veuillez configurer votre clé Firecrawl dans les paramètres (Settings > API Keys) ' +
+            "ou contactez votre administrateur d'agence.",
         );
       }
 
@@ -157,43 +157,65 @@ export class FirecrawlService {
       return result;
     } catch (error) {
       this.logger.error(`Échec du scraping Firecrawl pour ${url}: ${error.message}`);
-      
+
       // Si l'erreur est liée à la clé API, la remonter clairement
       if (error.response?.status === 401 || error.response?.status === 403) {
         throw new Error('Clé API Firecrawl invalide ou expirée');
       }
-      
+
       throw new Error(`Échec du scraping Firecrawl: ${error.message}`);
     }
   }
 
   /**
-   * Scraper plusieurs URLs en batch
+   * Scraper plusieurs URLs en parallèle (concurrence 5 max)
+   * Retry automatique sur 429 avec backoff exponentiel.
    */
   async scrapeMultipleUrls(
     urls: string[],
     options?: FirecrawlScrapingOptions,
     tenantId?: string,
   ): Promise<FirecrawlScrapingResult[]> {
-    this.logger.log(`Scraping de ${urls.length} URLs avec Firecrawl`);
+    this.logger.log(`Scraping de ${urls.length} URLs avec Firecrawl (concurrence=5)`);
 
-    const results: FirecrawlScrapingResult[] = [];
+    const CONCURRENCY = 5;
+    const results: (FirecrawlScrapingResult | null)[] = new Array(urls.length).fill(null);
 
-    // Traiter séquentiellement pour éviter de dépasser les limites de rate
-    for (const url of urls) {
-      try {
-        const result = await this.scrapeUrl(url, options, tenantId);
-        results.push(result);
-        
-        // Petit délai entre chaque requête pour respecter les limites
-        await this.sleep(500);
-      } catch (error) {
-        this.logger.warn(`Échec du scraping pour ${url}: ${error.message}`);
-        // Continuer avec les autres URLs
+    // Pool de concurrence simple : on maintient au plus CONCURRENCY tâches actives
+    let index = 0;
+
+    const worker = async (): Promise<void> => {
+      while (index < urls.length) {
+        const i = index++;
+        const url = urls[i];
+        let attempt = 0;
+        const maxAttempts = 3;
+
+        while (attempt < maxAttempts) {
+          try {
+            results[i] = await this.scrapeUrl(url, options, tenantId);
+            break;
+          } catch (error) {
+            const is429 = error?.response?.status === 429 || error.message?.includes('429');
+            if (is429 && attempt < maxAttempts - 1) {
+              const backoff = 1000 * Math.pow(2, attempt); // 1s, 2s
+              this.logger.warn(`Rate-limited (${url}), retry in ${backoff}ms…`);
+              await this.sleep(backoff);
+              attempt++;
+            } else {
+              this.logger.warn(`Échec du scraping pour ${url}: ${error.message}`);
+              break;
+            }
+          }
+        }
       }
-    }
+    };
 
-    return results;
+    // Lancer CONCURRENCY workers en parallèle
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, urls.length) }, worker));
+
+    // Retourner uniquement les résultats réussis
+    return results.filter((r): r is FirecrawlScrapingResult => r !== null);
   }
 
   /**
@@ -276,11 +298,7 @@ export class FirecrawlService {
   /**
    * Extraire des données structurées avec un prompt LLM
    */
-  async extractWithLLM(
-    url: string,
-    extractionPrompt: string,
-    tenantId?: string,
-  ): Promise<any> {
+  async extractWithLLM(url: string, extractionPrompt: string, tenantId?: string): Promise<any> {
     this.logger.log(`Extraction LLM avec Firecrawl pour: ${url}`);
 
     const result = await this.scrapeUrl(

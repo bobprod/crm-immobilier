@@ -21,6 +21,7 @@ import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { Response } from 'express';
 import { ProspectsService } from './prospects.service';
+import { ProspectSmartValidationService } from './prospect-smart-validation.service';
 import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto';
 
@@ -29,7 +30,10 @@ import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto'
 @UseGuards(JwtAuthGuard)
 @Controller('prospects')
 export class ProspectsController {
-  constructor(private prospectsService: ProspectsService) {}
+  constructor(
+    private prospectsService: ProspectsService,
+    private smartValidation: ProspectSmartValidationService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create prospect' })
@@ -89,6 +93,37 @@ export class ProspectsController {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(content);
+  }
+
+  @Post('validate')
+  @ApiOperation({ summary: 'Validate prospect data before creation (smart validation)' })
+  async validateProspect(@Request() req, @Body() data: any) {
+    return this.smartValidation.validateProspect(data, req.user.userId);
+  }
+
+  @Post('validate/field')
+  @ApiOperation({ summary: 'Validate a single prospect field in real-time' })
+  async validateField(
+    @Request() req,
+    @Body()
+    body: {
+      field: 'email' | 'phone' | 'name';
+      value: string;
+      firstName?: string;
+      lastName?: string;
+    },
+  ) {
+    return this.smartValidation.validateField(body.field, body.value, {
+      firstName: body.firstName,
+      lastName: body.lastName,
+      userId: req.user.userId,
+    });
+  }
+
+  @Post('validate/ai')
+  @ApiOperation({ summary: 'AI-enhanced prospect validation (uses configured LLM provider)' })
+  async validateWithAI(@Request() req, @Body() data: any) {
+    return this.smartValidation.validateProspectWithAI(data, req.user.userId);
   }
 
   @Get(':id')

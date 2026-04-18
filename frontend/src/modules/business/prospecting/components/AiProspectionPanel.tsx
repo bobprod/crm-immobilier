@@ -16,9 +16,7 @@ export interface AiProspectionPanelProps {
   language?: 'fr' | 'en';
 }
 
-export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
-  language = 'fr',
-}) => {
+export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({ language = 'fr' }) => {
   const { user } = useAuth();
   const authToken = user?.token || '';
 
@@ -91,7 +89,7 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
   const [isAddingToCrm, setIsAddingToCrm] = useState<string | null>(null);
 
   /**
-   * Ajouter un lead au CRM (convertir en prospect)
+   * Ajouter un lead au CRM (convertir en prospect) - avec validation préalable
    */
   const handleAddToCrm = async (leadId: string) => {
     if (!prospectionResult || !user?.token) return;
@@ -105,13 +103,56 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
     setIsAddingToCrm(leadId);
 
     try {
-      // Utiliser l'endpoint de conversion avec déduplication
+      // Étape 1: Valider le lead avant conversion
+      const validationResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/prospects/validate`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: lead.email,
+            phone: lead.phone,
+            firstName: lead.name?.split(' ')[0],
+            lastName: lead.name?.split(' ').slice(1).join(' '),
+          }),
+        }
+      );
+
+      if (validationResponse.ok) {
+        const validation = await validationResponse.json();
+        if (validation.overall?.status === 'spam') {
+          const confirmSpam = confirm(
+            `⚠️ Ce lead a été détecté comme spam (score: ${validation.overall.score}/100).\n` +
+              `Problèmes: ${validation.overall.flags?.join(', ') || 'Données suspectes'}\n\n` +
+              `Voulez-vous quand même l'ajouter au CRM ?`
+          );
+          if (!confirmSpam) {
+            setIsAddingToCrm(null);
+            return;
+          }
+        } else if (validation.overall?.status === 'suspicious') {
+          const confirmSuspicious = confirm(
+            `⚠️ Ce lead a des données suspectes (score: ${validation.overall.score}/100).\n` +
+              `Avertissements: ${validation.overall.flags?.join(', ') || 'Vérifiez les informations'}\n\n` +
+              `Voulez-vous continuer ?`
+          );
+          if (!confirmSuspicious) {
+            setIsAddingToCrm(null);
+            return;
+          }
+        }
+      }
+
+      // Étape 2: Convertir en prospect (le backend re-valide aussi)
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/prospecting-ai/${prospectionResult.id}/convert-to-prospects`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${user.token}`,
+            Authorization: `Bearer ${user.token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ leadIds: [leadId] }),
@@ -129,12 +170,16 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
         alert(`✅ Lead "${lead.name}" ajouté au CRM avec succès!`);
       } else if (result.merged > 0) {
         alert(`✅ Lead "${lead.name}" fusionné avec un prospect existant.`);
+      } else if (result.skipped > 0) {
+        alert(`⚠️ Lead "${lead.name}" rejeté par la validation (spam/doublon détecté).`);
       } else {
         alert(`ℹ️ Lead "${lead.name}" déjà présent dans le CRM.`);
       }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout au CRM:', error);
-      alert(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible d\'ajouter le lead au CRM'}`);
+      console.error("Erreur lors de l'ajout au CRM:", error);
+      alert(
+        `❌ Erreur: ${error instanceof Error ? error.message : "Impossible d'ajouter le lead au CRM"}`
+      );
     } finally {
       setIsAddingToCrm(null);
     }
@@ -166,7 +211,9 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
    * Envoyer un email au lead
    */
   const handleSendEmail = (leadId: string, email: string) => {
-    const userName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'votre agence immobilière';
+    const userName = user?.firstName
+      ? `${user.firstName} ${user.lastName || ''}`.trim()
+      : 'votre agence immobilière';
     const mailtoLink = `mailto:${email}?subject=Contact depuis ${userName}&body=Bonjour,%0D%0A%0D%0ANous avons trouvé votre profil et pensons avoir des opportunités qui pourraient vous intéresser.%0D%0A%0D%0ACordialement`;
     window.open(mailtoLink, '_blank');
     handleCloseContactModal();
@@ -206,13 +253,17 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
       // TODO: Implémenter l'endpoint backend si nécessaire
 
       // Pour l'instant, on simule en filtrant localement
-      alert(`✅ Lead "${lead.name}" marqué comme rejeté.\n\nNote: Cette action est locale pour cette session. Pour une persistance permanente, l'endpoint backend doit être implémenté.`);
+      alert(
+        `✅ Lead "${lead.name}" marqué comme rejeté.\n\nNote: Cette action est locale pour cette session. Pour une persistance permanente, l'endpoint backend doit être implémenté.`
+      );
 
       // Optionnel: Cacher le lead dans l'UI
       console.log(`Lead ${leadId} rejected`);
     } catch (error) {
       console.error('Erreur lors du rejet:', error);
-      alert(`❌ Erreur: ${error instanceof Error ? error.message : 'Impossible de rejeter le lead'}`);
+      alert(
+        `❌ Erreur: ${error instanceof Error ? error.message : 'Impossible de rejeter le lead'}`
+      );
     }
   };
 
@@ -240,7 +291,11 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
           <div className="p-3 bg-white/20 rounded-lg">
             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
               <path d="M13 7H7v6h6V7z" />
-              <path fillRule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z"
+                clipRule="evenodd"
+              />
             </svg>
           </div>
           <div>
@@ -253,19 +308,31 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
         <div className="flex gap-6 text-sm">
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
             </svg>
             <span>Rapide et automatisé</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
             </svg>
             <span>Leads qualifiés par IA</span>
           </div>
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
             </svg>
             <span>Export CRM direct</span>
           </div>
@@ -320,7 +387,11 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
             </div>
@@ -350,7 +421,9 @@ export const AiProspectionPanel: React.FC<AiProspectionPanelProps> = ({
 
               {/* Contact Methods */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700">Choisissez une méthode de contact:</p>
+                <p className="text-sm font-medium text-gray-700">
+                  Choisissez une méthode de contact:
+                </p>
 
                 {contactModalLead.email && (
                   <button

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../../shared/database/prisma.module';
 import { AIMetricsModule } from '../../intelligence/ai-metrics/ai-metrics.module';
+import { ValidationModule } from '../../../shared/validation/validation.module';
+import { ValidationModule as IntelligenceValidationModule } from '../../intelligence/validation/validation.module';
 import { ProspectsController } from './prospects.controller';
 import { ProspectsService } from './prospects.service';
 import { ProspectsConversionTrackerService } from './prospects-conversion-tracker.service';
@@ -10,9 +12,10 @@ import { ProspectsEnhancedService } from './prospects-enhanced.service';
 import { ProspectHistoryService } from './prospect-history.service';
 import { ProspectEnrichmentService } from './prospect-enrichment.service';
 import { ProspectEnrichmentController } from './prospect-enrichment.controller';
+import { ProspectSmartValidationService } from './prospect-smart-validation.service';
 
 @Module({
-  imports: [PrismaModule, AIMetricsModule],
+  imports: [PrismaModule, AIMetricsModule, ValidationModule, IntelligenceValidationModule],
   controllers: [
     ProspectsController,
     ProspectsConversionTrackerController,
@@ -25,6 +28,7 @@ import { ProspectEnrichmentController } from './prospect-enrichment.controller';
     ProspectsEnhancedService,
     ProspectHistoryService,
     ProspectEnrichmentService,
+    ProspectSmartValidationService,
   ],
   exports: [
     ProspectsService,
@@ -32,6 +36,7 @@ import { ProspectEnrichmentController } from './prospect-enrichment.controller';
     ProspectsEnhancedService,
     ProspectHistoryService,
     ProspectEnrichmentService,
+    ProspectSmartValidationService,
   ],
 })
 export class ProspectsModule {}
