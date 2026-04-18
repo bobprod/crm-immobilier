@@ -211,6 +211,10 @@ model matches {
   prospects      prospects  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
 
   @@unique([propertyId, prospectId])
+  @@index([score])
+  @@index([status])
+  @@index([prospectId])
+  @@index([propertyId])
 }
 
 model properties {
@@ -359,6 +363,16 @@ model prospects {
   tasks                tasks[]                     @relation("ProspectTasks")
   transactions         Transaction[]               @relation("ProspectTransactions")
   publicLeads          PublicLead[]
+
+  @@index([userId])
+  @@index([email])
+  @@index([phone])
+  @@index([status])
+  @@index([score])
+  @@index([deletedAt])
+  @@index([userId, status, deletedAt])
+  @@index([userId, createdAt])
+  @@index([agencyId])
 }
 
 model ProspectHistory {
@@ -856,6 +870,7 @@ model prospecting_leads {
   @@index([status])
   @@index([score])
   @@index([email])
+  @@index([phone])
   @@index([leadType])
   @@index([validationStatus])
   @@index([city])

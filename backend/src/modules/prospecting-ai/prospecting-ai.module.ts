@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../shared/database/prisma.module';
 import { AiOrchestratorModule } from '../intelligence/ai-orchestrator/ai-orchestrator.module';
 import { ScrapingModule } from '../scraping/scraping.module';
+import { ValidationModule } from '../../shared/validation/validation.module';
+import { CacheModule } from '../cache/cache.module';
 
 // Services
 import { ProspectionService } from './services/prospection.service';
@@ -13,8 +15,10 @@ import { ProspectingAiController } from './prospecting-ai.controller';
 @Module({
   imports: [
     PrismaModule,
-    AiOrchestratorModule, // Pour utiliser l'orchestrateur IA
-    ScrapingModule, // Pour le mode URL avec WebDataService et FirecrawlService
+    AiOrchestratorModule,
+    ScrapingModule,
+    ValidationModule,
+    CacheModule, // Pour persister les résultats en Redis
   ],
   providers: [ProspectionService, ProspectionExportService],
   controllers: [ProspectingAiController],

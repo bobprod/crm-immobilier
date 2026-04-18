@@ -693,6 +693,72 @@ export const prospectingAPI = {
     return response.data;
   },
 
+  /**
+   * Valider un ensemble de leads via le smart validation backend
+   */
+  validateLeads: async (
+    leads: Array<{
+      id: string;
+      email?: string;
+      phone?: string;
+      firstName?: string;
+      lastName?: string;
+    }>
+  ): Promise<
+    Array<{
+      leadId: string;
+      email: { valid: boolean; disposable: boolean; score: number };
+      phone: { valid: boolean; formatted: string };
+      name: { valid: boolean; confidence: number; issues: string[] };
+      overall: { score: number; status: 'valid' | 'suspicious' | 'spam'; flags: string[] };
+    }>
+  > => {
+    const results = await Promise.all(
+      leads.map(async (lead) => {
+        try {
+          const response = await apiClient.post('/prospects/validate', {
+            email: lead.email,
+            phone: lead.phone,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+          });
+          return { leadId: lead.id, ...response.data };
+        } catch {
+          // Fallback if validation endpoint fails
+          const hasEmail = !!lead.email;
+          const hasPhone = !!lead.phone;
+          const hasName = !!(lead.firstName || lead.lastName);
+          const score = Math.round(
+            ((hasEmail ? 80 : 0) + (hasPhone ? 70 : 0) + (hasName ? 80 : 40)) / 3
+          );
+          return {
+            leadId: lead.id,
+            email: { valid: hasEmail, disposable: false, score: hasEmail ? 80 : 0 },
+            phone: { valid: hasPhone, formatted: lead.phone || '' },
+            name: {
+              valid: hasName,
+              confidence: hasName ? 80 : 0,
+              issues: hasName ? [] : ['Nom manquant'],
+            },
+            overall: {
+              score,
+              status: (score >= 70 ? 'valid' : score >= 40 ? 'suspicious' : 'spam') as
+                | 'valid'
+                | 'suspicious'
+                | 'spam',
+              flags: [
+                ...(!hasEmail ? ['Email manquant'] : []),
+                ...(!hasPhone ? ['Téléphone manquant'] : []),
+                ...(!hasName ? ['Nom manquant'] : []),
+              ],
+            },
+          };
+        }
+      })
+    );
+    return results;
+  },
+
   getLocations: async (country?: string): Promise<any> => {
     const response = await apiClient.get('/prospecting/locations', {
       params: { country },
@@ -714,7 +780,9 @@ export const prospectingAPI = {
   /**
    * Nettoyer un lead avec normalisation et enrichissement IA
    */
-  cleanLead: async (leadId: string): Promise<{
+  cleanLead: async (
+    leadId: string
+  ): Promise<{
     leadId: string;
     success: boolean;
     changes: { field: string; before: any; after: any }[];
@@ -729,7 +797,9 @@ export const prospectingAPI = {
   /**
    * Nettoyer un batch de leads (5 par appel LLM)
    */
-  cleanLeadsBatch: async (leadIds: string[]): Promise<{
+  cleanLeadsBatch: async (
+    leadIds: string[]
+  ): Promise<{
     total: number;
     successful: number;
     failed: number;
@@ -749,7 +819,9 @@ export const prospectingAPI = {
   /**
    * Nettoyer tous les leads d'une campagne
    */
-  cleanCampaignLeads: async (campaignId: string): Promise<{
+  cleanCampaignLeads: async (
+    campaignId: string
+  ): Promise<{
     total: number;
     successful: number;
     failed: number;
@@ -762,7 +834,9 @@ export const prospectingAPI = {
   /**
    * Obtenir le score de qualité d'un lead
    */
-  getLeadQualityScore: async (leadId: string): Promise<{
+  getLeadQualityScore: async (
+    leadId: string
+  ): Promise<{
     leadId: string;
     qualityScore: number;
   }> => {

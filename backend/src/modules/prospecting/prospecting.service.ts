@@ -39,7 +39,7 @@ export class ProspectingService {
     private leadManagementService: LeadManagementService,
     @Inject(forwardRef(() => ProspectingIntegrationService))
     private integrationService: ProspectingIntegrationService,
-  ) { }
+  ) {}
 
   // ============================================
   // CAMPAIGNS
@@ -812,33 +812,44 @@ export class ProspectingService {
           `Ingestion: ${ingestResult.created} created, ${ingestResult.rejected} rejected`,
         );
       } else {
-        // Si aucun item scraped, fallback sur mock data pour démo
-        this.logger.warn('No items scraped, generating mock leads for demo');
-        const mockLeads = this.generateMockLeads(campaign);
+        // En production, ne pas générer de faux leads — retourner un résultat vide
+        const isProd = process.env.NODE_ENV === 'production';
+        if (isProd) {
+          this.logger.warn(
+            'No items scraped in production — returning empty result (mock leads disabled)',
+          );
+          ingestResult = { created: 0, rejected: 0, total: 0, leads: [] };
+        } else {
+          // Mode développement uniquement : mock data pour démo locale
+          this.logger.warn('No items scraped, generating mock leads for demo (dev mode only)');
+          const mockLeads = this.generateMockLeads(campaign);
 
-        for (const leadData of mockLeads) {
-          const score = await this.calculateLeadScore(leadData);
-          await this.prisma.prospecting_leads.create({
-            data: {
-              ...leadData,
-              campaignId: campaign.id,
-              userId,
-              score,
-            },
-          });
+          for (const leadData of mockLeads) {
+            const score = await this.calculateLeadScore(leadData);
+            await this.prisma.prospecting_leads.create({
+              data: {
+                ...leadData,
+                campaignId: campaign.id,
+                userId,
+                score,
+              },
+            });
+          }
+
+          ingestResult = {
+            created: mockLeads.length,
+            rejected: 0,
+            total: mockLeads.length,
+            leads: [],
+          };
         }
-
-        ingestResult = {
-          created: mockLeads.length,
-          rejected: 0,
-          total: mockLeads.length,
-          leads: [],
-        };
       }
 
       // 3. AUTO-MATCHING EN PARALLÈLE PAR BATCH ⚡
       if (autoMatch && ingestResult.leads && ingestResult.leads.length > 0) {
-        this.logger.log(`⚡ Starting parallel auto-matching for ${ingestResult.leads.length} leads`);
+        this.logger.log(
+          `⚡ Starting parallel auto-matching for ${ingestResult.leads.length} leads`,
+        );
         let totalMatches = 0;
 
         // ✅ OPTIMISATION: Matching en parallèle par batches de 20
@@ -886,7 +897,8 @@ export class ProspectingService {
       });
 
       this.logger.log(
-        `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${autoMatch ? 'auto-matching enabled' : 'manual matching'
+        `✅ Campaign ${campaign.id} completed: ${ingestResult.created} leads, ${
+          autoMatch ? 'auto-matching enabled' : 'manual matching'
         } (Provider: ${llmProviderOverride})`,
       );
     } catch (error) {
@@ -1110,7 +1122,7 @@ export class ProspectingService {
       const totalLeads = (campaigns || []).reduce((sum, c) => sum + (c?._count?.leads || 0), 0);
       const totalConverted = (convertedLeads || []).length;
       const estimatedValue = (convertedLeads || []).reduce((sum, lead) => {
-        const budget = (lead?.budget) as any;
+        const budget = lead?.budget as any;
         const budgetValue = budget?.max || budget?.min || lead?.budgetMax || lead?.budgetMin || 0;
         return sum + (typeof budgetValue === 'number' ? budgetValue : 0);
       }, 0);
@@ -1171,5 +1183,4 @@ export class ProspectingService {
       };
     }
   }
-
 }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { LLMProviderFactory } from './providers/llm-provider.factory';
 import { LLMProvider, PRICING_PER_1M_TOKENS } from './providers/llm-provider.interface';
@@ -7,14 +7,14 @@ import { LLMProvider, PRICING_PER_1M_TOKENS } from './providers/llm-provider.int
  * Types d'opérations pour le routing intelligent
  */
 export type OperationType =
-  | 'seo'                      // Génération SEO (qualité max)
-  | 'prospecting_mass'         // Prospection en masse (coût min)
-  | 'prospecting_qualify'      // Qualification leads (équilibré)
-  | 'analysis_quick'           // Analyse rapide (vitesse)
-  | 'content_generation'       // Génération de contenu (qualité)
-  | 'long_context'             // Documents longs (contexte)
-  | 'scraping_analysis'        // Analyse de scraping (équilibré)
-  | 'data_cleaning';           // Nettoyage de données (coût optimisé)
+  | 'seo' // Génération SEO (qualité max)
+  | 'prospecting_mass' // Prospection en masse (coût min)
+  | 'prospecting_qualify' // Qualification leads (équilibré)
+  | 'analysis_quick' // Analyse rapide (vitesse)
+  | 'content_generation' // Génération de contenu (qualité)
+  | 'long_context' // Documents longs (contexte)
+  | 'scraping_analysis' // Analyse de scraping (équilibré)
+  | 'data_cleaning'; // Nettoyage de données (coût optimisé)
 
 /**
  * Service de routing intelligent pour les providers LLM
@@ -27,6 +27,8 @@ export type OperationType =
  */
 @Injectable()
 export class LLMRouterService {
+  private readonly logger = new Logger(LLMRouterService.name);
+
   /**
    * Matrice de routing intelligente
    * Définit l'ordre de préférence des providers selon le type d'opération
@@ -39,52 +41,52 @@ export class LLMRouterService {
       description: string;
     }
   > = {
-      seo: {
-        priority: ['anthropic', 'openai', 'gemini', 'mistral'],
-        criteria: 'quality',
-        description: 'Qualité maximale pour le SEO',
-      },
-      prospecting_mass: {
-        priority: ['deepseek', 'qwen', 'mistral', 'gemini'],
-        criteria: 'cost',
-        description: 'Coût minimal pour traitement en masse',
-      },
-      prospecting_qualify: {
-        priority: ['gemini', 'mistral', 'qwen', 'anthropic'],
-        criteria: 'balanced',
-        description: 'Équilibre qualité/coût pour qualification',
-      },
-      analysis_quick: {
-        priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
-        criteria: 'speed',
-        description: 'Vitesse maximale',
-      },
-      content_generation: {
-        priority: ['anthropic', 'mistral', 'openai', 'gemini'],
-        criteria: 'quality',
-        description: 'Qualité de contenu',
-      },
-      long_context: {
-        priority: ['kimi', 'anthropic', 'openai', 'gemini'],
-        criteria: 'context_window',
-        description: 'Fenêtre de contexte large',
-      },
-      scraping_analysis: {
-        priority: ['mistral', 'gemini', 'deepseek', 'qwen'],
-        criteria: 'balanced',
-        description: 'Bon rapport qualité/prix',
-      },
-      data_cleaning: {
-        priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
-        criteria: 'cost',
-        description: 'Nettoyage de données - coût optimisé',
-      },
-    };
+    seo: {
+      priority: ['anthropic', 'openai', 'gemini', 'mistral'],
+      criteria: 'quality',
+      description: 'Qualité maximale pour le SEO',
+    },
+    prospecting_mass: {
+      priority: ['deepseek', 'qwen', 'mistral', 'gemini'],
+      criteria: 'cost',
+      description: 'Coût minimal pour traitement en masse',
+    },
+    prospecting_qualify: {
+      priority: ['gemini', 'mistral', 'qwen', 'anthropic'],
+      criteria: 'balanced',
+      description: 'Équilibre qualité/coût pour qualification',
+    },
+    analysis_quick: {
+      priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
+      criteria: 'speed',
+      description: 'Vitesse maximale',
+    },
+    content_generation: {
+      priority: ['anthropic', 'mistral', 'openai', 'gemini'],
+      criteria: 'quality',
+      description: 'Qualité de contenu',
+    },
+    long_context: {
+      priority: ['kimi', 'anthropic', 'openai', 'gemini'],
+      criteria: 'context_window',
+      description: 'Fenêtre de contexte large',
+    },
+    scraping_analysis: {
+      priority: ['mistral', 'gemini', 'deepseek', 'qwen'],
+      criteria: 'balanced',
+      description: 'Bon rapport qualité/prix',
+    },
+    data_cleaning: {
+      priority: ['gemini', 'qwen', 'deepseek', 'mistral'],
+      criteria: 'cost',
+      description: 'Nettoyage de données - coût optimisé',
+    },
+  };
 
   constructor(
     private prisma: PrismaService,
     private providerFactory: LLMProviderFactory,
-  ) { }
+  ) {}
 
   /**
    * 🎯 MÉTHODE PRINCIPALE : Sélection intelligente du provider
@@ -115,15 +117,9 @@ export class LLMRouterService {
     }
 
     // 3. Appliquer les règles de routing intelligentes
-    const selectedConfig = await this.applyIntelligentRouting(
-      userProviders,
-      operationType,
-      userId,
-    );
+    const selectedConfig = await this.applyIntelligentRouting(userProviders, operationType, userId);
 
-    console.log(
-      `✅ Provider sélectionné: ${selectedConfig.provider} pour ${operationType}`,
-    );
+    console.log(`✅ Provider sélectionné: ${selectedConfig.provider} pour ${operationType}`);
 
     // 4. Créer et retourner l'instance du provider
     const provider = await this.providerFactory.createProviderForUser(
@@ -132,11 +128,7 @@ export class LLMRouterService {
     );
 
     // 5. Logger la sélection (pour analytics)
-    await this.logProviderSelection(
-      userId,
-      selectedConfig.provider,
-      operationType,
-    );
+    await this.logProviderSelection(userId, selectedConfig.provider, operationType);
 
     return provider;
   }
@@ -163,9 +155,14 @@ export class LLMRouterService {
 
     // Check agency
     let agencyKeys = null;
-    const user = await this.prisma.users.findUnique({ where: { id: userId }, select: { agencyId: true } });
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: { agencyId: true },
+    });
     if (user?.agencyId) {
-      agencyKeys = await this.prisma.agencyApiKeys.findUnique({ where: { agencyId: user.agencyId } });
+      agencyKeys = await this.prisma.agencyApiKeys.findUnique({
+        where: { agencyId: user.agencyId },
+      });
     }
 
     // Liste des providers supportés à vérifier
@@ -184,7 +181,7 @@ export class LLMRouterService {
 
     for (const p of supportedProviders) {
       // Si le provider est déjà dans la liste configurée, on saute
-      if (activeProviders.some(cp => cp.provider === p.name)) continue;
+      if (activeProviders.some((cp) => cp.provider === p.name)) continue;
 
       // Sinon on vérifie si une clé existe ET EST NON VIDE
       let hasKey = false;
@@ -239,7 +236,7 @@ export class LLMRouterService {
           failureCount: 0,
           totalApiCalls: 0,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
       }
     }
@@ -275,14 +272,10 @@ export class LLMRouterService {
         const hasBudget = await this.checkProviderBudget(userId, found.provider);
 
         if (hasBudget) {
-          console.log(
-            `✅ Provider sélectionné: ${found.provider} (${rules.description})`,
-          );
+          console.log(`✅ Provider sélectionné: ${found.provider} (${rules.description})`);
           return found;
         } else {
-          console.log(
-            `⚠️ Provider ${found.provider} : budget dépassé, passage au suivant`,
-          );
+          console.log(`⚠️ Provider ${found.provider} : budget dépassé, passage au suivant`);
         }
       }
     }
@@ -298,10 +291,7 @@ export class LLMRouterService {
    *
    * @returns true si le budget est OK, false si dépassé
    */
-  private async checkProviderBudget(
-    userId: string,
-    provider: string,
-  ): Promise<boolean> {
+  private async checkProviderBudget(userId: string, provider: string): Promise<boolean> {
     const providerConfig = await this.prisma.userLlmProvider.findUnique({
       where: { userId_provider: { userId, provider } },
     });
@@ -337,10 +327,7 @@ export class LLMRouterService {
   /**
    * 🎯 Obtenir un provider spécifique (override manuel)
    */
-  async getSpecificProvider(
-    userId: string,
-    providerName: string,
-  ): Promise<LLMProvider> {
+  async getSpecificProvider(userId: string, providerName: string): Promise<LLMProvider> {
     const config = await this.prisma.userLlmProvider.findUnique({
       where: {
         userId_provider: { userId, provider: providerName },
@@ -365,10 +352,7 @@ export class LLMRouterService {
   /**
    *  Utilisation mensuelle d'un provider
    */
-  private async getMonthlyUsage(
-    userId: string,
-    provider: string,
-  ): Promise<number> {
+  private async getMonthlyUsage(userId: string, provider: string): Promise<number> {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -418,11 +402,7 @@ export class LLMRouterService {
   /**
    * 📝 Logger la sélection de provider
    */
-  private async logProviderSelection(
-    userId: string,
-    provider: string,
-    operationType: string,
-  ) {
+  private async logProviderSelection(userId: string, provider: string, operationType: string) {
     // Mettre à jour lastUsed dans UserLlmProvider
     await this.prisma.userLlmProvider.updateMany({
       where: { userId, provider },
@@ -440,10 +420,19 @@ export class LLMRouterService {
     const providerModels: Record<string, string[]> = {
       openai: ['gpt-4o', 'gpt-4-turbo-preview', 'gpt-4', 'gpt-3.5-turbo'],
       gemini: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro'],
-      anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
+      anthropic: [
+        'claude-sonnet-4-20250514',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+        'claude-3-haiku-20240307',
+      ],
       deepseek: ['deepseek-chat', 'deepseek-coder'],
       mistral: ['mistral-large-latest', 'mistral-medium', 'mistral-small-latest', 'mistral-tiny'],
-      openrouter: ['anthropic/claude-3.5-sonnet', 'openai/gpt-4-turbo-preview', 'google/gemini-pro-1.5'],
+      openrouter: [
+        'anthropic/claude-3.5-sonnet',
+        'openai/gpt-4-turbo-preview',
+        'google/gemini-pro-1.5',
+      ],
       qwen: ['qwen-max', 'qwen-plus', 'qwen-turbo'],
       kimi: ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'],
     };
@@ -504,7 +493,9 @@ export class LLMRouterService {
       }
     }
 
-    console.log(`✅ Providers valides retournés: ${validProviders.map(p => p.provider).join(', ')}`);
+    console.log(
+      `✅ Providers valides retournés: ${validProviders.map((p) => p.provider).join(', ')}`,
+    );
     return validProviders;
   }
 
@@ -562,17 +553,10 @@ export class LLMRouterService {
   /**
    * 💰 Calculer le coût d'un appel
    */
-  private calculateCost(
-    provider: string,
-    tokensInput: number,
-    tokensOutput: number,
-  ): number {
+  private calculateCost(provider: string, tokensInput: number, tokensOutput: number): number {
     const pricing = PRICING_PER_1M_TOKENS[provider] || { input: 1.0, output: 3.0 };
 
-    return (
-      (tokensInput / 1_000_000) * pricing.input +
-      (tokensOutput / 1_000_000) * pricing.output
-    );
+    return (tokensInput / 1_000_000) * pricing.input + (tokensOutput / 1_000_000) * pricing.output;
   }
 
   /**
@@ -672,14 +656,17 @@ export class LLMRouterService {
   /**
    * ✅ Ajouter un nouveau provider
    */
-  async addUserProvider(userId: string, data: {
-    provider: string;
-    apiKey: string;
-    model?: string;
-    isActive?: boolean;
-    priority?: number;
-    monthlyBudget?: number;
-  }) {
+  async addUserProvider(
+    userId: string,
+    data: {
+      provider: string;
+      apiKey: string;
+      model?: string;
+      isActive?: boolean;
+      priority?: number;
+      monthlyBudget?: number;
+    },
+  ) {
     // Migration automatique si nécessaire
     await this.migrateOldConfig(userId);
 
@@ -699,13 +686,17 @@ export class LLMRouterService {
   /**
    * ✅ Mettre à jour un provider
    */
-  async updateUserProvider(userId: string, provider: string, data: {
-    apiKey?: string;
-    model?: string;
-    isActive?: boolean;
-    priority?: number;
-    monthlyBudget?: number;
-  }) {
+  async updateUserProvider(
+    userId: string,
+    provider: string,
+    data: {
+      apiKey?: string;
+      model?: string;
+      isActive?: boolean;
+      priority?: number;
+      monthlyBudget?: number;
+    },
+  ) {
     const updateData: any = {};
 
     if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
@@ -780,5 +771,82 @@ export class LLMRouterService {
         message: `❌ ${provider} test failed: ${error.message}`,
       };
     }
+  }
+
+  /**
+   * 🔄 Cascade fallback : essaie les providers dans l'ordre de préférence.
+   *
+   * Si le premier provider lève une exception (quota dépassé, rate-limit, timeout…),
+   * le suivant est automatiquement tenté. Utile pour les appels critiques.
+   *
+   * @param userId - ID de l'utilisateur
+   * @param operationType - Type d'opération pour le routing
+   * @param callFn - Fonction qui reçoit un LLMProvider et fait l'appel
+   * @param providerOverride - Forcer un provider précis (optionnel)
+   */
+  async callWithFallback<T>(
+    userId: string,
+    operationType: OperationType,
+    callFn: (provider: LLMProvider) => Promise<T>,
+    providerOverride?: string,
+  ): Promise<T> {
+    // Si override manuel : pas de fallback, on laisse l'exception remonter
+    if (providerOverride && providerOverride !== 'auto') {
+      const provider = await this.getSpecificProvider(userId, providerOverride);
+      return callFn(provider);
+    }
+
+    const userProviders = await this.getUserActiveProviders(userId);
+    if (userProviders.length === 0) {
+      throw new BadRequestException(
+        'Aucun provider LLM configuré. Veuillez en ajouter un dans les paramètres.',
+      );
+    }
+
+    // Ordre de tentative : règles de routing, puis tous les autres actifs
+    const rules = this.ROUTING_RULES[operationType];
+    const orderedProviders: string[] = rules
+      ? [
+          ...rules.priority.filter((p) => userProviders.some((up) => up.provider === p)),
+          ...userProviders.map((up) => up.provider).filter((p) => !rules.priority.includes(p)),
+        ]
+      : userProviders.map((up) => up.provider);
+
+    // Dédupliquer tout en conservant l'ordre
+    const seen = new Set<string>();
+    const cascade = orderedProviders.filter((p) => {
+      if (seen.has(p)) return false;
+      seen.add(p);
+      return true;
+    });
+
+    let lastError: Error | undefined;
+
+    for (const providerName of cascade) {
+      // Vérifier budget avant tentative
+      const hasBudget = await this.checkProviderBudget(userId, providerName);
+      if (!hasBudget) {
+        this.logger.warn(
+          `⚠️  callWithFallback: ${providerName} budget dépassé, passage au suivant`,
+        );
+        continue;
+      }
+
+      try {
+        const provider = await this.providerFactory.createProviderForUser(userId, providerName);
+        const result = await callFn(provider);
+        this.logger.log(`✅ callWithFallback: succès avec ${providerName}`);
+        return result;
+      } catch (err) {
+        lastError = err as Error;
+        this.logger.warn(
+          `⚠️  callWithFallback: ${providerName} échoué (${err.message}), essai suivant…`,
+        );
+      }
+    }
+
+    throw new BadRequestException(
+      `Tous les providers LLM ont échoué. Dernier erreur: ${lastError?.message ?? 'inconnue'}`,
+    );
   }
 }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import * as LucideIcons from 'lucide-react';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import { useMenu } from '@/shared/hooks/useMenu';
 import type { DynamicMenuItem } from '@/shared/utils/module-registry-api';
@@ -11,7 +10,38 @@ import {
   Building2,
   UserCircle,
   Circle,
+  Home,
+  Users,
+  Search,
+  Target,
+  ArrowLeftRight,
+  CalendarDays,
+  MessageSquare,
+  Megaphone,
+  TrendingUp,
+  DollarSign,
+  FileText,
 } from 'lucide-react';
+
+// Static icon map — tree-shakeable, avoids bundling all lucide icons
+const ICON_MAP: Record<string, React.ElementType> = {
+  Home,
+  Building2,
+  Users,
+  Search,
+  Target,
+  ArrowLeftRight,
+  CalendarDays,
+  MessageSquare,
+  Megaphone,
+  TrendingUp,
+  DollarSign,
+  FileText,
+  Circle,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+};
 
 export interface SidebarProps {
   collapsed?: boolean;
@@ -22,6 +52,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
   const router = useRouter();
   const { menuItems, loading } = useMenu();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Prefetch all menu routes so subsequent navigations are instant
+  useEffect(() => {
+    const allPaths = (items: DynamicMenuItem[]): string[] =>
+      items.flatMap((item) => [
+        ...(item.path && item.moduleId !== 'section' ? [item.path.split('?')[0]] : []),
+        ...(item.children ? allPaths(item.children) : []),
+      ]);
+    allPaths(menuItems).forEach((path) => router.prefetch(path));
+  }, [menuItems, router]);
 
   // Auto-expand parent items when the current route matches a child
   useEffect(() => {
@@ -81,8 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
 
   const getIcon = (iconName?: string): React.ElementType => {
     if (!iconName) return Circle;
-    const Icon = (LucideIcons as any)[iconName];
-    return Icon || Circle;
+    return ICON_MAP[iconName] || Circle;
   };
 
   const renderMenuItem = (item: DynamicMenuItem, level: number = 0) => {
@@ -127,12 +166,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
           />
           {!collapsed && (
             <>
-              <span className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'} truncate`}>
+              <span
+                className={`flex-1 text-sm ${active ? 'font-semibold text-white' : 'font-medium'} truncate`}
+              >
                 {item.label}
               </span>
               {hasChildren && (
                 <span className="text-slate-400">
-                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
                 </span>
               )}
             </>
@@ -157,7 +202,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
       `}
     >
       {/* Header */}
-      <div className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}>
+      <div
+        className={`flex items-center border-b border-slate-700/60 ${collapsed ? 'justify-center p-4' : 'justify-between px-5 py-5'}`}
+      >
         {!collapsed && (
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-md">
@@ -190,9 +237,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false, onToggleCol
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-400" />
           </div>
         ) : (
-          <div className="space-y-0.5">
-            {menuItems.map((item) => renderMenuItem(item))}
-          </div>
+          <div className="space-y-0.5">{menuItems.map((item) => renderMenuItem(item))}</div>
         )}
       </nav>
 

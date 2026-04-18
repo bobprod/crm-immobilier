@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { CreateProspectDto, UpdateProspectDto, PaginationQueryDto } from './dto';
 import { ProspectHistoryService } from './prospect-history.service';
+import { ProspectSmartValidationService } from './prospect-smart-validation.service';
 import { ErrorHandler } from '../../../shared/utils/error-handler.utils';
 import { paginate } from '../../../shared/utils/pagination.utils';
 import { readFileSync, unlinkSync } from 'fs';
@@ -29,6 +30,7 @@ export class ProspectsService {
   constructor(
     private prisma: PrismaService,
     private historyService: ProspectHistoryService,
+    private smartValidation: ProspectSmartValidationService,
     private eventEmitter: EventEmitter2,
   ) {}
 
@@ -56,6 +58,33 @@ export class ProspectsService {
 
   async create(userId: string, data: CreateProspectDto) {
     try {
+      // Smart validation before creation
+      const validation = await this.smartValidation.validateProspect(
+        {
+          email: data.email,
+          phone: data.phone,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          notes: data.notes,
+        },
+        userId,
+      );
+
+      if (validation.spam.isSpam) {
+        throw new BadRequestException({
+          message: 'Ce contact a été identifié comme spam',
+          validation,
+        });
+      }
+
+      if (validation.duplicate.isDuplicate) {
+        throw new BadRequestException({
+          message: 'Un prospect avec cet email existe déjà',
+          existingProspectId: validation.duplicate.existingProspectId,
+          validation,
+        });
+      }
+
       // Convert budget number to JSON format for Prisma
       const prospectData: any = {
         firstName: data.firstName,
@@ -73,8 +102,10 @@ export class ProspectsService {
         prospectData.budget = { amount: data.budget, currency: 'TND' };
       }
 
-      // Auto-calculate score
-      prospectData.score = this.calculateScore(prospectData);
+      // Auto-calculate score (combine profile completeness + validation quality)
+      const baseScore = this.calculateScore(prospectData);
+      const validationBonus = Math.round((validation.score - 50) * 0.3); // validation adjusts score ±15
+      prospectData.score = Math.max(0, Math.min(100, baseScore + validationBonus));
 
       console.log(
         '[ProspectsService] Creating prospect with data:',
@@ -92,7 +123,16 @@ export class ProspectsService {
       this.eventEmitter.emit('prospect.created', new ProspectCreatedEvent(userId, result));
 
       console.log('[ProspectsService] Prospect created successfully:', result.id);
-      return result;
+      return {
+        ...result,
+        validation: {
+          score: validation.score,
+          warnings: validation.warnings,
+          email: validation.email,
+          phone: validation.phone,
+          spam: validation.spam,
+        },
+      };
     } catch (error) {
       console.error('[ProspectsService] Error creating prospect:', error);
       throw error;

@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { InjectQueue } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
-import { BrowserlessService, FacebookMarketplaceSearch, ScrapingResult } from './browserless.service';
+import {
+  BrowserlessService,
+  FacebookMarketplaceSearch,
+  ScrapingResult,
+} from './browserless.service';
 import { BehavioralSignalsService, IntentionScore } from './behavioral-signals.service';
 import { PrismaService } from '../../shared/database/prisma.service';
 
@@ -37,7 +41,6 @@ export interface ScrapingJobResult extends ScrapingResult {
 }
 
 @Injectable()
-@Processor('scraping')
 export class ScrapingQueueService {
   private readonly logger = new Logger(ScrapingQueueService.name);
 
@@ -47,7 +50,7 @@ export class ScrapingQueueService {
     private readonly browserlessService: BrowserlessService,
     private readonly behavioralSignalsService: BehavioralSignalsService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   /**
    * Ajouter un job de scraping Facebook Marketplace à la queue
@@ -132,17 +135,13 @@ export class ScrapingQueueService {
   }
 
   /**
-   * Processeur: Scraping Facebook Marketplace
+   * Traitement direct (non-Bull): Scraping Facebook Marketplace
+   * Peut être appelé directement par d'autres services.
    */
-  @Process('facebook_marketplace')
-  async processFacebookMarketplaceScraping(
-    job: Job<ScrapingJobData>,
-  ): Promise<ScrapingJobResult> {
+  async processFacebookMarketplaceScraping(job: Job<ScrapingJobData>): Promise<ScrapingJobResult> {
     const { search, userId, campaignId } = job.data;
 
-    this.logger.log(
-      `Processing Facebook Marketplace scraping job ${job.id}: ${search?.query}`,
-    );
+    this.logger.log(`Processing Facebook Marketplace scraping job ${job.id}: ${search?.query}`);
 
     try {
       // 1. Scraper Facebook Marketplace
@@ -162,9 +161,7 @@ export class ScrapingQueueService {
 
       // 3. Ajouter jobs de scoring pour chaque prospect
       const scoringJobs = await Promise.all(
-        prospects.map((prospect) =>
-          this.queueBehavioralScoring(prospect.id, userId),
-        ),
+        prospects.map((prospect) => this.queueBehavioralScoring(prospect.id, userId)),
       );
 
       this.logger.log(
@@ -177,17 +174,14 @@ export class ScrapingQueueService {
         jobId: job.id.toString(),
       };
     } catch (error) {
-      this.logger.error(
-        `Facebook scraping job ${job.id} failed: ${error.message}`,
-      );
+      this.logger.error(`Facebook scraping job ${job.id} failed: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Processeur: Scraping générique
+   * Traitement direct (non-Bull): Scraping générique
    */
-  @Process('generic_scraping')
   async processGenericScraping(job: Job<ScrapingJobData>): Promise<ScrapingJobResult> {
     const { url, selectors, userId } = job.data;
 
@@ -212,9 +206,8 @@ export class ScrapingQueueService {
   }
 
   /**
-   * Processeur: Calcul du score comportemental
+   * Traitement direct (non-Bull): Calcul du score comportemental
    */
-  @Process('calculate_intention_score')
   async processBehavioralScoring(job: Job<ScoringJobData>): Promise<IntentionScore> {
     const { prospectId, userId, forceRecalculate } = job.data;
 
@@ -244,26 +237,22 @@ export class ScrapingQueueService {
         prospect.lastScoredAt &&
         Date.now() - prospect.lastScoredAt.getTime() < 24 * 60 * 60 * 1000
       ) {
-        this.logger.log(
-          `Skipping scoring for ${prospectId}: recent score exists`,
-        );
-        return ({
+        this.logger.log(`Skipping scoring for ${prospectId}: recent score exists`);
+        return {
           totalScore: prospect.intentionScore || 0,
           quality: prospect.quality as any,
           breakdown: {} as any,
           confidence: 0.8,
           signals: [],
           recommendations: [],
-        } as any);
+        } as any;
       }
 
       // 2. Extraire les signaux comportementaux
       const signals = this.extractBehavioralSignalsFromProspect(prospect);
 
       // 3. Calculer le score d'intention
-      const score = await this.behavioralSignalsService.calculateIntentionScore(
-        signals,
-      );
+      const score = await this.behavioralSignalsService.calculateIntentionScore(signals);
 
       // 4. Mettre à jour le prospect dans la DB
       await this.prisma.prospect.update({
@@ -302,10 +291,7 @@ export class ScrapingQueueService {
         // Vérifier si le prospect existe déjà (par URL ou identifiant unique)
         const existing = await this.prisma.prospect.findFirst({
           where: {
-            OR: [
-              { externalId: item.id },
-              { url: item.url },
-            ],
+            OR: [{ externalId: item.id }, { url: item.url }],
           },
         });
 
@@ -363,9 +349,7 @@ export class ScrapingQueueService {
     const tags = prospect.tags || [];
 
     // Analyser les interactions pour détecter les signaux
-    const hasActiveSearch = interactions.some(
-      (i: any) => i.type === 'search' || i.type === 'view',
-    );
+    const hasActiveSearch = interactions.some((i: any) => i.type === 'search' || i.type === 'view');
     const hasEngagementOnListings = interactions.filter(
       (i: any) => i.type === 'click' || i.type === 'save',
     ).length;
@@ -408,12 +392,7 @@ export class ScrapingQueueService {
   }
 
   private detectSpamIndicators(text: string): boolean {
-    const spamPatterns = [
-      /copier.coller/i,
-      /message.automatique/i,
-      /spam/i,
-      /publicité/i,
-    ];
+    const spamPatterns = [/copier.coller/i, /message.automatique/i, /spam/i, /publicité/i];
     return spamPatterns.some((pattern) => pattern.test(text));
   }
 
@@ -450,18 +429,14 @@ export class ScrapingQueueService {
   private calculateFrequencyDays(interactions: any[]): number {
     if (interactions.length < 2) return 0;
 
-    const dates = interactions
-      .map((i) => new Date(i.createdAt).getTime())
-      .sort((a, b) => a - b);
+    const dates = interactions.map((i) => new Date(i.createdAt).getTime()).sort((a, b) => a - b);
 
     const intervals = [];
     for (let i = 1; i < dates.length; i++) {
       intervals.push((dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24));
     }
 
-    return intervals.length > 0
-      ? intervals.reduce((a, b) => a + b, 0) / intervals.length
-      : 0;
+    return intervals.length > 0 ? intervals.reduce((a, b) => a + b, 0) / intervals.length : 0;
   }
 
   /**

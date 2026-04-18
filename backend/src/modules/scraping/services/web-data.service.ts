@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CheerioService } from './cheerio.service';
 import { PuppeteerService } from './puppeteer.service';
 import { FirecrawlService } from './firecrawl.service';
+import { CacheService } from '../../cache/cache.service';
+import * as crypto from 'crypto';
 
 export type WebDataProvider = 'firecrawl' | 'cheerio' | 'puppeteer';
 
@@ -28,42 +30,91 @@ export interface WebDataResult {
 
 /**
  * Service unifié de scraping web
- * 
+ *
  * Ce service encapsule TOUS les providers de scraping et sélectionne
  * automatiquement le meilleur provider selon l'URL et les besoins.
- * 
+ *
  * Architecture:
  * - Tier 1: Firecrawl (API payante, IA intégrée, sites complexes)
  * - Tier 2: Cheerio (gratuit, rapide, sites simples/statiques)
  * - Tier 3: Puppeteer (gratuit, sites JS dynamiques)
- * 
+ *
  * Les clés API de scraping se configurent par l'utilisateur dans les paramètres,
  * et le LLM Router / AI Orchestrator se charge de choisir le meilleur moteur.
  */
 @Injectable()
 export class WebDataService {
   private readonly logger = new Logger(WebDataService.name);
+  /** Cache TTL pour les résultats de scraping : 24h */
+  private readonly SCRAPING_CACHE_TTL = 86400;
+  /** Délai minimum entre deux requêtes vers le même domaine (ms) */
+  private readonly DOMAIN_RATE_LIMIT_MS = 1000;
+  /** Timestamp du dernier appel par domaine */
+  private readonly domainLastRequest = new Map<string, number>();
 
   constructor(
     private readonly cheerioService: CheerioService,
     private readonly puppeteerService: PuppeteerService,
     private readonly firecrawlService: FirecrawlService,
+    private readonly cacheService: CacheService,
   ) {}
+
+  /** Extraire le domaine (hostname) d'une URL */
+  private getDomain(url: string): string {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  /** Respecter le rate-limit par domaine avant de faire une requête */
+  private async enforceDomainRateLimit(url: string): Promise<void> {
+    const domain = this.getDomain(url);
+    const lastRequest = this.domainLastRequest.get(domain) ?? 0;
+    const elapsed = Date.now() - lastRequest;
+
+    if (elapsed < this.DOMAIN_RATE_LIMIT_MS) {
+      const wait = this.DOMAIN_RATE_LIMIT_MS - elapsed;
+      this.logger.debug(`Rate-limit domain ${domain}: waiting ${wait}ms`);
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+
+    this.domainLastRequest.set(domain, Date.now());
+  }
 
   /**
    * Récupérer le contenu HTML d'une URL avec le provider optimal
+   * Les résultats sont mis en cache 24h pour éviter les requêtes répétées.
    */
   async fetchHtml(url: string, options?: WebDataFetchOptions): Promise<WebDataResult> {
     this.logger.log(`Récupération de ${url} avec les options: ${JSON.stringify(options)}`);
+
+    // Clé de cache basée sur l'URL + provider choisi
+    const cacheKey = `scraping:${crypto.createHash('sha256').update(url).digest('hex')}`;
+
+    // Pas de cache si forceProvider (le caller veut un refresh forcé)
+    if (!options?.forceProvider) {
+      const cached = await this.cacheService.get<WebDataResult>(cacheKey);
+      if (cached) {
+        this.logger.debug(`Cache hit scraping (24h): ${url}`);
+        return cached;
+      }
+    }
 
     // Sélectionner le provider
     const provider = options?.provider ?? this.selectBestProvider(url, options);
 
     this.logger.log(`Provider sélectionné: ${provider}`);
 
+    // Respecter le rate-limit par domaine
+    await this.enforceDomainRateLimit(url);
+
     try {
       // Tenter avec le provider sélectionné
       const result = await this.fetchWithProvider(url, provider, options);
+      // Stocker en cache 24h
+      await this.cacheService.set(cacheKey, result, this.SCRAPING_CACHE_TTL);
       return result;
     } catch (error) {
       this.logger.warn(`Échec avec ${provider}: ${error.message}`);
@@ -74,22 +125,20 @@ export class WebDataService {
       }
 
       // Stratégie de fallback automatique
-      return await this.fallbackFetch(url, provider, options);
+      const result = await this.fallbackFetch(url, provider, options);
+      // Cacher aussi le résultat du fallback
+      await this.cacheService.set(cacheKey, result, this.SCRAPING_CACHE_TTL);
+      return result;
     }
   }
 
   /**
    * Récupérer plusieurs URLs en parallèle
    */
-  async fetchMultipleUrls(
-    urls: string[],
-    options?: WebDataFetchOptions,
-  ): Promise<WebDataResult[]> {
+  async fetchMultipleUrls(urls: string[], options?: WebDataFetchOptions): Promise<WebDataResult[]> {
     this.logger.log(`Récupération de ${urls.length} URLs`);
 
-    const results = await Promise.allSettled(
-      urls.map((url) => this.fetchHtml(url, options)),
-    );
+    const results = await Promise.allSettled(urls.map((url) => this.fetchHtml(url, options)));
 
     const successfulResults: WebDataResult[] = [];
     let failedCount = 0;
@@ -168,12 +217,14 @@ export class WebDataService {
   /**
    * Obtenir les providers disponibles pour un utilisateur
    */
-  async getAvailableProviders(tenantId?: string): Promise<Array<{
-    name: WebDataProvider;
-    available: boolean;
-    description: string;
-    cost: string;
-  }>> {
+  async getAvailableProviders(tenantId?: string): Promise<
+    Array<{
+      name: WebDataProvider;
+      available: boolean;
+      description: string;
+      cost: string;
+    }>
+  > {
     const providers = [
       {
         name: 'cheerio' as WebDataProvider,

@@ -1,9 +1,40 @@
 'use client';
 
 import { useRouter } from 'next/router';
-import * as LucideIcons from 'lucide-react';
+import {
+  Home,
+  Building2,
+  Users,
+  Search,
+  Target,
+  ArrowLeftRight,
+  CalendarDays,
+  MessageSquare,
+  Megaphone,
+  TrendingUp,
+  DollarSign,
+  FileText,
+  Circle,
+} from 'lucide-react';
 import { useMenu } from '@/shared/hooks/useMenu';
 import type { DynamicMenuItem } from '@/shared/utils/module-registry-api';
+
+// Static icon map — tree-shakeable
+const ICON_MAP: Record<string, React.ElementType> = {
+  Home,
+  Building2,
+  Users,
+  Search,
+  Target,
+  ArrowLeftRight,
+  CalendarDays,
+  MessageSquare,
+  Megaphone,
+  TrendingUp,
+  DollarSign,
+  FileText,
+  Circle,
+};
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -69,11 +100,8 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
    * Ex: "Home" → <Home />
    */
   const getIcon = (iconName?: string) => {
-    if (!iconName) return LucideIcons.Circle;
-
-    // Récupérer l'icône depuis lucide-react
-    const Icon = (LucideIcons as any)[iconName];
-    return Icon || LucideIcons.Circle;
+    if (!iconName) return Circle;
+    return ICON_MAP[iconName] || Circle;
   };
 
   /**
@@ -97,7 +125,9 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
             }
           `}
         >
-          <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+          <Icon
+            className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-400'}`}
+          />
           <span className={`text-sm ${isActive ? 'font-semibold text-white' : 'font-medium'}`}>
             {item.label}
           </span>
@@ -142,9 +172,7 @@ export default function DynamicMenu({ onNavigate }: DynamicMenuProps) {
   return (
     <nav className="mt-4 flex-1 overflow-y-auto py-1">
       {menuItems.length === 0 ? (
-        <div className="px-5 py-4 text-sm text-slate-400">
-          Aucun module activé
-        </div>
+        <div className="px-5 py-4 text-sm text-slate-400">Aucun module activé</div>
       ) : (
         menuItems.map((item) => renderMenuItem(item))
       )}

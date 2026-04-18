@@ -18,6 +18,11 @@ const nextConfig = {
     defaultLocale: 'fr',
     localeDetection: true,
   },
+  // Tree-shake large icon/component libraries — only imports actually used
+  // are bundled, significantly reducing JS chunk size.
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
 };
 
 module.exports = nextConfig;
