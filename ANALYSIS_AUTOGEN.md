@@ -1,8 +1,8 @@
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-04-17T19:50:42.622Z
+Generated: 2026-04-18T00:55:25.827Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-04-17T19:16:46.028Z
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-04-17T19:50:42.667Z
 - README.md  —  mtime: 2026-04-17T19:16:46.028Z
 - backend\TESTS_IMPROVEMENT.md  —  mtime: 2026-04-17T19:16:46.030Z
 - backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-04-17T19:16:46.233Z
@@ -45,27 +45,27 @@ Generated: 2026-04-17T19:50:42.622Z
 - frontend\src\modules\business\prospecting\PROSPECTION_REFACTORING.md  —  mtime: 2026-02-09T10:26:27.306Z
 
 ## Key paths scanned
-- backend  —  mtime: 2026-04-17T19:16:46.269Z
-- frontend  —  mtime: 2026-04-17T19:16:49.716Z
-- backend\prisma\schema.prisma  —  mtime: 2026-04-17T19:16:46.044Z
+- backend  —  mtime: 2026-04-18T00:23:20.148Z
+- frontend  —  mtime: 2026-04-17T21:46:11.810Z
+- backend\prisma\schema.prisma  —  mtime: 2026-04-18T00:07:24.834Z
 
 ## Top of selected files
 
 ### ANALYSIS_AUTOGEN.md
 ```
 # ANALYSIS_AUTOGEN - Résumé automatique
-Generated: 2026-04-15T12:27:25.637Z
+Generated: 2026-04-17T19:50:42.622Z
 
 ## Markdown files (found)
-- ANALYSIS_AUTOGEN.md  —  mtime: 2026-04-15T12:24:11.358Z
-- README.md  —  mtime: 2026-04-15T12:24:11.359Z
-- backend\TESTS_IMPROVEMENT.md  —  mtime: 2026-04-15T12:24:11.360Z
-- backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-04-15T12:24:11.416Z
-- backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-04-15T12:24:11.417Z
-- backend\src\modules\scraping\INTERNATIONAL_EXPANSION.md  —  mtime: 2026-04-15T12:24:11.418Z
-- backend\src\modules\scraping\INTERNATIONAL_SITES.md  —  mtime: 2026-04-15T12:24:11.418Z
-- backend\src\modules\scraping\README_IMPROVEMENTS.md  —  mtime: 2026-04-15T12:24:11.419Z
-- backend\src\modules\scraping\SCRAPING_IMPROVEMEN
+- ANALYSIS_AUTOGEN.md  —  mtime: 2026-04-17T19:16:46.028Z
+- README.md  —  mtime: 2026-04-17T19:16:46.028Z
+- backend\TESTS_IMPROVEMENT.md  —  mtime: 2026-04-17T19:16:46.030Z
+- backend\src\modules\scraping\AI_FIRST_SCRAPING_PLAN.md  —  mtime: 2026-04-17T19:16:46.233Z
+- backend\src\modules\scraping\EXISTING_SYSTEM_ANALYSIS.md  —  mtime: 2026-04-17T19:16:46.234Z
+- backend\src\modules\scraping\INTERNATIONAL_EXPANSION.md  —  mtime: 2026-04-17T19:16:46.234Z
+- backend\src\modules\scraping\INTERNATIONAL_SITES.md  —  mtime: 2026-04-17T19:16:46.235Z
+- backend\src\modules\scraping\README_IMPROVEMENTS.md  —  mtime: 2026-04-17T19:16:46.236Z
+- backend\src\modules\scraping\SCRAPING_IMPROVEMENT_PLAN.md  —
 ```
 
 ### README.md
