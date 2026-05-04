@@ -43,6 +43,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { apiClient } from '@/shared/utils/backend-api';
+import { PepiteDetector } from '@/modules/business/investment/pepite/PepiteDetector';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ interface MarketIndicator {
   color: string;
 }
 
-type TabType = 'intelligence' | 'simulator' | 'market-prices' | 'indicators';
+type TabType = 'intelligence' | 'simulator' | 'market-prices' | 'indicators' | 'pepites';
 
 // ─── Mortgage Calculator Logic ───────────────────────────────
 
@@ -534,7 +535,7 @@ export default function ImmoMarketDashboard() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="intelligence" className="gap-2">
                 <Building2 className="h-4 w-4" /> Intelligence
               </TabsTrigger>
@@ -546,6 +547,9 @@ export default function ImmoMarketDashboard() {
               </TabsTrigger>
               <TabsTrigger value="indicators" className="gap-2">
                 <Activity className="h-4 w-4" /> Indicateurs
+              </TabsTrigger>
+              <TabsTrigger value="pepites" className="gap-2 text-orange-600 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
+                📡 Radar Spot
               </TabsTrigger>
             </TabsList>
 
@@ -1634,6 +1638,11 @@ export default function ImmoMarketDashboard() {
                 </>
               )}
             </TabsContent>
+            {/* ════════════ TAB: RADAR SPOT ════════════ */}
+            <TabsContent value="pepites" className="mt-6">
+              <PepiteDetector />
+            </TabsContent>
+
           </Tabs>
         </div>
       </MainLayout>

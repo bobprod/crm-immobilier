@@ -17,11 +17,15 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../core/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PrismaService } from '../../shared/database/prisma.service';
+import { PepiteAiService } from './services/pepite/pepite-ai.service';
 import { InvestmentImportService } from './services/investment-import.service';
 import { InvestmentAnalysisService } from './services/investment-analysis.service';
 import { InvestmentComparisonService } from './services/investment-comparison.service';
 import { InvestmentAlertService } from './services/investment-alert.service';
 import { AdapterRegistryService } from './services/adapter-registry.service';
+import { PepiteScorerService } from './services/pepite/pepite-scorer.service';
+import { COUNTRY_SOURCES, SOURCE_LABELS, getSourcesForCountry } from './services/pepite/country-sources.registry';
 import {
   ImportProjectDto,
   ImportBatchDto,
@@ -43,7 +47,96 @@ export class InvestmentIntelligenceController {
     private readonly comparisonService: InvestmentComparisonService,
     private readonly alertService: InvestmentAlertService,
     private readonly adapterRegistry: AdapterRegistryService,
+    private readonly pepiteScorer: PepiteScorerService,
+    private readonly pepiteAi: PepiteAiService,
+    private readonly prisma: PrismaService,
   ) { }
+
+  // ============================================
+  // Pépite Detector — Multi-pays
+  // ============================================
+
+  @Get('pepite/sources')
+  getPepiteSources(@Query('country') country: string = 'Tunisie') {
+    const sources = getSourcesForCountry(country);
+    return {
+      country,
+      sources: sources.map((id) => ({ id, label: SOURCE_LABELS[id] })),
+      availableCountries: Object.keys(COUNTRY_SOURCES),
+    };
+  }
+
+  @Get('pepite/scan')
+  async scanPepites(
+    @Query('country') country: string = 'Tunisie',
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('keywords') keywords?: string,
+    @Query('urls') urls?: string,
+    @CurrentUser() user?: any,
+  ) {
+    this.logger.log(`Radar Spot scan: country=${country}, keywords=${keywords}`);
+    return this.pepiteScorer.scan(
+      country,
+      lat ? parseFloat(lat) : undefined,
+      lng ? parseFloat(lng) : undefined,
+      keywords ? keywords.split(',').map((k) => k.trim()) : undefined,
+      urls ? urls.split(',').map((u) => u.trim()) : undefined,
+      user?.id,
+    );
+  }
+
+  @Post('pepite/zone-check')
+  async checkZone(
+    @Body() body: { lat: number; lng: number; country: string },
+  ) {
+    this.logger.log(`Zone check: lat=${body.lat}, lng=${body.lng}, country=${body.country}`);
+    return this.pepiteScorer.checkZone(body.lat, body.lng, body.country ?? 'Tunisie');
+  }
+
+  @Post('pepite/analyze-prompt')
+  async analyzePrompt(
+    @Body() body: { prompt: string; country?: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.pepiteAi.parseNaturalLanguageQuery(body.prompt, body.country ?? 'Tunisie', user.id);
+  }
+
+  @Post('pepite/add-to-crm')
+  async addToCrm(
+    @Body() body: {
+      title: string;
+      prix: string | null;
+      surface: string | null;
+      location: string;
+      url: string;
+      country: string;
+    },
+    @CurrentUser() user: any,
+  ) {
+    this.logger.log(`Add to CRM: ${body.title} for user ${user.id}`);
+    const data: any = {
+      title: body.title,
+      description: `Importé depuis Radar Spot — ${body.url}`,
+      status: 'available',
+      type: 'terrain',
+      userId: user.id,
+      agencyId: user.agencyId,
+      currency: body.country === 'France' ? 'EUR' : 'TND',
+      city: body.location || '',
+      source: 'radar-spot',
+    };
+    if (body.prix) {
+      const num = parseFloat(body.prix.replace(/[^\d.]/g, ''));
+      if (!isNaN(num)) data.price = num;
+    }
+    if (body.surface) {
+      const num = parseFloat(body.surface.replace(/[^\d.]/g, ''));
+      if (!isNaN(num)) data.area = num;
+    }
+    const property = await this.prisma.properties.create({ data }).catch(() => null);
+    return { success: true, property };
+  }
 
   // ============================================
   // Platform Detection
